@@ -1,0 +1,412 @@
+{
+    "users": [
+        {
+            "id": 1,
+            "username": "admin",
+            "password": "$2y$10$G02.emT7yrc15a8OiRHpVeL8yggl4fAS4nlFz4Z6fFRBtA8cNDFmS",
+            "station_name": "Administrador",
+            "is_admin": true
+        },
+        {
+            "id": 2,
+            "username": "salto",
+            "password": "$2y$10$.e7D.vwmLIzDAjbu4Q44t.pOpn6KsWaHr432e2dv2XpbILtWfXKl6",
+            "station_name": "El Salto radio",
+            "is_admin": false
+        },
+        {
+            "id": 3,
+            "username": "sonora",
+            "password": "$2y$10$7BIiXuka82V1ww66ZXyjT.ZwDPxcEjlfQHGlvpnIoBv6LN.DqqmwO",
+            "station_name": "Sonora UC3M",
+            "is_admin": false
+        },
+        {
+            "id": 4,
+            "username": "radiobot",
+            "password": "$2y$10$ipDCVvJJ\/tF9yG4g6O1O8Owi9hCG3AyxgjkyySiA.kW32qH1BTTxC",
+            "station_name": "radiobot",
+            "is_admin": false
+        }
+    ],
+    "podcasts": [],
+    "user_categories": {
+        "salto": [
+            "EL_SALTO",
+            "Externos"
+        ],
+        "sonora": [
+            "Sin_categoria"
+        ],
+        "radiobot": [
+            "3H",
+            "Externos",
+            "Mix_El_Salto",
+            "Quincenal",
+            "Semanal"
+        ]
+    },
+    "login_attempts": {
+        "elsalto": {
+            "count": 1,
+            "last_attempt": 1761125966
+        }
+    },
+    "feed_cache": {
+        "c423f28475751bfa39ce4f527519cc7a": {
+            "url": "https:\/\/www.ivoox.com\/feed_fg_f1149684_filtro_1.xml",
+            "last_episode": 1760516428,
+            "cached_at": 1761375822
+        },
+        "3e44c809f9ea15878cd4b5df8571b630": {
+            "url": "https:\/\/www.elsaltodiario.com\/canela-en-surco\/feed",
+            "last_episode": 1614420000,
+            "cached_at": 1761375824
+        },
+        "dbdcd735681ce59350f19f2a67557000": {
+            "url": "https:\/\/www.elsaltodiario.com\/catapulta\/feed",
+            "last_episode": 1757490900,
+            "cached_at": 1761375825
+        },
+        "0cc205eb6ec63de4cca74ee80bc624b3": {
+            "url": "https:\/\/www.elsaltodiario.com\/lanaren-ekonomia\/feed",
+            "last_episode": 1751860800,
+            "cached_at": 1761375834
+        },
+        "cb4759e2f488797210545ef8f2ae1106": {
+            "url": "https:\/\/www.elsaltodiario.com\/la-internacional-sonora\/feed",
+            "last_episode": 1751515200,
+            "cached_at": 1761375833
+        },
+        "028285e10746c01bedd8217221741a90": {
+            "url": "https:\/\/www.elsaltodiario.com\/que-no-te-lo-cuenten\/feed",
+            "last_episode": 1751169600,
+            "cached_at": 1761375836
+        },
+        "40d8d9e8b74b3557a39f4215042617a8": {
+            "url": "https:\/\/www.elsaltodiario.com\/mecambio\/feed",
+            "last_episode": 1760963700,
+            "cached_at": 1761375835
+        },
+        "d7a7d42d2ea6a2eafeb453389e0464a8": {
+            "url": "https:\/\/www.ivoox.com\/feed_fg_f1634081_filtro_1.xml",
+            "last_episode": 1757020679,
+            "cached_at": 1761375835
+        },
+        "85e6c6489684fbb90fbc8c1079898b01": {
+            "url": "https:\/\/www.ivoox.com\/feed_fg_f1874890_filtro_1.xml",
+            "last_episode": 1760074200,
+            "cached_at": 1761375836
+        },
+        "3ee20d256638098b30f08fc785b55404": {
+            "url": "https:\/\/www.elsaltodiario.com\/sardinas-en-lata\/feed",
+            "last_episode": 1680584940,
+            "cached_at": 1761375838
+        },
+        "ec734b3a66ae424214ccece50456964d": {
+            "url": "https:\/\/www.elsaltodiario.com\/o-teleclube\/feed",
+            "last_episode": 1761108960,
+            "cached_at": 1761375835
+        },
+        "98af5efc7105f4cb5e546737adce65b0": {
+            "url": "https:\/\/www.elsaltodiario.com\/there-is-alternative\/feed",
+            "last_episode": 1754568000,
+            "cached_at": 1761375839
+        },
+        "4297007ee3c49cbce58611ac8c02fdd6": {
+            "url": "https:\/\/www.elsaltodiario.com\/pulsos-bajo-el-cielo\/feed",
+            "last_episode": 1751442420,
+            "cached_at": 1761375836
+        },
+        "49368fc0f5dd475220e2cd4916e90626": {
+            "url": "https:\/\/www.elsaltodiario.com\/rio-arriba\/feed",
+            "last_episode": 1760868000,
+            "cached_at": 1761375837
+        },
+        "257fb54a73584050ba44daa07739124f": {
+            "url": "https:\/\/www.ivoox.com\/feed_fg_f12364929_filtro_1.xml",
+            "last_episode": 1751987240,
+            "cached_at": 1761375824
+        },
+        "747723f90800ba11f1f4f3e8f8db5088": {
+            "url": "https:\/\/www.agorasolradio.org\/podcast\/barriocanino\/feed\/",
+            "last_episode": 1748861895,
+            "cached_at": 1761379376
+        },
+        "1bf20c218de03bad7073233ebea7b0ec": {
+            "url": "https:\/\/www.ivoox.com\/feed_fg_f1790563_filtro_1.xml",
+            "last_episode": 1753367994,
+            "cached_at": 1761108870
+        },
+        "2faf66c0f9f2f37d9d73c25757a01037": {
+            "url": "https:\/\/caipirinhalibre.podomatic.com\/rss2.xml",
+            "last_episode": 1756591247,
+            "cached_at": 1761375824
+        },
+        "a62a6715fa07203f1ad33f3d86ec7fbd": {
+            "url": "https:\/\/www.democracynow.org\/podcast-emisoras.xml",
+            "last_episode": 1761321013,
+            "cached_at": 1761375830
+        },
+        "ae82ce753ff16007e3091ccebea96cdd": {
+            "url": "https:\/\/www.ivoox.com\/feed_fg_f1552492_filtro_1.xml",
+            "last_episode": 1760029796,
+            "cached_at": 1761375831
+        },
+        "8b5e0b2528d9bee9064f5a435fe6bdec": {
+            "url": "https:\/\/www.deraizradio.org\/category\/programas\/feed",
+            "last_episode": 1760941198,
+            "cached_at": 1761375826
+        },
+        "2dc83644c6317af4895e5ee46689c822": {
+            "url": "https:\/\/www.ivoox.com\/feed_fg_f11470038_filtro_1.xml",
+            "last_episode": 1752224368,
+            "cached_at": 1761375832
+        },
+        "a86cbdd672a3474ac1ba0b8bad31208f": {
+            "url": "https:\/\/www.ivoox.com\/feed_fg_f18738_filtro_1.xml",
+            "last_episode": 1761226305,
+            "cached_at": 1761375831
+        },
+        "dfe2f1048a78ae8270da5864af680a93": {
+            "url": "https:\/\/archive.org\/advancedsearch.php?q=subject%3A%22lddprograma%22&fl%5B%5D=identifier&sort%5B%5D=&sort%5B%5D=&sort%5B%5D=&rows=50&page=1&callback=callback&save=yes&output=rss",
+            "last_episode": 1751173899,
+            "cached_at": 1761375833
+        },
+        "549a521627c9b8da03c2f76d58a52d4b": {
+            "url": "https:\/\/www.ivoox.com\/feed_fg_f11170477_filtro_1.xml",
+            "last_episode": 1737065001,
+            "cached_at": 1761375834
+        },
+        "1d73816f0ca7a97ba5650ec1d581ec6f": {
+            "url": "https:\/\/www.ivoox.com\/feed_fg_f1141927_filtro_1.xml",
+            "last_episode": 1761038703,
+            "cached_at": 1761375834
+        },
+        "6d3f907bddef75f75701f3dbef6b9d60": {
+            "url": "https:\/\/www.ivoox.com\/feed_fg_f11890093_filtro_1.xml",
+            "last_episode": 1754726613,
+            "cached_at": 1761375836
+        },
+        "cdb15de0738d8935d36167283d1ddbbf": {
+            "url": "https:\/\/www.ivoox.com\/feed_fg_f173781_filtro_1.xml",
+            "last_episode": 1760381447,
+            "cached_at": 1761375837
+        },
+        "da48cfddb2efca6c6ce403e12fbd1d3b": {
+            "url": "https:\/\/www.ivoox.com\/feed_fg_f11439808_filtro_1.xml",
+            "last_episode": 1749767133,
+            "cached_at": 1761375837
+        },
+        "77bda32ee2d695ea822feef66d5ec158": {
+            "url": "https:\/\/www.ivoox.com\/feed_fg_f162460_filtro_1.xml",
+            "last_episode": 1752678684,
+            "cached_at": 1761375837
+        },
+        "0c903a3ba5c34aaf33b4d0126c4cf91f": {
+            "url": "https:\/\/www.ivoox.com\/feed_fg_f12313507_filtro_1.xml",
+            "last_episode": 1761162160,
+            "cached_at": 1761375838
+        },
+        "9925c404e2436db675014881768ddd4b": {
+            "url": "https:\/\/podcast.radioalmaina.org\/category\/produccion-propia\/sobrevivir_al_descalabro\/feed",
+            "last_episode": 1759287652,
+            "cached_at": 1761375838
+        },
+        "90ba7504c19a3f255436fa072946756e": {
+            "url": "https:\/\/anchor.fm\/s\/71c8f8cc\/podcast\/rss",
+            "last_episode": 1735314625,
+            "cached_at": 1761375840
+        },
+        "b8a10e635d5fe8a6f58beb035e6e9858": {
+            "url": "https:\/\/www.ivoox.com\/feed_fg_f1649442_filtro_1.xml",
+            "last_episode": 1761344067,
+            "cached_at": 1761375832
+        },
+        "24941b2e761c026d469ff1cea2034167": {
+            "url": "https:\/\/coranimal.contrabanda.org\/feed\/",
+            "last_episode": 1759687656,
+            "cached_at": 1761375825
+        },
+        "9f6f40f2bf35f67e063cacdda05243a1": {
+            "url": "https:\/\/www.ivoox.com\/feed_fg_f1175855_filtro_1.xml",
+            "last_episode": 1760458473,
+            "cached_at": 1761375839
+        },
+        "10fbb7b6439ff1ee7c62491031cda411": {
+            "url": "https:\/\/podcast.radioalmaina.org\/category\/produccion-propia\/a_un_paso_del_abismo\/feed",
+            "last_episode": 1761344720,
+            "cached_at": 1761379377
+        },
+        "af07b41fd219956991e596b5af2cf569": {
+            "url": "https:\/\/www.agorasolradio.org\/podcast\/enfrancadecadencia\/feed\/",
+            "last_episode": 1747588111,
+            "cached_at": 1761379384
+        },
+        "07c05de7c9659f9d73eebe7c95d91e2e": {
+            "url": "https:\/\/www.agorasolradio.org\/podcast\/teoria_cuerdos\/feed\/",
+            "last_episode": 1760371213,
+            "cached_at": 1761375839
+        },
+        "4a54a503e7f7dd7557f6c7907a06de63": {
+            "url": "https:\/\/www.agorasolradio.org\/podcast\/estrellas-de-metal\/feed\/",
+            "last_episode": 1760878948,
+            "cached_at": 1761375832
+        },
+        "d3156f99764e9f0d6dee454ecb7407a6": {
+            "url": "https:\/\/www.ivoox.com\/en-cabeza-goya_fg_f11178060_filtro_1.xml",
+            "last_episode": 1629993598,
+            "cached_at": 1761295013
+        },
+        "6a54b7eafb9b1ef3339e82f9d4654b3b": {
+            "url": "https:\/\/www.agorasolradio.org\/podcast\/zonadelmetal\/feed\/",
+            "last_episode": 1760940036,
+            "cached_at": 1761375840
+        },
+        "72afc1127b37e7e46e2758e2322277ee": {
+            "url": "https:\/\/www.agorasolradio.org\/podcast\/musica-kasual\/feed\/",
+            "last_episode": 1761369682,
+            "cached_at": 1761375835
+        },
+        "2986572f7d9121bd515e6b2be5abcd8b": {
+            "url": "https:\/\/archive.org\/advancedsearch.php?q=charito80&fl%5B%5D=identifier&sort%5B%5D=&sort%5B%5D=&sort%5B%5D=&rows=50&page=1&callback=callback&save=yes&output=rss",
+            "last_episode": 1761246423,
+            "cached_at": 1761379381
+        },
+        "65f45319632fd5294b1814a2aa2e64d7": {
+            "url": "https:\/\/100fuegosradio.com\/category\/programas\/feed\/",
+            "last_episode": 1760990594,
+            "cached_at": 1761379375
+        },
+        "dd0931048304e6f73965d8e54f6fcf9c": {
+            "url": "http:\/\/podcast.radiobronka.info\/category\/5-barbaros-en-la-cabeza\/feed\/",
+            "last_episode": 1717447996,
+            "cached_at": 1761379375
+        },
+        "1845477ffb653b19a404b81be368d18e": {
+            "url": "https:\/\/www.agorasolradio.org\/podcast\/agora-sesion-kasual\/feed\/",
+            "last_episode": 1758729617,
+            "cached_at": 1761379376
+        },
+        "922b9492fb86c44e8d4cface99b0ce51": {
+            "url": "http:\/\/caipirinhalibre.podomatic.com\/rss2.xml",
+            "last_episode": 1756591247,
+            "cached_at": 1761379377
+        },
+        "7dd886f6041cca014c42c0d1771cab23": {
+            "url": "https:\/\/www.radiotopo.org\/programa\/con-la-casa-en-la-mochila\/feed\/",
+            "last_episode": 1751880741,
+            "cached_at": 1761379377
+        },
+        "ff17ccaedf30b8c6c55fd978201c70b0": {
+            "url": "http:\/\/www.deraizradio.org\/category\/programas\/feed\/",
+            "last_episode": 1760941198,
+            "cached_at": 1761379378
+        },
+        "bb15d9065b9d344f8d97d691c5b328ec": {
+            "url": "https:\/\/www.radiotopo.org\/programa\/el-acratador\/feed\/",
+            "last_episode": 1760707497,
+            "cached_at": 1761379382
+        },
+        "d4bbc96ab2f1369d18f8eb29c443416f": {
+            "url": "https:\/\/www.ivoox.com\/podcast-cafe-silverio_fg_f1552492_filtro_1.xml",
+            "last_episode": 1760029796,
+            "cached_at": 1761379384
+        },
+        "7c8b7d7ce3ff1b57fcf7f514da733384": {
+            "url": "https:\/\/www.agorasolradio.org\/podcast\/elgestomasradical\/feed\/",
+            "last_episode": 1754465416,
+            "cached_at": 1761375831
+        },
+        "6b7bc3a25fe26ef395adb62af8a11a28": {
+            "url": "https:\/\/www.agorasolradio.org\/podcast\/ensenando_los_dientes\/feed\/",
+            "last_episode": 1758088822,
+            "cached_at": 1761379385
+        },
+        "7cd0ea1f1f996d6b0a9693731bac59e2": {
+            "url": "https:\/\/www.agorasolradio.org\/podcast\/espaciocomun15m\/feed\/",
+            "last_episode": 1760809903,
+            "cached_at": 1761379385
+        },
+        "b93285016b7e5b46487765c1220ad2be": {
+            "url": "https:\/\/radioalmaina.org\/category\/programas\/produccion-propia\/historia_social_del_jazz_primitivo\/feed\/",
+            "last_episode": 1760515655,
+            "cached_at": 1761379385
+        },
+        "f0b99ec01804be7d9ec92f5b94e5b000": {
+            "url": "https:\/\/www.agorasolradio.org\/podcast\/la-contratertulia\/feed\/",
+            "last_episode": 1761288676,
+            "cached_at": 1761379386
+        },
+        "db6d385e90b964af8ff651e15875a0ad": {
+            "url": "https:\/\/www.ivoox.com\/podcast-lluvia-truenos-radio_fg_f1703690_filtro_1.xml",
+            "last_episode": 1759473647,
+            "cached_at": 1761379386
+        },
+        "4dfa920e2a6c4cfc94f25f9804922aef": {
+            "url": "https:\/\/www.agorasolradio.org\/podcast\/mas-que-una-intencion\/feed\/",
+            "last_episode": 1760336513,
+            "cached_at": 1761379386
+        },
+        "6cccceebe7970f4edefb435eca31b7fa": {
+            "url": "https:\/\/www.agorasolradio.org\/podcast\/ondasonora\/feed\/",
+            "last_episode": 1751351313,
+            "cached_at": 1761379387
+        },
+        "d4b9a07510a34a78e6b425ac78a9d30d": {
+            "url": "https:\/\/www.ivoox.com\/podcast-post-apocalipsis-nau_fg_f1634081_filtro_1.xml",
+            "last_episode": 1757020679,
+            "cached_at": 1761379388
+        },
+        "9ce7650dc94434427e660d0f7dee2d4c": {
+            "url": "https:\/\/www.agorasolradio.org\/podcast\/radikalsonoro\/feed\/",
+            "last_episode": 1734976856,
+            "cached_at": 1761379388
+        },
+        "c26a30f96f4e7098ebfb3ee68be5234e": {
+            "url": "https:\/\/www.agorasolradio.org\/podcast\/rarasmusicas\/feed\/",
+            "last_episode": 1752645609,
+            "cached_at": 1761379389
+        },
+        "60b2afbd8133d600b2b6ebde270ba787": {
+            "url": "https:\/\/www.agorasolradio.org\/podcast\/rituales-de-resistencia\/feed\/",
+            "last_episode": 1751786317,
+            "cached_at": 1761379389
+        },
+        "a10bdef0087dd14dcb749b50d3a25092": {
+            "url": "https:\/\/www.agorasolradio.org\/podcast\/saltoalvacio\/feed\/",
+            "last_episode": 1760954417,
+            "cached_at": 1761379389
+        },
+        "57792721b3d63aec193adb49d71a06df": {
+            "url": "https:\/\/www.agorasolradio.org\/podcast\/sangrefucsia\/feed\/",
+            "last_episode": 1752822050,
+            "cached_at": 1761379390
+        },
+        "154d61c134c8ae6bd3d0a9a9438a8287": {
+            "url": "https:\/\/www.ivoox.com\/feed_fg_f11761032_filtro_1.xml",
+            "last_episode": 1746975615,
+            "cached_at": 1761379390
+        },
+        "439431a2283bace1ee04b967dfc2bc5d": {
+            "url": "https:\/\/www.agorasolradio.org\/podcast\/tiempodejazz\/feed\/",
+            "last_episode": 1752474768,
+            "cached_at": 1761379390
+        },
+        "8bbac06e3a201324bb9290125ef66d78": {
+            "url": "https:\/\/www.ivoox.com\/feed_fg_f1922056_filtro_1.xml",
+            "last_episode": 1761299423,
+            "cached_at": 1761379387
+        },
+        "ae41a8096a2190dd8787ae2364990056": {
+            "url": "https:\/\/www.agorasolradio.org\/podcast\/mentescorrientes\/feed\/",
+            "last_episode": 1731398210,
+            "cached_at": 1761379601
+        }
+    },
+    "config": {
+        "base_path": "\/mnt\/emisoras",
+        "subscriptions_folder": "Suscripciones",
+        "cache_duration": 43200
+    }
+}
