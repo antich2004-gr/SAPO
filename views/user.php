@@ -136,11 +136,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                             <button type="submit" class="btn btn-warning">🔄 Actualizar estado de feeds</button>
                         </form>
-                        <?php if (!isset($_SESSION['feeds_updated']) || !$_SESSION['feeds_updated']): ?>
-                            <small style="color: #718096;">Haz clic para ver el estado de actividad de tus suscripciones</small>
-                        <?php else: ?>
-                            <small style="color: #48bb78;">✓ Estado actualizado - Verde: activo (< 30 días) | Naranja: poco activo (30-90 días) | Rojo: inactivo (> 90 días)</small>
-                        <?php endif; ?>
+                        <small style="color: #718096;">Verde: activo (< 15 días) | Naranja: poco activo (15-30 días) | Rojo: inactivo (> 30 días)</small>
                         
                         <?php if (!empty($userCategories)): ?>
                             <div style="display: flex; gap: 10px; align-items: center; flex: 1;">
@@ -177,18 +173,17 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         <small>Categoria: <?php echo htmlEsc($podcast['category']); ?> | Caducidad: <?php echo $podcastCaducidad; ?> días</small>
                                         <small><?php echo htmlEsc($podcast['url']); ?></small>
 
-                                        <?php if (isset($_SESSION['feeds_updated']) && $_SESSION['feeds_updated']): ?>
-                                            <?php
-                                            $feedInfo = getCachedFeedInfo($podcast['url']);
+                                        <?php
+                                        $feedInfo = getCachedFeedInfo($podcast['url']);
+                                        if ($feedInfo['timestamp'] !== null):
                                             $statusInfo = formatFeedStatus($feedInfo['timestamp']);
-                                            ?>
-
+                                        ?>
                                             <div class="last-episode <?php echo $statusInfo['class']; ?>">
                                                 <?php echo $statusInfo['status']; ?> - Último episodio: <?php echo $statusInfo['date']; ?> (hace <?php echo $statusInfo['days']; ?> días)
-                                                <?php if ($feedInfo['cached']):
+                                                <?php if ($feedInfo['cached'] && $feedInfo['cache_age'] > 0):
                                                     $cacheHours = floor($feedInfo['cache_age'] / 3600);
                                                 ?>
-                                                    <span class="cache-indicator">(datos de hace <?php echo $cacheHours; ?>h)</span>
+                                                    <span class="cache-indicator">(comprobado hace <?php echo $cacheHours; ?>h)</span>
                                                 <?php endif; ?>
                                             </div>
                                         <?php endif; ?>
@@ -244,18 +239,17 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                     <small>Caducidad: <?php echo $podcastCaducidad; ?> días</small>
                                                     <small><?php echo htmlEsc($podcast['url']); ?></small>
 
-                                                    <?php if (isset($_SESSION['feeds_updated']) && $_SESSION['feeds_updated']): ?>
-                                                        <?php
-                                                        $feedInfo = getCachedFeedInfo($podcast['url']);
+                                                    <?php
+                                                    $feedInfo = getCachedFeedInfo($podcast['url']);
+                                                    if ($feedInfo['timestamp'] !== null):
                                                         $statusInfo = formatFeedStatus($feedInfo['timestamp']);
-                                                        ?>
-
+                                                    ?>
                                                         <div class="last-episode <?php echo $statusInfo['class']; ?>">
                                                             <?php echo $statusInfo['status']; ?> - Último episodio: <?php echo $statusInfo['date']; ?> (hace <?php echo $statusInfo['days']; ?> días)
-                                                            <?php if ($feedInfo['cached']):
+                                                            <?php if ($feedInfo['cached'] && $feedInfo['cache_age'] > 0):
                                                                 $cacheHours = floor($feedInfo['cache_age'] / 3600);
                                                             ?>
-                                                                <span class="cache-indicator">(datos de hace <?php echo $cacheHours; ?>h)</span>
+                                                                <span class="cache-indicator">(comprobado hace <?php echo $cacheHours; ?>h)</span>
                                                             <?php endif; ?>
                                                         </div>
                                                     <?php endif; ?>
