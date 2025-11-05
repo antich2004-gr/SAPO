@@ -292,35 +292,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $updated = refreshAllFeeds($_SESSION['username']);
         $message = "Se actualizaron $updated feeds correctamente";
     }
-
-    // CHECK FEEDS WITH PROGRESS (AJAX)
-    if ($action == 'check_feeds_progress' && isLoggedIn() && !isAdmin()) {
-        header('Content-Type: application/json');
-
-        $podcasts = readServerList($_SESSION['username']);
-        $total = count($podcasts);
-        $current = isset($_GET['index']) ? intval($_GET['index']) : 0;
-
-        if ($current < $total) {
-            // Procesar el feed actual
-            $podcast = $podcasts[$current];
-            getCachedFeedInfo($podcast['url'], false); // false = usar caché si existe
-
-            echo json_encode([
-                'status' => 'processing',
-                'current' => $current + 1,
-                'total' => $total,
-                'podcast_name' => $podcast['name']
-            ]);
-        } else {
-            echo json_encode([
-                'status' => 'completed',
-                'current' => $total,
-                'total' => $total
-            ]);
-        }
-        exit;
-    }
 }
 
 // Cargar vista
