@@ -156,27 +156,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     
     // ADD CATEGORY
-    if ($action == 'add_category' && isLoggedIn() && !isAdmin()) {
-        $categoryName = trim($_POST['category_name'] ?? '');
-        if (empty($categoryName)) {
-            $error = 'El nombre de la categoria es obligatorio';
+    if ($action == 'add_category' && isLoggedIn()) {
+        if (isAdmin()) {
+            $error = 'Los administradores no pueden crear categorias. Inicia sesion con un usuario de emisora.';
         } else {
-            $result = saveUserCategory($_SESSION['username'], $categoryName);
-            if ($result) {
-                $message = 'Categoria agregada: ' . $result;
+            $categoryName = trim($_POST['category_name'] ?? '');
+            if (empty($categoryName)) {
+                $error = 'El nombre de la categoria es obligatorio';
             } else {
-                $error = 'La categoria ya existe';
+                $result = saveUserCategory($_SESSION['username'], $categoryName);
+                if ($result) {
+                    $message = 'Categoria agregada: ' . $result;
+                } else {
+                    $error = 'La categoria ya existe';
+                }
             }
         }
     }
     
     // DELETE CATEGORY
-    if ($action == 'delete_category' && isLoggedIn() && !isAdmin()) {
-        $categoryName = $_POST['category_name'] ?? '';
-        if (deleteUserCategory($_SESSION['username'], $categoryName)) {
-            $message = 'Categoria eliminada correctamente';
+    if ($action == 'delete_category' && isLoggedIn()) {
+        if (isAdmin()) {
+            $error = 'Los administradores no pueden eliminar categorias. Inicia sesion con un usuario de emisora.';
         } else {
-            $error = 'Error al eliminar la categoria';
+            $categoryName = $_POST['category_name'] ?? '';
+            if (deleteUserCategory($_SESSION['username'], $categoryName)) {
+                $message = 'Categoria eliminada correctamente';
+            } else {
+                $error = 'Error al eliminar la categoria. Puede estar en uso por un podcast.';
+            }
         }
     }
     
