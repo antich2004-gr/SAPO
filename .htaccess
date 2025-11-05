@@ -5,32 +5,28 @@ Options -Indexes
 
 # Proteger archivos sensibles
 <FilesMatch "^\.">
-    Order allow,deny
-    Deny from all
+    Require all denied
 </FilesMatch>
 
-# Proteger archivos de configuración y datos
-<FilesMatch "(config\.php|db\.json|\.json)$">
-    Order allow,deny
-    Deny from all
+# Proteger archivos JSON y configuración
+<FilesMatch "\.(json)$">
+    Require all denied
 </FilesMatch>
 
-# Permitir solo index.php como punto de entrada
-<FilesMatch "^(index\.php)$">
-    Order allow,deny
-    Allow from all
-</FilesMatch>
+<Files "config.php">
+    Require all denied
+</Files>
 
 # Proteger directorio de includes
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteCond %{REQUEST_URI} ^/includes/ [NC]
+    RewriteCond %{REQUEST_URI} /includes/ [NC]
     RewriteRule .* - [F,L]
 </IfModule>
 
 # Proteger directorio db/
 <IfModule mod_rewrite.c>
-    RewriteCond %{REQUEST_URI} ^/db/ [NC]
+    RewriteCond %{REQUEST_URI} /db/ [NC]
     RewriteRule .* - [F,L]
 </IfModule>
 
