@@ -4,10 +4,21 @@
 
 function initSession() {
     session_start();
-    
+
+    // Verificar timeout de inactividad
+    if (isset($_SESSION['last_activity'])) {
+        if (time() - $_SESSION['last_activity'] > SESSION_TIMEOUT) {
+            session_unset();
+            session_destroy();
+            session_start();
+        }
+    }
+    $_SESSION['last_activity'] = time();
+
+    // Regenerar ID de sesión periódicamente
     if (!isset($_SESSION['created'])) {
         $_SESSION['created'] = time();
-    } elseif (time() - $_SESSION['created'] > SESSION_TIMEOUT) {
+    } elseif (time() - $_SESSION['created'] > 3600) {
         session_regenerate_id(true);
         $_SESSION['created'] = time();
     }
@@ -23,7 +34,7 @@ function isAdmin() {
 
 function getCurrentUser() {
     if (!isLoggedIn()) return null;
-    $db = getDB();
+    $db = getGlobalDB();
     foreach ($db['users'] as $user) {
         if ($user['id'] == $_SESSION['user_id']) {
             return $user;

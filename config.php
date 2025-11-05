@@ -8,9 +8,11 @@ error_reporting(E_ALL);
 
 // Configuración de sesión
 ini_set('session.cookie_httponly', 1);
-ini_set('session.cookie_secure', 0);
+ini_set('session.cookie_secure', 0); // Cambiar a 1 si se usa HTTPS en producción
 ini_set('session.use_strict_mode', 1);
 ini_set('session.cookie_samesite', 'Strict');
+ini_set('session.gc_maxlifetime', SESSION_TIMEOUT);
+ini_set('session.cookie_lifetime', 0); // Cookie de sesión (se borra al cerrar navegador)
 
 // Constantes
 define('DB_FILE', 'db.json');
