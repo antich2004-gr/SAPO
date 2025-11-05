@@ -336,6 +336,31 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
     <?php endif; ?>
 </div>
 
+<!-- MODAL DE COMPROBACIÓN DE FEEDS AL INICIAR -->
+<div id="initialFeedCheckModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 450px; text-align: center;">
+        <h3>Comprobando feeds RSS</h3>
+        <div style="margin: 30px 0;">
+            <div class="spinner"></div>
+        </div>
+        <p id="initialFeedMessage" style="color: #718096; margin-top: 15px; font-size: 14px;">
+            Verificando estado de las suscripciones...
+        </p>
+        <div style="margin-top: 20px;">
+            <div style="background: #f7fafc; border-radius: 8px; padding: 15px;">
+                <div id="initialFeedProgress" style="font-size: 24px; font-weight: 600; color: #667eea; margin-bottom: 10px;">
+                    <span id="initialFeedProgressText">0 / 0</span>
+                </div>
+                <div style="width: 100%; background: #e2e8f0; border-radius: 10px; height: 10px; overflow: hidden;">
+                    <div id="initialProgressBar" style="width: 0%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100%; transition: width 0.3s;"></div>
+                </div>
+            </div>
+        </div>
+        <p id="initialCurrentPodcast" style="color: #4a5568; margin-top: 15px; font-size: 13px; font-style: italic;">
+        </p>
+    </div>
+</div>
+
 <!-- MODAL DE AGREGAR PODCAST -->
 <div id="addPodcastModal" class="modal">
     <div class="modal-content" style="max-width: 600px;">
@@ -522,4 +547,143 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
     padding-left: 15px;
 }
 
+/* Spinner para modal de carga */
+.spinner {
+    border: 4px solid #f3f4f6;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 </style>
+
+<script>
+// Reabrir el modal de categorías si se acabó de añadir o eliminar una categoría
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar si hay mensajes relacionados con categorías
+    const alerts = document.querySelectorAll('.alert');
+    let shouldOpenCategoryModal = false;
+
+    alerts.forEach(alert => {
+        const text = alert.textContent.toLowerCase();
+        if (text.includes('categoría agregada') ||
+            text.includes('categoría eliminada') ||
+            text.includes('categoria agregada') ||
+            text.includes('categoria eliminada')) {
+            shouldOpenCategoryModal = true;
+        }
+    });
+
+    if (shouldOpenCategoryModal) {
+        // Abrir el modal después de un pequeño delay para que se vea el mensaje
+        setTimeout(() => {
+            showCategoryManager();
+        }, 100);
+    }
+
+    // Comprobar feeds al cargar la página (solo si no hay sesión previa de feeds chequeados)
+    checkInitialFeeds();
+});
+
+/**
+ * Comprobar feeds RSS al iniciar sesión
+ */
+function checkInitialFeeds() {
+    // Verificar si ya se comprobaron los feeds en esta sesión
+    const feedsChecked = sessionStorage.getItem('feedsChecked');
+
+    if (feedsChecked === 'true') {
+        return; // Ya se comprobaron, no hacer nada
+    }
+
+    // Mostrar modal
+    const modal = document.getElementById('initialFeedCheckModal');
+    if (!modal) return;
+
+    modal.style.display = 'block';
+
+    // Comenzar la comprobación recursiva
+    checkFeedRecursive(0);
+}
+
+/**
+ * Comprobar feeds de forma recursiva
+ */
+function checkFeedRecursive(index) {
+    fetch(window.location.href + '?action=check_feeds_progress&index=' + index, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Actualizar progreso
+        const progressText = document.getElementById('initialFeedProgressText');
+        const progressBar = document.getElementById('initialProgressBar');
+        const currentPodcast = document.getElementById('initialCurrentPodcast');
+
+        if (progressText) {
+            progressText.textContent = data.current + ' / ' + data.total;
+        }
+
+        if (progressBar && data.total > 0) {
+            const percentage = (data.current / data.total) * 100;
+            progressBar.style.width = percentage + '%';
+        }
+
+        if (currentPodcast && data.podcast_name) {
+            currentPodcast.textContent = 'Comprobando: ' + data.podcast_name;
+        }
+
+        if (data.status === 'processing') {
+            // Continuar con el siguiente
+            setTimeout(() => {
+                checkFeedRecursive(data.current);
+            }, 100); // Pequeño delay para que se vea el progreso
+        } else if (data.status === 'completed') {
+            // Finalizado
+            sessionStorage.setItem('feedsChecked', 'true');
+
+            // Mostrar mensaje de completado
+            const message = document.getElementById('initialFeedMessage');
+            if (message) {
+                message.textContent = '¡Comprobación completada!';
+                message.style.color = '#48bb78';
+            }
+
+            if (currentPodcast) {
+                currentPodcast.textContent = 'Todos los feeds han sido verificados';
+            }
+
+            // Cerrar modal después de 1.5 segundos
+            setTimeout(() => {
+                const modal = document.getElementById('initialFeedCheckModal');
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+            }, 1500);
+        }
+    })
+    .catch(error => {
+        console.error('Error al comprobar feeds:', error);
+
+        // Marcar como completado para no volver a intentar
+        sessionStorage.setItem('feedsChecked', 'true');
+
+        // Cerrar modal en caso de error
+        const modal = document.getElementById('initialFeedCheckModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    });
+}
+</script>
