@@ -68,25 +68,23 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     <label>Categoria:</label>
                     <?php if (!empty($userCategories)): ?>
                         <div style="display: flex; gap: 10px; align-items: flex-start;">
-                            <select name="category" id="edit_category_select" onchange="toggleEditInlineCategory()" style="flex: 1;">
+                            <select name="category" id="edit_category_select" required style="flex: 1;">
                                 <option value="">-- Selecciona una categoria --</option>
-                                <?php foreach ($userCategories as $cat): 
+                                <?php foreach ($userCategories as $cat):
                                     $inUse = isCategoryInUse($_SESSION['username'], $cat);
                                 ?>
                                     <option value="<?php echo htmlEsc($cat); ?>" <?php echo $podcast['category'] === $cat ? 'selected' : ''; ?>>
                                         <?php echo htmlEsc($cat); ?><?php echo !$inUse ? ' (sin usar)' : ''; ?>
                                     </option>
                                 <?php endforeach; ?>
-                                <option value="custom">✏️ Escribir nueva categoria...</option>
                             </select>
-                            
+
                             <button type="button" class="btn btn-secondary" onclick="showCategoryManager('edit')" style="white-space: nowrap;">Gestionar</button>
                         </div>
-                        <div id="edit_custom_category_input" style="display: none; margin-top: 10px;">
-                            <input type="text" name="custom_category" placeholder="Escribe una nueva categoria" maxlength="50">
-                        </div>
+                        <small style="color: #718096;">Usa el botón "Gestionar" para añadir nuevas categorías</small>
                     <?php else: ?>
-                        <input type="text" name="custom_category" value="<?php echo htmlEsc($podcast['category']); ?>" required placeholder="Escribe el nombre de la categoria" maxlength="50">
+                        <p style="color: #e53e3e; margin-bottom: 10px;">No hay categorías disponibles. Por favor, créalas primero.</p>
+                        <button type="button" class="btn btn-secondary" onclick="showCategoryManager('edit')" style="margin-bottom: 15px;">Crear Categorías</button>
                     <?php endif; ?>
                 </div>
                 
@@ -107,21 +105,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 </div>
             </form>
         </div>
-        
-        <script>
-            function toggleEditInlineCategory() {
-                const select = document.getElementById('edit_category_select');
-                const customInput = document.getElementById('edit_custom_category_input');
-                if (select && customInput) {
-                    if (select.value === 'custom') {
-                        customInput.style.display = 'block';
-                    } else {
-                        customInput.style.display = 'none';
-                    }
-                }
-            }
-        </script>
-        
+
         <?php 
         } else {
         ?>
@@ -355,23 +339,18 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 <label>Categoría:</label>
                 <?php if (!empty($userCategories)): ?>
                     <div style="display: flex; gap: 10px; align-items: flex-start;">
-                        <select name="category" id="modal_category_select" onchange="toggleModalCustomCategory()" style="flex: 1;">
+                        <select name="category" id="modal_category_select" required style="flex: 1;">
                             <option value="">-- Selecciona una categoría --</option>
                             <?php foreach ($userCategories as $cat): ?>
                                 <option value="<?php echo htmlEsc($cat); ?>"><?php echo htmlEsc($cat); ?></option>
                             <?php endforeach; ?>
-                            <option value="custom">✏️ Escribir nueva categoría...</option>
                         </select>
                         <button type="button" class="btn btn-secondary" onclick="showCategoryManager('modal')" style="white-space: nowrap;">Gestionar</button>
                     </div>
-                    <div id="modal_custom_category_input" style="display: none; margin-top: 10px;">
-                        <input type="text" name="custom_category" placeholder="Escribe una nueva categoría" maxlength="50">
-                    </div>
+                    <small style="color: #718096;">Usa el botón "Gestionar" para añadir nuevas categorías</small>
                 <?php else: ?>
-                    <div style="display: flex; gap: 10px; align-items: flex-start;">
-                        <input type="text" name="custom_category" required placeholder="Escribe el nombre de la categoría" maxlength="50" style="flex: 1;">
-                        <button type="button" class="btn btn-secondary" onclick="showCategoryManager('modal')" style="white-space: nowrap;">Gestionar</button>
-                    </div>
+                    <p style="color: #e53e3e; margin-bottom: 10px;">No hay categorías disponibles. Por favor, créalas primero usando el botón "Gestionar".</p>
+                    <button type="button" class="btn btn-secondary" onclick="showCategoryManager('modal')">Gestionar Categorías</button>
                 <?php endif; ?>
             </div>
             

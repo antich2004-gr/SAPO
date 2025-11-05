@@ -29,23 +29,6 @@ function switchTab(tabName) {
     }
 }
 
-/**
- * Alternar input de categoria personalizada
- */
-function toggleCustomCategory() {
-    const select = document.getElementById('category_select');
-    const customInput = document.getElementById('custom_category_input');
-    
-    if (select && customInput) {
-        if (select.value === 'custom') {
-            customInput.style.display = 'block';
-            select.removeAttribute('required');
-        } else {
-            customInput.style.display = 'none';
-            select.setAttribute('required', 'required');
-        }
-    }
-}
 
 /**
  * Mostrar nombre del archivo seleccionado
@@ -228,38 +211,6 @@ function closeAddPodcastModal() {
     }
 }
 
-/**
- * Toggle para categoría personalizada en el modal
- */
-function toggleModalCustomCategory() {
-    const select = document.getElementById('modal_category_select');
-    const customInput = document.getElementById('modal_custom_category_input');
-    
-    if (select && customInput) {
-        if (select.value === 'custom') {
-            customInput.style.display = 'block';
-            select.removeAttribute('required');
-        } else {
-            customInput.style.display = 'none';
-            select.setAttribute('required', 'required');
-        }
-    }
-}
-
-/**
- * Toggle para categoría personalizada en edición inline
- */
-function toggleEditInlineCategory() {
-    const select = document.getElementById('edit_category_select');
-    const customInput = document.getElementById('edit_custom_category_input');
-    if (select && customInput) {
-        if (select.value === 'custom') {
-            customInput.style.display = 'block';
-        } else {
-            customInput.style.display = 'none';
-        }
-    }
-}
 
 /**
  * Mostrar el gestor de categorías
@@ -412,24 +363,6 @@ function closeAddPodcastModal() {
         // Limpiar el formulario
         const form = modal.querySelector('form');
         if (form) form.reset();
-        // Ocultar el input de categoría personalizada
-        const customInput = document.getElementById('modal_custom_category_input');
-        if (customInput) customInput.style.display = 'none';
-    }
-}
-
-function toggleModalCustomCategory() {
-    const select = document.getElementById('modal_category_select');
-    const customInput = document.getElementById('modal_custom_category_input');
-    
-    if (select && customInput) {
-        if (select.value === 'custom') {
-            customInput.style.display = 'block';
-            select.removeAttribute('required');
-        } else {
-            customInput.style.display = 'none';
-            select.setAttribute('required', 'required');
-        }
     }
 }
 
