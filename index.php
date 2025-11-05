@@ -45,14 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $result = authenticateUser($username, $password);
             if ($result['success']) {
                 loginUser($result['user']);
-                
-                if (!isAdmin()) {
-                    $importedCategories = importCategoriesFromServerList($username);
-                    if (!empty($importedCategories)) {
-                        $_SESSION['imported_categories'] = count($importedCategories);
-                    }
-                }
-                
+
                 header('Location: ' . basename($_SERVER['PHP_SELF']));
                 exit;
             } else {

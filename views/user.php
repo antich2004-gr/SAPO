@@ -1,10 +1,5 @@
 <?php
 // views/user.php - Interfaz de usuario regular
-if (!isset($_SESSION['categories_auto_imported'])) {
-    importCategoriesFromServerList($_SESSION['username']);
-    $_SESSION['categories_auto_imported'] = true;
-}
-
 $userCategories = getUserCategories($_SESSION['username']);
 $podcasts = readServerList($_SESSION['username']);
 $caducidades = readCaducidades($_SESSION['username']);
@@ -139,8 +134,9 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         <form method="POST" style="display: inline-block;">
                             <input type="hidden" name="action" value="refresh_feeds">
                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                            <button type="submit" class="btn btn-warning">Actualizar estado</button>
+                            <button type="submit" class="btn btn-warning">🔄 Actualizar estado de feeds</button>
                         </form>
+                        <small style="color: #718096;">Haz clic para comprobar el estado de tus suscripciones</small>
                         
                         <?php if (!empty($userCategories)): ?>
                             <div style="display: flex; gap: 10px; align-items: center; flex: 1;">
@@ -176,20 +172,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         <strong><?php echo htmlEsc($podcast['name']); ?></strong>
                                         <small>Categoria: <?php echo htmlEsc($podcast['category']); ?> | Caducidad: <?php echo $podcastCaducidad; ?> días</small>
                                         <small><?php echo htmlEsc($podcast['url']); ?></small>
-                                        
-                                        <?php
-                                        $feedInfo = getCachedFeedInfo($podcast['url']);
-                                        $statusInfo = formatFeedStatus($feedInfo['timestamp']);
-                                        ?>
-                                        
-                                        <div class="last-episode <?php echo $statusInfo['class']; ?>">
-                                            <?php echo $statusInfo['status']; ?> - Último episodio: <?php echo $statusInfo['date']; ?> (hace <?php echo $statusInfo['days']; ?> días)
-                                            <?php if ($feedInfo['cached']): 
-                                                $cacheHours = floor($feedInfo['cache_age'] / 3600);
-                                            ?>
-                                                <span class="cache-indicator">(datos de hace <?php echo $cacheHours; ?>h)</span>
-                                            <?php endif; ?>
-                                        </div>
                                     </div>
                                     <div class="podcast-actions">
                                         <a href="?edit=<?php echo htmlEsc($podcast['original_index']); ?>" class="btn btn-warning">Editar</a>
@@ -241,20 +223,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                     <strong><?php echo htmlEsc($podcast['name']); ?></strong>
                                                     <small>Caducidad: <?php echo $podcastCaducidad; ?> días</small>
                                                     <small><?php echo htmlEsc($podcast['url']); ?></small>
-                                                    
-                                                    <?php
-                                                    $feedInfo = getCachedFeedInfo($podcast['url']);
-                                                    $statusInfo = formatFeedStatus($feedInfo['timestamp']);
-                                                    ?>
-                                                    
-                                                    <div class="last-episode <?php echo $statusInfo['class']; ?>">
-                                                        <?php echo $statusInfo['status']; ?> - Último episodio: <?php echo $statusInfo['date']; ?> (hace <?php echo $statusInfo['days']; ?> días)
-                                                        <?php if ($feedInfo['cached']): 
-                                                            $cacheHours = floor($feedInfo['cache_age'] / 3600);
-                                                        ?>
-                                                            <span class="cache-indicator">(datos de hace <?php echo $cacheHours; ?>h)</span>
-                                                        <?php endif; ?>
-                                                    </div>
                                                 </div>
                                                 <div class="podcast-actions">
                                                     <a href="?edit=<?php echo htmlEsc($podcast['original_index']); ?>" class="btn btn-warning">Editar</a>
