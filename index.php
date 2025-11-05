@@ -291,6 +291,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // REFRESH FEEDS
     if ($action == 'refresh_feeds' && isLoggedIn() && !isAdmin()) {
         $updated = refreshAllFeeds($_SESSION['username']);
+        $_SESSION['feeds_updated'] = true;
         $message = "Se actualizaron $updated feeds correctamente";
     }
 }
