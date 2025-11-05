@@ -7,18 +7,29 @@ function getUserCategories($username) {
 }
 
 function saveUserCategory($username, $category) {
+    error_log("DEBUG saveUserCategory: username=$username, category=$category");
     $db = getDB();
+
     if (!isset($db['user_categories'][$username])) {
         $db['user_categories'][$username] = [];
+        error_log("DEBUG: Inicializando user_categories para $username");
     }
-    
+
     $sanitized = sanitizePodcastName($category);
+    error_log("DEBUG: Sanitized category = $sanitized");
+    error_log("DEBUG: Existing categories = " . json_encode($db['user_categories'][$username]));
+
     if (!in_array($sanitized, $db['user_categories'][$username])) {
         $db['user_categories'][$username][] = $sanitized;
         sort($db['user_categories'][$username]);
-        saveDB($db);
+
+        $saveResult = saveDB($db);
+        error_log("DEBUG: saveDB result = " . ($saveResult ? 'true' : 'false'));
+
         return $sanitized;
     }
+
+    error_log("DEBUG: Categoria ya existe");
     return false;
 }
 

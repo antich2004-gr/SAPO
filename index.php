@@ -157,14 +157,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     // ADD CATEGORY
     if ($action == 'add_category' && isLoggedIn()) {
+        error_log("DEBUG: add_category action triggered");
+        error_log("DEBUG: username = " . $_SESSION['username']);
+        error_log("DEBUG: isAdmin = " . (isAdmin() ? 'true' : 'false'));
+
         if (isAdmin()) {
             $error = 'Los administradores no pueden crear categorias. Inicia sesion con un usuario de emisora.';
         } else {
             $categoryName = trim($_POST['category_name'] ?? '');
+            error_log("DEBUG: category_name = " . $categoryName);
+
             if (empty($categoryName)) {
                 $error = 'El nombre de la categoria es obligatorio';
             } else {
                 $result = saveUserCategory($_SESSION['username'], $categoryName);
+                error_log("DEBUG: saveUserCategory result = " . ($result ? $result : 'false'));
+
                 if ($result) {
                     $message = 'Categoria agregada: ' . $result;
                 } else {
