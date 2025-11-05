@@ -372,11 +372,53 @@ function closeAddPodcastModal() {
 window.onclick = function(event) {
     const addPodcastModal = document.getElementById('addPodcastModal');
     const categoryModal = document.getElementById('categoryModal');
-    
+
     if (event.target === addPodcastModal) {
         closeAddPodcastModal();
     }
     if (event.target === categoryModal) {
         closeCategoryManager();
     }
+}
+
+/**
+ * Cargar informe de descargas por período
+ */
+function loadReport(days, button) {
+    // Actualizar botones activos
+    const buttons = document.querySelectorAll('.period-btn');
+    buttons.forEach(btn => btn.classList.remove('active'));
+    if (button) {
+        button.classList.add('active');
+    }
+
+    // Mostrar loading
+    const container = document.getElementById('report-container');
+    if (!container) return;
+
+    container.innerHTML = '<div style="text-align: center; padding: 40px;"><div style="color: #667eea; font-size: 18px;">⏳ Cargando informe...</div></div>';
+
+    // Obtener CSRF token
+    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
+
+    // Petición AJAX
+    fetch(window.location.href, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `action=load_report&days=${days}&csrf_token=${encodeURIComponent(csrfToken)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.html) {
+            container.innerHTML = data.html;
+        } else {
+            container.innerHTML = '<div class="alert alert-error">Error al cargar el informe</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        container.innerHTML = '<div class="alert alert-error">Error al cargar el informe. Por favor, recarga la página.</div>';
+    });
 }

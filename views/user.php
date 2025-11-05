@@ -308,9 +308,34 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     </button>
                     
                     <div id="podget-status" style="margin-top: 20px;"></div>
-                    
-                    <p style="color: #718096; margin-top: 20px; font-size: 14px;">
-                    </p>
+
+                    <!-- INFORME DE DESCARGAS -->
+                    <div style="margin-top: 40px; border-top: 2px solid #e2e8f0; padding-top: 30px;">
+                        <h4>Historial de Descargas</h4>
+                        <p style="color: #718096; margin-bottom: 20px;">Consulta el historial de descargas de tus podcasts por período</p>
+
+                        <!-- Selector de período -->
+                        <div class="period-selector" style="margin-bottom: 30px;">
+                            <button class="period-btn active" onclick="loadReport(7, this)">Últimos 7 días</button>
+                            <button class="period-btn" onclick="loadReport(14, this)">Últimos 14 días</button>
+                            <button class="period-btn" onclick="loadReport(30, this)">Últimos 30 días</button>
+                        </div>
+
+                        <!-- Contenedor del informe -->
+                        <div id="report-container">
+                            <?php
+                            // Cargar informe de 7 días por defecto
+                            $report = generatePeriodReport($_SESSION['username'], 7);
+                            if ($report):
+                            ?>
+                                <?php include 'report_view.php'; ?>
+                            <?php else: ?>
+                                <div class="alert alert-info">
+                                    No hay informes disponibles para este período. Los informes se generan automáticamente cuando ejecutas las descargas.
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

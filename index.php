@@ -15,6 +15,7 @@ require_once INCLUDES_DIR . '/utils.php';
 require_once INCLUDES_DIR . '/categories.php';
 require_once INCLUDES_DIR . '/podcasts.php';
 require_once INCLUDES_DIR . '/feed.php';
+require_once INCLUDES_DIR . '/reports.php';
 
 initSession();
 
@@ -294,7 +295,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         echo json_encode($status);
         exit;
     }
-    
+
+    // LOAD REPORT (AJAX)
+    if ($action == 'load_report' && isLoggedIn() && !isAdmin()) {
+        $days = intval($_POST['days'] ?? 7);
+        if ($days < 1 || $days > 365) $days = 7;
+
+        $report = generatePeriodReport($_SESSION['username'], $days);
+
+        ob_start();
+        if ($report) {
+            include 'views/report_view.php';
+        } else {
+            echo '<div class="alert alert-info">No hay informes disponibles para este período. Los informes se generan automáticamente cuando ejecutas las descargas.</div>';
+        }
+        $html = ob_get_clean();
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'html' => $html]);
+        exit;
+    }
+
     // REFRESH FEEDS
     if ($action == 'refresh_feeds' && isLoggedIn() && !isAdmin()) {
         $updated = refreshAllFeeds($_SESSION['username']);
