@@ -1,6 +1,122 @@
 <?php
 // includes/database.php - Operaciones de base de datos
 
+// Nuevas constantes para archivos separados
+define('DB_DIR', dirname(DB_FILE) . '/db');
+define('GLOBAL_DB_FILE', DB_DIR . '/global.json');
+define('FEED_CACHE_FILE', DB_DIR . '/feed_cache.json');
+define('USERS_DIR', DB_DIR . '/users');
+
+// ==========================================
+// SISTEMA NUEVO: ARCHIVOS SEPARADOS
+// ==========================================
+
+/**
+ * Inicializar estructura de directorios
+ */
+function initDBStructure() {
+    if (!is_dir(DB_DIR)) {
+        mkdir(DB_DIR, 0755, true);
+    }
+    if (!is_dir(USERS_DIR)) {
+        mkdir(USERS_DIR, 0755, true);
+    }
+}
+
+/**
+ * Obtener base de datos global (usuarios, config, login_attempts)
+ */
+function getGlobalDB() {
+    initDBStructure();
+
+    if (!file_exists(GLOBAL_DB_FILE)) {
+        $initialData = [
+            'users' => [
+                [
+                    'id' => 1,
+                    'username' => 'admin',
+                    'password' => password_hash('admin123', PASSWORD_BCRYPT),
+                    'station_name' => 'Administrador',
+                    'is_admin' => true
+                ]
+            ],
+            'config' => [
+                'base_path' => '',
+                'subscriptions_folder' => 'Suscripciones',
+                'cache_duration' => 43200
+            ],
+            'login_attempts' => []
+        ];
+        file_put_contents(GLOBAL_DB_FILE, json_encode($initialData, JSON_PRETTY_PRINT));
+        chmod(GLOBAL_DB_FILE, 0666);
+    }
+
+    return json_decode(file_get_contents(GLOBAL_DB_FILE), true);
+}
+
+/**
+ * Guardar base de datos global
+ */
+function saveGlobalDB($data) {
+    initDBStructure();
+    return file_put_contents(GLOBAL_DB_FILE, json_encode($data, JSON_PRETTY_PRINT)) !== false;
+}
+
+/**
+ * Obtener datos de usuario específico (categorías)
+ */
+function getUserDB($username) {
+    initDBStructure();
+
+    $userFile = USERS_DIR . '/' . $username . '.json';
+
+    if (!file_exists($userFile)) {
+        $initialData = [
+            'categories' => []
+        ];
+        file_put_contents($userFile, json_encode($initialData, JSON_PRETTY_PRINT));
+        chmod($userFile, 0666);
+    }
+
+    return json_decode(file_get_contents($userFile), true);
+}
+
+/**
+ * Guardar datos de usuario específico
+ */
+function saveUserDB($username, $data) {
+    initDBStructure();
+
+    $userFile = USERS_DIR . '/' . $username . '.json';
+    return file_put_contents($userFile, json_encode($data, JSON_PRETTY_PRINT)) !== false;
+}
+
+/**
+ * Obtener cache de feeds
+ */
+function getFeedCacheDB() {
+    initDBStructure();
+
+    if (!file_exists(FEED_CACHE_FILE)) {
+        file_put_contents(FEED_CACHE_FILE, json_encode([], JSON_PRETTY_PRINT));
+        chmod(FEED_CACHE_FILE, 0666);
+    }
+
+    return json_decode(file_get_contents(FEED_CACHE_FILE), true);
+}
+
+/**
+ * Guardar cache de feeds
+ */
+function saveFeedCacheDB($data) {
+    initDBStructure();
+    return file_put_contents(FEED_CACHE_FILE, json_encode($data, JSON_PRETTY_PRINT)) !== false;
+}
+
+// ==========================================
+// SISTEMA ANTIGUO (para compatibilidad temporal)
+// ==========================================
+
 function getDB() {
     if (!file_exists(DB_FILE)) {
         $initialData = [
@@ -34,7 +150,7 @@ function saveDB($data) {
 }
 
 function getConfig() {
-    $db = getDB();
+    $db = getGlobalDB();
     return $db['config'] ?? [
         'base_path' => '',
         'subscriptions_folder' => 'Suscripciones',
@@ -43,17 +159,17 @@ function getConfig() {
 }
 
 function saveConfig($basePath, $subscriptionsFolder) {
-    $db = getDB();
+    $db = getGlobalDB();
     $db['config'] = [
         'base_path' => rtrim($basePath, '/\\'),
         'subscriptions_folder' => trim($subscriptionsFolder, '/\\'),
         'cache_duration' => $db['config']['cache_duration'] ?? 43200
     ];
-    return saveDB($db);
+    return saveGlobalDB($db);
 }
 
 function findUserByUsername($username) {
-    $db = getDB();
+    $db = getGlobalDB();
     foreach ($db['users'] as $user) {
         if ($user['username'] == $username) {
             return $user;
@@ -63,7 +179,7 @@ function findUserByUsername($username) {
 }
 
 function findUserById($id) {
-    $db = getDB();
+    $db = getGlobalDB();
     foreach ($db['users'] as $user) {
         if ($user['id'] == $id) {
             return $user;
@@ -73,8 +189,8 @@ function findUserById($id) {
 }
 
 function createUser($username, $password, $station_name) {
-    $db = getDB();
-    
+    $db = getGlobalDB();
+
     $newId = max(array_column($db['users'], 'id')) + 1;
     $db['users'][] = [
         'id' => $newId,
@@ -83,8 +199,13 @@ function createUser($username, $password, $station_name) {
         'station_name' => $station_name,
         'is_admin' => false
     ];
-    
-    saveDB($db);
+
+    saveGlobalDB($db);
+
+    // Crear archivo de usuario vacío
+    $userData = ['categories' => []];
+    saveUserDB($username, $userData);
+
     return $newId;
 }
 
@@ -92,23 +213,44 @@ function deleteUser($userId) {
     if ($userId == 1) {
         return false;
     }
-    
-    $db = getDB();
+
+    $db = getGlobalDB();
+
+    // Obtener username antes de eliminar
+    $username = null;
+    foreach ($db['users'] as $user) {
+        if ($user['id'] == $userId) {
+            $username = $user['username'];
+            break;
+        }
+    }
+
     $db['users'] = array_filter($db['users'], function($user) use ($userId) {
         return $user['id'] != $userId;
     });
     $db['users'] = array_values($db['users']);
-    
-    return saveDB($db);
+
+    $result = saveGlobalDB($db);
+
+    // Eliminar archivo de usuario
+    if ($username && $result) {
+        $userFile = USERS_DIR . '/' . $username . '.json';
+        if (file_exists($userFile)) {
+            unlink($userFile);
+        }
+    }
+
+    return $result;
 }
 
 function updateUser($userId, $username, $password, $station_name) {
     if ($userId == 1) {
         return false; // No permitir editar el admin principal
     }
-    
-    $db = getDB();
-    
+
+    $db = getGlobalDB();
+
+    $oldUsername = null;
     foreach ($db['users'] as &$user) {
         if ($user['id'] == $userId) {
             // Verificar si el nuevo username ya existe (en otro usuario)
@@ -117,37 +259,46 @@ function updateUser($userId, $username, $password, $station_name) {
                     return false; // Username ya existe
                 }
             }
-            
+
+            $oldUsername = $user['username'];
             $user['username'] = $username;
             if (!empty($password)) {
                 $user['password'] = password_hash($password, PASSWORD_BCRYPT);
             }
             $user['station_name'] = $station_name;
-            
-            return saveDB($db);
+
+            $result = saveGlobalDB($db);
+
+            // Si cambió el username, renombrar archivo de usuario
+            if ($result && $oldUsername !== $username) {
+                $oldFile = USERS_DIR . '/' . $oldUsername . '.json';
+                $newFile = USERS_DIR . '/' . $username . '.json';
+                if (file_exists($oldFile)) {
+                    rename($oldFile, $newFile);
+                }
+            }
+
+            return $result;
         }
     }
-    
+
     return false;
 }
 
 function getAllUsers() {
-    $db = getDB();
+    $db = getGlobalDB();
     return $db['users'];
 }
 
 function getCacheEntry($key) {
-    $db = getDB();
-    return $db['feed_cache'][$key] ?? null;
+    $cache = getFeedCacheDB();
+    return $cache[$key] ?? null;
 }
 
 function setCacheEntry($key, $data) {
-    $db = getDB();
-    if (!isset($db['feed_cache'])) {
-        $db['feed_cache'] = [];
-    }
-    $db['feed_cache'][$key] = $data;
-    return saveDB($db);
+    $cache = getFeedCacheDB();
+    $cache[$key] = $data;
+    return saveFeedCacheDB($cache);
 }
 
 ?>

@@ -2,21 +2,21 @@
 // includes/categories.php - Gestión de categorías de podcasts
 
 function getUserCategories($username) {
-    $db = getDB();
-    return $db['user_categories'][$username] ?? [];
+    $userData = getUserDB($username);
+    return $userData['categories'] ?? [];
 }
 
 function saveUserCategory($username, $category) {
-    $db = getDB();
-    if (!isset($db['user_categories'][$username])) {
-        $db['user_categories'][$username] = [];
+    $userData = getUserDB($username);
+    if (!isset($userData['categories'])) {
+        $userData['categories'] = [];
     }
 
     $sanitized = sanitizePodcastName($category);
-    if (!in_array($sanitized, $db['user_categories'][$username])) {
-        $db['user_categories'][$username][] = $sanitized;
-        sort($db['user_categories'][$username]);
-        saveDB($db);
+    if (!in_array($sanitized, $userData['categories'])) {
+        $userData['categories'][] = $sanitized;
+        sort($userData['categories']);
+        saveUserDB($username, $userData);
         return $sanitized;
     }
     return false;
@@ -30,19 +30,19 @@ function deleteUserCategory($username, $category) {
             return false; // Categoría en uso, no se puede eliminar
         }
     }
-    
-    $db = getDB();
-    if (isset($db['user_categories'][$username])) {
-        $db['user_categories'][$username] = array_values(
-            array_filter($db['user_categories'][$username], function($cat) use ($category) {
+
+    $userData = getUserDB($username);
+    if (isset($userData['categories'])) {
+        $userData['categories'] = array_values(
+            array_filter($userData['categories'], function($cat) use ($category) {
                 return $cat !== $category;
             })
         );
-        saveDB($db);
-        
+        saveUserDB($username, $userData);
+
         // También eliminar de caducidades.txt
         deleteCaducidad($username, $category);
-        
+
         return true;
     }
     return false;
@@ -50,29 +50,29 @@ function deleteUserCategory($username, $category) {
 
 function importCategoriesFromServerList($username) {
     $podcasts = readServerList($username);
-    $db = getDB();
-    
-    if (!isset($db['user_categories'][$username])) {
-        $db['user_categories'][$username] = [];
+    $userData = getUserDB($username);
+
+    if (!isset($userData['categories'])) {
+        $userData['categories'] = [];
     }
-    
+
     $categoriesFound = [];
-    $existingCategories = $db['user_categories'][$username];
-    
+    $existingCategories = $userData['categories'];
+
     foreach ($podcasts as $podcast) {
         $category = $podcast['category'];
         if (!in_array($category, $existingCategories)) {
-            $db['user_categories'][$username][] = $category;
+            $userData['categories'][] = $category;
             $categoriesFound[] = $category;
         }
     }
-    
+
     if (!empty($categoriesFound)) {
-        $db['user_categories'][$username] = array_unique($db['user_categories'][$username]);
-        sort($db['user_categories'][$username]);
-        saveDB($db);
+        $userData['categories'] = array_unique($userData['categories']);
+        sort($userData['categories']);
+        saveUserDB($username, $userData);
     }
-    
+
     return $categoriesFound;
 }
 

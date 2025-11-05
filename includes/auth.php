@@ -2,27 +2,27 @@
 // includes/auth.php - Autenticación y seguridad
 
 function checkLoginAttempts($username) {
-    $db = getDB();
+    $db = getGlobalDB();
     if (!isset($db['login_attempts'])) {
         $db['login_attempts'] = [];
     }
-    
+
     $now = time();
     $attempts = $db['login_attempts'][$username] ?? ['count' => 0, 'last_attempt' => 0];
-    
+
     if ($now - $attempts['last_attempt'] > LOCKOUT_TIME) {
         $attempts = ['count' => 0, 'last_attempt' => 0];
     }
-    
+
     return $attempts;
 }
 
 function recordLoginAttempt($username, $success = false) {
-    $db = getDB();
+    $db = getGlobalDB();
     if (!isset($db['login_attempts'])) {
         $db['login_attempts'] = [];
     }
-    
+
     if ($success) {
         unset($db['login_attempts'][$username]);
     } else {
@@ -32,8 +32,8 @@ function recordLoginAttempt($username, $success = false) {
             'last_attempt' => time()
         ];
     }
-    
-    saveDB($db);
+
+    saveGlobalDB($db);
 }
 
 function authenticateUser($username, $password) {
