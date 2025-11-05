@@ -13,6 +13,6 @@
             <label>Contrasena:</label>
             <input type="password" name="password" required minlength="8">
         </div>
-        <button type="submit" class="btn btn-primary">Entrar</button>
+        <button type="submit" class="btn btn-primary"><span class="btn-icon">🔐</span> Entrar</button>
     </form>
 </div>

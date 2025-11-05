@@ -11,7 +11,7 @@ $users = getAllUsers();
             <p style="margin: 0 0 10px 0; color: #4a5568; font-size: 14px;">Conectado como <strong><?php echo htmlEsc($_SESSION['station_name']); ?></strong></p>
             <form method="POST" style="display: inline;">
                 <input type="hidden" name="action" value="logout">
-                <button type="submit" class="btn btn-secondary">Cerrar Sesion</button>
+                <button type="submit" class="btn btn-secondary"><span class="btn-icon">🚪</span> Cerrar Sesion</button>
             </form>
         </div>
     </div>
@@ -41,7 +41,7 @@ $users = getAllUsers();
                 <label>Carpeta de Suscripciones: <small>(donde estara serverlist.txt)</small></label>
                 <input type="text" name="subscriptions_folder" value="<?php echo htmlEsc($config['subscriptions_folder']); ?>" required placeholder="Suscripciones" maxlength="100">
             </div>
-            <button type="submit" class="btn btn-warning">Guardar Configuracion</button>
+            <button type="submit" class="btn btn-warning"><span class="btn-icon">💾</span> Guardar Configuracion</button>
         </form>
     </div>
     
@@ -64,7 +64,7 @@ $users = getAllUsers();
                 <label>Nombre de la Emisora:</label>
                 <input type="text" name="station_name" required placeholder="Radio Ejemplo FM" maxlength="100">
             </div>
-            <button type="submit" class="btn btn-success">Crear Usuario</button>
+            <button type="submit" class="btn btn-success"><span class="btn-icon">➕</span> Crear Usuario</button>
         </form>
     </div>
     
@@ -91,7 +91,7 @@ $users = getAllUsers();
                     <input type="hidden" name="action" value="delete_user">
                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                     <input type="hidden" name="user_id" value="<?php echo $user['id']; ?>">
-                    <button type="submit" class="btn btn-danger" onclick="return confirm('Eliminar este usuario?')">Eliminar</button>
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Eliminar este usuario?')"><span class="btn-icon">🗑️</span> Eliminar</button>
                 </form>
             </div>
         <?php endforeach; ?>

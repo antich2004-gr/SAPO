@@ -96,6 +96,15 @@ select {
     cursor: pointer;
     transition: all 0.3s;
     margin-right: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-icon {
+    font-size: 16px;
+    line-height: 1;
 }
 
 .btn-primary {

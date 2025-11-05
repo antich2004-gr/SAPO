@@ -30,7 +30,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
             <p style="margin: 0 0 10px 0; color: #4a5568; font-size: 14px;">Conectado como <strong><?php echo htmlEsc($_SESSION['station_name']); ?></strong></p>
             <form method="POST" style="display: inline;">
                 <input type="hidden" name="action" value="logout">
-                <button type="submit" class="btn btn-secondary">Cerrar Sesion</button>
+                <button type="submit" class="btn btn-secondary"><span class="btn-icon">🚪</span> Cerrar Sesion</button>
             </form>
         </div>
     </div>
@@ -45,7 +45,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
         ?>
         
         <div style="margin-top: 30px;">
-            <a href="<?php echo basename($_SERVER['PHP_SELF']); ?>" class="btn btn-secondary" style="margin-bottom: 20px;">Volver al listado</a>
+            <a href="<?php echo basename($_SERVER['PHP_SELF']); ?>" class="btn btn-secondary" style="margin-bottom: 20px;"><span class="btn-icon">⬅️</span> Volver al listado</a>
             
             <h3 style="margin-bottom: 20px;">Editar Podcast</h3>
             
@@ -95,7 +95,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 </div>
                 
                 <div style="display: flex; gap: 10px; margin-top: 30px;">
-                    <button type="submit" class="btn btn-primary" style="flex: 1;">Guardar Cambios</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1;"><span class="btn-icon">💾</span> Guardar Cambios</button>
                     <a href="<?php echo basename($_SERVER['PHP_SELF']); ?>" class="btn btn-secondary" style="flex: 1; text-align: center; text-decoration: none;">Cancelar</a>
                 </div>
             </form>
@@ -126,7 +126,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 10px;">
                         <h3 style="margin: 0;">Podcasts Suscritos</h3>
                         <button type="button" class="btn btn-success" onclick="showAddPodcastModal()">
-                            ➕ Agregar Nuevo Podcast
+                            <span class="btn-icon">➕</span> Agregar Nuevo Podcast
                         </button>
                     </div>
                     
@@ -189,12 +189,12 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         <?php endif; ?>
                                     </div>
                                     <div class="podcast-actions">
-                                        <a href="?edit=<?php echo htmlEsc($podcast['original_index']); ?>" class="btn btn-warning">Editar</a>
+                                        <a href="?edit=<?php echo htmlEsc($podcast['original_index']); ?>" class="btn btn-warning"><span class="btn-icon">✏️</span> Editar</a>
                                         <form method="POST" style="display: inline;">
                                             <input type="hidden" name="action" value="delete_podcast">
                                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                                             <input type="hidden" name="index" value="<?php echo htmlEsc($podcast['original_index']); ?>">
-                                            <button type="submit" class="btn btn-danger" onclick="return confirm('Eliminar este podcast?')">Eliminar</button>
+                                            <button type="submit" class="btn btn-danger" onclick="return confirm('Eliminar este podcast?')"><span class="btn-icon">🗑️</span> Eliminar</button>
                                         </form>
                                     </div>
                                 </div>
@@ -255,12 +255,12 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                     <?php endif; ?>
                                                 </div>
                                                 <div class="podcast-actions">
-                                                    <a href="?edit=<?php echo htmlEsc($podcast['original_index']); ?>" class="btn btn-warning">Editar</a>
+                                                    <a href="?edit=<?php echo htmlEsc($podcast['original_index']); ?>" class="btn btn-warning"><span class="btn-icon">✏️</span> Editar</a>
                                                     <form method="POST" style="display: inline;">
                                                         <input type="hidden" name="action" value="delete_podcast">
                                                         <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                                                         <input type="hidden" name="index" value="<?php echo htmlEsc($podcast['original_index']); ?>">
-                                                        <button type="submit" class="btn btn-danger" onclick="return confirm('Eliminar este podcast?')">Eliminar</button>
+                                                        <button type="submit" class="btn btn-danger" onclick="return confirm('Eliminar este podcast?')"><span class="btn-icon">🗑️</span> Eliminar</button>
                                                     </form>
                                                 </div>
                                             </div>
@@ -287,14 +287,14 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             <input type="file" name="serverlist_file" id="serverlist_file" accept=".txt" required onchange="showFileName(this)">
                         </div>
                         <span class="selected-file" id="fileName"></span>
-                        <button type="submit" class="btn btn-success">Importar</button>
+                        <button type="submit" class="btn btn-success"><span class="btn-icon">📥</span> Importar</button>
                     </form>
                     
                     <h4 style="margin-top: 30px; margin-bottom: 15px;">Exportar podcasts</h4>
                     <form method="POST">
                         <input type="hidden" name="action" value="export_serverlist">
                         <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                        <button type="submit" class="btn btn-primary">Descargar mi serverlist.txt</button>
+                        <button type="submit" class="btn btn-primary"><span class="btn-icon">📤</span> Descargar mi serverlist.txt</button>
                     </form>
                 </div>
                 
@@ -304,7 +304,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     <p style="color: #718096; margin-bottom: 20px;">Descarga los nuevos episodios de todos tus podcasts suscritos en el servidor.</p>
                     
                     <button type="button" class="btn btn-info" style="font-size: 16px; padding: 15px 30px;" onclick="executePodgetViaAjax();">
-                        Ejecutar descargas para <?php echo htmlEsc($_SESSION['station_name']); ?>
+                        <span class="btn-icon">🚀</span> Ejecutar descargas para <?php echo htmlEsc($_SESSION['station_name']); ?>
                     </button>
                     
                     <div id="podget-status" style="margin-top: 20px;"></div>
@@ -365,7 +365,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
             </div>
             
             <div class="form-actions">
-                <button type="submit" class="btn btn-success">Agregar Podcast</button>
+                <button type="submit" class="btn btn-success"><span class="btn-icon">➕</span> Agregar Podcast</button>
                 <button type="button" class="btn btn-secondary" onclick="closeAddPodcastModal()">Cancelar</button>
             </div>
         </form>
@@ -385,7 +385,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 <label>Nueva Categoría:</label>
                 <div style="display: flex; gap: 10px;">
                     <input type="text" name="category_name" id="new_category_input" required placeholder="Ej: Deportes, Noticias..." maxlength="50" style="flex: 1;">
-                    <button type="submit" class="btn btn-success">Añadir</button>
+                    <button type="submit" class="btn btn-success"><span class="btn-icon">✅</span> Añadir</button>
                 </div>
             </div>
         </form>
