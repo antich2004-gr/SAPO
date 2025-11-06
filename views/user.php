@@ -1,10 +1,5 @@
 <?php
 // views/user.php - Interfaz de usuario regular
-if (!isset($_SESSION['categories_auto_imported'])) {
-    importCategoriesFromServerList($_SESSION['username']);
-    $_SESSION['categories_auto_imported'] = true;
-}
-
 $userCategories = getUserCategories($_SESSION['username']);
 $podcasts = readServerList($_SESSION['username']);
 $caducidades = readCaducidades($_SESSION['username']);
@@ -35,7 +30,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
             <p style="margin: 0 0 10px 0; color: #4a5568; font-size: 14px;">Conectado como <strong><?php echo htmlEsc($_SESSION['station_name']); ?></strong></p>
             <form method="POST" style="display: inline;">
                 <input type="hidden" name="action" value="logout">
-                <button type="submit" class="btn btn-secondary">Cerrar Sesion</button>
+                <button type="submit" class="btn btn-secondary"><span class="btn-icon">🚪</span> Cerrar Sesion</button>
             </form>
         </div>
     </div>
@@ -50,7 +45,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
         ?>
         
         <div style="margin-top: 30px;">
-            <a href="<?php echo basename($_SERVER['PHP_SELF']); ?>" class="btn btn-secondary" style="margin-bottom: 20px;">Volver al listado</a>
+            <a href="<?php echo basename($_SERVER['PHP_SELF']); ?>" class="btn btn-secondary" style="margin-bottom: 20px;"><span class="btn-icon">⬅️</span> Volver al listado</a>
             
             <h3 style="margin-bottom: 20px;">Editar Podcast</h3>
             
@@ -68,25 +63,23 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     <label>Categoria:</label>
                     <?php if (!empty($userCategories)): ?>
                         <div style="display: flex; gap: 10px; align-items: flex-start;">
-                            <select name="category" id="edit_category_select" onchange="toggleEditInlineCategory()" style="flex: 1;">
+                            <select name="category" id="edit_category_select" required style="flex: 1;">
                                 <option value="">-- Selecciona una categoria --</option>
-                                <?php foreach ($userCategories as $cat): 
+                                <?php foreach ($userCategories as $cat):
                                     $inUse = isCategoryInUse($_SESSION['username'], $cat);
                                 ?>
                                     <option value="<?php echo htmlEsc($cat); ?>" <?php echo $podcast['category'] === $cat ? 'selected' : ''; ?>>
                                         <?php echo htmlEsc($cat); ?><?php echo !$inUse ? ' (sin usar)' : ''; ?>
                                     </option>
                                 <?php endforeach; ?>
-                                <option value="custom">✏️ Escribir nueva categoria...</option>
                             </select>
-                            
+
                             <button type="button" class="btn btn-secondary" onclick="showCategoryManager('edit')" style="white-space: nowrap;">Gestionar</button>
                         </div>
-                        <div id="edit_custom_category_input" style="display: none; margin-top: 10px;">
-                            <input type="text" name="custom_category" placeholder="Escribe una nueva categoria" maxlength="50">
-                        </div>
+                        <small style="color: #718096;">Usa el botón "Gestionar" para añadir nuevas categorías</small>
                     <?php else: ?>
-                        <input type="text" name="custom_category" value="<?php echo htmlEsc($podcast['category']); ?>" required placeholder="Escribe el nombre de la categoria" maxlength="50">
+                        <p style="color: #e53e3e; margin-bottom: 10px;">No hay categorías disponibles. Por favor, créalas primero.</p>
+                        <button type="button" class="btn btn-secondary" onclick="showCategoryManager('edit')" style="margin-bottom: 15px;">Crear Categorías</button>
                     <?php endif; ?>
                 </div>
                 
@@ -102,26 +95,12 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 </div>
                 
                 <div style="display: flex; gap: 10px; margin-top: 30px;">
-                    <button type="submit" class="btn btn-primary" style="flex: 1;">Guardar Cambios</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1;"><span class="btn-icon">💾</span> Guardar Cambios</button>
                     <a href="<?php echo basename($_SERVER['PHP_SELF']); ?>" class="btn btn-secondary" style="flex: 1; text-align: center; text-decoration: none;">Cancelar</a>
                 </div>
             </form>
         </div>
-        
-        <script>
-            function toggleEditInlineCategory() {
-                const select = document.getElementById('edit_category_select');
-                const customInput = document.getElementById('edit_custom_category_input');
-                if (select && customInput) {
-                    if (select.value === 'custom') {
-                        customInput.style.display = 'block';
-                    } else {
-                        customInput.style.display = 'none';
-                    }
-                }
-            }
-        </script>
-        
+
         <?php 
         } else {
         ?>
@@ -144,59 +123,21 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
             <div class="tabs-content">
                 <!-- PESTAÑA 1: MIS PODCASTS -->
                 <div id="tab-podcasts" class="tab-panel active">
-                    <h3>Agregar Nuevo Podcast</h3>
-                    <form method="POST" style="margin-bottom: 40px;">
-                        <input type="hidden" name="action" value="add_podcast">
-                        <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                        <div class="form-group">
-                            <label>URL del RSS:</label>
-                            <input type="text" name="url" required placeholder="https://ejemplo.com/podcast/rss" maxlength="500">
-                        </div>
-                        <div class="form-group">
-                            <label>Categoria:</label>
-                            <?php if (!empty($userCategories)): ?>
-                                <div style="display: flex; gap: 10px; align-items: flex-start;">
-                                    <select name="category" id="category_select" onchange="toggleCustomCategory()" style="flex: 1;">
-                                        <option value="">-- Selecciona una categoria --</option>
-                                        <?php foreach ($userCategories as $cat): ?>
-                                            <option value="<?php echo htmlEsc($cat); ?>"><?php echo htmlEsc($cat); ?></option>
-                                        <?php endforeach; ?>
-                                        <option value="custom">✏️ Escribir nueva categoria...</option>
-                                    </select>
-                                    <button type="button" class="btn btn-secondary" onclick="showCategoryManager('add')" style="white-space: nowrap;">Gestionar</button>
-                                </div>
-                                <div id="custom_category_input" style="display: none; margin-top: 10px;">
-                                    <input type="text" name="custom_category" placeholder="Escribe una nueva categoria" maxlength="50">
-                                </div>
-                            <?php else: ?>
-                                <div style="display: flex; gap: 10px; align-items: flex-start;">
-                                    <input type="text" name="custom_category" required placeholder="Escribe el nombre de la categoria" maxlength="50" style="flex: 1;">
-                                    <button type="button" class="btn btn-secondary" onclick="showCategoryManager('add')" style="white-space: nowrap;">Gestionar</button>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                        <div class="form-group">
-                            <label>Nombre del Podcast:</label>
-                            <input type="text" name="name" required placeholder="Mi_Podcast" maxlength="100">
-                        </div>
-                        <div class="form-group">
-                            <label>Días de caducidad:</label>
-                            <input type="number" name="caducidad" value="30" min="1" max="365" required>
-                            <small style="color: #718096;">Los archivos se eliminarán después de X días sin descargas nuevas (por defecto: 30 días)</small>
-                        </div>
-                        <button type="submit" class="btn btn-success">Agregar Podcast</button>
-                    </form>
-                    
-                    <h3>Podcasts Suscritos</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 10px;">
+                        <h3 style="margin: 0;">Podcasts Suscritos</h3>
+                        <button type="button" class="btn btn-success" onclick="showAddPodcastModal()">
+                            <span class="btn-icon">➕</span> Agregar Nuevo Podcast
+                        </button>
+                    </div>
                     
                     <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap;">
                         <form method="POST" style="display: inline-block;">
                             <input type="hidden" name="action" value="refresh_feeds">
                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                            <button type="submit" class="btn btn-warning">Actualizar estado</button>
+                            <button type="submit" class="btn btn-warning">🔄 Actualizar estado de feeds</button>
                         </form>
-                        <small style="color: #718096;">🟢 ≤30d | 🟠 31-90d | 🔴 >90d</small>
-
+                        <small style="color: #718096;">🟢 <15d | 🟠 15-30d | 🔴 >30d</small>
+                        
                         <?php if (!empty($userCategories)): ?>
                             <div style="display: flex; gap: 10px; align-items: center; flex: 1;">
                                 <label for="filter_category" style="margin: 0; white-space: nowrap;">Filtrar por:</label>
@@ -219,7 +160,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     </div>
                     
                     <?php if (empty($podcasts)): ?>
-                        <p style="color: #718096; margin-top: 20px;">No hay podcasts suscritos aun.</p>
+                        <p style="color: #718096; margin-top: 20px;">No hay podcasts suscritos aún.</p>
                     <?php else: ?>
                         <!-- Vista Normal (Alfabética) -->
                         <div id="normal-view" class="podcast-list">
@@ -231,28 +172,29 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         <strong><?php echo htmlEsc($podcast['name']); ?></strong>
                                         <small>Categoria: <?php echo htmlEsc($podcast['category']); ?> | Caducidad: <?php echo $podcastCaducidad; ?> días</small>
                                         <small><?php echo htmlEsc($podcast['url']); ?></small>
-                                        
+
                                         <?php
                                         $feedInfo = getCachedFeedInfo($podcast['url']);
-                                        $statusInfo = formatFeedStatus($feedInfo['timestamp']);
+                                        if ($feedInfo['timestamp'] !== null):
+                                            $statusInfo = formatFeedStatus($feedInfo['timestamp']);
                                         ?>
-                                        
-                                        <div class="last-episode <?php echo $statusInfo['class']; ?>">
-                                            <?php echo $statusInfo['status']; ?> - Ultimo episodio: <?php echo $statusInfo['date']; ?> (hace <?php echo $statusInfo['days']; ?> dias)
-                                            <?php if ($feedInfo['cached']): 
-                                                $cacheHours = floor($feedInfo['cache_age'] / 3600);
-                                            ?>
-                                                <span class="cache-indicator">(datos de hace <?php echo $cacheHours; ?>h)</span>
-                                            <?php endif; ?>
-                                        </div>
+                                            <div class="last-episode <?php echo $statusInfo['class']; ?>">
+                                                <?php echo $statusInfo['status']; ?> - Último episodio: <?php echo $statusInfo['date']; ?> (hace <?php echo $statusInfo['days']; ?> días)
+                                                <?php if ($feedInfo['cached'] && $feedInfo['cache_age'] > 0):
+                                                    $cacheHours = floor($feedInfo['cache_age'] / 3600);
+                                                ?>
+                                                    <span class="cache-indicator">(comprobado hace <?php echo $cacheHours; ?>h)</span>
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                     <div class="podcast-actions">
-                                        <a href="?edit=<?php echo htmlEsc($podcast['original_index']); ?>" class="btn btn-warning">Editar</a>
+                                        <a href="?edit=<?php echo htmlEsc($podcast['original_index']); ?>" class="btn btn-warning"><span class="btn-icon">✏️</span> Editar</a>
                                         <form method="POST" style="display: inline;">
                                             <input type="hidden" name="action" value="delete_podcast">
                                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                                             <input type="hidden" name="index" value="<?php echo htmlEsc($podcast['original_index']); ?>">
-                                            <button type="submit" class="btn btn-danger" onclick="return confirm('Eliminar este podcast?')">Eliminar</button>
+                                            <button type="submit" class="btn btn-danger" onclick="return confirm('Eliminar este podcast?')"><span class="btn-icon">🗑️</span> Eliminar</button>
                                         </form>
                                     </div>
                                 </div>
@@ -296,28 +238,29 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                     <strong><?php echo htmlEsc($podcast['name']); ?></strong>
                                                     <small>Caducidad: <?php echo $podcastCaducidad; ?> días</small>
                                                     <small><?php echo htmlEsc($podcast['url']); ?></small>
-                                                    
+
                                                     <?php
                                                     $feedInfo = getCachedFeedInfo($podcast['url']);
-                                                    $statusInfo = formatFeedStatus($feedInfo['timestamp']);
+                                                    if ($feedInfo['timestamp'] !== null):
+                                                        $statusInfo = formatFeedStatus($feedInfo['timestamp']);
                                                     ?>
-                                                    
-                                                    <div class="last-episode <?php echo $statusInfo['class']; ?>">
-                                                        <?php echo $statusInfo['status']; ?> - Ultimo episodio: <?php echo $statusInfo['date']; ?> (hace <?php echo $statusInfo['days']; ?> dias)
-                                                        <?php if ($feedInfo['cached']): 
-                                                            $cacheHours = floor($feedInfo['cache_age'] / 3600);
-                                                        ?>
-                                                            <span class="cache-indicator">(datos de hace <?php echo $cacheHours; ?>h)</span>
-                                                        <?php endif; ?>
-                                                    </div>
+                                                        <div class="last-episode <?php echo $statusInfo['class']; ?>">
+                                                            <?php echo $statusInfo['status']; ?> - Último episodio: <?php echo $statusInfo['date']; ?> (hace <?php echo $statusInfo['days']; ?> días)
+                                                            <?php if ($feedInfo['cached'] && $feedInfo['cache_age'] > 0):
+                                                                $cacheHours = floor($feedInfo['cache_age'] / 3600);
+                                                            ?>
+                                                                <span class="cache-indicator">(comprobado hace <?php echo $cacheHours; ?>h)</span>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                    <?php endif; ?>
                                                 </div>
                                                 <div class="podcast-actions">
-                                                    <a href="?edit=<?php echo htmlEsc($podcast['original_index']); ?>" class="btn btn-warning">Editar</a>
+                                                    <a href="?edit=<?php echo htmlEsc($podcast['original_index']); ?>" class="btn btn-warning"><span class="btn-icon">✏️</span> Editar</a>
                                                     <form method="POST" style="display: inline;">
                                                         <input type="hidden" name="action" value="delete_podcast">
                                                         <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                                                         <input type="hidden" name="index" value="<?php echo htmlEsc($podcast['original_index']); ?>">
-                                                        <button type="submit" class="btn btn-danger" onclick="return confirm('Eliminar este podcast?')">Eliminar</button>
+                                                        <button type="submit" class="btn btn-danger" onclick="return confirm('Eliminar este podcast?')"><span class="btn-icon">🗑️</span> Eliminar</button>
                                                     </form>
                                                 </div>
                                             </div>
@@ -344,14 +287,14 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             <input type="file" name="serverlist_file" id="serverlist_file" accept=".txt" required onchange="showFileName(this)">
                         </div>
                         <span class="selected-file" id="fileName"></span>
-                        <button type="submit" class="btn btn-success">Importar</button>
+                        <button type="submit" class="btn btn-success"><span class="btn-icon">📥</span> Importar</button>
                     </form>
                     
                     <h4 style="margin-top: 30px; margin-bottom: 15px;">Exportar podcasts</h4>
                     <form method="POST">
                         <input type="hidden" name="action" value="export_serverlist">
                         <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                        <button type="submit" class="btn btn-primary">Descargar mi serverlist.txt</button>
+                        <button type="submit" class="btn btn-primary"><span class="btn-icon">📤</span> Descargar mi serverlist.txt</button>
                     </form>
                 </div>
                 
@@ -361,18 +304,97 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     <p style="color: #718096; margin-bottom: 20px;">Descarga los nuevos episodios de todos tus podcasts suscritos en el servidor.</p>
                     
                     <button type="button" class="btn btn-info" style="font-size: 16px; padding: 15px 30px;" onclick="executePodgetViaAjax();">
-                        Ejecutar descargas para <?php echo htmlEsc($_SESSION['station_name']); ?>
+                        <span class="btn-icon">🚀</span> Ejecutar descargas para <?php echo htmlEsc($_SESSION['station_name']); ?>
                     </button>
                     
                     <div id="podget-status" style="margin-top: 20px;"></div>
-                    
-                    <p style="color: #718096; margin-top: 20px; font-size: 14px;">
-                    </p>
+
+                    <!-- INFORME DE DESCARGAS -->
+                    <div style="margin-top: 40px; border-top: 2px solid #e2e8f0; padding-top: 30px;">
+                        <h4>Historial de Descargas</h4>
+                        <p style="color: #718096; margin-bottom: 20px;">Consulta el historial de descargas de tus podcasts por período</p>
+
+                        <!-- Selector de período -->
+                        <div class="period-selector" style="margin-bottom: 30px;">
+                            <button class="period-btn active" onclick="loadReport(7, this)">Últimos 7 días</button>
+                            <button class="period-btn" onclick="loadReport(14, this)">Últimos 14 días</button>
+                            <button class="period-btn" onclick="loadReport(30, this)">Últimos 30 días</button>
+                        </div>
+
+                        <!-- Contenedor del informe -->
+                        <div id="report-container">
+                            <?php
+                            // Cargar informe de 7 días por defecto
+                            $report = generatePeriodReport($_SESSION['username'], 7);
+                            if ($report):
+                            ?>
+                                <?php include 'report_view.php'; ?>
+                            <?php else: ?>
+                                <div class="alert alert-info">
+                                    No hay informes disponibles para este período. Los informes se generan automáticamente cuando ejecutas las descargas.
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         
     <?php endif; ?>
+</div>
+
+<!-- MODAL DE AGREGAR PODCAST -->
+<div id="addPodcastModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <span class="close" onclick="closeAddPodcastModal()">&times;</span>
+        <h3>Agregar Nuevo Podcast</h3>
+        
+        <form method="POST" style="margin-top: 20px;">
+            <input type="hidden" name="action" value="add_podcast">
+            <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+            
+            <div class="form-group">
+                <label>URL del RSS:</label>
+                <input type="text" name="url" id="podcast_url" required placeholder="https://ejemplo.com/podcast/rss" maxlength="500">
+            </div>
+            
+            <div class="form-group">
+                <label>Categoría:</label>
+                <?php if (!empty($userCategories)): ?>
+                    <div style="display: flex; gap: 10px; align-items: flex-start;">
+                        <select name="category" id="modal_category_select" required style="flex: 1;">
+                            <option value="">-- Selecciona una categoría --</option>
+                            <?php foreach ($userCategories as $cat): ?>
+                                <option value="<?php echo htmlEsc($cat); ?>"><?php echo htmlEsc($cat); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button type="button" class="btn btn-secondary" onclick="showCategoryManager('modal')" style="white-space: nowrap;">Gestionar</button>
+                    </div>
+                    <small style="color: #718096;">Usa el botón "Gestionar" para añadir nuevas categorías</small>
+                <?php else: ?>
+                    <p style="color: #e53e3e; margin-bottom: 10px;">No hay categorías disponibles. Por favor, créalas primero usando el botón "Gestionar".</p>
+                    <button type="button" class="btn btn-secondary" onclick="showCategoryManager('modal')">Gestionar Categorías</button>
+                <?php endif; ?>
+            </div>
+            
+            <div class="form-group">
+                <label>Nombre del Podcast:</label>
+                <input type="text" name="name" id="podcast_name" required placeholder="Mi_Podcast" maxlength="100">
+                <small style="color: #718096;">Usa guiones bajos en lugar de espacios</small>
+            </div>
+            
+            <div class="form-group">
+                <label>Días de caducidad:</label>
+                <input type="number" name="caducidad" id="podcast_caducidad" value="30" min="1" max="365" required>
+                <small style="color: #718096;">Los archivos se eliminarán después de X días sin descargas nuevas (por defecto: 30 días)</small>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success"><span class="btn-icon">➕</span> Agregar Podcast</button>
+                <button type="button" class="btn btn-secondary" onclick="closeAddPodcastModal()">Cancelar</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- MODAL DE GESTIÓN DE CATEGORÍAS -->
@@ -388,7 +410,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 <label>Nueva Categoría:</label>
                 <div style="display: flex; gap: 10px;">
                     <input type="text" name="category_name" id="new_category_input" required placeholder="Ej: Deportes, Noticias..." maxlength="50" style="flex: 1;">
-                    <button type="submit" class="btn btn-success">Añadir</button>
+                    <button type="submit" class="btn btn-success"><span class="btn-icon">✅</span> Añadir</button>
                 </div>
             </div>
         </form>
@@ -505,120 +527,27 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 </style>
 
 <script>
-function toggleCustomCategory() {
-    const select = document.getElementById('category_select');
-    const customInput = document.getElementById('custom_category_input');
-    
-    if (select && customInput) {
-        if (select.value === 'custom') {
-            customInput.style.display = 'block';
-            select.removeAttribute('required');
-        } else {
-            customInput.style.display = 'none';
-            select.setAttribute('required', 'required');
-        }
-    }
-}
+// Reabrir el modal de categorías si se acabó de añadir o eliminar una categoría
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar si hay mensajes relacionados con categorías
+    const alerts = document.querySelectorAll('.alert');
+    let shouldOpenCategoryModal = false;
 
-function showCategoryManager(context) {
-    const modal = document.getElementById('categoryModal');
-    if (modal) {
-        modal.style.display = 'block';
-        // Focus en el input de nueva categoría
+    alerts.forEach(alert => {
+        const text = alert.textContent.toLowerCase();
+        if (text.includes('categoría agregada') ||
+            text.includes('categoría eliminada') ||
+            text.includes('categoria agregada') ||
+            text.includes('categoria eliminada')) {
+            shouldOpenCategoryModal = true;
+        }
+    });
+
+    if (shouldOpenCategoryModal) {
+        // Abrir el modal después de un pequeño delay para que se vea el mensaje
         setTimeout(() => {
-            const input = document.getElementById('new_category_input');
-            if (input) input.focus();
+            showCategoryManager();
         }, 100);
     }
-}
-
-function closeCategoryManager() {
-    const modal = document.getElementById('categoryModal');
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
-
-function deleteCategory(categoryName) {
-    if (!confirm('¿Eliminar la categoría "' + categoryName + '"?\n\nSolo se pueden eliminar categorías que no estén en uso.')) {
-        return;
-    }
-    
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.innerHTML = `
-        <input type="hidden" name="action" value="delete_category">
-        <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-        <input type="hidden" name="category_name" value="${categoryName}">
-    `;
-    document.body.appendChild(form);
-    form.submit();
-}
-
-// Cerrar modal al hacer clic fuera
-window.onclick = function(event) {
-    const modal = document.getElementById('categoryModal');
-    if (event.target === modal) {
-        closeCategoryManager();
-    }
-}
-
-// Filtrar podcasts por categoría
-function filterByCategory() {
-    const select = document.getElementById('filter_category');
-    const selectedCategory = select.value;
-    const items = document.querySelectorAll('#normal-view .podcast-item');
-    const groups = document.querySelectorAll('#grouped-view .category-group');
-    
-    if (selectedCategory === '') {
-        // Mostrar todos
-        items.forEach(item => item.style.display = '');
-        groups.forEach(group => group.style.display = '');
-    } else {
-        // Filtrar por categoría
-        items.forEach(item => {
-            if (item.dataset.category === selectedCategory) {
-                item.style.display = '';
-            } else {
-                item.style.display = 'none';
-            }
-        });
-        
-        groups.forEach(group => {
-            if (group.dataset.category === selectedCategory) {
-                group.style.display = '';
-            } else {
-                group.style.display = 'none';
-            }
-        });
-    }
-}
-
-// Toggle entre vista normal y agrupada
-let isGroupedView = false;
-
-function toggleGroupView() {
-    const normalView = document.getElementById('normal-view');
-    const groupedView = document.getElementById('grouped-view');
-    const btnText = document.getElementById('viewModeText');
-    const filterSelect = document.getElementById('filter_category');
-    
-    isGroupedView = !isGroupedView;
-    
-    if (isGroupedView) {
-        normalView.style.display = 'none';
-        groupedView.style.display = 'block';
-        btnText.textContent = 'Vista alfabética';
-    } else {
-        normalView.style.display = 'block';
-        groupedView.style.display = 'none';
-        btnText.textContent = 'Agrupar por categoría';
-    }
-    
-    // Aplicar filtro en la nueva vista
-    if (filterSelect) {
-        filterByCategory();
-    }
-}
-
+});
 </script>
