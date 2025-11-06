@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // views/user.php - Interfaz de usuario regular
 $userCategories = getUserCategories($_SESSION['username']);
 $podcasts = readServerList($_SESSION['username']);
@@ -136,7 +136,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                             <button type="submit" class="btn btn-warning">🔄 Actualizar estado de feeds</button>
                         </form>
-                        <small style="color: #718096;">🟢 <15d | 🟠 15-30d | 🔴 >30d</small>
+                        <small style="color: #718096;">🟢 ≤30d | 🟠 31-90d | 🔴 >90d</small>
                         
                         <?php if (!empty($userCategories)): ?>
                             <div style="display: flex; gap: 10px; align-items: center; flex: 1;">
