@@ -82,19 +82,15 @@ function executePodgetViaAjax() {
     })
     .then(data => {
         console.log('Respuesta recibida del servidor');
-        
-        // Verificar si hay un mensaje de error en la respuesta
-        if (data.includes('alert-error') || data.toLowerCase().includes('error')) {
-            // Extraer el mensaje de error si existe
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(data, 'text/html');
-            const errorDiv = doc.querySelector('.alert-error');
-            
-            if (errorDiv) {
-                statusDiv.innerHTML = '<div class="alert alert-error">❌ ' + errorDiv.textContent.trim() + '</div>';
-            } else {
-                statusDiv.innerHTML = '<div class="alert alert-error">❌ Error desconocido al ejecutar el script</div>';
-            }
+
+        // Extraer solo los mensajes de alerta de SAPO (no todo el HTML)
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(data, 'text/html');
+        const errorDiv = doc.querySelector('.alert-error');
+
+        if (errorDiv) {
+            // Hay un mensaje de error específico de SAPO
+            statusDiv.innerHTML = '<div class="alert alert-error">❌ ' + errorDiv.textContent.trim() + '</div>';
         } else {
             // El script se envió correctamente
             statusDiv.innerHTML = `
