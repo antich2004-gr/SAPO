@@ -35,7 +35,7 @@ $userCategories = getUserCategories($_SESSION['username']);
                     <option value="">-- Selecciona una categoria --</option>
                     <?php foreach ($userCategories as $cat): ?>
                         <option value="<?php echo htmlEsc($cat); ?>" <?php echo $podcast['category'] === $cat ? 'selected' : ''; ?>>
-                            <?php echo htmlEsc($cat); ?>
+                            <?php echo htmlEsc(displayName($cat)); ?>
                         </option>
                     <?php endforeach; ?>
                     <option value="custom">Escribir nueva categoria...</option>
@@ -56,14 +56,14 @@ $userCategories = getUserCategories($_SESSION['username']);
                     }
                 </script>
             <?php else: ?>
-                <input type="text" name="custom_category" value="<?php echo htmlEsc($podcast['category']); ?>" required placeholder="Escribe el nombre de la categoria" maxlength="50" autocomplete="off">
+                <input type="text" name="custom_category" value="<?php echo htmlEsc(displayName($podcast['category'])); ?>" required placeholder="Escribe el nombre de la categoria" maxlength="50" autocomplete="off">
                 <small style="color: #718096;">Crea algunas categorias para poder seleccionarlas.</small>
             <?php endif; ?>
         </div>
         
         <div class="form-group">
             <label>Nombre del Podcast:</label>
-            <input type="text" name="name" value="<?php echo htmlEsc($podcast['name']); ?>" required maxlength="100" autocomplete="off">
+            <input type="text" name="name" value="<?php echo htmlEsc(displayName($podcast['name'])); ?>" required maxlength="100" autocomplete="off">
             <small style="color: #718096;">El nombre que aparecera en el listado</small>
         </div>
         

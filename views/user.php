@@ -69,7 +69,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     $inUse = isCategoryInUse($_SESSION['username'], $cat);
                                 ?>
                                     <option value="<?php echo htmlEsc($cat); ?>" <?php echo $podcast['category'] === $cat ? 'selected' : ''; ?>>
-                                        <?php echo htmlEsc($cat); ?><?php echo !$inUse ? ' (sin usar)' : ''; ?>
+                                        <?php echo htmlEsc(displayName($cat)); ?><?php echo !$inUse ? ' (sin usar)' : ''; ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -85,7 +85,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 
                 <div class="form-group">
                     <label>Nombre del Podcast:</label>
-                    <input type="text" name="name" value="<?php echo htmlEsc($podcast['name']); ?>" required maxlength="100">
+                    <input type="text" name="name" value="<?php echo htmlEsc(displayName($podcast['name'])); ?>" required maxlength="100">
                 </div>
                 
                 <div class="form-group">
@@ -148,7 +148,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                             return $p['category'] === $cat;
                                         }));
                                     ?>
-                                        <option value="<?php echo htmlEsc($cat); ?>"><?php echo htmlEsc($cat); ?> (<?php echo $countInCategory; ?>)</option>
+                                        <option value="<?php echo htmlEsc($cat); ?>"><?php echo htmlEsc(displayName($cat)); ?> (<?php echo $countInCategory; ?>)</option>
                                     <?php endforeach; ?>
                                 </select>
                                 
@@ -169,8 +169,8 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             ?>
                                 <div class="podcast-item" data-category="<?php echo htmlEsc($podcast['category']); ?>">
                                     <div class="podcast-info">
-                                        <strong><?php echo htmlEsc($podcast['name']); ?></strong>
-                                        <small>Categoria: <?php echo htmlEsc($podcast['category']); ?> | Caducidad: <?php echo $podcastCaducidad; ?> días</small>
+                                        <strong><?php echo htmlEsc(displayName($podcast['name'])); ?></strong>
+                                        <small>Categoria: <?php echo htmlEsc(displayName($podcast['category'])); ?> | Caducidad: <?php echo $podcastCaducidad; ?> días</small>
                                         <small><?php echo htmlEsc($podcast['url']); ?></small>
 
                                         <?php
@@ -225,7 +225,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             ?>
                                 <div class="category-group" data-category="<?php echo htmlEsc($category); ?>">
                                     <div class="category-header">
-                                        <h4><?php echo htmlEsc($category); ?></h4>
+                                        <h4><?php echo htmlEsc(displayName($category)); ?></h4>
                                         <span class="category-count"><?php echo count($categoryPodcasts); ?> podcast<?php echo count($categoryPodcasts) > 1 ? 's' : ''; ?></span>
                                     </div>
                                     
@@ -235,7 +235,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         ?>
                                             <div class="podcast-item">
                                                 <div class="podcast-info">
-                                                    <strong><?php echo htmlEsc($podcast['name']); ?></strong>
+                                                    <strong><?php echo htmlEsc(displayName($podcast['name'])); ?></strong>
                                                     <small>Caducidad: <?php echo $podcastCaducidad; ?> días</small>
                                                     <small><?php echo htmlEsc($podcast['url']); ?></small>
 
@@ -365,7 +365,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         <select name="category" id="modal_category_select" required style="flex: 1;">
                             <option value="">-- Selecciona una categoría --</option>
                             <?php foreach ($userCategories as $cat): ?>
-                                <option value="<?php echo htmlEsc($cat); ?>"><?php echo htmlEsc($cat); ?></option>
+                                <option value="<?php echo htmlEsc($cat); ?>"><?php echo htmlEsc(displayName($cat)); ?></option>
                             <?php endforeach; ?>
                         </select>
                         <button type="button" class="btn btn-secondary" onclick="showCategoryManager('modal')" style="white-space: nowrap;">Gestionar</button>
@@ -379,8 +379,8 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
             
             <div class="form-group">
                 <label>Nombre del Podcast:</label>
-                <input type="text" name="name" id="podcast_name" required placeholder="Mi_Podcast" maxlength="100">
-                <small style="color: #718096;">Usa guiones bajos en lugar de espacios</small>
+                <input type="text" name="name" id="podcast_name" required placeholder="Mi Podcast" maxlength="100">
+                <small style="color: #718096;">Puedes usar espacios normales</small>
             </div>
             
             <div class="form-group">
@@ -423,7 +423,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         $inUse = isCategoryInUse($_SESSION['username'], $cat);
                     ?>
                         <div class="category-item">
-                            <span><?php echo htmlEsc($cat); ?></span>
+                            <span><?php echo htmlEsc(displayName($cat)); ?></span>
                             <?php if ($inUse): ?>
                                 <span class="badge-in-use">En uso</span>
                             <?php else: ?>
