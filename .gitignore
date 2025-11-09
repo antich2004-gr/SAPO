@@ -1,0 +1,19 @@
+# Claude Code
+.claude/
+
+# Archivos de configuración del servidor (locales)
+*.conf
+check_server.sh
+validate_https_plan.sh
+
+# Archivos temporales
+*.tmp
+*.bak
+*.backup
+
+# Logs
+*.log
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
