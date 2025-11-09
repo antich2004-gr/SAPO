@@ -89,7 +89,8 @@ function parseReportFile($filepath) {
     $subsection = '';
     
     foreach ($lines as $line) {
-        $line = trim($line);
+        // NO hacer trim aquí para preservar espacios de indentación
+        $line = rtrim($line); // Solo eliminar espacios al final
         
         // Detectar emisora y fecha
         if (preg_match('/Emisora:\s*(.+)/', $line, $matches)) {
