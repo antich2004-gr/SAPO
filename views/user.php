@@ -313,32 +313,60 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     
                     <div id="podget-status" style="margin-top: 20px;"></div>
 
-                    <!-- INFORME DE DESCARGAS -->
+                    <!-- ÚLTIMOS EPISODIOS DESCARGADOS -->
                     <div style="margin-top: 40px; border-top: 2px solid #e2e8f0; padding-top: 30px;">
-                        <h4>Historial de Descargas</h4>
-                        <p style="color: #718096; margin-bottom: 20px;">Consulta el historial de descargas de tus podcasts por período</p>
+                        <h4>🎙️ Últimos Episodios Descargados (esta semana)</h4>
+                        <p style="color: #718096; margin-bottom: 20px;">Listado de los episodios descargados en los últimos 7 días</p>
 
-                        <!-- Selector de período -->
-                        <div class="period-selector" style="margin-bottom: 30px;">
-                            <button class="period-btn active" onclick="loadReport(7, this)">Últimos 7 días</button>
-                            <button class="period-btn" onclick="loadReport(14, this)">Últimos 14 días</button>
-                            <button class="period-btn" onclick="loadReport(30, this)">Últimos 30 días</button>
-                        </div>
+                        <?php
+                        // Cargar informes de los últimos 7 días
+                        $allEpisodes = [];
+                        $reports = getAvailableReports($_SESSION['username']);
 
-                        <!-- Contenedor del informe -->
-                        <div id="report-container">
-                            <?php
-                            // Cargar informe de 7 días por defecto
-                            $report = generatePeriodReport($_SESSION['username'], 7);
-                            if ($report):
-                            ?>
-                                <?php include 'report_view.php'; ?>
-                            <?php else: ?>
-                                <div class="alert alert-info">
-                                    No hay informes disponibles para este período. Los informes se generan automáticamente cuando ejecutas las descargas.
-                                </div>
-                            <?php endif; ?>
-                        </div>
+                        if (!empty($reports)) {
+                            $cutoffDate = strtotime("-7 days");
+                            foreach ($reports as $reportInfo) {
+                                if ($reportInfo['timestamp'] >= $cutoffDate) {
+                                    $reportData = parseReportFile($reportInfo['file']);
+                                    if ($reportData && !empty($reportData['podcasts_hoy'])) {
+                                        foreach ($reportData['podcasts_hoy'] as $episode) {
+                                            $episode['report_date'] = $reportInfo['display_date'];
+                                            $allEpisodes[] = $episode;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!empty($allEpisodes)):
+                        ?>
+                            <div class="episodes-list">
+                                <?php foreach (array_slice($allEpisodes, 0, 30) as $episode): ?>
+                                    <div class="episode-item">
+                                        <div class="episode-icon">🎙️</div>
+                                        <div class="episode-info">
+                                            <div class="episode-name">
+                                                <?php echo htmlEsc($episode['archivo']); ?>
+                                            </div>
+                                            <div class="episode-meta">
+                                                <?php echo htmlEsc($episode['podcast']); ?>
+                                                • Descargado: <?php echo htmlEsc($episode['fecha']); ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+
+                                <?php if (count($allEpisodes) > 30): ?>
+                                    <div style="text-align: center; padding: 20px; color: #718096;">
+                                        ... y <?php echo count($allEpisodes) - 30; ?> episodios más
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="alert alert-info">
+                                No hay episodios descargados en los últimos 7 días. Los informes se generan automáticamente cuando ejecutas las descargas.
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
