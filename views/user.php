@@ -21,6 +21,49 @@ $podcasts = $podcastsWithIndex;
 // Detectar si estamos editando
 $isEditing = isset($_GET['edit']) && is_numeric($_GET['edit']);
 $editIndex = $isEditing ? intval($_GET['edit']) : null;
+
+// Cargar últimos episodios por podcast desde los informes
+$episodesByPodcast = [];
+$reports = getAvailableReports($_SESSION['username']);
+
+if (!empty($reports)) {
+    // Cargar los últimos 30 días de informes para tener suficiente histórico
+    $cutoffDate = strtotime("-30 days");
+
+    foreach ($reports as $reportInfo) {
+        if ($reportInfo['timestamp'] >= $cutoffDate) {
+            $reportData = parseReportFile($reportInfo['file']);
+
+            if ($reportData && !empty($reportData['podcasts_hoy'])) {
+                foreach ($reportData['podcasts_hoy'] as $episode) {
+                    $podcastName = $episode['podcast'];
+
+                    if (!isset($episodesByPodcast[$podcastName])) {
+                        $episodesByPodcast[$podcastName] = [];
+                    }
+
+                    // Añadir episodio con información completa
+                    $episodesByPodcast[$podcastName][] = [
+                        'archivo' => $episode['archivo'],
+                        'fecha' => $episode['fecha'],
+                        'podcast' => $episode['podcast']
+                    ];
+                }
+            }
+        }
+    }
+
+    // Limitar a los últimos 5 episodios por podcast
+    foreach ($episodesByPodcast as $podcastName => $episodes) {
+        // Ordenar por fecha descendente (más reciente primero)
+        usort($episodes, function($a, $b) {
+            return strtotime($b['fecha']) - strtotime($a['fecha']);
+        });
+
+        // Mantener solo los últimos 5
+        $episodesByPodcast[$podcastName] = array_slice($episodes, 0, 5);
+    }
+}
 ?>
 
 <div class="card">
@@ -189,6 +232,30 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                 <span class="cache-indicator">(comprobado hace <?php echo $cacheHours; ?>h)</span>
                                             <?php endif; ?>
                                         </div>
+
+                                        <?php
+                                        // Mostrar botón de episodios si hay episodios disponibles
+                                        $podcastEpisodes = $episodesByPodcast[$podcast['name']] ?? [];
+                                        if (!empty($podcastEpisodes)):
+                                        ?>
+                                            <button type="button" class="btn-toggle-episodes" onclick="toggleEpisodes('<?php echo htmlEsc($index); ?>')">
+                                                <span id="toggle-icon-<?php echo $index; ?>">▼</span> Mostrar últimos episodios (<?php echo count($podcastEpisodes); ?>)
+                                            </button>
+                                            <div id="episodes-<?php echo $index; ?>" class="episodes-dropdown" style="display: none;">
+                                                <?php foreach ($podcastEpisodes as $ep): ?>
+                                                    <?php
+                                                    $parts = explode(' ', $ep['fecha']);
+                                                    $date = isset($parts[0]) ? $parts[0] : '';
+                                                    $time = isset($parts[1]) ? $parts[1] : '';
+                                                    ?>
+                                                    <div class="episode-row">
+                                                        <span class="episode-date"><?php echo htmlEsc($date); ?></span>
+                                                        <span class="episode-time"><?php echo htmlEsc($time); ?></span>
+                                                        <span class="episode-file"><?php echo htmlEsc($ep['archivo']); ?></span>
+                                                    </div>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                     <div class="podcast-actions">
                                         <a href="?edit=<?php echo htmlEsc($podcast['original_index']); ?>" class="btn btn-warning"><span class="btn-icon">✏️</span> Editar</a>
@@ -257,6 +324,30 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                             <span class="cache-indicator">(comprobado hace <?php echo $cacheHours; ?>h)</span>
                                                         <?php endif; ?>
                                                     </div>
+
+                                                    <?php
+                                                    // Mostrar botón de episodios si hay episodios disponibles
+                                                    $podcastEpisodes = $episodesByPodcast[$podcast['name']] ?? [];
+                                                    if (!empty($podcastEpisodes)):
+                                                    ?>
+                                                        <button type="button" class="btn-toggle-episodes" onclick="toggleEpisodes('grouped-<?php echo htmlEsc($podcast['original_index']); ?>')">
+                                                            <span id="toggle-icon-grouped-<?php echo $podcast['original_index']; ?>">▼</span> Mostrar últimos episodios (<?php echo count($podcastEpisodes); ?>)
+                                                        </button>
+                                                        <div id="episodes-grouped-<?php echo $podcast['original_index']; ?>" class="episodes-dropdown" style="display: none;">
+                                                            <?php foreach ($podcastEpisodes as $ep): ?>
+                                                                <?php
+                                                                $parts = explode(' ', $ep['fecha']);
+                                                                $date = isset($parts[0]) ? $parts[0] : '';
+                                                                $time = isset($parts[1]) ? $parts[1] : '';
+                                                                ?>
+                                                                <div class="episode-row">
+                                                                    <span class="episode-date"><?php echo htmlEsc($date); ?></span>
+                                                                    <span class="episode-time"><?php echo htmlEsc($time); ?></span>
+                                                                    <span class="episode-file"><?php echo htmlEsc($ep['archivo']); ?></span>
+                                                                </div>
+                                                            <?php endforeach; ?>
+                                                        </div>
+                                                    <?php endif; ?>
                                                 </div>
                                                 <div class="podcast-actions">
                                                     <a href="?edit=<?php echo htmlEsc($podcast['original_index']); ?>" class="btn btn-warning"><span class="btn-icon">✏️</span> Editar</a>

@@ -1036,6 +1036,80 @@ select {
     color: #718096;
 }
 
+/* Botón para mostrar/ocultar episodios */
+.btn-toggle-episodes {
+    background: none;
+    border: none;
+    color: #667eea;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 8px 0;
+    text-align: left;
+    transition: color 0.2s;
+    margin-top: 8px;
+}
+
+.btn-toggle-episodes:hover {
+    color: #5a67d8;
+    text-decoration: underline;
+}
+
+/* Dropdown de episodios */
+.episodes-dropdown {
+    margin-top: 12px;
+    background: #f7fafc;
+    border-left: 3px solid #667eea;
+    border-radius: 4px;
+    padding: 10px;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 500px;
+    }
+}
+
+/* Fila de episodio */
+.episode-row {
+    display: flex;
+    gap: 12px;
+    padding: 8px;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 13px;
+    align-items: center;
+}
+
+.episode-row:last-child {
+    border-bottom: none;
+}
+
+.episode-row:hover {
+    background: #edf2f7;
+}
+
+.episode-date {
+    color: #4a5568;
+    font-weight: 600;
+    min-width: 90px;
+}
+
+.episode-time {
+    color: #718096;
+    min-width: 70px;
+}
+
+.episode-file {
+    color: #2d3748;
+    flex: 1;
+    word-break: break-word;
+}
+
 @media (max-width: 768px) {
     .stats-grid {
         grid-template-columns: 1fr;
@@ -1059,5 +1133,17 @@ select {
         flex-direction: column;
         align-items: flex-start;
         gap: 8px;
+    }
+
+    /* Episodios responsive */
+    .episode-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .episode-date,
+    .episode-time {
+        min-width: auto;
     }
 }

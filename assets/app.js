@@ -418,3 +418,21 @@ function loadReport(days, button) {
         container.innerHTML = '<div class="alert alert-error">Error al cargar el informe. Por favor, recarga la página.</div>';
     });
 }
+
+/**
+ * Mostrar/ocultar episodios descargados de un podcast
+ */
+function toggleEpisodes(podcastId) {
+    const episodesDiv = document.getElementById('episodes-' + podcastId);
+    const iconSpan = document.getElementById('toggle-icon-' + podcastId);
+
+    if (episodesDiv && iconSpan) {
+        if (episodesDiv.style.display === 'none') {
+            episodesDiv.style.display = 'block';
+            iconSpan.textContent = '▲';
+        } else {
+            episodesDiv.style.display = 'none';
+            iconSpan.textContent = '▼';
+        }
+    }
+}
