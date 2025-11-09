@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // views/user.php - Interfaz de usuario regular
 $userCategories = getUserCategories($_SESSION['username']);
 $podcasts = readServerList($_SESSION['username']);
