@@ -137,13 +137,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // IMPORT SERVERLIST
     if ($action == 'import_serverlist' && isLoggedIn() && !isAdmin()) {
         if (isset($_FILES['serverlist_file']) && $_FILES['serverlist_file']['error'] == 0) {
-            $fileContent = file_get_contents($_FILES['serverlist_file']['tmp_name']);
-            $result = importPodcasts($_SESSION['username'], $fileContent);
-            
-            if ($result['success']) {
-                $message = "Se importaron {$result['count']} podcasts correctamente";
+            // Validar tamaño del archivo (máximo 1 MB)
+            $maxSize = 1 * 1024 * 1024; // 1 MB
+            $fileSize = $_FILES['serverlist_file']['size'];
+
+            if ($fileSize > $maxSize) {
+                $error = 'El archivo es demasiado grande. Tamaño máximo: 1 MB.';
+            } elseif ($fileSize == 0) {
+                $error = 'El archivo está vacío';
             } else {
-                $message = 'No se encontraron podcasts nuevos para importar';
+                // Validar que sea un archivo de texto
+                $fileName = $_FILES['serverlist_file']['name'];
+                $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+                if ($fileExt !== 'txt') {
+                    $error = 'Solo se permiten archivos .txt';
+                } else {
+                    // Todo validado, proceder a leer
+                    $fileContent = file_get_contents($_FILES['serverlist_file']['tmp_name']);
+                    $result = importPodcasts($_SESSION['username'], $fileContent);
+
+                    if ($result['success']) {
+                        $message = "Se importaron {$result['count']} podcasts correctamente";
+                    } else {
+                        $message = 'No se encontraron podcasts nuevos para importar';
+                    }
+                }
             }
         } else {
             $error = 'Error al cargar el archivo';
