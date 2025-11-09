@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAPO - Sistema de Automatizacion de Podcasts</title>
+    <title>SAPO - Sistema de Automatización de Podcasts</title>
     <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
@@ -14,7 +14,7 @@
 <div class="container">
     <div class="header">
         <h1>🐸 SAPO</h1>
-        <div class="subtitle">Sistema de Automatizacion de Podcasts para Radiobot</div>
+        <div class="subtitle">Sistema de Automatización de Podcasts para Radiobot</div>
     </div>
 
     <?php if ($message): ?>
