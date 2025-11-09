@@ -87,7 +87,7 @@ SAPO establece los siguientes headers de seguridad:
 
 ```
 X-Content-Type-Options: nosniff
-X-Frame-Options: DENY
+X-Frame-Options: SAMEORIGIN
 X-XSS-Protection: 1; mode=block
 Referrer-Policy: strict-origin-when-cross-origin
 Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';
@@ -95,7 +95,7 @@ Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; 
 
 #### Explicación:
 - **X-Content-Type-Options**: Previene MIME sniffing
-- **X-Frame-Options**: Previene clickjacking
+- **X-Frame-Options**: Previene clickjacking (permite embeber en mismo origen)
 - **X-XSS-Protection**: Protección XSS del navegador
 - **Referrer-Policy**: Control de información de referencia
 - **Content-Security-Policy**: Previene carga de recursos externos maliciosos
@@ -127,12 +127,12 @@ chmod 644 includes/*.php
 chmod 644 views/*.php
 
 # Archivos de configuración
-chmod 600 config.php
+chmod 640 config.php
 
-# Base de datos
-chmod 666 db/global.json          # Necesita escritura por web server
-chmod 666 db/feed_cache.json
-chmod 666 db/users/*.json
+# Base de datos (permisos seguros - owner rw, group r)
+chmod 640 db/global.json          # Necesita escritura por web server
+chmod 640 db/feed_cache.json
+chmod 640 db/users/*.json
 
 # Archivos de sistema
 chmod 644 .htaccess
@@ -212,6 +212,33 @@ error_reporting(E_ALL);            // Reportar todos los errores
 
 ---
 
+### 11. Validación de Uploads
+
+#### Características (v1.3):
+- ✅ **Límite de tamaño**: Máximo 1MB por archivo
+- ✅ **Validación de tipo**: Solo archivos .txt permitidos
+- ✅ **Verificación de contenido**: Validación antes de procesar
+- ✅ **Rechazo de archivos vacíos**: Control de archivos con 0 bytes
+
+#### Implementación:
+```php
+$maxSize = 1 * 1024 * 1024; // 1 MB
+$fileSize = $_FILES['serverlist_file']['size'];
+
+if ($fileSize > $maxSize) {
+    $error = 'El archivo es demasiado grande. Tamaño máximo: 1 MB.';
+} elseif ($fileSize == 0) {
+    $error = 'El archivo está vacío';
+} else {
+    $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+    if ($fileExt !== 'txt') {
+        $error = 'Solo se permiten archivos .txt';
+    }
+}
+```
+
+---
+
 ## 🔧 Configuración de Producción
 
 ### Lista de verificación pre-producción:
@@ -232,9 +259,9 @@ Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains
 # Ejecutar en el servidor:
 find /ruta/sapo -type d -exec chmod 755 {} \;
 find /ruta/sapo -type f -exec chmod 644 {} \;
-chmod 600 /ruta/sapo/config.php
-chmod 666 /ruta/sapo/db/*.json
-chmod 666 /ruta/sapo/db/users/*.json
+chmod 640 /ruta/sapo/config.php
+chmod 640 /ruta/sapo/db/*.json
+chmod 640 /ruta/sapo/db/users/*.json
 ```
 
 #### 3. Cambiar credenciales por defecto
@@ -316,4 +343,16 @@ Si encuentras una vulnerabilidad de seguridad:
 
 ---
 
-**Última actualización**: 2025-01-05 (v2.0-separated-db)
+## 📝 Mejoras de Seguridad en v1.3
+
+### Novedades (Noviembre 2025):
+- ✅ **Validación de uploads**: Límite 1MB, solo archivos .txt
+- ✅ **Permisos mejorados**: Cambio de 0666 a 0640 en archivos sensibles
+- ✅ **Headers unificados**: X-Frame-Options SAMEORIGIN consistente
+- ✅ **Eliminación de BOM**: Corrección de UTF-8 BOM en archivos PHP
+- ✅ **Interfaz corregida**: Eliminación de errores ortográficos
+- ✅ **Parser robusto**: Corrección crítica en procesamiento de informes
+
+---
+
+**Última actualización**: 2025-11-09 (v1.3)
