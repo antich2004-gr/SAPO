@@ -15,10 +15,12 @@ SAPO es una aplicación web desarrollada en PHP que permite a múltiples emisora
 - ✅ **Descarga automatizada**: Obtención automática de nuevos episodios vía RSS
 - ✅ **Integración con Radiobot**: Generación de listas M3U compatibles
 - ✅ **Sistema de caducidad**: Control de cuánto tiempo mantener episodios antiguos
+- ✅ **Informes diarios**: Reportes automáticos de descargas, eliminaciones y errores
+- ✅ **Historial de descargas**: Visualización de episodios descargados en los últimos 7 días
 - ✅ **Cache de feeds**: Optimización de consultas a feeds RSS
 - ✅ **Control de concurrencia**: Múltiples emisoras pueden trabajar simultáneamente sin conflictos
 - ✅ **Panel de administración**: Gestión centralizada de usuarios y configuración
-- ✅ **Seguridad robusta**: CSRF protection, rate limiting, bloqueo por intentos fallidos
+- ✅ **Seguridad robusta**: CSRF protection, rate limiting, bloqueo por intentos fallidos, validación de uploads
 
 ## 🏗️ Arquitectura
 
@@ -28,22 +30,26 @@ SAPO es una aplicación web desarrollada en PHP que permite a múltiples emisora
 SAPO/
 ├── index.php                    # Controlador principal y router
 ├── config.php                   # Configuración global
+├── .htaccess                    # Configuración Apache y headers de seguridad
 ├── includes/
 │   ├── auth.php                 # Sistema de autenticación y seguridad
 │   ├── categories.php           # Gestión de categorías
 │   ├── database.php             # Capa de acceso a datos
 │   ├── file_operations.php      # Operaciones con archivos
 │   ├── podcast_functions.php    # Lógica de podcasts
+│   ├── reports.php              # Gestión de informes diarios
 │   └── rss_functions.php        # Parsing de feeds RSS
 ├── views/
+│   ├── layout.php               # Layout principal HTML
 │   ├── login.php                # Vista de login
 │   ├── admin.php                # Panel de administración
-│   └── user.php                 # Panel de emisora
+│   ├── user.php                 # Panel de emisora
+│   ├── report_view.php          # Vista de informes consolidados
+│   └── podget_status.php        # Estado de ejecución de Podget
 ├── assets/
-│   ├── css/
-│   │   └── style.css            # Estilos de la aplicación
-│   └── js/
-│       └── script.js            # JavaScript del frontend
+│   ├── style.css                # Estilos de la aplicación
+│   ├── app.js                   # JavaScript del frontend
+│   └── favicon.svg              # Icono de la aplicación
 └── db/
     ├── global.json              # Usuarios, configuración, login_attempts
     ├── feed_cache.json          # Cache compartido de feeds RSS
@@ -77,6 +83,8 @@ Cada emisora tiene su propio directorio en el servidor con:
 - `podcasts.txt`: Lista de podcasts suscritos con sus categorías
 - `caducidades.txt`: Configuración de tiempo de retención por categoría
 - `{categoria}.m3u`: Listas de reproducción M3U para Radiobot
+- `media/Informes/`: Directorio con los informes diarios generados automáticamente
+  - `Informe_diario_DD_MM_YYYY.log`: Informes diarios de actividad
 
 ## 🚀 Instalación
 
@@ -98,9 +106,10 @@ cd SAPO
 2. **Configurar permisos**
 ```bash
 chmod 755 .
-chmod 666 config.php
+chmod 640 config.php
 mkdir db
 chmod 755 db
+# Los archivos JSON se crearán automáticamente con permisos 0640
 ```
 
 3. **Configurar el servidor web**
@@ -170,6 +179,21 @@ Cada emisora puede:
    - Establecer cuántos días mantener episodios por categoría
    - Por defecto: 30 días
 
+6. **Historial de descargas**
+   - Ver los últimos episodios descargados en los últimos 7 días
+   - Formato: Fecha - Hora - Nombre del podcast - Archivo MP3
+   - Actualización automática desde los informes diarios
+
+7. **Ver informes de actividad**
+   - Informes diarios automáticos de:
+     - Podcasts descargados
+     - Archivos eliminados (por caducidad o reemplazo)
+     - Carpetas vacías
+     - Errores de Podget
+     - Emisiones en directo detectadas
+   - Informes consolidados de 7, 14 o 30 días
+   - Estadísticas y gráficos de actividad
+
 ## 🔧 Configuración avanzada
 
 ### Estructura de podcasts.txt
@@ -204,18 +228,30 @@ SAPO implementa múltiples capas de seguridad:
 - **Protección CSRF**: Tokens únicos por sesión
 - **Rate limiting**: Control de frecuencia de acciones
 - **Validación de entrada**: Sanitización de URLs y nombres de archivos
+- **Validación de uploads**: Límite de 1MB y solo archivos .txt permitidos
+- **Headers de seguridad**: X-Frame-Options, X-Content-Type-Options, CSP
+- **Permisos de archivos**: Archivos sensibles con permisos 0640
 - **Sesiones seguras**: Timeout configurable y regeneración de ID
 - **Separación de datos**: Cada emisora solo accede a sus propios datos
 
 ## 📊 Versiones
 
-### v2.0-separated-db (Actual)
+### v1.3 (Actual - Noviembre 2025)
+- ✅ Sistema de informes diarios automáticos
+- ✅ Historial de descargas de episodios (últimos 7 días)
+- ✅ Mejoras de seguridad: validación de uploads, permisos 0640
+- ✅ Corrección de errores ortográficos en interfaz
+- ✅ Favicon con icono de SAPO
+- ✅ Headers de seguridad unificados
+- ✅ Corrección crítica en parser de informes (trim vs rtrim)
+
+### v1.2 (2024)
 - Implementación de sistema de base de datos separada
 - Resolución de problemas de concurrencia
 - Mejora de rendimiento en operaciones concurrentes
 - Estructura escalable con archivos individuales por usuario
 
-### v1.0-stable
+### v1.0-stable (2024)
 - Versión inicial estable
 - Sistema de base de datos unificado (db.json)
 - Funcionalidades básicas de gestión de podcasts
