@@ -182,17 +182,7 @@ Cada emisora puede:
 6. **Historial de descargas**
    - Ver los últimos episodios descargados en los últimos 7 días
    - Formato: Fecha - Hora - Nombre del podcast - Archivo MP3
-   - Actualización automática desde los informes diarios
-
-7. **Ver informes de actividad**
-   - Informes diarios automáticos de:
-     - Podcasts descargados
-     - Archivos eliminados (por caducidad o reemplazo)
-     - Carpetas vacías
-     - Errores de Podget
-     - Emisiones en directo detectadas
-   - Informes consolidados de 7, 14 o 30 días
-   - Estadísticas y gráficos de actividad
+   - Actualización automática desde los informes diarios generados por el sistema
 
 ## 🔧 Configuración avanzada
 
