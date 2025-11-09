@@ -11,7 +11,7 @@ $users = getAllUsers();
             <p style="margin: 0 0 10px 0; color: #4a5568; font-size: 14px;">Conectado como <strong><?php echo htmlEsc($_SESSION['station_name']); ?></strong></p>
             <form method="POST" style="display: inline;">
                 <input type="hidden" name="action" value="logout">
-                <button type="submit" class="btn btn-secondary"><span class="btn-icon">🚪</span> Cerrar Sesion</button>
+                <button type="submit" class="btn btn-secondary"><span class="btn-icon">🚪</span> Cerrar Sesión</button>
             </form>
         </div>
     </div>
@@ -56,9 +56,9 @@ $users = getAllUsers();
                 <small style="color: #718096;">Se convertira automaticamente en formato slug</small>
             </div>
             <div class="form-group">
-                <label>Contrasena:</label>
+                <label>Contraseña:</label>
                 <input type="password" name="new_password" required minlength="8">
-                <small style="color: #718096;">Minimo 8 caracteres</small>
+                <small style="color: #718096;">Mínimo 8 caracteres</small>
             </div>
             <div class="form-group">
                 <label>Nombre de la Emisora:</label>

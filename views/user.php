@@ -30,7 +30,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
             <p style="margin: 0 0 10px 0; color: #4a5568; font-size: 14px;">Conectado como <strong><?php echo htmlEsc($_SESSION['station_name']); ?></strong></p>
             <form method="POST" style="display: inline;">
                 <input type="hidden" name="action" value="logout">
-                <button type="submit" class="btn btn-secondary"><span class="btn-icon">🚪</span> Cerrar Sesion</button>
+                <button type="submit" class="btn btn-secondary"><span class="btn-icon">🚪</span> Cerrar Sesión</button>
             </form>
         </div>
     </div>
@@ -60,11 +60,11 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 </div>
                 
                 <div class="form-group">
-                    <label>Categoria:</label>
+                    <label>Categoría:</label>
                     <?php if (!empty($userCategories)): ?>
                         <div style="display: flex; gap: 10px; align-items: flex-start;">
                             <select name="category" id="edit_category_select" required style="flex: 1;">
-                                <option value="">-- Selecciona una categoria --</option>
+                                <option value="">-- Selecciona una categoría --</option>
                                 <?php foreach ($userCategories as $cat):
                                     $inUse = isCategoryInUse($_SESSION['username'], $cat);
                                 ?>
@@ -170,7 +170,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 <div class="podcast-item" data-category="<?php echo htmlEsc($podcast['category']); ?>">
                                     <div class="podcast-info">
                                         <strong><?php echo htmlEsc(displayName($podcast['name'])); ?></strong>
-                                        <small>Categoria: <?php echo htmlEsc(displayName($podcast['category'])); ?> | Caducidad: <?php echo $podcastCaducidad; ?> días</small>
+                                        <small>Categoría: <?php echo htmlEsc(displayName($podcast['category'])); ?> | Caducidad: <?php echo $podcastCaducidad; ?> días</small>
                                         <small><?php echo htmlEsc($podcast['url']); ?></small>
 
                                         <?php

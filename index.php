@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $password = $_POST['password'] ?? '';
         
         if (!validateInput($username, 'username')) {
-            $error = 'Nombre de usuario invalido';
+            $error = 'Nombre de usuario inválido';
         } else {
             $result = authenticateUser($username, $password);
             if ($result['success']) {
@@ -96,9 +96,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (empty($username) || empty($password) || empty($station_name)) {
             $error = 'Todos los campos son obligatorios';
         } elseif (strlen($password) < 8) {
-            $error = 'La contrasena debe tener al menos 8 caracteres';
+            $error = 'La contraseña debe tener al menos 8 caracteres';
         } elseif (!validateInput($username, 'username')) {
-            $error = 'Nombre de usuario invalido';
+            $error = 'Nombre de usuario inválido';
         } else {
             $config = getConfig();
             if (empty($config['base_path'])) {
@@ -185,17 +185,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // ADD CATEGORY
     if ($action == 'add_category' && isLoggedIn()) {
         if (isAdmin()) {
-            $error = 'Los administradores no pueden crear categorias. Inicia sesion con un usuario de emisora.';
+            $error = 'Los administradores no pueden crear categorías. Inicia sesión con un usuario de emisora.';
         } else {
             $categoryName = trim($_POST['category_name'] ?? '');
             if (empty($categoryName)) {
-                $error = 'El nombre de la categoria es obligatorio';
+                $error = 'El nombre de la categoría es obligatorio';
             } else {
                 $result = saveUserCategory($_SESSION['username'], $categoryName);
                 if ($result) {
-                    $message = 'Categoria agregada: ' . $result;
+                    $message = 'Categoría agregada: ' . $result;
                 } else {
-                    $error = 'La categoria ya existe';
+                    $error = 'La categoría ya existe';
                 }
             }
         }
@@ -204,13 +204,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // DELETE CATEGORY
     if ($action == 'delete_category' && isLoggedIn()) {
         if (isAdmin()) {
-            $error = 'Los administradores no pueden eliminar categorias. Inicia sesion con un usuario de emisora.';
+            $error = 'Los administradores no pueden eliminar categorías. Inicia sesión con un usuario de emisora.';
         } else {
             $categoryName = $_POST['category_name'] ?? '';
             if (deleteUserCategory($_SESSION['username'], $categoryName)) {
-                $message = 'Categoria eliminada correctamente';
+                $message = 'Categoría eliminada correctamente';
             } else {
-                $error = 'Error al eliminar la categoria. Puede estar en uso por un podcast.';
+                $error = 'Error al eliminar la categoría. Puede estar en uso por un podcast.';
             }
         }
     }
