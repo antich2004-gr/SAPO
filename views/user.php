@@ -175,18 +175,20 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
                                         <?php
                                         $feedInfo = getCachedFeedInfo($podcast['url']);
-                                        if ($feedInfo['timestamp'] !== null):
-                                            $statusInfo = formatFeedStatus($feedInfo['timestamp']);
+                                        $statusInfo = formatFeedStatus($feedInfo['timestamp']);
                                         ?>
-                                            <div class="last-episode <?php echo $statusInfo['class']; ?>">
+                                        <div class="last-episode <?php echo $statusInfo['class']; ?>">
+                                            <?php if ($feedInfo['timestamp'] !== null): ?>
                                                 <?php echo $statusInfo['status']; ?> - Último episodio: <?php echo $statusInfo['date']; ?> (hace <?php echo $statusInfo['days']; ?> días)
-                                                <?php if ($feedInfo['cached'] && $feedInfo['cache_age'] > 0):
-                                                    $cacheHours = floor($feedInfo['cache_age'] / 3600);
-                                                ?>
-                                                    <span class="cache-indicator">(comprobado hace <?php echo $cacheHours; ?>h)</span>
-                                                <?php endif; ?>
-                                            </div>
-                                        <?php endif; ?>
+                                            <?php else: ?>
+                                                ⚠️ <?php echo $statusInfo['status']; ?>
+                                            <?php endif; ?>
+                                            <?php if ($feedInfo['cached'] && $feedInfo['cache_age'] > 0):
+                                                $cacheHours = floor($feedInfo['cache_age'] / 3600);
+                                            ?>
+                                                <span class="cache-indicator">(comprobado hace <?php echo $cacheHours; ?>h)</span>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
                                     <div class="podcast-actions">
                                         <a href="?edit=<?php echo htmlEsc($podcast['original_index']); ?>" class="btn btn-warning"><span class="btn-icon">✏️</span> Editar</a>
@@ -241,18 +243,20 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
                                                     <?php
                                                     $feedInfo = getCachedFeedInfo($podcast['url']);
-                                                    if ($feedInfo['timestamp'] !== null):
-                                                        $statusInfo = formatFeedStatus($feedInfo['timestamp']);
+                                                    $statusInfo = formatFeedStatus($feedInfo['timestamp']);
                                                     ?>
-                                                        <div class="last-episode <?php echo $statusInfo['class']; ?>">
+                                                    <div class="last-episode <?php echo $statusInfo['class']; ?>">
+                                                        <?php if ($feedInfo['timestamp'] !== null): ?>
                                                             <?php echo $statusInfo['status']; ?> - Último episodio: <?php echo $statusInfo['date']; ?> (hace <?php echo $statusInfo['days']; ?> días)
-                                                            <?php if ($feedInfo['cached'] && $feedInfo['cache_age'] > 0):
-                                                                $cacheHours = floor($feedInfo['cache_age'] / 3600);
-                                                            ?>
-                                                                <span class="cache-indicator">(comprobado hace <?php echo $cacheHours; ?>h)</span>
-                                                            <?php endif; ?>
-                                                        </div>
-                                                    <?php endif; ?>
+                                                        <?php else: ?>
+                                                            ⚠️ <?php echo $statusInfo['status']; ?>
+                                                        <?php endif; ?>
+                                                        <?php if ($feedInfo['cached'] && $feedInfo['cache_age'] > 0):
+                                                            $cacheHours = floor($feedInfo['cache_age'] / 3600);
+                                                        ?>
+                                                            <span class="cache-indicator">(comprobado hace <?php echo $cacheHours; ?>h)</span>
+                                                        <?php endif; ?>
+                                                    </div>
                                                 </div>
                                                 <div class="podcast-actions">
                                                     <a href="?edit=<?php echo htmlEsc($podcast['original_index']); ?>" class="btn btn-warning"><span class="btn-icon">✏️</span> Editar</a>
