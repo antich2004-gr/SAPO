@@ -48,7 +48,7 @@ function getGlobalDB() {
             'login_attempts' => []
         ];
         file_put_contents(GLOBAL_DB_FILE, json_encode($initialData, JSON_PRETTY_PRINT));
-        chmod(GLOBAL_DB_FILE, 0666);
+        chmod(GLOBAL_DB_FILE, 0640);
     }
 
     return json_decode(file_get_contents(GLOBAL_DB_FILE), true);
@@ -75,7 +75,7 @@ function getUserDB($username) {
             'categories' => []
         ];
         file_put_contents($userFile, json_encode($initialData, JSON_PRETTY_PRINT));
-        chmod($userFile, 0666);
+        chmod($userFile, 0640);
     }
 
     return json_decode(file_get_contents($userFile), true);
@@ -99,7 +99,7 @@ function getFeedCacheDB() {
 
     if (!file_exists(FEED_CACHE_FILE)) {
         file_put_contents(FEED_CACHE_FILE, json_encode([], JSON_PRETTY_PRINT));
-        chmod(FEED_CACHE_FILE, 0666);
+        chmod(FEED_CACHE_FILE, 0640);
     }
 
     return json_decode(file_get_contents(FEED_CACHE_FILE), true);
