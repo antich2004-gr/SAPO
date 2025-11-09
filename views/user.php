@@ -340,24 +340,24 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
                         if (!empty($allEpisodes)):
                         ?>
-                            <div class="episodes-list">
+                            <div style="background: #f7fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
                                 <?php foreach (array_slice($allEpisodes, 0, 30) as $episode): ?>
-                                    <div class="episode-item">
-                                        <div class="episode-icon">🎙️</div>
-                                        <div class="episode-info">
-                                            <div class="episode-name">
-                                                <?php echo htmlEsc($episode['archivo']); ?>
-                                            </div>
-                                            <div class="episode-meta">
-                                                <?php echo htmlEsc($episode['podcast']); ?>
-                                                • Descargado: <?php echo htmlEsc($episode['fecha']); ?>
-                                            </div>
-                                        </div>
+                                    <?php
+                                    // Dividir fecha en fecha y hora: "09-11-2025 11:01:48"
+                                    $parts = explode(' ', $episode['fecha']);
+                                    $date = isset($parts[0]) ? $parts[0] : '';
+                                    $time = isset($parts[1]) ? $parts[1] : '';
+                                    ?>
+                                    <div style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #2d3748;">
+                                        <?php
+                                        echo htmlEsc($date) . ' - ' . htmlEsc($time) . ' - ' .
+                                             htmlEsc($episode['podcast']) . ' - ' . htmlEsc($episode['archivo']);
+                                        ?>
                                     </div>
                                 <?php endforeach; ?>
 
                                 <?php if (count($allEpisodes) > 30): ?>
-                                    <div style="text-align: center; padding: 20px; color: #718096;">
+                                    <div style="text-align: center; padding: 20px; color: #718096; font-size: 14px;">
                                         ... y <?php echo count($allEpisodes) - 30; ?> episodios más
                                     </div>
                                 <?php endif; ?>
