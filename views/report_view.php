@@ -39,6 +39,44 @@
         </div>
     </div>
 
+    <!-- Últimos Episodios Descargados -->
+    <?php
+    // Combinar todos los episodios de todos los días
+    $allEpisodes = [];
+    if (!empty($report['podcasts_por_dia'])) {
+        foreach ($report['podcasts_por_dia'] as $dayData) {
+            foreach ($dayData['items'] as $item) {
+                $allEpisodes[] = $item;
+            }
+        }
+    }
+
+    if (!empty($allEpisodes)):
+    ?>
+    <div class="report-section">
+        <h4>🎙️ Últimos Episodios Descargados</h4>
+        <p style="color: #718096; font-size: 14px; margin-bottom: 15px;">
+            Mostrando los <?php echo min(count($allEpisodes), 20); ?> episodios más recientes
+        </p>
+        <div class="episodes-list">
+            <?php foreach (array_slice($allEpisodes, 0, 20) as $episode): ?>
+                <div class="episode-item">
+                    <div class="episode-icon">🎙️</div>
+                    <div class="episode-info">
+                        <div class="episode-name">
+                            <?php echo htmlEsc($episode['archivo']); ?>
+                        </div>
+                        <div class="episode-meta">
+                            <?php echo htmlEsc($episode['podcast']); ?>
+                            • <?php echo htmlEsc($episode['fecha']); ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Top Podcasts -->
     <?php if (!empty($report['top_podcasts'])): ?>
     <div class="report-section">
@@ -75,7 +113,11 @@
                     <div class="day-podcasts">
                         <?php foreach (array_slice($dayData['items'], 0, 5) as $item): ?>
                             <div class="day-podcast-mini">
-                                • <?php echo htmlEsc($item['podcast']); ?>
+                                <strong>• <?php echo htmlEsc($item['podcast']); ?></strong>
+                                <br>
+                                <span style="font-size: 12px; color: #718096; padding-left: 12px;">
+                                    📄 <?php echo htmlEsc($item['archivo']); ?>
+                                </span>
                             </div>
                         <?php endforeach; ?>
                         <?php if (count($dayData['items']) > 5): ?>

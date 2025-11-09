@@ -989,6 +989,53 @@ select {
     padding-left: 5px;
 }
 
+/* Estilos para lista de episodios */
+.episodes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.episode-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    background: #f7fafc;
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+    transition: all 0.2s;
+}
+
+.episode-item:hover {
+    background: #edf2f7;
+    transform: translateX(4px);
+}
+
+.episode-icon {
+    font-size: 24px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.episode-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.episode-name {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 14px;
+    margin-bottom: 4px;
+    word-break: break-all;
+}
+
+.episode-meta {
+    font-size: 12px;
+    color: #718096;
+}
+
 @media (max-width: 768px) {
     .stats-grid {
         grid-template-columns: 1fr;
