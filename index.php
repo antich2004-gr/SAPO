@@ -341,6 +341,56 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $_SESSION['feeds_updated'] = true;
         $message = "Se actualizaron $updated feeds correctamente";
     }
+
+    // LOAD EPISODES (AJAX)
+    if ($action == 'load_episodes' && isLoggedIn() && !isAdmin()) {
+        $podcastUrl = $_POST['podcast_url'] ?? '';
+
+        header('Content-Type: application/json');
+
+        if (empty($podcastUrl)) {
+            echo json_encode(['success' => false, 'error' => 'URL del podcast requerida']);
+            exit;
+        }
+
+        // Cargar episodios del RSS (con caché)
+        $episodes = getLastEpisodesFromFeed($podcastUrl, 5);
+
+        if (empty($episodes)) {
+            echo json_encode(['success' => false, 'error' => 'No se pudieron cargar los episodios']);
+            exit;
+        }
+
+        // Cargar archivos descargados
+        $downloadedFiles = getDownloadedFilesFromDone($_SESSION['username']);
+
+        // Generar HTML de los episodios
+        $html = '';
+        $diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+        foreach ($episodes as $episode) {
+            $isDownloaded = in_array(strtolower($episode['file']), $downloadedFiles);
+            $timestamp = $episode['pubDate'];
+            $diaSemana = $diasSemana[date('w', $timestamp)];
+            $date = date('d-m-Y', $timestamp);
+            $time = date('H:i', $timestamp);
+
+            $html .= '<div class="episode-row">';
+            $html .= '<span class="episode-weekday">' . htmlspecialchars($diaSemana) . '</span>';
+            $html .= '<span class="episode-date">' . htmlspecialchars($date) . '</span>';
+            $html .= '<span class="episode-time">' . htmlspecialchars($time) . '</span>';
+            $html .= '<span class="episode-file">';
+            if ($isDownloaded) {
+                $html .= '<span class="downloaded-badge">✓</span>';
+            }
+            $html .= htmlspecialchars($episode['file']);
+            $html .= '</span>';
+            $html .= '</div>';
+        }
+
+        echo json_encode(['success' => true, 'html' => $html, 'count' => count($episodes)]);
+        exit;
+    }
 }
 
 // Cargar vista

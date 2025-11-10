@@ -420,19 +420,55 @@ function loadReport(days, button) {
 }
 
 /**
- * Mostrar/ocultar episodios descargados de un podcast
+ * Mostrar/ocultar episodios descargados de un podcast (con carga AJAX bajo demanda)
  */
-function toggleEpisodes(podcastId) {
+function toggleEpisodesAjax(button, podcastId) {
     const episodesDiv = document.getElementById('episodes-' + podcastId);
     const iconSpan = document.getElementById('toggle-icon-' + podcastId);
 
-    if (episodesDiv && iconSpan) {
-        if (episodesDiv.style.display === 'none') {
-            episodesDiv.style.display = 'block';
-            iconSpan.textContent = '▲';
-        } else {
-            episodesDiv.style.display = 'none';
-            iconSpan.textContent = '▼';
-        }
+    if (!episodesDiv || !iconSpan) return;
+
+    // Si ya está visible, solo ocultar
+    if (episodesDiv.style.display === 'block') {
+        episodesDiv.style.display = 'none';
+        iconSpan.textContent = '▼';
+        return;
     }
+
+    // Si ya tiene contenido cargado, solo mostrar
+    if (episodesDiv.innerHTML.trim() !== '' && !episodesDiv.innerHTML.includes('Cargando')) {
+        episodesDiv.style.display = 'block';
+        iconSpan.textContent = '▲';
+        return;
+    }
+
+    // Cargar episodios vía AJAX
+    const podcastUrl = button.getAttribute('data-podcast-url');
+    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
+
+    // Mostrar loading
+    episodesDiv.innerHTML = '<div style="padding: 15px; text-align: center; color: #718096;">⏳ Cargando episodios...</div>';
+    episodesDiv.style.display = 'block';
+    iconSpan.textContent = '▲';
+
+    // Petición AJAX
+    fetch(window.location.href, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `action=load_episodes&podcast_url=${encodeURIComponent(podcastUrl)}&csrf_token=${encodeURIComponent(csrfToken)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.html) {
+            episodesDiv.innerHTML = data.html;
+        } else {
+            episodesDiv.innerHTML = '<div style="padding: 15px; color: #e53e3e;">❌ ' + (data.error || 'Error al cargar episodios') + '</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        episodesDiv.innerHTML = '<div style="padding: 15px; color: #e53e3e;">❌ Error al cargar episodios</div>';
+    });
 }
