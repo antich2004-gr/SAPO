@@ -106,10 +106,10 @@ function formatFeedStatus($timestamp) {
             'icon' => '?'
         ];
     }
-    
+
     $daysSince = floor((time() - $timestamp) / (60 * 60 * 24));
     $dateFormatted = date('d/m/Y', $timestamp);
-    
+
     if ($daysSince <= 30) {
         $class = 'recent';
         $status = 'Activo';
@@ -123,7 +123,7 @@ function formatFeedStatus($timestamp) {
         $status = 'Inactivo';
         $icon = 'X';
     }
-    
+
     return [
         'class' => $class,
         'status' => $status,
@@ -131,6 +131,80 @@ function formatFeedStatus($timestamp) {
         'date' => $dateFormatted,
         'days' => $daysSince
     ];
+}
+
+function getLastEpisodesFromFeed($rssFeedUrl, $limit = 5) {
+    $context = stream_context_create([
+        'http' => [
+            'timeout' => 5,
+            'user_agent' => 'SAPO-Radiobot/1.0'
+        ]
+    ]);
+
+    $xmlContent = @file_get_contents($rssFeedUrl, false, $context);
+
+    if ($xmlContent === false) {
+        return [];
+    }
+
+    libxml_use_internal_errors(true);
+    $xml = simplexml_load_string($xmlContent);
+    libxml_clear_errors();
+
+    if ($xml === false) {
+        return [];
+    }
+
+    $episodes = [];
+
+    // RSS 2.0 format
+    if (isset($xml->channel->item)) {
+        $items = array_slice((array)$xml->channel->item, 0, $limit);
+
+        foreach ($items as $item) {
+            $pubDate = isset($item->pubDate) ? strtotime((string)$item->pubDate) : null;
+            $title = isset($item->title) ? (string)$item->title : 'Sin título';
+            $enclosure = isset($item->enclosure['url']) ? (string)$item->enclosure['url'] : '';
+
+            // Extraer nombre de archivo del enclosure URL
+            $fileName = $enclosure ? basename(parse_url($enclosure, PHP_URL_PATH)) : $title;
+
+            if ($pubDate) {
+                $episodes[] = [
+                    'title' => $title,
+                    'file' => $fileName,
+                    'pubDate' => $pubDate,
+                    'dateFormatted' => date('d-m-Y H:i:s', $pubDate)
+                ];
+            }
+        }
+    }
+    // Atom format
+    elseif (isset($xml->entry)) {
+        $entries = array_slice((array)$xml->entry, 0, $limit);
+
+        foreach ($entries as $entry) {
+            $pubDate = null;
+            if (isset($entry->published)) {
+                $pubDate = strtotime((string)$entry->published);
+            } elseif (isset($entry->updated)) {
+                $pubDate = strtotime((string)$entry->updated);
+            }
+
+            $title = isset($entry->title) ? (string)$entry->title : 'Sin título';
+
+            if ($pubDate) {
+                $episodes[] = [
+                    'title' => $title,
+                    'file' => $title,
+                    'pubDate' => $pubDate,
+                    'dateFormatted' => date('d-m-Y H:i:s', $pubDate)
+                ];
+            }
+        }
+    }
+
+    return $episodes;
 }
 
 ?>

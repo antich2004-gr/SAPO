@@ -22,28 +22,15 @@ $podcasts = $podcastsWithIndex;
 $isEditing = isset($_GET['edit']) && is_numeric($_GET['edit']);
 $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
-// Cargar últimos episodios por podcast desde los informes
+// Cargar episodios por podcast desde RSS y marcar descargados según informes
 $episodesByPodcast = [];
+
+// Primero, cargar archivos descargados desde los informes
+$downloadedFiles = [];
 $reports = getAvailableReports($_SESSION['username']);
 
-// Función auxiliar para normalizar nombres de podcasts
-function normalizePodcastName($name) {
-    // Convertir a mayúsculas y reemplazar espacios/guiones por un separador común
-    $normalized = strtoupper(trim($name));
-    $normalized = str_replace([' ', '_', '-'], '|', $normalized);
-    return $normalized;
-}
-
 if (!empty($reports)) {
-    // Cargar los últimos 30 días de informes para tener suficiente histórico
-    $cutoffDate = strtotime("-30 days");
-
-    // Crear un mapa de nombres normalizados a nombres originales de podcasts
-    $podcastNameMap = [];
-    foreach ($podcasts as $podcast) {
-        $normalizedKey = normalizePodcastName($podcast['name']);
-        $podcastNameMap[$normalizedKey] = $podcast['name'];
-    }
+    $cutoffDate = strtotime("-60 days"); // Buscar en los últimos 60 días
 
     foreach ($reports as $reportInfo) {
         if ($reportInfo['timestamp'] >= $cutoffDate) {
@@ -51,36 +38,35 @@ if (!empty($reports)) {
 
             if ($reportData && !empty($reportData['podcasts_hoy'])) {
                 foreach ($reportData['podcasts_hoy'] as $episode) {
-                    $reportPodcastName = $episode['podcast'];
-                    $normalizedReportName = normalizePodcastName($reportPodcastName);
-
-                    // Buscar el nombre original del podcast en nuestro mapa
-                    $originalPodcastName = $podcastNameMap[$normalizedReportName] ?? $reportPodcastName;
-
-                    if (!isset($episodesByPodcast[$originalPodcastName])) {
-                        $episodesByPodcast[$originalPodcastName] = [];
-                    }
-
-                    // Añadir episodio con información completa
-                    $episodesByPodcast[$originalPodcastName][] = [
-                        'archivo' => $episode['archivo'],
-                        'fecha' => $episode['fecha'],
-                        'podcast' => $episode['podcast']
-                    ];
+                    // Guardar el nombre de archivo descargado
+                    $downloadedFiles[] = strtolower($episode['archivo']);
                 }
             }
         }
     }
+}
 
-    // Limitar a los últimos 5 episodios por podcast
-    foreach ($episodesByPodcast as $podcastName => $episodes) {
-        // Ordenar por fecha descendente (más reciente primero)
-        usort($episodes, function($a, $b) {
-            return strtotime($b['fecha']) - strtotime($a['fecha']);
-        });
+// Ahora, leer episodios desde el RSS de cada podcast
+foreach ($podcasts as $podcast) {
+    $feedEpisodes = getLastEpisodesFromFeed($podcast['url'], 5);
 
-        // Mantener solo los últimos 5
-        $episodesByPodcast[$podcastName] = array_slice($episodes, 0, 5);
+    if (!empty($feedEpisodes)) {
+        $episodesWithStatus = [];
+
+        foreach ($feedEpisodes as $episode) {
+            // Verificar si el archivo está descargado
+            $isDownloaded = in_array(strtolower($episode['file']), $downloadedFiles);
+
+            $episodesWithStatus[] = [
+                'file' => $episode['file'],
+                'title' => $episode['title'],
+                'pubDate' => $episode['pubDate'],
+                'dateFormatted' => $episode['dateFormatted'],
+                'downloaded' => $isDownloaded
+            ];
+        }
+
+        $episodesByPodcast[$podcast['name']] = $episodesWithStatus;
     }
 }
 ?>
@@ -263,24 +249,25 @@ if (!empty($reports)) {
                                             <div id="episodes-<?php echo $index; ?>" class="episodes-dropdown" style="display: none;">
                                                 <?php foreach ($podcastEpisodes as $ep): ?>
                                                     <?php
-                                                    $parts = explode(' ', $ep['fecha']);
-                                                    $date = isset($parts[0]) ? $parts[0] : '';
-                                                    $time = isset($parts[1]) ? $parts[1] : '';
-
                                                     // Obtener día de la semana
-                                                    $timestamp = strtotime($date);
+                                                    $timestamp = $ep['pubDate'];
                                                     $diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
                                                     $diaSemana = $diasSemana[date('w', $timestamp)];
 
-                                                    // Quitar segundos (HH:MM:SS -> HH:MM)
-                                                    $timeParts = explode(':', $time);
-                                                    $timeShort = isset($timeParts[0]) && isset($timeParts[1]) ? $timeParts[0] . ':' . $timeParts[1] : $time;
+                                                    // Formatear fecha y hora
+                                                    $date = date('d-m-Y', $timestamp);
+                                                    $time = date('H:i', $timestamp);
                                                     ?>
                                                     <div class="episode-row">
                                                         <span class="episode-weekday"><?php echo $diaSemana; ?></span>
-                                                        <span class="episode-date"><?php echo htmlEsc($date); ?></span>
-                                                        <span class="episode-time"><?php echo htmlEsc($timeShort); ?></span>
-                                                        <span class="episode-file"><?php echo htmlEsc($ep['archivo']); ?></span>
+                                                        <span class="episode-date"><?php echo $date; ?></span>
+                                                        <span class="episode-time"><?php echo $time; ?></span>
+                                                        <span class="episode-file">
+                                                            <?php if ($ep['downloaded']): ?>
+                                                                <span class="downloaded-badge">✓</span>
+                                                            <?php endif; ?>
+                                                            <?php echo htmlEsc($ep['file']); ?>
+                                                        </span>
                                                     </div>
                                                 <?php endforeach; ?>
                                             </div>
@@ -365,24 +352,25 @@ if (!empty($reports)) {
                                                         <div id="episodes-grouped-<?php echo $podcast['original_index']; ?>" class="episodes-dropdown" style="display: none;">
                                                             <?php foreach ($podcastEpisodes as $ep): ?>
                                                                 <?php
-                                                                $parts = explode(' ', $ep['fecha']);
-                                                                $date = isset($parts[0]) ? $parts[0] : '';
-                                                                $time = isset($parts[1]) ? $parts[1] : '';
-
                                                                 // Obtener día de la semana
-                                                                $timestamp = strtotime($date);
+                                                                $timestamp = $ep['pubDate'];
                                                                 $diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
                                                                 $diaSemana = $diasSemana[date('w', $timestamp)];
 
-                                                                // Quitar segundos (HH:MM:SS -> HH:MM)
-                                                                $timeParts = explode(':', $time);
-                                                                $timeShort = isset($timeParts[0]) && isset($timeParts[1]) ? $timeParts[0] . ':' . $timeParts[1] : $time;
+                                                                // Formatear fecha y hora
+                                                                $date = date('d-m-Y', $timestamp);
+                                                                $time = date('H:i', $timestamp);
                                                                 ?>
                                                                 <div class="episode-row">
                                                                     <span class="episode-weekday"><?php echo $diaSemana; ?></span>
-                                                                    <span class="episode-date"><?php echo htmlEsc($date); ?></span>
-                                                                    <span class="episode-time"><?php echo htmlEsc($timeShort); ?></span>
-                                                                    <span class="episode-file"><?php echo htmlEsc($ep['archivo']); ?></span>
+                                                                    <span class="episode-date"><?php echo $date; ?></span>
+                                                                    <span class="episode-time"><?php echo $time; ?></span>
+                                                                    <span class="episode-file">
+                                                                        <?php if ($ep['downloaded']): ?>
+                                                                            <span class="downloaded-badge">✓</span>
+                                                                        <?php endif; ?>
+                                                                        <?php echo htmlEsc($ep['file']); ?>
+                                                                    </span>
                                                                 </div>
                                                             <?php endforeach; ?>
                                                         </div>

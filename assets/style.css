@@ -1118,6 +1118,18 @@ select {
     margin-left: 6px;
 }
 
+.downloaded-badge {
+    display: inline-block;
+    background: #48bb78;
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 5px;
+    border-radius: 3px;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
 @media (max-width: 768px) {
     .stats-grid {
         grid-template-columns: 1fr;
