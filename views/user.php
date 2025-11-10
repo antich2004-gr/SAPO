@@ -26,9 +26,24 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 $episodesByPodcast = [];
 $reports = getAvailableReports($_SESSION['username']);
 
+// Función auxiliar para normalizar nombres de podcasts
+function normalizePodcastName($name) {
+    // Convertir a mayúsculas y reemplazar espacios/guiones por un separador común
+    $normalized = strtoupper(trim($name));
+    $normalized = str_replace([' ', '_', '-'], '|', $normalized);
+    return $normalized;
+}
+
 if (!empty($reports)) {
     // Cargar los últimos 30 días de informes para tener suficiente histórico
     $cutoffDate = strtotime("-30 days");
+
+    // Crear un mapa de nombres normalizados a nombres originales de podcasts
+    $podcastNameMap = [];
+    foreach ($podcasts as $podcast) {
+        $normalizedKey = normalizePodcastName($podcast['name']);
+        $podcastNameMap[$normalizedKey] = $podcast['name'];
+    }
 
     foreach ($reports as $reportInfo) {
         if ($reportInfo['timestamp'] >= $cutoffDate) {
@@ -36,14 +51,18 @@ if (!empty($reports)) {
 
             if ($reportData && !empty($reportData['podcasts_hoy'])) {
                 foreach ($reportData['podcasts_hoy'] as $episode) {
-                    $podcastName = $episode['podcast'];
+                    $reportPodcastName = $episode['podcast'];
+                    $normalizedReportName = normalizePodcastName($reportPodcastName);
 
-                    if (!isset($episodesByPodcast[$podcastName])) {
-                        $episodesByPodcast[$podcastName] = [];
+                    // Buscar el nombre original del podcast en nuestro mapa
+                    $originalPodcastName = $podcastNameMap[$normalizedReportName] ?? $reportPodcastName;
+
+                    if (!isset($episodesByPodcast[$originalPodcastName])) {
+                        $episodesByPodcast[$originalPodcastName] = [];
                     }
 
                     // Añadir episodio con información completa
-                    $episodesByPodcast[$podcastName][] = [
+                    $episodesByPodcast[$originalPodcastName][] = [
                         'archivo' => $episode['archivo'],
                         'fecha' => $episode['fecha'],
                         'podcast' => $episode['podcast']
