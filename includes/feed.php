@@ -133,7 +133,24 @@ function formatFeedStatus($timestamp) {
     ];
 }
 
-function getLastEpisodesFromFeed($rssFeedUrl, $limit = 5) {
+function getLastEpisodesFromFeed($rssFeedUrl, $limit = 5, $forceUpdate = false) {
+    $config = getConfig();
+    $cacheDuration = $config['cache_duration'] ?? 43200; // 12 horas por defecto
+    $now = time();
+    $cacheKey = 'episodes_' . md5($rssFeedUrl);
+
+    // Intentar leer del caché primero
+    if (!$forceUpdate) {
+        $cached = getCacheEntry($cacheKey);
+        if ($cached) {
+            $age = $now - $cached['cached_at'];
+            if ($age < $cacheDuration && isset($cached['episodes'])) {
+                return $cached['episodes'];
+            }
+        }
+    }
+
+    // Si no hay caché válido, leer del RSS
     $context = stream_context_create([
         'http' => [
             'timeout' => 5,
@@ -144,6 +161,10 @@ function getLastEpisodesFromFeed($rssFeedUrl, $limit = 5) {
     $xmlContent = @file_get_contents($rssFeedUrl, false, $context);
 
     if ($xmlContent === false) {
+        // Si falla, devolver caché antiguo si existe
+        if (isset($cached['episodes'])) {
+            return $cached['episodes'];
+        }
         return [];
     }
 
@@ -152,6 +173,10 @@ function getLastEpisodesFromFeed($rssFeedUrl, $limit = 5) {
     libxml_clear_errors();
 
     if ($xml === false) {
+        // Si falla el parsing, devolver caché antiguo si existe
+        if (isset($cached['episodes'])) {
+            return $cached['episodes'];
+        }
         return [];
     }
 
@@ -203,6 +228,13 @@ function getLastEpisodesFromFeed($rssFeedUrl, $limit = 5) {
             }
         }
     }
+
+    // Guardar en caché
+    setCacheEntry($cacheKey, [
+        'url' => $rssFeedUrl,
+        'episodes' => $episodes,
+        'cached_at' => $now
+    ]);
 
     return $episodes;
 }

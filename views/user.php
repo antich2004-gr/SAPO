@@ -22,31 +22,13 @@ $podcasts = $podcastsWithIndex;
 $isEditing = isset($_GET['edit']) && is_numeric($_GET['edit']);
 $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
-// Cargar episodios por podcast desde RSS y marcar descargados según informes
+// Cargar episodios por podcast desde RSS (cacheado) y marcar descargados según archivo done
 $episodesByPodcast = [];
 
-// Primero, cargar archivos descargados desde los informes
-$downloadedFiles = [];
-$reports = getAvailableReports($_SESSION['username']);
+// Primero, cargar archivos descargados desde el archivo done (mucho más rápido)
+$downloadedFiles = getDownloadedFilesFromDone($_SESSION['username']);
 
-if (!empty($reports)) {
-    $cutoffDate = strtotime("-60 days"); // Buscar en los últimos 60 días
-
-    foreach ($reports as $reportInfo) {
-        if ($reportInfo['timestamp'] >= $cutoffDate) {
-            $reportData = parseReportFile($reportInfo['file']);
-
-            if ($reportData && !empty($reportData['podcasts_hoy'])) {
-                foreach ($reportData['podcasts_hoy'] as $episode) {
-                    // Guardar el nombre de archivo descargado
-                    $downloadedFiles[] = strtolower($episode['archivo']);
-                }
-            }
-        }
-    }
-}
-
-// Ahora, leer episodios desde el RSS de cada podcast
+// Ahora, leer episodios desde el RSS de cada podcast (con caché de 12 horas)
 foreach ($podcasts as $podcast) {
     $feedEpisodes = getLastEpisodesFromFeed($podcast['url'], 5);
 

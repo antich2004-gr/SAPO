@@ -326,4 +326,49 @@ function executePodget($username) {
     ];
 }
 
+function getDownloadedFilesFromDone($username) {
+    $config = getConfig();
+    $basePath = $config['base_path'];
+
+    if (empty($basePath)) {
+        return [];
+    }
+
+    // Ruta al archivo done (formato: done.nombre_emisora)
+    // Ejemplo: /mnt/emisoras/radiobot/media/Suscripciones/done.radiobot
+    $donePath = $basePath . DIRECTORY_SEPARATOR . $username . DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . 'Suscripciones' . DIRECTORY_SEPARATOR . 'done.' . $username;
+
+    if (!file_exists($donePath)) {
+        return [];
+    }
+
+    $content = file_get_contents($donePath);
+    if ($content === false) {
+        return [];
+    }
+
+    // El archivo done contiene una línea por URL descargada
+    // Formato: https://archive.org/download/nombre/format=VBR+MP3&ignore=x.mp3
+    $lines = explode("\n", $content);
+    $downloadedFiles = [];
+
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if (!empty($line)) {
+            // Extraer el nombre del archivo de la URL
+            // Primero quitar parámetros (?...) si los hay
+            $urlWithoutParams = strtok($line, '?');
+
+            // Luego extraer el basename
+            $fileName = basename(parse_url($urlWithoutParams, PHP_URL_PATH));
+
+            if (!empty($fileName)) {
+                $downloadedFiles[] = strtolower($fileName);
+            }
+        }
+    }
+
+    return $downloadedFiles;
+}
+
 ?>
