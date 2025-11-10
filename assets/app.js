@@ -452,6 +452,7 @@ function toggleEpisodesAjax(button, podcastId) {
     iconSpan.textContent = '▲';
 
     // Petición AJAX
+    console.log('Cargando episodios para:', podcastUrl);
     fetch(window.location.href, {
         method: 'POST',
         headers: {
@@ -459,16 +460,26 @@ function toggleEpisodesAjax(button, podcastId) {
         },
         body: `action=load_episodes&podcast_url=${encodeURIComponent(podcastUrl)}&csrf_token=${encodeURIComponent(csrfToken)}`
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success && data.html) {
-            episodesDiv.innerHTML = data.html;
-        } else {
-            episodesDiv.innerHTML = '<div style="padding: 15px; color: #e53e3e;">❌ ' + (data.error || 'Error al cargar episodios') + '</div>';
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.text();
+    })
+    .then(text => {
+        console.log('Response text:', text);
+        try {
+            const data = JSON.parse(text);
+            if (data.success && data.html) {
+                episodesDiv.innerHTML = data.html;
+            } else {
+                episodesDiv.innerHTML = '<div style="padding: 15px; color: #e53e3e;">❌ ' + (data.error || 'Error al cargar episodios') + '</div>';
+            }
+        } catch (e) {
+            console.error('JSON parse error:', e);
+            episodesDiv.innerHTML = '<div style="padding: 15px; color: #e53e3e;">❌ Error al procesar respuesta</div>';
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        episodesDiv.innerHTML = '<div style="padding: 15px; color: #e53e3e;">❌ Error al cargar episodios</div>';
+        console.error('Fetch error:', error);
+        episodesDiv.innerHTML = '<div style="padding: 15px; color: #e53e3e;">❌ Error de conexión</div>';
     });
 }

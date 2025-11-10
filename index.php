@@ -357,7 +357,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $episodes = getLastEpisodesFromFeed($podcastUrl, 5);
 
         if (empty($episodes)) {
-            echo json_encode(['success' => false, 'error' => 'No se pudieron cargar los episodios']);
+            echo json_encode(['success' => false, 'error' => 'No se encontraron episodios en el feed RSS']);
             exit;
         }
 
