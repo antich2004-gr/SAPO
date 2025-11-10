@@ -1078,7 +1078,7 @@ select {
 /* Fila de episodio */
 .episode-row {
     display: flex;
-    gap: 12px;
+    gap: 6px;
     padding: 8px;
     border-bottom: 1px solid #e2e8f0;
     font-size: 13px;
@@ -1094,26 +1094,28 @@ select {
 }
 
 .episode-weekday {
-    color: #667eea;
-    font-weight: 600;
-    min-width: 85px;
+    color: #4a5568;
+    font-weight: 500;
+    min-width: 80px;
 }
 
 .episode-date {
     color: #4a5568;
-    font-weight: 600;
+    font-weight: 500;
     min-width: 90px;
 }
 
 .episode-time {
-    color: #718096;
-    min-width: 50px;
+    color: #4a5568;
+    font-weight: 500;
+    min-width: 45px;
 }
 
 .episode-file {
     color: #2d3748;
     flex: 1;
     word-break: break-word;
+    margin-left: 6px;
 }
 
 @media (max-width: 768px) {
