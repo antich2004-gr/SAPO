@@ -22,8 +22,33 @@ $podcasts = $podcastsWithIndex;
 $isEditing = isset($_GET['edit']) && is_numeric($_GET['edit']);
 $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
-// NO cargar episodios al inicio - se cargarán bajo demanda vía AJAX
-// Esto hace que la página cargue instantáneamente incluso con 50+ podcasts
+// Cargar episodios SOLO del caché (no hacer peticiones HTTP)
+// El caché se actualiza al hacer click en "Actualizar feeds" o al login si hace >24h
+$episodesByPodcast = [];
+$downloadedFiles = getDownloadedFilesFromDone($_SESSION['username']);
+
+foreach ($podcasts as $podcast) {
+    // Solo leer del caché, no hacer peticiones HTTP
+    $feedEpisodes = getLastEpisodesFromFeed($podcast['url'], 5, false, true); // true = solo caché
+
+    if (!empty($feedEpisodes)) {
+        $episodesWithStatus = [];
+
+        foreach ($feedEpisodes as $episode) {
+            $isDownloaded = in_array(strtolower($episode['file']), $downloadedFiles);
+
+            $episodesWithStatus[] = [
+                'file' => $episode['file'],
+                'title' => $episode['title'],
+                'pubDate' => $episode['pubDate'],
+                'dateFormatted' => $episode['dateFormatted'],
+                'downloaded' => $isDownloaded
+            ];
+        }
+
+        $episodesByPodcast[$podcast['name']] = $episodesWithStatus;
+    }
+}
 ?>
 
 <div class="card">
@@ -193,16 +218,33 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                             <?php endif; ?>
                                         </div>
 
-                                        <!-- Botón para cargar episodios vía AJAX (bajo demanda) -->
-                                        <button type="button" class="btn-toggle-episodes"
-                                                data-podcast-url="<?php echo htmlEsc($podcast['url']); ?>"
-                                                data-podcast-index="<?php echo $index; ?>"
-                                                onclick="toggleEpisodesAjax(this, '<?php echo $index; ?>')">
-                                            <span id="toggle-icon-<?php echo $index; ?>">▼</span> Mostrar últimos episodios
-                                        </button>
-                                        <div id="episodes-<?php echo $index; ?>" class="episodes-dropdown" style="display: none;">
-                                            <!-- Se llenará vía AJAX -->
-                                        </div>
+                                        <!-- Mostrar últimos episodios del caché -->
+                                        <?php if (isset($episodesByPodcast[$podcast['name']]) && !empty($episodesByPodcast[$podcast['name']])): ?>
+                                            <button type="button" class="btn-toggle-episodes" onclick="toggleEpisodes('<?php echo $index; ?>')">
+                                                <span id="toggle-icon-<?php echo $index; ?>">▼</span> Mostrar últimos episodios
+                                            </button>
+                                            <div id="episodes-<?php echo $index; ?>" class="episodes-dropdown" style="display: none;">
+                                                <?php
+                                                $diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                                                foreach ($episodesByPodcast[$podcast['name']] as $episode):
+                                                    $diaSemana = $diasSemana[date('w', $episode['pubDate'])];
+                                                    $date = date('d-m-Y', $episode['pubDate']);
+                                                    $time = date('H:i', $episode['pubDate']);
+                                                ?>
+                                                    <div class="episode-row">
+                                                        <span class="episode-weekday"><?php echo htmlEsc($diaSemana); ?></span>
+                                                        <span class="episode-date"><?php echo htmlEsc($date); ?></span>
+                                                        <span class="episode-time"><?php echo htmlEsc($time); ?></span>
+                                                        <span class="episode-file">
+                                                            <?php if ($episode['downloaded']): ?>
+                                                                <span class="downloaded-badge">✓</span>
+                                                            <?php endif; ?>
+                                                            <?php echo htmlEsc($episode['file']); ?>
+                                                        </span>
+                                                    </div>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                     <div class="podcast-actions">
                                         <a href="?edit=<?php echo htmlEsc($podcast['original_index']); ?>" class="btn btn-warning"><span class="btn-icon">✏️</span> Editar</a>
@@ -272,16 +314,33 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                         <?php endif; ?>
                                                     </div>
 
-                                                    <!-- Botón para cargar episodios vía AJAX (bajo demanda) -->
-                                                    <button type="button" class="btn-toggle-episodes"
-                                                            data-podcast-url="<?php echo htmlEsc($podcast['url']); ?>"
-                                                            data-podcast-index="grouped-<?php echo $podcast['original_index']; ?>"
-                                                            onclick="toggleEpisodesAjax(this, 'grouped-<?php echo $podcast['original_index']; ?>')">
-                                                        <span id="toggle-icon-grouped-<?php echo $podcast['original_index']; ?>">▼</span> Mostrar últimos episodios
-                                                    </button>
-                                                    <div id="episodes-grouped-<?php echo $podcast['original_index']; ?>" class="episodes-dropdown" style="display: none;">
-                                                        <!-- Se llenará vía AJAX -->
-                                                    </div>
+                                                    <!-- Mostrar últimos episodios del caché -->
+                                                    <?php if (isset($episodesByPodcast[$podcast['name']]) && !empty($episodesByPodcast[$podcast['name']])): ?>
+                                                        <button type="button" class="btn-toggle-episodes" onclick="toggleEpisodes('grouped-<?php echo $podcast['original_index']; ?>')">
+                                                            <span id="toggle-icon-grouped-<?php echo $podcast['original_index']; ?>">▼</span> Mostrar últimos episodios
+                                                        </button>
+                                                        <div id="episodes-grouped-<?php echo $podcast['original_index']; ?>" class="episodes-dropdown" style="display: none;">
+                                                            <?php
+                                                            $diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                                                            foreach ($episodesByPodcast[$podcast['name']] as $episode):
+                                                                $diaSemana = $diasSemana[date('w', $episode['pubDate'])];
+                                                                $date = date('d-m-Y', $episode['pubDate']);
+                                                                $time = date('H:i', $episode['pubDate']);
+                                                            ?>
+                                                                <div class="episode-row">
+                                                                    <span class="episode-weekday"><?php echo htmlEsc($diaSemana); ?></span>
+                                                                    <span class="episode-date"><?php echo htmlEsc($date); ?></span>
+                                                                    <span class="episode-time"><?php echo htmlEsc($time); ?></span>
+                                                                    <span class="episode-file">
+                                                                        <?php if ($episode['downloaded']): ?>
+                                                                            <span class="downloaded-badge">✓</span>
+                                                                        <?php endif; ?>
+                                                                        <?php echo htmlEsc($episode['file']); ?>
+                                                                    </span>
+                                                                </div>
+                                                            <?php endforeach; ?>
+                                                        </div>
+                                                    <?php endif; ?>
                                                 </div>
                                                 <div class="podcast-actions">
                                                     <a href="?edit=<?php echo htmlEsc($podcast['original_index']); ?>" class="btn btn-warning"><span class="btn-icon">✏️</span> Editar</a>

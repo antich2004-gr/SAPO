@@ -89,12 +89,17 @@ function getCachedFeedInfo($url, $forceUpdate = false) {
 function refreshAllFeeds($username) {
     $podcasts = readServerList($username);
     $updated = 0;
-    
+
     foreach ($podcasts as $podcast) {
+        // Actualizar caché de fecha del último episodio
         getCachedFeedInfo($podcast['url'], true);
+
+        // Actualizar caché de últimos episodios
+        getLastEpisodesFromFeed($podcast['url'], 5, true);
+
         $updated++;
     }
-    
+
     return $updated;
 }
 
@@ -133,7 +138,7 @@ function formatFeedStatus($timestamp) {
     ];
 }
 
-function getLastEpisodesFromFeed($rssFeedUrl, $limit = 5, $forceUpdate = false) {
+function getLastEpisodesFromFeed($rssFeedUrl, $limit = 5, $forceUpdate = false, $cacheOnly = false) {
     $config = getConfig();
     $cacheDuration = $config['cache_duration'] ?? 43200; // 12 horas por defecto
     $now = time();
@@ -142,12 +147,23 @@ function getLastEpisodesFromFeed($rssFeedUrl, $limit = 5, $forceUpdate = false) 
     // Intentar leer del caché primero
     if (!$forceUpdate) {
         $cached = getCacheEntry($cacheKey);
-        if ($cached) {
+        if ($cached && isset($cached['episodes'])) {
+            // Si solo queremos caché, devolver aunque esté expirado
+            if ($cacheOnly) {
+                return $cached['episodes'];
+            }
+
+            // Si no, verificar si es válido
             $age = $now - $cached['cached_at'];
-            if ($age < $cacheDuration && isset($cached['episodes'])) {
+            if ($age < $cacheDuration) {
                 return $cached['episodes'];
             }
         }
+    }
+
+    // Si solo queremos caché y no hay, devolver vacío
+    if ($cacheOnly) {
+        return [];
     }
 
     // Si no hay caché válido, leer del RSS
