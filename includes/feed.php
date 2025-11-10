@@ -93,10 +93,6 @@ function refreshAllFeeds($username) {
     foreach ($podcasts as $podcast) {
         // Actualizar caché de fecha del último episodio
         getCachedFeedInfo($podcast['url'], true);
-
-        // Actualizar caché de últimos episodios
-        getLastEpisodesFromFeed($podcast['url'], 5, true);
-
         $updated++;
     }
 
@@ -136,123 +132,6 @@ function formatFeedStatus($timestamp) {
         'date' => $dateFormatted,
         'days' => $daysSince
     ];
-}
-
-function getLastEpisodesFromFeed($rssFeedUrl, $limit = 5, $forceUpdate = false, $cacheOnly = false) {
-    $config = getConfig();
-    $cacheDuration = $config['cache_duration'] ?? 43200; // 12 horas por defecto
-    $now = time();
-    $cacheKey = 'episodes_' . md5($rssFeedUrl);
-
-    // Intentar leer del caché primero
-    if (!$forceUpdate) {
-        $cached = getCacheEntry($cacheKey);
-        if ($cached && isset($cached['episodes'])) {
-            // Si solo queremos caché, devolver aunque esté expirado
-            if ($cacheOnly) {
-                return $cached['episodes'];
-            }
-
-            // Si no, verificar si es válido
-            $age = $now - $cached['cached_at'];
-            if ($age < $cacheDuration) {
-                return $cached['episodes'];
-            }
-        }
-    }
-
-    // Si solo queremos caché y no hay, devolver vacío
-    if ($cacheOnly) {
-        return [];
-    }
-
-    // Si no hay caché válido, leer del RSS
-    $context = stream_context_create([
-        'http' => [
-            'timeout' => 5,
-            'user_agent' => 'SAPO-Radiobot/1.0'
-        ]
-    ]);
-
-    $xmlContent = @file_get_contents($rssFeedUrl, false, $context);
-
-    if ($xmlContent === false) {
-        // Si falla, devolver caché antiguo si existe
-        if (isset($cached['episodes'])) {
-            return $cached['episodes'];
-        }
-        return [];
-    }
-
-    libxml_use_internal_errors(true);
-    $xml = simplexml_load_string($xmlContent);
-    libxml_clear_errors();
-
-    if ($xml === false) {
-        // Si falla el parsing, devolver caché antiguo si existe
-        if (isset($cached['episodes'])) {
-            return $cached['episodes'];
-        }
-        return [];
-    }
-
-    $episodes = [];
-
-    // RSS 2.0 format
-    if (isset($xml->channel->item)) {
-        $items = array_slice((array)$xml->channel->item, 0, $limit);
-
-        foreach ($items as $item) {
-            $pubDate = isset($item->pubDate) ? strtotime((string)$item->pubDate) : null;
-            $title = isset($item->title) ? (string)$item->title : 'Sin título';
-            $enclosure = isset($item->enclosure['url']) ? (string)$item->enclosure['url'] : '';
-
-            // Extraer nombre de archivo del enclosure URL
-            $fileName = $enclosure ? basename(parse_url($enclosure, PHP_URL_PATH)) : $title;
-
-            if ($pubDate) {
-                $episodes[] = [
-                    'title' => $title,
-                    'file' => $fileName,
-                    'pubDate' => $pubDate,
-                    'dateFormatted' => date('d-m-Y H:i:s', $pubDate)
-                ];
-            }
-        }
-    }
-    // Atom format
-    elseif (isset($xml->entry)) {
-        $entries = array_slice((array)$xml->entry, 0, $limit);
-
-        foreach ($entries as $entry) {
-            $pubDate = null;
-            if (isset($entry->published)) {
-                $pubDate = strtotime((string)$entry->published);
-            } elseif (isset($entry->updated)) {
-                $pubDate = strtotime((string)$entry->updated);
-            }
-
-            $title = isset($entry->title) ? (string)$entry->title : 'Sin título';
-
-            if ($pubDate) {
-                $episodes[] = [
-                    'title' => $title,
-                    'file' => $title,
-                    'pubDate' => $pubDate,
-                    'dateFormatted' => date('d-m-Y H:i:s', $pubDate)
-                ];
-            }
-        }
-    }
-
-    // Guardar en caché
-    setCacheEntry($cacheKey, [
-        'url' => $rssFeedUrl,
-        'episodes' => $episodes,
-        'cached_at' => $now
-    ]);
-
-    return $episodes;
 }
 
 ?>

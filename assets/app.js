@@ -419,21 +419,3 @@ function loadReport(days, button) {
     });
 }
 
-/**
- * Mostrar/ocultar episodios de un podcast (simple toggle)
- */
-function toggleEpisodes(podcastId) {
-    const episodesDiv = document.getElementById('episodes-' + podcastId);
-    const iconSpan = document.getElementById('toggle-icon-' + podcastId);
-
-    if (!episodesDiv || !iconSpan) return;
-
-    // Toggle display
-    if (episodesDiv.style.display === 'block') {
-        episodesDiv.style.display = 'none';
-        iconSpan.textContent = '▼';
-    } else {
-        episodesDiv.style.display = 'block';
-        iconSpan.textContent = '▲';
-    }
-}

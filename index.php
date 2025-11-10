@@ -54,17 +54,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             if ($result['success']) {
                 loginUser($result['user']);
 
-                // Refrescar caché de feeds si hace más de 24 horas desde la última actualización
-                // Solo para usuarios no-admin
-                if (!($result['user']['is_admin'] ?? false)) {
-                    $lastUpdate = $_SESSION['last_feed_refresh'] ?? 0;
-                    $now = time();
-                    if (($now - $lastUpdate) > 86400) { // 24 horas = 86400 segundos
-                        refreshAllFeeds($result['user']['username']);
-                        $_SESSION['last_feed_refresh'] = $now;
-                    }
-                }
-
                 header('Location: ' . basename($_SERVER['PHP_SELF']));
                 exit;
             } else {
@@ -350,7 +339,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($action == 'refresh_feeds' && isLoggedIn() && !isAdmin()) {
         $updated = refreshAllFeeds($_SESSION['username']);
         $_SESSION['feeds_updated'] = true;
-        $_SESSION['last_feed_refresh'] = time();
         $message = "Se actualizaron $updated feeds correctamente";
     }
 

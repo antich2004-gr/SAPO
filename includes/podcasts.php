@@ -300,75 +300,30 @@ function importPodcasts($username, $fileContent) {
 function executePodget($username) {
     $scriptPath = '/home/radioslibres/cliente_rrll/cliente_rrll.sh';
     $logFile = '/var/log/sapo/podget_' . $username . '.log';
-    
+
     $logDir = dirname($logFile);
     if (!is_dir($logDir)) {
         @mkdir($logDir, 0755, true);
     }
-    
+
     if (!file_exists($scriptPath)) {
         return ['success' => false, 'message' => 'El script no se encontro en el servidor'];
     }
-    
+
     if (!is_executable($scriptPath)) {
         return ['success' => false, 'message' => 'El script no tiene permisos de ejecucion'];
     }
-    
+
     // Ejecutar el script como usuario radioslibres usando sudo
     $command = 'sudo -u radioslibres /bin/bash ' . escapeshellarg($scriptPath) . ' --emisora ' . escapeshellarg($username);
     $command .= ' > ' . escapeshellarg($logFile) . ' 2>&1 &';
-    
+
     exec($command, $output, $returnCode);
-    
+
     return [
         'success' => true,
         'message' => 'Las descargas se estan ejecutando. Log: ' . $logFile
     ];
-}
-
-function getDownloadedFilesFromDone($username) {
-    $config = getConfig();
-    $basePath = $config['base_path'];
-
-    if (empty($basePath)) {
-        return [];
-    }
-
-    // Ruta al archivo done (formato: done.nombre_emisora)
-    // Ejemplo: /mnt/emisoras/radiobot/media/Suscripciones/done.radiobot
-    $donePath = $basePath . DIRECTORY_SEPARATOR . $username . DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . 'Suscripciones' . DIRECTORY_SEPARATOR . 'done.' . $username;
-
-    if (!file_exists($donePath)) {
-        return [];
-    }
-
-    $content = file_get_contents($donePath);
-    if ($content === false) {
-        return [];
-    }
-
-    // El archivo done contiene una línea por URL descargada
-    // Formato: https://archive.org/download/nombre/format=VBR+MP3&ignore=x.mp3
-    $lines = explode("\n", $content);
-    $downloadedFiles = [];
-
-    foreach ($lines as $line) {
-        $line = trim($line);
-        if (!empty($line)) {
-            // Extraer el nombre del archivo de la URL
-            // Primero quitar parámetros (?...) si los hay
-            $urlWithoutParams = strtok($line, '?');
-
-            // Luego extraer el basename
-            $fileName = basename(parse_url($urlWithoutParams, PHP_URL_PATH));
-
-            if (!empty($fileName)) {
-                $downloadedFiles[] = strtolower($fileName);
-            }
-        }
-    }
-
-    return $downloadedFiles;
 }
 
 ?>
