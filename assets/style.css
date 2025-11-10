@@ -1093,6 +1093,12 @@ select {
     background: #edf2f7;
 }
 
+.episode-weekday {
+    color: #667eea;
+    font-weight: 600;
+    min-width: 85px;
+}
+
 .episode-date {
     color: #4a5568;
     font-weight: 600;
@@ -1101,7 +1107,7 @@ select {
 
 .episode-time {
     color: #718096;
-    min-width: 70px;
+    min-width: 50px;
 }
 
 .episode-file {
@@ -1142,6 +1148,7 @@ select {
         gap: 4px;
     }
 
+    .episode-weekday,
     .episode-date,
     .episode-time {
         min-width: auto;

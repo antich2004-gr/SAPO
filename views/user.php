@@ -266,10 +266,20 @@ if (!empty($reports)) {
                                                     $parts = explode(' ', $ep['fecha']);
                                                     $date = isset($parts[0]) ? $parts[0] : '';
                                                     $time = isset($parts[1]) ? $parts[1] : '';
+
+                                                    // Obtener día de la semana
+                                                    $timestamp = strtotime($date);
+                                                    $diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                                                    $diaSemana = $diasSemana[date('w', $timestamp)];
+
+                                                    // Quitar segundos (HH:MM:SS -> HH:MM)
+                                                    $timeParts = explode(':', $time);
+                                                    $timeShort = isset($timeParts[0]) && isset($timeParts[1]) ? $timeParts[0] . ':' . $timeParts[1] : $time;
                                                     ?>
                                                     <div class="episode-row">
+                                                        <span class="episode-weekday"><?php echo $diaSemana; ?></span>
                                                         <span class="episode-date"><?php echo htmlEsc($date); ?></span>
-                                                        <span class="episode-time"><?php echo htmlEsc($time); ?></span>
+                                                        <span class="episode-time"><?php echo htmlEsc($timeShort); ?></span>
                                                         <span class="episode-file"><?php echo htmlEsc($ep['archivo']); ?></span>
                                                     </div>
                                                 <?php endforeach; ?>
@@ -358,10 +368,20 @@ if (!empty($reports)) {
                                                                 $parts = explode(' ', $ep['fecha']);
                                                                 $date = isset($parts[0]) ? $parts[0] : '';
                                                                 $time = isset($parts[1]) ? $parts[1] : '';
+
+                                                                // Obtener día de la semana
+                                                                $timestamp = strtotime($date);
+                                                                $diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                                                                $diaSemana = $diasSemana[date('w', $timestamp)];
+
+                                                                // Quitar segundos (HH:MM:SS -> HH:MM)
+                                                                $timeParts = explode(':', $time);
+                                                                $timeShort = isset($timeParts[0]) && isset($timeParts[1]) ? $timeParts[0] . ':' . $timeParts[1] : $time;
                                                                 ?>
                                                                 <div class="episode-row">
+                                                                    <span class="episode-weekday"><?php echo $diaSemana; ?></span>
                                                                     <span class="episode-date"><?php echo htmlEsc($date); ?></span>
-                                                                    <span class="episode-time"><?php echo htmlEsc($time); ?></span>
+                                                                    <span class="episode-time"><?php echo htmlEsc($timeShort); ?></span>
                                                                     <span class="episode-file"><?php echo htmlEsc($ep['archivo']); ?></span>
                                                                 </div>
                                                             <?php endforeach; ?>
