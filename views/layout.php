@@ -18,6 +18,15 @@
         <div class="subtitle">Sistema de Automatización de Podcasts para Radiobot</div>
     </div>
 
+    <?php if (isLoggedIn()): ?>
+        <!-- Menú de navegación -->
+        <div style="background: #f7fafc; padding: 15px; border-radius: 8px; margin-bottom: 30px; text-align: center; border: 1px solid #e2e8f0;">
+            <a href="index.php" style="margin: 0 15px; color: #667eea; text-decoration: none; font-weight: 600;">🏠 Inicio</a>
+            <a href="help.php" style="margin: 0 15px; color: #3182ce; text-decoration: none; font-weight: 500;">❓ Ayuda</a>
+            <a href="about.php" style="margin: 0 15px; color: #3182ce; text-decoration: none; font-weight: 500;">📖 Acerca de</a>
+        </div>
+    <?php endif; ?>
+
     <?php if ($message): ?>
         <div class="alert alert-success"><?php echo htmlEsc($message); ?></div>
     <?php endif; ?>
