@@ -587,60 +587,64 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 <!-- MODAL DE GESTIÓN DE CATEGORÍAS -->
 <div id="categoryModal" class="modal">
     <div class="modal-content" style="max-width: 600px;">
-        <span class="close" onclick="closeCategoryManager()">&times;</span>
-        <h3>Gestión de Categorías</h3>
+        <h3>
+            <span class="close" onclick="closeCategoryManager()">&times;</span>
+            Gestión de Categorías
+        </h3>
 
-        <form method="POST" style="margin-top: 20px;">
-            <input type="hidden" name="action" value="add_category">
-            <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-            <div class="form-group">
-                <label>Nueva Categoría:</label>
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" name="category_name" id="new_category_input" required placeholder="Ej: Deportes, Noticias..." maxlength="50" style="flex: 1;">
-                    <button type="submit" class="btn btn-success"><span class="btn-icon">✅</span> Añadir</button>
+        <div>
+            <form method="POST">
+                <input type="hidden" name="action" value="add_category">
+                <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                <div class="form-group">
+                    <label>Nueva Categoría:</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" name="category_name" id="new_category_input" required placeholder="Ej: Deportes, Noticias..." maxlength="50" style="flex: 1;">
+                        <button type="submit" class="btn btn-success"><span class="btn-icon">✅</span> Añadir</button>
+                    </div>
                 </div>
-            </div>
-        </form>
+            </form>
 
-        <div style="margin-top: 30px;">
-            <h4>Categorías Existentes:</h4>
-            <?php if (!empty($userCategories)): ?>
-                <div class="category-list" style="margin-top: 15px;">
-                    <?php foreach ($userCategories as $cat):
-                        $stats = getCategoryStats($_SESSION['username'], $cat);
-                        $isEmpty = $stats['files'] == 0 && $stats['podcasts'] == 0;
-                    ?>
-                        <div class="category-item-extended">
-                            <div class="category-info">
-                                <div class="category-name"><?php echo htmlEsc(displayName($cat)); ?></div>
-                                <div class="category-stats">
-                                    <?php echo $stats['podcasts']; ?> podcast<?php echo $stats['podcasts'] != 1 ? 's' : ''; ?> ·
-                                    <?php echo $stats['files']; ?> archivo<?php echo $stats['files'] != 1 ? 's' : ''; ?>
+            <div style="margin-top: 30px;">
+                <h4>Categorías Existentes:</h4>
+                <?php if (!empty($userCategories)): ?>
+                    <div class="category-list" style="margin-top: 15px;">
+                        <?php foreach ($userCategories as $cat):
+                            $stats = getCategoryStats($_SESSION['username'], $cat);
+                            $isEmpty = $stats['files'] == 0 && $stats['podcasts'] == 0;
+                        ?>
+                            <div class="category-item-extended">
+                                <div class="category-info">
+                                    <div class="category-name"><?php echo htmlEsc(displayName($cat)); ?></div>
+                                    <div class="category-stats">
+                                        <?php echo $stats['podcasts']; ?> podcast<?php echo $stats['podcasts'] != 1 ? 's' : ''; ?> ·
+                                        <?php echo $stats['files']; ?> archivo<?php echo $stats['files'] != 1 ? 's' : ''; ?>
+                                        <?php if ($isEmpty): ?>
+                                            <span class="badge-empty">Vacía</span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <div class="category-actions">
+                                    <button type="button" class="btn-action" onclick="renameCategoryPrompt('<?php echo htmlEsc($cat); ?>')" title="Renombrar">
+                                        ✏️
+                                    </button>
                                     <?php if ($isEmpty): ?>
-                                        <span class="badge-empty">Vacía</span>
+                                        <button type="button" class="btn-delete-small" onclick="deleteCategoryConfirm('<?php echo htmlEsc($cat); ?>')" title="Eliminar">
+                                            🗑️
+                                        </button>
+                                    <?php else: ?>
+                                        <button type="button" class="btn-action" disabled title="No se puede eliminar: contiene archivos">
+                                            🔒
+                                        </button>
                                     <?php endif; ?>
                                 </div>
                             </div>
-                            <div class="category-actions">
-                                <button type="button" class="btn-action" onclick="renameCategoryPrompt('<?php echo htmlEsc($cat); ?>')" title="Renombrar">
-                                    ✏️
-                                </button>
-                                <?php if ($isEmpty): ?>
-                                    <button type="button" class="btn-delete-small" onclick="deleteCategoryConfirm('<?php echo htmlEsc($cat); ?>')" title="Eliminar">
-                                        🗑️
-                                    </button>
-                                <?php else: ?>
-                                    <button type="button" class="btn-action" disabled title="No se puede eliminar: contiene archivos">
-                                        🔒
-                                    </button>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php else: ?>
-                <p style="color: #718096; margin-top: 15px;">No hay categorías creadas aún.</p>
-            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <p style="color: #718096; margin-top: 15px;">No hay categorías creadas aún.</p>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 </div>
