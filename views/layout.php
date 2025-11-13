@@ -32,7 +32,7 @@
         unset($_SESSION['imported_categories']);
     ?>
         <div class="alert alert-success">
-            Se han importado automaticamente <?php echo $count; ?> podcast<?php echo $count > 1 ? 's' : ''; ?> desde tu serverlist.txt existente.
+            Se han importado automaticamente <?php echo htmlEsc($count); ?> podcast<?php echo $count > 1 ? 's' : ''; ?> desde tu serverlist.txt existente.
         </div>
     <?php endif; ?>
 

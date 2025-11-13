@@ -7,31 +7,31 @@
     <!-- Estadísticas Generales -->
     <div class="stats-grid">
         <div class="stat-card stat-success">
-            <div class="stat-number"><?php echo $report['stats']['descargados']; ?></div>
+            <div class="stat-number"><?php echo htmlEsc($report['stats']['descargados']); ?></div>
             <div class="stat-label">Descargados</div>
             <div class="stat-average">
-                ~<?php echo $report['promedios']['descargados_por_dia']; ?> por día
+                ~<?php echo htmlEsc($report['promedios']['descargados_por_dia']); ?> por día
             </div>
         </div>
 
         <div class="stat-card stat-warning">
-            <div class="stat-number"><?php echo $report['stats']['eliminados']; ?></div>
+            <div class="stat-number"><?php echo htmlEsc($report['stats']['eliminados']); ?></div>
             <div class="stat-label">Eliminados</div>
             <div class="stat-average">
-                ~<?php echo $report['promedios']['eliminados_por_dia']; ?> por día
+                ~<?php echo htmlEsc($report['promedios']['eliminados_por_dia']); ?> por día
             </div>
         </div>
 
         <div class="stat-card stat-info">
-            <div class="stat-number"><?php echo $report['total_dias']; ?></div>
+            <div class="stat-number"><?php echo htmlEsc($report['total_dias']); ?></div>
             <div class="stat-label">Días con actividad</div>
             <div class="stat-average">
-                <?php echo $report['fecha_inicio']; ?> - <?php echo $report['fecha_fin']; ?>
+                <?php echo htmlEsc($report['fecha_inicio']); ?> - <?php echo htmlEsc($report['fecha_fin']); ?>
             </div>
         </div>
 
         <div class="stat-card stat-neutral">
-            <div class="stat-number"><?php echo count($report['top_podcasts']); ?></div>
+            <div class="stat-number"><?php echo htmlEsc(count($report['top_podcasts'])); ?></div>
             <div class="stat-label">Podcasts activos</div>
             <div class="stat-average">
                 con descargas
@@ -56,7 +56,7 @@
     <div class="report-section">
         <h4>🎙️ Últimos Episodios Descargados</h4>
         <p style="color: #718096; font-size: 14px; margin-bottom: 15px;">
-            Mostrando los <?php echo min(count($allEpisodes), 20); ?> episodios más recientes
+            Mostrando los <?php echo htmlEsc(min(count($allEpisodes), 20)); ?> episodios más recientes
         </p>
         <div class="episodes-list">
             <?php foreach (array_slice($allEpisodes, 0, 20) as $episode): ?>
@@ -87,9 +87,9 @@
             foreach ($report['top_podcasts'] as $podcastName => $count):
             ?>
                 <div class="top-podcast-item">
-                    <div class="top-position">#<?php echo $position; ?></div>
+                    <div class="top-position">#<?php echo htmlEsc($position); ?></div>
                     <div class="top-podcast-name"><?php echo htmlEsc($podcastName); ?></div>
-                    <div class="top-podcast-count"><?php echo $count; ?> episodios</div>
+                    <div class="top-podcast-count"><?php echo htmlEsc($count); ?> episodios</div>
                 </div>
             <?php
                 $position++;
@@ -108,7 +108,7 @@
                 <div class="day-activity-item">
                     <div class="day-header">
                         <span class="day-date"><?php echo htmlEsc($dayData['fecha']); ?></span>
-                        <span class="day-count"><?php echo $dayData['count']; ?> descargas</span>
+                        <span class="day-count"><?php echo htmlEsc($dayData['count']); ?> descargas</span>
                     </div>
                     <div class="day-podcasts">
                         <?php foreach (array_slice($dayData['items'], 0, 5) as $item): ?>
@@ -122,7 +122,7 @@
                         <?php endforeach; ?>
                         <?php if (count($dayData['items']) > 5): ?>
                             <div class="day-podcast-mini" style="color: #a0aec0; font-style: italic;">
-                                ... y <?php echo count($dayData['items']) - 5; ?> más
+                                ... y <?php echo htmlEsc(count($dayData['items']) - 5); ?> más
                             </div>
                         <?php endif; ?>
                     </div>
@@ -137,7 +137,7 @@
     <div class="report-section">
         <h4>🗑️ Archivos Eliminados por Día</h4>
         <p style="color: #718096; font-size: 14px; margin-bottom: 15px;">
-            Total: <?php echo $report['stats']['eliminados']; ?> archivos
+            Total: <?php echo htmlEsc($report['stats']['eliminados']); ?> archivos
             (<?php echo $report['stats']['eliminados_caducidad']; ?> por caducidad,
             <?php echo $report['stats']['eliminados_reemplazo']; ?> por reemplazo)
         </p>
@@ -146,7 +146,7 @@
                 <div class="day-activity-item" style="border-left-color: #fc8181;">
                     <div class="day-header">
                         <span class="day-date"><?php echo htmlEsc($dayData['fecha']); ?></span>
-                        <span class="day-count" style="background: #fc8181;"><?php echo $dayData['count']; ?> eliminados</span>
+                        <span class="day-count" style="background: #fc8181;"><?php echo htmlEsc($dayData['count']); ?> eliminados</span>
                     </div>
                     <div class="day-podcasts">
                         <?php foreach (array_slice($dayData['items'], 0, 5) as $item): ?>
@@ -157,7 +157,7 @@
                         <?php endforeach; ?>
                         <?php if (count($dayData['items']) > 5): ?>
                             <div class="day-podcast-mini" style="color: #a0aec0; font-style: italic;">
-                                ... y <?php echo count($dayData['items']) - 5; ?> más
+                                ... y <?php echo htmlEsc(count($dayData['items']) - 5); ?> más
                             </div>
                         <?php endif; ?>
                     </div>
@@ -190,7 +190,7 @@
             <?php foreach ($report['carpetas_vacias'] as $folder): ?>
                 <div class="empty-folder-item">
                     <span class="folder-name"><?php echo htmlEsc($folder['nombre']); ?></span>
-                    <span class="folder-days">Vacía desde hace <?php echo $folder['dias']; ?> días</span>
+                    <span class="folder-days">Vacía desde hace <?php echo htmlEsc($folder['dias']); ?> días</span>
                 </div>
             <?php endforeach; ?>
         </div>

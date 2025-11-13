@@ -52,7 +52,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
             <form method="POST">
                 <input type="hidden" name="action" value="edit_podcast">
                 <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                <input type="hidden" name="index" value="<?php echo $editIndex; ?>">
+                <input type="hidden" name="index" value="<?php echo htmlEsc($editIndex); ?>">
                 
                 <div class="form-group">
                     <label>URL del RSS:</label>
@@ -90,7 +90,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 
                 <div class="form-group">
                     <label>Días de caducidad:</label>
-                    <input type="number" name="caducidad" value="<?php echo $podcastCaducidad; ?>" min="1" max="365" required>
+                    <input type="number" name="caducidad" value="<?php echo htmlEsc($podcastCaducidad); ?>" min="1" max="365" required>
                     <small style="color: #718096;">Los archivos se eliminarán después de X días sin descargas nuevas (por defecto: 30 días)</small>
                 </div>
                 
@@ -148,7 +148,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                             return $p['category'] === $cat;
                                         }));
                                     ?>
-                                        <option value="<?php echo htmlEsc($cat); ?>"><?php echo htmlEsc(displayName($cat)); ?> (<?php echo $countInCategory; ?>)</option>
+                                        <option value="<?php echo htmlEsc($cat); ?>"><?php echo htmlEsc(displayName($cat)); ?> (<?php echo htmlEsc($countInCategory); ?>)</option>
                                     <?php endforeach; ?>
                                 </select>
                                 
@@ -170,7 +170,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 <div class="podcast-item" data-category="<?php echo htmlEsc($podcast['category']); ?>">
                                     <div class="podcast-info">
                                         <strong><?php echo htmlEsc(displayName($podcast['name'])); ?></strong>
-                                        <small>Categoría: <?php echo htmlEsc(displayName($podcast['category'])); ?> | Caducidad: <?php echo $podcastCaducidad; ?> días</small>
+                                        <small>Categoría: <?php echo htmlEsc(displayName($podcast['category'])); ?> | Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días</small>
                                         <small><?php echo htmlEsc($podcast['url']); ?></small>
 
                                         <?php
@@ -179,14 +179,14 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         ?>
                                         <div class="last-episode <?php echo $statusInfo['class']; ?>">
                                             <?php if ($feedInfo['timestamp'] !== null): ?>
-                                                <?php echo $statusInfo['status']; ?> - Último episodio: <?php echo $statusInfo['date']; ?> (hace <?php echo $statusInfo['days']; ?> días)
+                                                <?php echo htmlEsc($statusInfo['status']); ?> - Último episodio: <?php echo htmlEsc($statusInfo['date']); ?> (hace <?php echo htmlEsc($statusInfo['days']); ?> días)
                                             <?php else: ?>
-                                                ⚠️ <?php echo $statusInfo['status']; ?>
+                                                ⚠️ <?php echo htmlEsc($statusInfo['status']); ?>
                                             <?php endif; ?>
                                             <?php if ($feedInfo['cached'] && $feedInfo['cache_age'] > 0):
                                                 $cacheHours = floor($feedInfo['cache_age'] / 3600);
                                             ?>
-                                                <span class="cache-indicator">(comprobado hace <?php echo $cacheHours; ?>h)</span>
+                                                <span class="cache-indicator">(comprobado hace <?php echo htmlEsc($cacheHours); ?>h)</span>
                                             <?php endif; ?>
                                         </div>
                                     </div>
@@ -228,7 +228,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 <div class="category-group" data-category="<?php echo htmlEsc($category); ?>">
                                     <div class="category-header">
                                         <h4><?php echo htmlEsc(displayName($category)); ?></h4>
-                                        <span class="category-count"><?php echo count($categoryPodcasts); ?> podcast<?php echo count($categoryPodcasts) > 1 ? 's' : ''; ?></span>
+                                        <span class="category-count"><?php echo htmlEsc(count($categoryPodcasts)); ?> podcast<?php echo count($categoryPodcasts) > 1 ? 's' : ''; ?></span>
                                     </div>
                                     
                                     <div class="podcast-list">
@@ -238,7 +238,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                             <div class="podcast-item">
                                                 <div class="podcast-info">
                                                     <strong><?php echo htmlEsc(displayName($podcast['name'])); ?></strong>
-                                                    <small>Caducidad: <?php echo $podcastCaducidad; ?> días</small>
+                                                    <small>Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días</small>
                                                     <small><?php echo htmlEsc($podcast['url']); ?></small>
 
                                                     <?php
@@ -247,14 +247,14 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                     ?>
                                                     <div class="last-episode <?php echo $statusInfo['class']; ?>">
                                                         <?php if ($feedInfo['timestamp'] !== null): ?>
-                                                            <?php echo $statusInfo['status']; ?> - Último episodio: <?php echo $statusInfo['date']; ?> (hace <?php echo $statusInfo['days']; ?> días)
+                                                            <?php echo htmlEsc($statusInfo['status']); ?> - Último episodio: <?php echo htmlEsc($statusInfo['date']); ?> (hace <?php echo htmlEsc($statusInfo['days']); ?> días)
                                                         <?php else: ?>
-                                                            ⚠️ <?php echo $statusInfo['status']; ?>
+                                                            ⚠️ <?php echo htmlEsc($statusInfo['status']); ?>
                                                         <?php endif; ?>
                                                         <?php if ($feedInfo['cached'] && $feedInfo['cache_age'] > 0):
                                                             $cacheHours = floor($feedInfo['cache_age'] / 3600);
                                                         ?>
-                                                            <span class="cache-indicator">(comprobado hace <?php echo $cacheHours; ?>h)</span>
+                                                            <span class="cache-indicator">(comprobado hace <?php echo htmlEsc($cacheHours); ?>h)</span>
                                                         <?php endif; ?>
                                                     </div>
                                                 </div>
@@ -358,7 +358,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
                                 <?php if (count($allEpisodes) > 30): ?>
                                     <div style="text-align: center; padding: 20px; color: #718096; font-size: 14px;">
-                                        ... y <?php echo count($allEpisodes) - 30; ?> episodios más
+                                        ... y <?php echo htmlEsc(count($allEpisodes) - 30); ?> episodios más
                                     </div>
                                 <?php endif; ?>
                             </div>

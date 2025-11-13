@@ -90,7 +90,7 @@ $users = getAllUsers();
                 <form method="POST" style="display: inline;">
                     <input type="hidden" name="action" value="delete_user">
                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                    <input type="hidden" name="user_id" value="<?php echo $user['id']; ?>">
+                    <input type="hidden" name="user_id" value="<?php echo htmlEsc($user['id']); ?>">
                     <button type="submit" class="btn btn-danger" onclick="return confirm('Eliminar este usuario?')"><span class="btn-icon">🗑️</span> Eliminar</button>
                 </form>
             </div>
