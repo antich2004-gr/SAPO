@@ -28,6 +28,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
         <h2>Mis Podcasts</h2>
         <div style="text-align: right;">
             <p style="margin: 0 0 10px 0; color: #4a5568; font-size: 14px;">Conectado como <strong><?php echo htmlEsc($_SESSION['station_name']); ?></strong></p>
+            <a href="?page=help" class="btn btn-secondary" style="margin-right: 10px;"><span class="btn-icon">📖</span> Ayuda</a>
             <form method="POST" style="display: inline;">
                 <input type="hidden" name="action" value="logout">
                 <button type="submit" class="btn btn-secondary"><span class="btn-icon">🚪</span> Cerrar Sesión</button>
