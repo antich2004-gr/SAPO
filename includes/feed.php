@@ -63,33 +63,35 @@ function getLastEpisodeDate($rssFeedUrl) {
             'user_agent' => 'SAPO-Radiobot/1.0'
         ]
     ]);
-    
+
     $xmlContent = @file_get_contents($rssFeedUrl, false, $context);
-    
+
     if ($xmlContent === false) {
         return null;
     }
-    
+
     libxml_use_internal_errors(true);
 
-    // Prevenir ataques XXE (XML External Entity) con LIBXML_NOENT
-    $xml = simplexml_load_string($xmlContent, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_NOCDATA);
+    // Prevenir ataques XXE (XML External Entity)
+    // LIBXML_NONET: Deshabilita carga de recursos externos
+    // LIBXML_NOCDATA: Procesa CDATA como texto
+    $xml = simplexml_load_string($xmlContent, 'SimpleXMLElement', LIBXML_NONET | LIBXML_NOCDATA);
 
     libxml_clear_errors();
-    
+
     if ($xml === false) {
         return null;
     }
-    
+
     $lastDate = null;
-    
+
     if (isset($xml->channel->item[0])) {
         $firstItem = $xml->channel->item[0];
         if (isset($firstItem->pubDate)) {
             $lastDate = (string)$firstItem->pubDate;
         }
     }
-    
+
     if (!$lastDate && isset($xml->entry[0])) {
         $firstEntry = $xml->entry[0];
         if (isset($firstEntry->published)) {
@@ -98,14 +100,14 @@ function getLastEpisodeDate($rssFeedUrl) {
             $lastDate = (string)$firstEntry->updated;
         }
     }
-    
+
     if ($lastDate) {
         $timestamp = strtotime($lastDate);
         if ($timestamp !== false) {
             return $timestamp;
         }
     }
-    
+
     return null;
 }
 
@@ -114,7 +116,7 @@ function getCachedFeedInfo($url, $forceUpdate = false) {
     $cacheDuration = $config['cache_duration'] ?? 43200;
     $now = time();
     $cacheKey = md5($url);
-    
+
     if (!$forceUpdate) {
         $cached = getCacheEntry($cacheKey);
         if ($cached) {
@@ -128,15 +130,15 @@ function getCachedFeedInfo($url, $forceUpdate = false) {
             }
         }
     }
-    
+
     $lastEpisode = getLastEpisodeDate($url);
-    
+
     setCacheEntry($cacheKey, [
         'url' => $url,
         'last_episode' => $lastEpisode,
         'cached_at' => $now
     ]);
-    
+
     return [
         'timestamp' => $lastEpisode,
         'cached' => false,

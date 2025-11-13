@@ -178,10 +178,11 @@ if (!validateInput($username, 'username')) {
 
 #### XML External Entity (XXE):
 ✅ **Prevención mediante**:
-- Uso de `libxml_use_internal_errors(true)`
-- Sin carga de entidades externas
+- Uso de `LIBXML_NONET` para deshabilitar carga de recursos externos
+- Uso de `LIBXML_NOCDATA` para procesar CDATA como texto
+- Validación SSRF previa de URLs (bloquea IPs privadas y localhost)
 - Timeout en lectura de feeds RSS (5 segundos)
-
+- User-Agent identificativo para rastreo de peticiones
 ---
 
 ### 9. Gestión de Feeds RSS Externos
