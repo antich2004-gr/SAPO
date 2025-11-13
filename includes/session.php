@@ -48,11 +48,19 @@ function loginUser($user) {
     $_SESSION['username'] = $user['username'];
     $_SESSION['station_name'] = $user['station_name'];
     $_SESSION['is_admin'] = $user['is_admin'] ?? false;
+
+    // Regenerar CSRF token en login para prevenir fijación de sesión
+    unset($_SESSION['csrf_token']);
+
     session_regenerate_id(true);
 }
 
 function logoutUser() {
+    // Destruir sesión actual
     session_destroy();
+
+    // Iniciar nueva sesión limpia (regenera CSRF automáticamente)
+    session_start();
 }
 
 function requireLogin() {
