@@ -223,9 +223,20 @@ function movePodcastFiles($username, $podcastName, $oldCategory, $newCategory) {
     $podcastDirInOldCategory = $oldCategoryPath . DIRECTORY_SEPARATOR . $podcastName;
     $podcastDirInNewCategory = $newCategoryPath . DIRECTORY_SEPARATOR . $podcastName;
 
+    // DEBUG: Log de rutas
+    error_log("SAPO DEBUG movePodcastFiles: Buscando directorio en: $podcastDirInOldCategory");
+    error_log("SAPO DEBUG movePodcastFiles: Destino: $podcastDirInNewCategory");
+    error_log("SAPO DEBUG movePodcastFiles: Directorio existe? " . (is_dir($podcastDirInOldCategory) ? 'SI' : 'NO'));
+
     // Si el directorio del podcast no existe en origen, no hay nada que mover
     if (!is_dir($podcastDirInOldCategory)) {
-        return ['success' => true, 'moved' => 0, 'message' => 'El directorio del podcast no existe en la categoría origen'];
+        // Listar contenido de la categoría origen para debug
+        if (is_dir($oldCategoryPath)) {
+            $filesInCategory = scandir($oldCategoryPath);
+            error_log("SAPO DEBUG movePodcastFiles: Contenido de $oldCategoryPath: " . json_encode($filesInCategory));
+        }
+
+        return ['success' => true, 'moved' => 0, 'message' => 'El directorio del podcast no existe en la categoría origen. Buscado: ' . $podcastDirInOldCategory];
     }
 
     // Si el directorio ya existe en destino, error (no sobrescribir directorios)
