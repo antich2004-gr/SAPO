@@ -221,23 +221,52 @@ function movePodcastFiles($username, $podcastName, $oldCategory, $newCategory) {
     // ESTRUCTURA REAL: /Categoría/NombrePodcast/archivos.mp3
     // Necesitamos mover el DIRECTORIO completo del podcast
     $podcastDirInOldCategory = $oldCategoryPath . DIRECTORY_SEPARATOR . $podcastName;
-    $podcastDirInNewCategory = $newCategoryPath . DIRECTORY_SEPARATOR . $podcastName;
 
-    // DEBUG: Log de rutas
+    // DEBUG: Log de búsqueda inicial
     error_log("SAPO DEBUG movePodcastFiles: Buscando directorio en: $podcastDirInOldCategory");
-    error_log("SAPO DEBUG movePodcastFiles: Destino: $podcastDirInNewCategory");
-    error_log("SAPO DEBUG movePodcastFiles: Directorio existe? " . (is_dir($podcastDirInOldCategory) ? 'SI' : 'NO'));
 
-    // Si el directorio del podcast no existe en origen, no hay nada que mover
-    if (!is_dir($podcastDirInOldCategory)) {
-        // Listar contenido de la categoría origen para debug
+    // IMPORTANTE: Podget a veces agrega sufijos a los nombres de directorios
+    // Ejemplo: "podcast_OPT_FILENAME_RENAME_TITLETAG_OPT_FILENAME_RENAME_MDATE"
+    // Si no existe exactamente, buscar directorios que empiecen con el nombre del podcast
+    $actualPodcastDir = null;
+    $actualPodcastDirName = null;
+
+    if (is_dir($podcastDirInOldCategory)) {
+        // Coincidencia exacta
+        $actualPodcastDir = $podcastDirInOldCategory;
+        $actualPodcastDirName = $podcastName;
+        error_log("SAPO DEBUG movePodcastFiles: Encontrado con coincidencia exacta");
+    } else {
+        // Buscar directorios que empiecen con el nombre del podcast
+        error_log("SAPO DEBUG movePodcastFiles: No existe exactamente, buscando coincidencias parciales...");
         if (is_dir($oldCategoryPath)) {
-            $filesInCategory = scandir($oldCategoryPath);
-            error_log("SAPO DEBUG movePodcastFiles: Contenido de $oldCategoryPath: " . json_encode($filesInCategory));
-        }
+            $dirs = scandir($oldCategoryPath);
+            foreach ($dirs as $dir) {
+                if ($dir === '.' || $dir === '..') continue;
 
-        return ['success' => true, 'moved' => 0, 'message' => 'El directorio del podcast no existe en la categoría origen. Buscado: ' . $podcastDirInOldCategory];
+                $fullPath = $oldCategoryPath . DIRECTORY_SEPARATOR . $dir;
+                if (is_dir($fullPath) && strpos($dir, $podcastName) === 0) {
+                    // Encontrado un directorio que empieza con el nombre del podcast
+                    $actualPodcastDir = $fullPath;
+                    $actualPodcastDirName = $dir;
+                    error_log("SAPO DEBUG movePodcastFiles: Encontrada coincidencia parcial: $dir");
+                    break;
+                }
+            }
+        }
     }
+
+    // Si no se encontró ningún directorio (ni exacto ni similar)
+    if ($actualPodcastDir === null) {
+        error_log("SAPO DEBUG movePodcastFiles: No se encontró ningún directorio que coincida");
+        return ['success' => true, 'moved' => 0, 'message' => 'El directorio del podcast no existe en la categoría origen'];
+    }
+
+    // Construir la ruta destino usando el nombre real del directorio encontrado
+    $podcastDirInNewCategory = $newCategoryPath . DIRECTORY_SEPARATOR . $actualPodcastDirName;
+
+    error_log("SAPO DEBUG movePodcastFiles: Origen final: $actualPodcastDir");
+    error_log("SAPO DEBUG movePodcastFiles: Destino final: $podcastDirInNewCategory");
 
     // Si el directorio ya existe en destino, error (no sobrescribir directorios)
     if (is_dir($podcastDirInNewCategory)) {
@@ -248,11 +277,11 @@ function movePodcastFiles($username, $podcastName, $oldCategory, $newCategory) {
     }
 
     // Contar archivos antes de mover (para estadísticas)
-    $filesBeforeMove = glob($podcastDirInOldCategory . DIRECTORY_SEPARATOR . '*.{mp3,ogg,wav,m4a}', GLOB_BRACE);
+    $filesBeforeMove = glob($actualPodcastDir . DIRECTORY_SEPARATOR . '*.{mp3,ogg,wav,m4a}', GLOB_BRACE);
     $fileCount = $filesBeforeMove ? count($filesBeforeMove) : 0;
 
     // Intentar mover el directorio completo
-    $renamed = @rename($podcastDirInOldCategory, $podcastDirInNewCategory);
+    $renamed = @rename($actualPodcastDir, $podcastDirInNewCategory);
 
     if ($renamed) {
         return [
@@ -265,7 +294,7 @@ function movePodcastFiles($username, $podcastName, $oldCategory, $newCategory) {
         $errorMsg = $lastError ? $lastError['message'] : 'Error desconocido';
         return [
             'success' => false,
-            'error' => 'No se pudo mover el directorio del podcast. Origen: ' . $podcastDirInOldCategory . ' -> Destino: ' . $podcastDirInNewCategory . '. Error: ' . $errorMsg
+            'error' => 'No se pudo mover el directorio del podcast. Origen: ' . $actualPodcastDir . ' -> Destino: ' . $podcastDirInNewCategory . '. Error: ' . $errorMsg
         ];
     }
 }
