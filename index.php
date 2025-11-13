@@ -221,17 +221,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $category = trim($_POST['category'] ?? '');
         $customCategory = trim($_POST['custom_category'] ?? '');
         $name = trim($_POST['name'] ?? '');
-        
+        $caducidad = intval($_POST['caducidad'] ?? 30);
+
         $finalCategory = !empty($customCategory) ? $customCategory : $category;
-        
+
         if (empty($url) || empty($finalCategory) || empty($name)) {
             $error = 'Todos los campos son obligatorios';
         } elseif (!validateInput($url, 'url')) {
             $error = 'URL de RSS invalida';
         } elseif (strlen($name) > 100) {
             $error = 'El nombre del podcast es demasiado largo';
+        } elseif ($caducidad < 1 || $caducidad > 365) {
+            $error = 'Los días de caducidad deben estar entre 1 y 365';
         } else {
-            $result = addPodcast($_SESSION['username'], $url, $finalCategory, $name);
+            $result = addPodcast($_SESSION['username'], $url, $finalCategory, $name, $caducidad);
             if ($result['success']) {
                 $message = $result['message'];
             } else {
@@ -247,9 +250,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $category = trim($_POST['category'] ?? '');
         $customCategory = trim($_POST['custom_category'] ?? '');
         $name = trim($_POST['name'] ?? '');
-        
+        $caducidad = intval($_POST['caducidad'] ?? 30);
+
         $finalCategory = !empty($customCategory) ? $customCategory : $category;
-        
+
         if ($index < 0) {
             $error = 'Podcast no valido';
         } elseif (empty($url) || empty($finalCategory) || empty($name)) {
@@ -258,8 +262,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $error = 'URL de RSS invalida';
         } elseif (strlen($name) > 100) {
             $error = 'El nombre del podcast es demasiado largo';
+        } elseif ($caducidad < 1 || $caducidad > 365) {
+            $error = 'Los días de caducidad deben estar entre 1 y 365';
         } else {
-            $result = editPodcast($_SESSION['username'], $index, $url, $finalCategory, $name);
+            $result = editPodcast($_SESSION['username'], $index, $url, $finalCategory, $name, $caducidad);
             if ($result['success']) {
                 header('Location: ' . basename($_SERVER['PHP_SELF']));
                 exit;
