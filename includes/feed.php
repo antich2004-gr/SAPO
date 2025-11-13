@@ -72,10 +72,8 @@ function getLastEpisodeDate($rssFeedUrl) {
     
     libxml_use_internal_errors(true);
 
-    // Prevenir ataques XXE (XML External Entity)
-    $previousValue = libxml_disable_entity_loader(true);
+    // Prevenir ataques XXE (XML External Entity) con LIBXML_NOENT
     $xml = simplexml_load_string($xmlContent, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_NOCDATA);
-    libxml_disable_entity_loader($previousValue);
 
     libxml_clear_errors();
     

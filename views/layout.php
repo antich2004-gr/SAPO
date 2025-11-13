@@ -73,8 +73,6 @@
         <?php require_once 'views/login.php'; ?>
     <?php elseif (isAdmin()): ?>
         <?php require_once 'views/admin.php'; ?>
-    <?php elseif (isset($_GET['status']) && $_GET['status'] == 'podget'): ?>
-        <?php require_once 'views/podget_status.php'; ?>
     <?php else: ?>
         <?php require_once 'views/user.php'; ?>
     <?php endif; ?>
