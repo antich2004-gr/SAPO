@@ -264,6 +264,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 </div>
                             </div>
                         <?php endif; ?>
+                        </div>
 
                         <!-- Vista Agrupada por Categorías -->
                         <div id="grouped-view" style="display: none;">
