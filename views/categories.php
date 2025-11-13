@@ -68,6 +68,22 @@ echo '</div>';
 // Obtener todas las categorías con estadísticas
 $categoriesWithStats = getAllCategoriesWithStats($username);
 
+// DEBUG: Mostrar qué retornó getAllCategoriesWithStats
+echo '<div style="background: #ffcccc; border: 2px solid #ff0000; padding: 15px; margin: 20px 0; font-family: monospace;">';
+echo '<strong>🔍 DEBUG - Estadísticas Retornadas:</strong><br>';
+echo 'Total categorías procesadas: ' . count($categoriesWithStats) . '<br><br>';
+foreach ($categoriesWithStats as $cat) {
+    echo '<strong>' . htmlspecialchars($cat['name']) . ':</strong><br>';
+    echo '&nbsp;&nbsp;podcasts=' . $cat['podcasts'] . ', files=' . $cat['files'] . ', size=' . $cat['size'] . ', exists=' . ($cat['exists'] ? 'YES' : 'NO') . ', status=' . $cat['status'];
+    if ($cat['last_download']) {
+        echo ', last_download=' . date('Y-m-d H:i:s', $cat['last_download']);
+    } else {
+        echo ', last_download=NULL';
+    }
+    echo '<br>';
+}
+echo '</div>';
+
 // Calcular estadísticas globales
 $totalCategories = count($categoriesWithStats);
 $totalFiles = 0;
