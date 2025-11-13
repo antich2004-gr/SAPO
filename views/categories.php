@@ -6,83 +6,24 @@ if (!isset($username)) {
     die('Acceso no autorizado');
 }
 
-// DEBUG TEMPORAL - Mostrar información de sesión
-echo '<!-- DEBUG INFO -->';
-echo '<div style="background: #ffffcc; border: 2px solid #ffaa00; padding: 15px; margin: 20px 0; font-family: monospace;">';
-echo '<strong>🐛 DEBUG - Información de Diagnóstico:</strong><br>';
-echo 'Session Username: ' . htmlspecialchars($username) . '<br>';
+// Sincronización automática de categorías desde el disco
 $config = getConfig();
-echo 'Base Path: ' . htmlspecialchars($config['base_path']) . '<br>';
-echo 'Expected Path Format: ' . htmlspecialchars($config['base_path'] . '/' . $username . '/media/Podcasts/{category}') . '<br>';
+$userMediaPath = $config['base_path'] . DIRECTORY_SEPARATOR . $username . DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . 'Podcasts';
 
-// Verificar si el directorio base del usuario existe
-$userPath = $config['base_path'] . DIRECTORY_SEPARATOR . $username;
-echo 'User Path: ' . htmlspecialchars($userPath) . ' - ' . (is_dir($userPath) ? '✅ EXISTS' : '❌ NOT FOUND') . '<br>';
-
-$userMediaPath = $userPath . DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . 'Podcasts';
-echo 'User Media/Podcasts Path: ' . htmlspecialchars($userMediaPath) . ' - ' . (is_dir($userMediaPath) ? '✅ EXISTS' : '❌ NOT FOUND') . '<br>';
-
-if (is_dir($userMediaPath)) {
-    $dirs = glob($userMediaPath . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR);
-    if ($dirs) {
-        echo 'Categories found on disk: ' . implode(', ', array_map('basename', $dirs)) . '<br>';
-    } else {
-        echo 'Categories found on disk: NONE<br>';
-    }
-}
-
-// Mostrar categorías registradas en el sistema ANTES de sincronizar
-$userCategories = getUserCategories($username);
-echo 'Categories in users.json (before sync): ';
-if (empty($userCategories)) {
-    echo '<strong style="color: red;">NONE</strong><br>';
-} else {
-    echo implode(', ', $userCategories) . '<br>';
-}
-
-// SINCRONIZACIÓN AUTOMÁTICA: Si hay categorías en disco que no están en sistema, sincronizar
 if (is_dir($userMediaPath)) {
     $diskDirs = glob($userMediaPath . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR);
     $diskCategories = $diskDirs ? array_map('basename', $diskDirs) : [];
+    $userCategories = getUserCategories($username);
     $missingInSystem = array_diff($diskCategories, $userCategories);
 
+    // Sincronizar silenciosamente si hay categorías nuevas en el disco
     if (!empty($missingInSystem)) {
-        echo '<strong style="color: orange;">🔄 SINCRONIZANDO...</strong> Se encontraron ' . count($missingInSystem) . ' categorías en el disco que no están en el sistema.<br>';
-
-        $syncResult = syncCategoriesFromDisk($username);
-
-        if ($syncResult['success'] && $syncResult['synced'] > 0) {
-            echo '<strong style="color: green;">✅ SINCRONIZACIÓN EXITOSA:</strong> Se han registrado ' . $syncResult['synced'] . ' categorías: <strong>' . implode(', ', $syncResult['categories']) . '</strong><br>';
-        } elseif ($syncResult['success'] && $syncResult['synced'] == 0) {
-            echo '<strong style="color: blue;">ℹ️ YA SINCRONIZADO:</strong> ' . $syncResult['message'] . '<br>';
-        } else {
-            echo '<strong style="color: red;">❌ ERROR EN SINCRONIZACIÓN:</strong> ' . ($syncResult['error'] ?? 'Error desconocido') . '<br>';
-        }
-    } else {
-        echo '<strong style="color: green;">✅ SINCRONIZADO:</strong> Todas las categorías del disco están registradas en el sistema.<br>';
+        syncCategoriesFromDisk($username);
     }
 }
-
-echo '</div>';
 
 // Obtener todas las categorías con estadísticas
 $categoriesWithStats = getAllCategoriesWithStats($username);
-
-// DEBUG: Mostrar qué retornó getAllCategoriesWithStats
-echo '<div style="background: #ffcccc; border: 2px solid #ff0000; padding: 15px; margin: 20px 0; font-family: monospace;">';
-echo '<strong>🔍 DEBUG - Estadísticas Retornadas:</strong><br>';
-echo 'Total categorías procesadas: ' . count($categoriesWithStats) . '<br><br>';
-foreach ($categoriesWithStats as $cat) {
-    echo '<strong>' . htmlspecialchars($cat['name']) . ':</strong><br>';
-    echo '&nbsp;&nbsp;podcasts=' . $cat['podcasts'] . ', files=' . $cat['files'] . ', size=' . $cat['size'] . ', exists=' . ($cat['exists'] ? 'YES' : 'NO') . ', status=' . $cat['status'];
-    if ($cat['last_download']) {
-        echo ', last_download=' . date('Y-m-d H:i:s', $cat['last_download']);
-    } else {
-        echo ', last_download=NULL';
-    }
-    echo '<br>';
-}
-echo '</div>';
 
 // Calcular estadísticas globales
 $totalCategories = count($categoriesWithStats);
