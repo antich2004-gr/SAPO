@@ -277,6 +277,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } else {
             $result = editPodcast($_SESSION['username'], $index, $url, $finalCategory, $name, $caducidad, $duracion);
             if ($result['success']) {
+                // Si se cambió la categoría, mostrar recordatorio de Radiobot
+                if (!empty($result['category_changed'])) {
+                    $_SESSION['show_radiobot_reminder'] = true;
+                    $_SESSION['radiobot_action'] = 'move_podcast';
+                }
                 header('Location: ' . basename($_SERVER['PHP_SELF']));
                 exit;
             } else {
