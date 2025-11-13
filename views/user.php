@@ -437,8 +437,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 </div>
             </div>
         </div>
-        
-    <?php endif; ?>
 </div>
 
 <!-- MODAL DE AGREGAR PODCAST -->
