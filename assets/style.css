@@ -317,6 +317,60 @@ textarea {
     border-bottom-color: var(--primary-green);
 }
 
+/* Tabs container - para user.php */
+.tabs-container {
+    margin-bottom: 30px;
+}
+
+.tabs-header {
+    display: flex;
+    border-bottom: 2px solid var(--border-color);
+    gap: 0;
+    flex-wrap: wrap;
+    margin-bottom: 0;
+}
+
+.tab-button {
+    background: transparent;
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--secondary-medium);
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    position: relative;
+}
+
+.tab-button:hover {
+    color: var(--primary-green);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.tab-button.active {
+    color: var(--primary-green);
+    border-bottom-color: var(--primary-green);
+    font-weight: 600;
+}
+
+.tabs-content {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    padding: 30px;
+}
+
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
 /* Navegación */
 .nav-buttons {
     display: flex;
