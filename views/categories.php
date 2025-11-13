@@ -43,14 +43,7 @@ $config = getConfig();
 $radiobotUrl = $config['radiobot_url'] ?? 'https://radiobot.radioslibres.info';
 ?>
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Categorías - SAPO</title>
-    <link rel="stylesheet" href="assets/style.css">
-    <style>
+<style>
         .categories-container {
             max-width: 1200px;
             margin: 0 auto;
@@ -772,5 +765,3 @@ $radiobotUrl = $config['radiobot_url'] ?? 'https://radiobot.radioslibres.info';
             });
         });
     </script>
-</body>
-</html>
