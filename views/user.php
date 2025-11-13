@@ -522,65 +522,69 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 <!-- MODAL DE AGREGAR PODCAST -->
 <div id="addPodcastModal" class="modal">
     <div class="modal-content" style="max-width: 600px;">
-        <span class="close" onclick="closeAddPodcastModal()">&times;</span>
-        <h3>Agregar Nuevo Podcast</h3>
-        
-        <form method="POST" style="margin-top: 20px;">
-            <input type="hidden" name="action" value="add_podcast">
-            <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-            
-            <div class="form-group">
-                <label>URL del RSS:</label>
-                <input type="text" name="url" id="podcast_url" required placeholder="https://ejemplo.com/podcast/rss" maxlength="500">
-            </div>
-            
-            <div class="form-group">
-                <label>Categoría:</label>
-                <?php if (!empty($userCategories)): ?>
-                    <div style="display: flex; gap: 10px; align-items: flex-start;">
-                        <select name="category" id="modal_category_select" required style="flex: 1;">
-                            <option value="">-- Selecciona una categoría --</option>
-                            <?php foreach ($userCategories as $cat): ?>
-                                <option value="<?php echo htmlEsc($cat); ?>"><?php echo htmlEsc(displayName($cat)); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <button type="button" class="btn btn-secondary" onclick="showCategoryManager('modal')" style="white-space: nowrap;">Gestionar</button>
-                    </div>
-                    <small style="color: #718096;">Usa el botón "Gestionar" para añadir nuevas categorías</small>
-                <?php else: ?>
-                    <p style="color: #e53e3e; margin-bottom: 10px;">No hay categorías disponibles. Por favor, créalas primero usando el botón "Gestionar".</p>
-                    <button type="button" class="btn btn-secondary" onclick="showCategoryManager('modal')">Gestionar Categorías</button>
-                <?php endif; ?>
-            </div>
-            
-            <div class="form-group">
-                <label>Nombre del Podcast:</label>
-                <input type="text" name="name" id="podcast_name" required placeholder="Mi Podcast" maxlength="100">
-                <small style="color: #718096;">Puedes usar espacios normales</small>
-            </div>
-            
-            <div class="form-group">
-                <label>Días de caducidad:</label>
-                <input type="number" name="caducidad" id="podcast_caducidad" value="30" min="1" max="365" required>
-                <small style="color: #718096;">Los archivos se eliminarán después de X días sin descargas nuevas (por defecto: 30 días)</small>
-            </div>
-            <div class="form-group">
-                <label>Duración máxima de episodios:</label>
-                <select name="duracion" id="podcast_duracion">
-                    <?php foreach ($duracionesOptions as $value => $label): ?>
-                        <option value="<?php echo htmlEsc($value); ?>" <?php echo $value === '' ? 'selected' : ''; ?>>
-                            <?php echo htmlEsc($label); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-                <small style="color: #718096;">Los episodios que excedan esta duración serán eliminados durante la limpieza diaria</small>
-            </div>
-            
-            <div class="form-actions">
-                <button type="submit" class="btn btn-success"><span class="btn-icon">➕</span> Agregar Podcast</button>
-                <button type="button" class="btn btn-secondary" onclick="closeAddPodcastModal()">Cancelar</button>
-            </div>
-        </form>
+        <h3>
+            <span class="close" onclick="closeAddPodcastModal()">&times;</span>
+            Agregar Nuevo Podcast
+        </h3>
+
+        <div>
+            <form method="POST">
+                <input type="hidden" name="action" value="add_podcast">
+                <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+
+                <div class="form-group">
+                    <label>URL del RSS:</label>
+                    <input type="text" name="url" id="podcast_url" required placeholder="https://ejemplo.com/podcast/rss" maxlength="500">
+                </div>
+
+                <div class="form-group">
+                    <label>Categoría:</label>
+                    <?php if (!empty($userCategories)): ?>
+                        <div style="display: flex; gap: 10px; align-items: flex-start;">
+                            <select name="category" id="modal_category_select" required style="flex: 1;">
+                                <option value="">-- Selecciona una categoría --</option>
+                                <?php foreach ($userCategories as $cat): ?>
+                                    <option value="<?php echo htmlEsc($cat); ?>"><?php echo htmlEsc(displayName($cat)); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <button type="button" class="btn btn-secondary" onclick="showCategoryManager('modal')" style="white-space: nowrap;">Gestionar</button>
+                        </div>
+                        <small style="color: #718096;">Usa el botón "Gestionar" para añadir nuevas categorías</small>
+                    <?php else: ?>
+                        <p style="color: #e53e3e; margin-bottom: 10px;">No hay categorías disponibles. Por favor, créalas primero usando el botón "Gestionar".</p>
+                        <button type="button" class="btn btn-secondary" onclick="showCategoryManager('modal')">Gestionar Categorías</button>
+                    <?php endif; ?>
+                </div>
+
+                <div class="form-group">
+                    <label>Nombre del Podcast:</label>
+                    <input type="text" name="name" id="podcast_name" required placeholder="Mi Podcast" maxlength="100">
+                    <small style="color: #718096;">Puedes usar espacios normales</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Días de caducidad:</label>
+                    <input type="number" name="caducidad" id="podcast_caducidad" value="30" min="1" max="365" required>
+                    <small style="color: #718096;">Los archivos se eliminarán después de X días sin descargas nuevas (por defecto: 30 días)</small>
+                </div>
+                <div class="form-group">
+                    <label>Duración máxima de episodios:</label>
+                    <select name="duracion" id="podcast_duracion">
+                        <?php foreach ($duracionesOptions as $value => $label): ?>
+                            <option value="<?php echo htmlEsc($value); ?>" <?php echo $value === '' ? 'selected' : ''; ?>>
+                                <?php echo htmlEsc($label); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <small style="color: #718096;">Los episodios que excedan esta duración serán eliminados durante la limpieza diaria</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success"><span class="btn-icon">➕</span> Agregar Podcast</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeAddPodcastModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
