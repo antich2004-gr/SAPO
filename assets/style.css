@@ -511,12 +511,40 @@ textarea {
     padding: 30px;
 }
 
+.modal-content form {
+    margin-top: 0 !important;
+}
+
 .modal-content .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 25px;
 }
 
 .modal-content .form-group:last-child {
     margin-bottom: 0;
+}
+
+.modal-content input[type="text"],
+.modal-content input[type="password"],
+.modal-content input[type="email"],
+.modal-content input[type="number"],
+.modal-content input[type="url"],
+.modal-content select,
+.modal-content textarea {
+    width: 100%;
+    max-width: 100%;
+}
+
+.modal-content label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: var(--primary-dark);
+}
+
+.modal-content h4 {
+    color: var(--primary-dark);
+    margin-bottom: 15px;
+    margin-top: 0;
 }
 
 .close {
