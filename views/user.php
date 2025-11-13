@@ -18,6 +18,15 @@ usort($podcastsWithIndex, function($a, $b) {
 
 $podcasts = $podcastsWithIndex;
 
+// Paginación
+$itemsPerPage = 25;
+$currentPage = isset($_GET['p']) && is_numeric($_GET['p']) ? max(1, intval($_GET['p'])) : 1;
+$totalPodcasts = count($podcasts);
+$totalPages = ceil($totalPodcasts / $itemsPerPage);
+$currentPage = min($currentPage, max(1, $totalPages)); // Asegurar que la página existe
+$offset = ($currentPage - 1) * $itemsPerPage;
+$podcastsPaginated = array_slice($podcasts, $offset, $itemsPerPage);
+
 // Detectar si estamos editando
 $isEditing = isset($_GET['edit']) && is_numeric($_GET['edit']);
 $editIndex = $isEditing ? intval($_GET['edit']) : null;
@@ -131,6 +140,14 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         </button>
                     </div>
                     
+
+                    <!-- Campo de búsqueda -->
+                    <div style="margin-bottom: 20px;">
+                        <input type="text" id="search-podcasts" placeholder="🔍 Buscar por nombre de podcast..."
+                               style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;"
+                               onkeyup="searchPodcasts()">
+                    </div>
+
                     <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap;">
                         <form method="POST" style="display: inline-block;">
                             <input type="hidden" name="action" value="refresh_feeds">
@@ -165,7 +182,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     <?php else: ?>
                         <!-- Vista Normal (Alfabética) -->
                         <div id="normal-view" class="podcast-list">
-                            <?php foreach ($podcasts as $index => $podcast): 
+                            <?php foreach ($podcastsPaginated as $index => $podcast): 
                                 $podcastCaducidad = $caducidades[$podcast['name']] ?? 30;
                             ?>
                                 <div class="podcast-item" data-category="<?php echo htmlEsc($podcast['category']); ?>">
@@ -203,7 +220,51 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 </div>
                             <?php endforeach; ?>
                         </div>
-                        
+
+                        <!-- Controles de paginación -->
+                        <?php if ($totalPages > 1): ?>
+                            <div class="pagination-controls">
+                                <div class="pagination-info">
+                                    Mostrando <?php echo htmlEsc(min($offset + 1, $totalPodcasts)); ?>-<?php echo htmlEsc(min($offset + $itemsPerPage, $totalPodcasts)); ?> de <?php echo htmlEsc($totalPodcasts); ?> podcasts
+                                </div>
+                                <div class="pagination-buttons">
+                                    <?php if ($currentPage > 1): ?>
+                                        <a href="?p=<?php echo htmlEsc($currentPage - 1); ?>" class="btn btn-secondary pagination-btn">← Anterior</a>
+                                    <?php endif; ?>
+
+                                    <?php
+                                    // Mostrar números de página (máximo 5)
+                                    $startPage = max(1, $currentPage - 2);
+                                    $endPage = min($totalPages, $currentPage + 2);
+
+                                    if ($startPage > 1): ?>
+                                        <a href="?p=1" class="btn btn-secondary pagination-btn">1</a>
+                                        <?php if ($startPage > 2): ?>
+                                            <span style="padding: 0 5px; color: #718096;">...</span>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+
+                                    <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+                                        <a href="?p=<?php echo htmlEsc($i); ?>"
+                                           class="btn btn-secondary pagination-btn <?php echo $i === $currentPage ? 'active' : ''; ?>">
+                                            <?php echo htmlEsc($i); ?>
+                                        </a>
+                                    <?php endfor; ?>
+
+                                    <?php if ($endPage < $totalPages): ?>
+                                        <?php if ($endPage < $totalPages - 1): ?>
+                                            <span style="padding: 0 5px; color: #718096;">...</span>
+                                        <?php endif; ?>
+                                        <a href="?p=<?php echo htmlEsc($totalPages); ?>" class="btn btn-secondary pagination-btn"><?php echo htmlEsc($totalPages); ?></a>
+                                    <?php endif; ?>
+
+                                    <?php if ($currentPage < $totalPages): ?>
+                                        <a href="?p=<?php echo htmlEsc($currentPage + 1); ?>" class="btn btn-secondary pagination-btn">Siguiente →</a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
                         <!-- Vista Agrupada por Categorías -->
                         <div id="grouped-view" style="display: none;">
                             <?php 

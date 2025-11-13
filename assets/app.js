@@ -353,6 +353,68 @@ window.onclick = function(event) {
     }
 }
 
+
+/**
+ * Buscar podcasts en tiempo real
+ */
+function searchPodcasts() {
+    const input = document.getElementById('search-podcasts');
+    if (!input) return;
+
+    const filter = input.value.toLowerCase();
+    const normalView = document.getElementById('normal-view');
+    const groupedView = document.getElementById('grouped-view');
+
+    // Buscar en vista normal
+    if (normalView) {
+        const items = normalView.querySelectorAll('.podcast-item');
+        items.forEach(item => {
+            const podcastName = item.querySelector('strong')?.textContent.toLowerCase() || '';
+            if (podcastName.includes(filter)) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+
+    // Buscar en vista agrupada
+    if (groupedView) {
+        const groups = groupedView.querySelectorAll('.category-group');
+        groups.forEach(group => {
+            const items = group.querySelectorAll('.podcast-item');
+            let visibleCount = 0;
+
+            items.forEach(item => {
+                const podcastName = item.querySelector('strong')?.textContent.toLowerCase() || '';
+                if (podcastName.includes(filter)) {
+                    item.style.display = '';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // Ocultar categoria si no hay podcasts visibles
+            if (visibleCount === 0 && filter !== '') {
+                group.style.display = 'none';
+            } else {
+                group.style.display = '';
+            }
+        });
+    }
+
+    // Ocultar controles de paginacion durante la busqueda
+    const paginationControls = document.querySelector('.pagination-controls');
+    if (paginationControls) {
+        if (filter !== '') {
+            paginationControls.style.display = 'none';
+        } else {
+            paginationControls.style.display = '';
+        }
+    }
+}
+
 /**
  * Cargar informe de descargas por período
  */
