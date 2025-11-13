@@ -222,6 +222,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $customCategory = trim($_POST['custom_category'] ?? '');
         $name = trim($_POST['name'] ?? '');
         
+        $caducidad = intval($_POST['caducidad'] ?? 30);
+
+        // Validar caducidad
+        if ($caducidad < 1 || $caducidad > 365) {
+            $caducidad = 30; // Valor por defecto si está fuera de rango
+        }
+
         $finalCategory = !empty($customCategory) ? $customCategory : $category;
         
         if (empty($url) || empty($finalCategory) || empty($name)) {
@@ -231,7 +238,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } elseif (strlen($name) > 100) {
             $error = 'El nombre del podcast es demasiado largo';
         } else {
-            $result = addPodcast($_SESSION['username'], $url, $finalCategory, $name);
+            $result = addPodcast($_SESSION['username'], $url, $finalCategory, $name, $caducidad);
             if ($result['success']) {
                 $message = $result['message'];
             } else {
@@ -247,6 +254,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $category = trim($_POST['category'] ?? '');
         $customCategory = trim($_POST['custom_category'] ?? '');
         $name = trim($_POST['name'] ?? '');
+        $caducidad = intval($_POST['caducidad'] ?? 30);
+
+        // Validar caducidad
+        if ($caducidad < 1 || $caducidad > 365) {
+            $caducidad = 30; // Valor por defecto si está fuera de rango
+        }
+
         
         $finalCategory = !empty($customCategory) ? $customCategory : $category;
         
@@ -259,7 +273,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } elseif (strlen($name) > 100) {
             $error = 'El nombre del podcast es demasiado largo';
         } else {
-            $result = editPodcast($_SESSION['username'], $index, $url, $finalCategory, $name);
+            $result = editPodcast($_SESSION['username'], $index, $url, $finalCategory, $name, $caducidad);
             if ($result['success']) {
                 header('Location: ' . basename($_SERVER['PHP_SELF']));
                 exit;
