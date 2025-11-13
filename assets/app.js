@@ -337,30 +337,6 @@ function getUsername() {
     return 'usuario';
 }
 
-/**
- * Funciones para el modal de agregar podcast
- */
-function showAddPodcastModal() {
-    const modal = document.getElementById('addPodcastModal');
-    if (modal) {
-        modal.style.display = 'block';
-        // Focus en el primer input
-        setTimeout(() => {
-            const urlInput = document.getElementById('podcast_url');
-            if (urlInput) urlInput.focus();
-        }, 100);
-    }
-}
-
-function closeAddPodcastModal() {
-    const modal = document.getElementById('addPodcastModal');
-    if (modal) {
-        modal.style.display = 'none';
-        // Limpiar el formulario
-        const form = modal.querySelector('form');
-        if (form) form.reset();
-    }
-}
 
 /**
  * Cerrar modales al hacer clic fuera
