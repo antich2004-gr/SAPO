@@ -761,9 +761,10 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
     justify-content: space-between;
     align-items: center;
     padding: 15px 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
     border-radius: 8px;
     margin-bottom: 15px;
+    border-bottom: 2px solid #10b981;
 }
 
 .category-header h4 {

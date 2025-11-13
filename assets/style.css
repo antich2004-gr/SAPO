@@ -12,11 +12,11 @@
     --secondary-medium: #404040;       /* Gris medio */
     --secondary-light: #f3f4f6;       /* Gris claro */
 
-    /* Estados */
-    --danger: #ef4444;
-    --warning: #f59e0b;
-    --success: #10b981;
-    --info: #3b82f6;
+    /* Estados - Unificados con tema verde/negro */
+    --danger: #2d2d2d;           /* Gris oscuro en lugar de rojo */
+    --warning: #404040;           /* Gris medio en lugar de naranja */
+    --success: #10b981;           /* Verde esmeralda */
+    --info: #10b981;              /* Verde esmeralda en lugar de azul */
 
     /* Sombras */
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -215,17 +215,17 @@ textarea {
 }
 
 .btn-danger:hover {
-    background-color: #dc2626;
+    background-color: var(--primary-dark);
     transform: translateY(-2px);
 }
 
 .btn-warning {
-    background-color: var(--warning);
+    background: linear-gradient(135deg, var(--primary-green-light) 0%, var(--primary-green) 100%);
     color: white;
 }
 
 .btn-warning:hover {
-    background-color: #d97706;
+    background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-green-dark) 100%);
     transform: translateY(-2px);
 }
 
@@ -269,21 +269,21 @@ textarea {
 }
 
 .alert-error {
-    background-color: rgba(239, 68, 68, 0.1);
-    color: #dc2626;
-    border-left: 4px solid var(--danger);
+    background-color: rgba(45, 45, 45, 0.08);
+    color: var(--primary-dark);
+    border-left: 4px solid var(--secondary-dark);
 }
 
 .alert-warning {
-    background-color: rgba(245, 158, 11, 0.1);
-    color: #d97706;
-    border-left: 4px solid var(--warning);
+    background-color: rgba(16, 185, 129, 0.08);
+    color: var(--secondary-dark);
+    border-left: 4px solid var(--primary-green-light);
 }
 
 .alert-info {
-    background-color: rgba(59, 130, 246, 0.1);
-    color: #2563eb;
-    border-left: 4px solid var(--info);
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--primary-green-dark);
+    border-left: 4px solid var(--primary-green);
 }
 
 /* Tabs/Pestañas */
@@ -424,41 +424,45 @@ textarea {
     flex-wrap: wrap;
 }
 
-/* Estados de feed */
+/* Estados de feed - Unificados con tema verde/negro */
 .status-active {
-    background: #d4edda;
-    color: #155724;
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--primary-green-dark);
     padding: 4px 12px;
     border-radius: 4px;
     font-size: 14px;
     font-weight: 600;
+    border: 1px solid var(--primary-green);
 }
 
 .status-inactive {
-    background: #f8d7da;
-    color: #721c24;
+    background: rgba(45, 45, 45, 0.1);
+    color: var(--primary-dark);
     padding: 4px 12px;
     border-radius: 4px;
     font-size: 14px;
     font-weight: 600;
+    border: 1px solid var(--secondary-medium);
 }
 
 .status-poco-activo {
-    background: #fff3cd;
-    color: #856404;
+    background: rgba(16, 185, 129, 0.08);
+    color: var(--secondary-dark);
     padding: 4px 12px;
     border-radius: 4px;
     font-size: 14px;
     font-weight: 600;
+    border: 1px solid var(--secondary-medium);
 }
 
 .status-unknown {
-    background: #e2e8f0;
-    color: #475569;
+    background: var(--secondary-light);
+    color: var(--secondary-medium);
     padding: 4px 12px;
     border-radius: 4px;
     font-size: 14px;
     font-weight: 600;
+    border: 1px solid var(--border-color);
 }
 
 /* Modal */
