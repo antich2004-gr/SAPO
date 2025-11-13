@@ -36,10 +36,10 @@
         </div>
     <?php endif; ?>
 
-    <?php if (!isLoggedIn()): ?>
-        <?php require_once 'views/login.php'; ?>
-    <?php elseif (isset($_GET['page']) && $_GET['page'] == 'help'): ?>
+    <?php if (isset($_GET['page']) && $_GET['page'] == 'help'): ?>
         <?php require_once 'views/help.php'; ?>
+    <?php elseif (!isLoggedIn()): ?>
+        <?php require_once 'views/login.php'; ?>
     <?php elseif (isAdmin()): ?>
         <?php require_once 'views/admin.php'; ?>
     <?php elseif (isset($_GET['status']) && $_GET['status'] == 'podget'): ?>
