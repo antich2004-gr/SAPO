@@ -388,29 +388,6 @@ if ($action == 'rename_category' && isLoggedIn() && !isAdmin()) {
     exit;
 }
 
-// MERGE CATEGORIES (POST)
-if ($action == 'merge_categories' && isLoggedIn() && !isAdmin()) {
-    $source = $_POST['source'] ?? '';
-    $target = $_POST['target'] ?? '';
-
-    if (empty($source) || empty($target)) {
-        $_SESSION['error'] = 'Categorías inválidas';
-    } else {
-        $result = mergeCategories($_SESSION['username'], $source, $target);
-        if ($result['success']) {
-            $_SESSION['message'] = $result['message'];
-            $_SESSION['show_radiobot_reminder'] = true;
-            $_SESSION['radiobot_action'] = 'merge';
-            $_SESSION['radiobot_source'] = $source;
-            $_SESSION['radiobot_target'] = $target;
-        } else {
-            $_SESSION['error'] = $result['error'];
-        }
-    }
-    header('Location: index.php?view=categories');
-    exit;
-}
-
 // DELETE CATEGORY (POST) - para categorías vacías
 if ($action == 'delete_category' && isLoggedIn() && !isAdmin()) {
     $categoryName = $_POST['category'] ?? '';

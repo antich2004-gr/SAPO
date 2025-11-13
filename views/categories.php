@@ -473,9 +473,6 @@ $radiobotUrl = $config['radiobot_url'] ?? 'https://radiobot.radioslibres.info';
                                 <button class="btn btn-sm btn-secondary" onclick="viewCategoryFiles('<?php echo htmlspecialchars($cat['name'], ENT_QUOTES); ?>')">👁️ Ver Archivos</button>
                             <?php endif; ?>
                             <button class="btn btn-sm btn-primary" onclick="showRenameModal('<?php echo htmlspecialchars($cat['name'], ENT_QUOTES); ?>')">✏️ Renombrar</button>
-                            <?php if ($totalCategories > 1): ?>
-                                <button class="btn btn-sm btn-secondary" onclick="showMergeModal('<?php echo htmlspecialchars($cat['name'], ENT_QUOTES); ?>')">🔀 Fusionar</button>
-                            <?php endif; ?>
                             <?php if ($cat['podcasts'] == 0 && $cat['files'] == 0): ?>
                                 <button class="btn btn-sm btn-danger" onclick="deleteCategory('<?php echo htmlspecialchars($cat['name'], ENT_QUOTES); ?>')">🗑️ Eliminar</button>
                             <?php endif; ?>
@@ -542,63 +539,6 @@ $radiobotUrl = $config['radiobot_url'] ?? 'https://radiobot.radioslibres.info';
         </div>
     </div>
 
-    <!-- Modal: Fusionar Categorías -->
-    <div id="modal-merge" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">🔀 Fusionar Categorías</div>
-
-            <div class="form-group">
-                <label>Categoría origen (se eliminará):</label>
-                <input type="text" id="merge-source" readonly style="background: #f0f0f0;">
-            </div>
-
-            <div class="form-group">
-                <label>Categoría destino (recibirá los archivos):</label>
-                <select id="merge-target">
-                    <option value="">Selecciona una categoría...</option>
-                    <?php foreach ($categoriesWithStats as $cat): ?>
-                        <option value="<?php echo htmlspecialchars($cat['name']); ?>"><?php echo htmlspecialchars($cat['name']); ?> (<?php echo $cat['files']; ?> archivos)</option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-
-            <div class="warning-box critical">
-                <div class="warning-title">🔴 CRÍTICO - ACCIONES REQUERIDAS EN RADIOBOT</div>
-
-                <p><strong>OPCIÓN A - Mantener playlist separada:</strong></p>
-                <ol>
-                    <li>Ve a la playlist de origen en Radiobot</li>
-                    <li>Cambia la carpeta origen a la categoría destino</li>
-                    <li>Añade un filtro para reproducir solo los archivos deseados</li>
-                </ol>
-
-                <p><strong>OPCIÓN B - Fusionar en Radiobot también:</strong></p>
-                <ol>
-                    <li>Elimina la playlist de origen en Radiobot</li>
-                    <li>La playlist destino reproducirá todos los archivos</li>
-                </ol>
-
-                <p><strong>⚠️ Si no haces NADA:</strong> La playlist de origen quedará VACÍA y aparecerán errores.</p>
-            </div>
-
-            <div class="checkbox-group">
-                <label>
-                    <input type="checkbox" id="merge-check-1">
-                    <span>Entiendo que debo actualizar las playlists</span>
-                </label>
-                <label>
-                    <input type="checkbox" id="merge-check-2">
-                    <span>Sé qué opción (A o B) voy a usar en Radiobot</span>
-                </label>
-            </div>
-
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeModal('modal-merge')">❌ Cancelar</button>
-                <button class="btn btn-danger" onclick="confirmMerge()">✅ Confirmar Fusión</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Modal: Ver Archivos -->
     <div id="modal-files" class="modal">
         <div class="modal-content" style="max-width: 800px;">
@@ -659,21 +599,6 @@ $radiobotUrl = $config['radiobot_url'] ?? 'https://radiobot.radioslibres.info';
             showModal('modal-rename');
         }
 
-        function showMergeModal(categoryName) {
-            document.getElementById('merge-source').value = categoryName;
-            document.getElementById('merge-target').value = '';
-            document.getElementById('merge-check-1').checked = false;
-            document.getElementById('merge-check-2').checked = false;
-
-            // Deshabilitar la opción de la categoría origen en el select
-            const select = document.getElementById('merge-target');
-            for (let option of select.options) {
-                option.disabled = (option.value === categoryName);
-            }
-
-            showModal('modal-merge');
-        }
-
         function viewCategoryFiles(categoryName) {
             document.getElementById('files-content').innerHTML = '<p>Cargando archivos...</p>';
             showModal('modal-files');
@@ -725,32 +650,6 @@ $radiobotUrl = $config['radiobot_url'] ?? 'https://radiobot.radioslibres.info';
                 submitPostAction('rename_category', {
                     'old_name': oldName,
                     'new_name': newName
-                });
-            }
-        }
-
-        function confirmMerge() {
-            const check1 = document.getElementById('merge-check-1').checked;
-            const check2 = document.getElementById('merge-check-2').checked;
-
-            if (!check1 || !check2) {
-                alert('⚠️ Debes marcar ambas casillas para confirmar que entiendes los cambios necesarios en Radiobot.');
-                return;
-            }
-
-            const source = document.getElementById('merge-source').value;
-            const target = document.getElementById('merge-target').value;
-
-            if (!target) {
-                alert('Debes seleccionar una categoría destino');
-                return;
-            }
-
-            if (confirm('¿Estás seguro de fusionar "' + source + '" en "' + target + '"? Esta acción NO se puede deshacer.')) {
-                // Enviar POST con CSRF token (previene ataques CSRF)
-                submitPostAction('merge_categories', {
-                    'source': source,
-                    'target': target
                 });
             }
         }
