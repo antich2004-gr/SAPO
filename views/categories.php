@@ -200,6 +200,7 @@ $radiobotUrl = $config['radiobot_url'] ?? 'https://radiobot.radioslibres.info';
             display: flex;
             align-items: center;
             gap: 10px;
+            color: #333;
         }
 
         .status-indicator {
