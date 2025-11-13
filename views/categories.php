@@ -385,10 +385,9 @@ $radiobotUrl = $config['radiobot_url'] ?? 'https://radiobot.radioslibres.info';
                 grid-template-columns: 1fr;
             }
         }
-    </style>
-</head>
-<body>
-    <div class="categories-container">
+</style>
+
+<div class="categories-container">
         <!-- Encabezado -->
         <div class="page-header">
             <h1>🗂️ Gestor de Categorías</h1>
