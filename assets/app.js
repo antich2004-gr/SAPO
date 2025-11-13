@@ -298,19 +298,27 @@ function toggleGroupView() {
     const groupedView = document.getElementById('grouped-view');
     const btnText = document.getElementById('viewModeText');
     const filterSelect = document.getElementById('filter_category');
+    const paginationControls = document.querySelector('.pagination-controls');
     
     if (!normalView || !groupedView) return;
     
     isGroupedView = !isGroupedView;
+
+    // Guardar estado en localStorage
+    localStorage.setItem('sapo_view_mode', isGroupedView ? 'grouped' : 'normal');
     
     if (isGroupedView) {
         normalView.style.display = 'none';
         groupedView.style.display = 'block';
-        if (btnText) btnText.textContent = 'Vista alfabética';
+        if (btnText) btnText.textContent = 'Vista alfabetica';
+        // Ocultar paginacion en vista agrupada
+        if (paginationControls) paginationControls.style.display = 'none';
     } else {
         normalView.style.display = 'block';
         groupedView.style.display = 'none';
-        if (btnText) btnText.textContent = 'Agrupar por categoría';
+        if (btnText) btnText.textContent = 'Agrupar por categoria';
+        // Mostrar paginacion en vista normal
+        if (paginationControls) paginationControls.style.display = '';
     }
     
     // Aplicar filtro en la nueva vista
@@ -337,6 +345,30 @@ function getUsername() {
     return 'usuario';
 }
 
+
+
+/**
+ * Restaurar vista guardada al cargar la pagina
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    const savedView = localStorage.getItem('sapo_view_mode');
+
+    if (savedView === 'grouped') {
+        // Restaurar vista agrupada
+        const normalView = document.getElementById('normal-view');
+        const groupedView = document.getElementById('grouped-view');
+        const btnText = document.getElementById('viewModeText');
+        const paginationControls = document.querySelector('.pagination-controls');
+
+        if (normalView && groupedView) {
+            isGroupedView = true;
+            normalView.style.display = 'none';
+            groupedView.style.display = 'block';
+            if (btnText) btnText.textContent = 'Vista alfabetica';
+            if (paginationControls) paginationControls.style.display = 'none';
+        }
+    }
+});
 
 /**
  * Cerrar modales al hacer clic fuera
