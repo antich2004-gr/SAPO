@@ -180,14 +180,15 @@ $radiobotUrl = $config['radiobot_url'] ?? 'https://radiobot.radioslibres.info';
             border-bottom: none;
         }
 
-        .category-header {
+        .cat-item-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 10px;
+            background: transparent !important;
         }
 
-        .category-name {
+        .cat-item-name {
             font-size: 1.3em;
             font-weight: bold;
             display: flex;
@@ -371,7 +372,7 @@ $radiobotUrl = $config['radiobot_url'] ?? 'https://radiobot.radioslibres.info';
         }
 
         @media (max-width: 768px) {
-            .category-header {
+            .cat-item-header {
                 flex-direction: column;
                 align-items: flex-start;
             }
@@ -437,8 +438,8 @@ $radiobotUrl = $config['radiobot_url'] ?? 'https://radiobot.radioslibres.info';
             <?php else: ?>
                 <?php foreach ($categoriesWithStats as $cat): ?>
                     <div class="category-item">
-                        <div class="category-header">
-                            <div class="category-name">
+                        <div class="cat-item-header">
+                            <div class="cat-item-name">
                                 <span class="status-indicator status-<?php echo $cat['status']; ?>"></span>
                                 📁 <?php echo htmlspecialchars($cat['name']); ?>
                             </div>
@@ -745,6 +746,14 @@ $radiobotUrl = $config['radiobot_url'] ?? 'https://radiobot.radioslibres.info';
                     'category': categoryName
                 });
             }
+        }
+
+        function showNewCategoryModal() {
+            alert('Funcionalidad de "Nueva Categoría" no implementada aún.\n\nPara crear una nueva categoría, simplemente asigna un podcast a una categoría nueva desde la vista principal de podcasts.');
+        }
+
+        function showCleanEmptyModal() {
+            alert('Funcionalidad de "Limpiar Vacías" no implementada aún.\n\nLas categorías vacías (sin podcasts y sin archivos) se pueden eliminar manualmente usando el botón "Eliminar" en cada categoría.');
         }
 
         function showModal(modalId) {
