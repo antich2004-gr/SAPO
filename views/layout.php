@@ -79,7 +79,7 @@
 
     <footer style="margin-top: 40px; padding: 20px 0; border-top: 1px solid #e2e8f0; text-align: center; color: #718096; font-size: 14px;">
         <p style="margin: 0;">🐸 <strong>SAPO</strong> - Sistema de Automatización de Podcasts para Radiobot</p>
-        <p style="margin: 5px 0 0 0;">Versión 1.0 beta</p>
+        <p style="margin: 5px 0 0 0;">Versión 1.1.0</p>
     </footer>
 </div>
 

@@ -353,12 +353,20 @@ SAPO implementa múltiples capas de seguridad. Ver [SECURITY.md](SECURITY.md) pa
 
 ## 📊 Versiones
 
-### v1.3.1 (Noviembre 2024) - Actual
-- ✅ Creación de vista `podget_status.php` faltante
-- ✅ Corrección de error que mostraba solo el encabezado
-- ✅ README actualizado con información precisa del código
+## 📊 Versiones
 
-### v1.3 (Noviembre 2024)
+### v1.1.0 (Noviembre 2024) - Actual
+- 🔒 **[CRÍTICO] Corrección de vulnerabilidad XXE** en feed.php (LIBXML_NOENT → LIBXML_NONET)
+- 🔒 Agregado header Content-Security-Policy faltante
+- 🔒 Agregado header Strict-Transport-Security (HSTS) condicional para HTTPS
+- 📝 Logging mejorado de intentos SSRF y XXE con detalles de seguridad
+- 🧪 Script de testing para verificar feeds RSS (test_feeds.php)
+- ✅ Corrección de vista `podget_status.php` faltante
+- ✅ README actualizado con información precisa del código
+- ✅ Footer con nombre de proyecto y versión
+- 📚 SECURITY.md actualizado con detalles técnicos de protección XXE
+
+### v1.0 beta (Noviembre 2024)
 - ✅ Gestor avanzado de categorías (renombrado, mover archivos, estadísticas)
 - ✅ Sistema de informes diarios automáticos
 - ✅ Historial de descargas con múltiples períodos
@@ -368,18 +376,10 @@ SAPO implementa múltiples capas de seguridad. Ver [SECURITY.md](SECURITY.md) pa
 - ✅ Búsqueda en tiempo real de podcasts
 - ✅ Headers de seguridad unificados
 - ✅ Favicon con icono de SAPO
-
-### v1.2 (2024)
-- Implementación de base de datos JSON unificada
-- Resolución de problemas de concurrencia
-- Estructura escalable con separación de datos por usuario
-- Cache compartido de feeds RSS
-
-### v1.0-stable (2024)
-- Versión inicial estable
-- Funcionalidades básicas de gestión de podcasts
-- Autenticación y multi-usuario
-- Integración básica con Podget
+- ✅ Sistema de base de datos JSON unificada
+- ✅ Funcionalidades básicas de gestión de podcasts
+- ✅ Autenticación con BCrypt y multi-usuario
+- ✅ Integración básica con Podget
 
 ## 🗺️ Roadmap
 
