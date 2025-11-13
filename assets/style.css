@@ -403,6 +403,43 @@ textarea {
     box-shadow: var(--shadow-md);
 }
 
+/* Fondos de color según estado del podcast */
+.podcast-item-status-active {
+    background: rgba(16, 185, 129, 0.03);
+    border-left-color: var(--primary-green);
+}
+
+.podcast-item-status-active:hover {
+    background: rgba(16, 185, 129, 0.08);
+}
+
+.podcast-item-status-poco-activo {
+    background: rgba(16, 185, 129, 0.02);
+    border-left-color: var(--primary-green-light);
+}
+
+.podcast-item-status-poco-activo:hover {
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.podcast-item-status-inactive {
+    background: rgba(45, 45, 45, 0.02);
+    border-left-color: var(--secondary-medium);
+}
+
+.podcast-item-status-inactive:hover {
+    background: rgba(45, 45, 45, 0.05);
+}
+
+.podcast-item-status-unknown {
+    background: rgba(0, 0, 0, 0.01);
+    border-left-color: var(--border-color);
+}
+
+.podcast-item-status-unknown:hover {
+    background: rgba(0, 0, 0, 0.03);
+}
+
 .podcast-info {
     margin-bottom: 10px;
 }

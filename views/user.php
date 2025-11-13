@@ -201,20 +201,18 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     <?php else: ?>
                         <!-- Vista Normal (Alfabética) -->
                         <div id="normal-view" class="podcast-list">
-                            <?php foreach ($podcastsPaginated as $index => $podcast): 
+                            <?php foreach ($podcastsPaginated as $index => $podcast):
                                 $podcastCaducidad = $caducidades[$podcast['name']] ?? 30;
             $podcastDuracion = $duraciones[$podcast['name']] ?? '';
+                                $feedInfo = getCachedFeedInfo($podcast['url']);
+                                $statusInfo = formatFeedStatus($feedInfo['timestamp']);
                             ?>
-                                <div class="podcast-item" data-category="<?php echo htmlEsc($podcast['category']); ?>">
+                                <div class="podcast-item podcast-item-<?php echo htmlEsc($statusInfo['class']); ?>" data-category="<?php echo htmlEsc($podcast['category']); ?>">
                                     <div class="podcast-info">
                                         <strong><?php echo htmlEsc(displayName($podcast['name'])); ?></strong>
                                         <small>Categoría: <?php echo htmlEsc(displayName($podcast['category'])); ?> | Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días</small>
                                         <small><?php echo htmlEsc($podcast['url']); ?></small>
 
-                                        <?php
-                                        $feedInfo = getCachedFeedInfo($podcast['url']);
-                                        $statusInfo = formatFeedStatus($feedInfo['timestamp']);
-                                        ?>
                                         <div class="last-episode <?php echo $statusInfo['class']; ?>">
                                             <?php if ($feedInfo['timestamp'] !== null): ?>
                                                 <?php echo htmlEsc($statusInfo['status']); ?> - Último episodio: <?php echo htmlEsc($statusInfo['date']); ?> (hace <?php echo htmlEsc($statusInfo['days']); ?> días)
@@ -326,20 +324,18 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     </div>
                                     
                                     <div class="podcast-list">
-                                        <?php foreach ($categoryPodcasts as $podcast): 
+                                        <?php foreach ($categoryPodcasts as $podcast):
                                             $podcastCaducidad = $caducidades[$podcast['name']] ?? 30;
             $podcastDuracion = $duraciones[$podcast['name']] ?? '';
+                                            $feedInfo = getCachedFeedInfo($podcast['url']);
+                                            $statusInfo = formatFeedStatus($feedInfo['timestamp']);
                                         ?>
-                                            <div class="podcast-item">
+                                            <div class="podcast-item podcast-item-<?php echo htmlEsc($statusInfo['class']); ?>">
                                                 <div class="podcast-info">
                                                     <strong><?php echo htmlEsc(displayName($podcast['name'])); ?></strong>
                                                     <small>Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días</small>
                                                     <small><?php echo htmlEsc($podcast['url']); ?></small>
 
-                                                    <?php
-                                                    $feedInfo = getCachedFeedInfo($podcast['url']);
-                                                    $statusInfo = formatFeedStatus($feedInfo['timestamp']);
-                                                    ?>
                                                     <div class="last-episode <?php echo $statusInfo['class']; ?>">
                                                         <?php if ($feedInfo['timestamp'] !== null): ?>
                                                             <?php echo htmlEsc($statusInfo['status']); ?> - Último episodio: <?php echo htmlEsc($statusInfo['date']); ?> (hace <?php echo htmlEsc($statusInfo['days']); ?> días)
