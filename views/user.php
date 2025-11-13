@@ -220,20 +220,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 </div>
                             <?php endforeach; ?>
 
-                            <!-- Controles de paginacion para categorias -->
-                            <?php if ($totalCategoryPages > 1): ?>
-                                <div class="pagination-controls" style="margin-top: 30px;">
-                                    <div class="pagination-info">
-                                        Mostrando <?php
-                                            $firstCat = $categoryOffset + 1;
-                                            $lastCat = min($categoryOffset + $categoriesPerPage, $totalCategories);
-                                            echo htmlEsc($firstCat) . '-' . htmlEsc($lastCat) . ' de ' . htmlEsc($totalCategories);
-                                        ?> categorías
-                                    </div>
-                                    <div class="pagination-buttons">
-                                        <?php if ($currentCategoryPage > 1): ?>
-                                            <a href="?p=<?php echo htmlEsc($currentCategoryPage - 1); ?>" class="btn btn-secondary pagination-btn">← Anterior</a>
-                                        <?php endif; ?>
 
                                         <?php
                                         // Mostrar números de página (máximo 5)
@@ -391,20 +377,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                             </div>
                                         <?php endforeach; ?>
 
-                            <!-- Controles de paginacion para categorias -->
-                            <?php if ($totalCategoryPages > 1): ?>
-                                <div class="pagination-controls" style="margin-top: 30px;">
-                                    <div class="pagination-info">
-                                        Mostrando <?php
-                                            $firstCat = $categoryOffset + 1;
-                                            $lastCat = min($categoryOffset + $categoriesPerPage, $totalCategories);
-                                            echo htmlEsc($firstCat) . '-' . htmlEsc($lastCat) . ' de ' . htmlEsc($totalCategories);
-                                        ?> categorías
-                                    </div>
-                                    <div class="pagination-buttons">
-                                        <?php if ($currentCategoryPage > 1): ?>
-                                            <a href="?p=<?php echo htmlEsc($currentCategoryPage - 1); ?>" class="btn btn-secondary pagination-btn">← Anterior</a>
-                                        <?php endif; ?>
 
                                         <?php
                                         // Mostrar números de página (máximo 5)
