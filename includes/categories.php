@@ -123,11 +123,11 @@ function movePodcastFiles($username, $podcastName, $oldCategory, $newCategory) {
     $basePath = $config['base_path'];
     $oldCategoryPath = $basePath . DIRECTORY_SEPARATOR . $username .
                        DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR .
-                       'Podcast' . DIRECTORY_SEPARATOR . $oldCategory;
+                       'Podcasts' . DIRECTORY_SEPARATOR . $oldCategory;
 
     $newCategoryPath = $basePath . DIRECTORY_SEPARATOR . $username .
                        DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR .
-                       'Podcast' . DIRECTORY_SEPARATOR . $newCategory;
+                       'Podcasts' . DIRECTORY_SEPARATOR . $newCategory;
 
     // VALIDACIÓN 5: Carpeta origen existe
     if (!is_dir($oldCategoryPath)) {
@@ -234,7 +234,7 @@ function getCategoryStats($username, $category) {
     // Ruta física de la categoría
     $categoryPath = $basePath . DIRECTORY_SEPARATOR . $username .
                     DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR .
-                    'Podcast' . DIRECTORY_SEPARATOR . $category;
+                    'Podcasts' . DIRECTORY_SEPARATOR . $category;
 
     $stats = [
         'podcasts' => 0,
@@ -430,11 +430,11 @@ function renameCategory($username, $oldName, $newName) {
     // Rutas
     $oldPath = $basePath . DIRECTORY_SEPARATOR . $username .
                DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR .
-               'Podcast' . DIRECTORY_SEPARATOR . $oldName;
+               'Podcasts' . DIRECTORY_SEPARATOR . $oldName;
 
     $newPath = $basePath . DIRECTORY_SEPARATOR . $username .
                DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR .
-               'Podcast' . DIRECTORY_SEPARATOR . $newNameSanitized;
+               'Podcasts' . DIRECTORY_SEPARATOR . $newNameSanitized;
 
     // VALIDACIÓN 4: Carpeta origen debe existir
     if (!is_dir($oldPath)) {
@@ -543,11 +543,11 @@ function mergeCategories($username, $sourceCategory, $targetCategory) {
 
     $sourcePath = $basePath . DIRECTORY_SEPARATOR . $username .
                   DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR .
-                  'Podcast' . DIRECTORY_SEPARATOR . $sourceCategory;
+                  'Podcasts' . DIRECTORY_SEPARATOR . $sourceCategory;
 
     $targetPath = $basePath . DIRECTORY_SEPARATOR . $username .
                   DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR .
-                  'Podcast' . DIRECTORY_SEPARATOR . $targetCategory;
+                  'Podcasts' . DIRECTORY_SEPARATOR . $targetCategory;
 
     // Guardar estado original para revertir
     $backupState = [
