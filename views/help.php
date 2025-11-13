@@ -71,7 +71,7 @@
         <pre style="background: #2d3748; color: #e2e8f0; padding: 15px; border-radius: 6px; overflow-x: auto;">
 /tu-emisora/
 └── media/
-    └── Suscripciones/
+    └── Podcasts/
         ├── Categoria1/
         │   ├── Podcast_A/
         │   │   ├── episodio1.mp3
