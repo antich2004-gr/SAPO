@@ -404,39 +404,39 @@ textarea {
 }
 
 /* Fondos de color según estado del podcast */
-.podcast-item-status-active {
+.podcast-item-recent {
     background: rgba(16, 185, 129, 0.03);
     border-left-color: var(--primary-green);
 }
 
-.podcast-item-status-active:hover {
+.podcast-item-recent:hover {
     background: rgba(16, 185, 129, 0.08);
 }
 
-.podcast-item-status-poco-activo {
+.podcast-item-old {
     background: rgba(16, 185, 129, 0.02);
     border-left-color: var(--primary-green-light);
 }
 
-.podcast-item-status-poco-activo:hover {
+.podcast-item-old:hover {
     background: rgba(16, 185, 129, 0.05);
 }
 
-.podcast-item-status-inactive {
+.podcast-item-inactive {
     background: rgba(45, 45, 45, 0.02);
     border-left-color: var(--secondary-medium);
 }
 
-.podcast-item-status-inactive:hover {
+.podcast-item-inactive:hover {
     background: rgba(45, 45, 45, 0.05);
 }
 
-.podcast-item-status-unknown {
+.podcast-item-unknown {
     background: rgba(0, 0, 0, 0.01);
     border-left-color: var(--border-color);
 }
 
-.podcast-item-status-unknown:hover {
+.podcast-item-unknown:hover {
     background: rgba(0, 0, 0, 0.03);
 }
 
