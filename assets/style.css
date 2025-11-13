@@ -477,7 +477,7 @@ textarea {
 
 .modal-content {
     background-color: #fefefe;
-    margin: 5% auto;
+    margin: 8% auto;
     padding: 0;
     border: none;
     border-radius: var(--border-radius);
@@ -501,14 +501,22 @@ textarea {
 .modal-content h3 {
     background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary-dark) 100%);
     color: white;
-    padding: 20px;
+    padding: 25px 30px;
     margin: 0;
     border-radius: var(--border-radius) var(--border-radius) 0 0;
     border-bottom: 2px solid var(--primary-green);
 }
 
 .modal-content > div {
-    padding: 20px;
+    padding: 30px;
+}
+
+.modal-content .form-group {
+    margin-bottom: 20px;
+}
+
+.modal-content .form-group:last-child {
+    margin-bottom: 0;
 }
 
 .close {
