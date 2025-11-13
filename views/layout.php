@@ -74,11 +74,6 @@
         <?php require_once 'views/login.php'; ?>
     <?php elseif (isAdmin()): ?>
         <?php require_once 'views/admin.php'; ?>
-    <?php elseif (isset($_GET['view']) && $_GET['view'] == 'categories' && !isAdmin()): ?>
-        <?php
-        $username = $_SESSION['username'];
-        require_once 'views/categories.php';
-        ?>
     <?php elseif (isset($_GET['status']) && $_GET['status'] == 'podget'): ?>
         <?php require_once 'views/podget_status.php'; ?>
     <?php else: ?>

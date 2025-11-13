@@ -254,6 +254,60 @@ function deleteCategory(categoryName) {
 }
 
 /**
+ * Alias para showCategoryManager
+ */
+function openCategoryManager() {
+    showCategoryManager();
+}
+
+/**
+ * Solicitar nuevo nombre para una categoría
+ */
+function renameCategoryPrompt(oldName) {
+    const newName = prompt('Renombrar categoría "' + oldName + '" a:', oldName);
+    if (newName && newName.trim() !== '' && newName !== oldName) {
+        renameCategory(oldName, newName.trim());
+    }
+}
+
+/**
+ * Renombrar categoría
+ */
+function renameCategory(oldName, newName) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
+    form.innerHTML = `
+        <input type="hidden" name="action" value="rename_category">
+        <input type="hidden" name="csrf_token" value="${csrfToken}">
+        <input type="hidden" name="old_name" value="${oldName}">
+        <input type="hidden" name="new_name" value="${newName}">
+    `;
+    document.body.appendChild(form);
+    form.submit();
+}
+
+/**
+ * Confirmar eliminación de categoría vacía
+ */
+function deleteCategoryConfirm(categoryName) {
+    if (!confirm('¿Eliminar la categoría vacía "' + categoryName + '"?\n\nEsta acción eliminará la carpeta vacía del disco.')) {
+        return;
+    }
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
+    form.innerHTML = `
+        <input type="hidden" name="action" value="delete_category">
+        <input type="hidden" name="csrf_token" value="${csrfToken}">
+        <input type="hidden" name="category" value="${categoryName}">
+    `;
+    document.body.appendChild(form);
+    form.submit();
+}
+
+/**
  * Filtrar podcasts por categoría
  */
 function filterByCategory() {

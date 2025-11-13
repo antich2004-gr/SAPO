@@ -189,9 +189,9 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     <span id="viewModeText">Agrupar por categoría</span>
                                 </button>
 
-                                <a href="index.php?view=categories" class="btn btn-primary" style="text-decoration: none; white-space: nowrap;">
+                                <button type="button" class="btn btn-primary" onclick="openCategoryManager()" style="white-space: nowrap;">
                                     🗂️ Gestionar Categorías
-                                </a>
+                                </button>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -586,10 +586,10 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
 <!-- MODAL DE GESTIÓN DE CATEGORÍAS -->
 <div id="categoryModal" class="modal">
-    <div class="modal-content" style="max-width: 500px;">
+    <div class="modal-content" style="max-width: 600px;">
         <span class="close" onclick="closeCategoryManager()">&times;</span>
         <h3>Gestión de Categorías</h3>
-        
+
         <form method="POST" style="margin-top: 20px;">
             <input type="hidden" name="action" value="add_category">
             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
@@ -601,21 +601,40 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 </div>
             </div>
         </form>
-        
+
         <div style="margin-top: 30px;">
             <h4>Categorías Existentes:</h4>
             <?php if (!empty($userCategories)): ?>
                 <div class="category-list" style="margin-top: 15px;">
-                    <?php foreach ($userCategories as $cat): 
-                        $inUse = isCategoryInUse($_SESSION['username'], $cat);
+                    <?php foreach ($userCategories as $cat):
+                        $stats = getCategoryStats($_SESSION['username'], $cat);
+                        $isEmpty = $stats['files'] == 0 && $stats['podcasts'] == 0;
                     ?>
-                        <div class="category-item">
-                            <span><?php echo htmlEsc(displayName($cat)); ?></span>
-                            <?php if ($inUse): ?>
-                                <span class="badge-in-use">En uso</span>
-                            <?php else: ?>
-                                <button type="button" class="btn-delete-small" onclick="deleteCategory('<?php echo htmlEsc($cat); ?>')" title="Eliminar">×</button>
-                            <?php endif; ?>
+                        <div class="category-item-extended">
+                            <div class="category-info">
+                                <div class="category-name"><?php echo htmlEsc(displayName($cat)); ?></div>
+                                <div class="category-stats">
+                                    <?php echo $stats['podcasts']; ?> podcast<?php echo $stats['podcasts'] != 1 ? 's' : ''; ?> ·
+                                    <?php echo $stats['files']; ?> archivo<?php echo $stats['files'] != 1 ? 's' : ''; ?>
+                                    <?php if ($isEmpty): ?>
+                                        <span class="badge-empty">Vacía</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <div class="category-actions">
+                                <button type="button" class="btn-action" onclick="renameCategoryPrompt('<?php echo htmlEsc($cat); ?>')" title="Renombrar">
+                                    ✏️
+                                </button>
+                                <?php if ($isEmpty): ?>
+                                    <button type="button" class="btn-delete-small" onclick="deleteCategoryConfirm('<?php echo htmlEsc($cat); ?>')" title="Eliminar">
+                                        🗑️
+                                    </button>
+                                <?php else: ?>
+                                    <button type="button" class="btn-action" disabled title="No se puede eliminar: contiene archivos">
+                                        🔒
+                                    </button>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -633,27 +652,74 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
     gap: 10px;
 }
 
-.category-item {
+.category-item-extended {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 15px;
+    padding: 12px 15px;
     background: #f7fafc;
     border-radius: 6px;
+    border: 1px solid #e2e8f0;
 }
 
-.category-item span {
-    font-size: 14px;
-    color: #2d3748;
+.category-info {
+    flex: 1;
 }
 
-.badge-in-use {
-    background: #bee3f8;
-    color: #2c5282;
-    padding: 3px 10px;
-    border-radius: 4px;
-    font-size: 12px;
+.category-name {
+    font-size: 15px;
     font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 4px;
+}
+
+.category-stats {
+    font-size: 13px;
+    color: #718096;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.badge-empty {
+    background: #feebc8;
+    color: #c05621;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.category-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-action {
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-action:hover:not(:disabled) {
+    background: #5a67d8;
+    transform: scale(1.05);
+}
+
+.btn-action:disabled {
+    background: #cbd5e0;
+    cursor: not-allowed;
+    opacity: 0.6;
 }
 
 .btn-delete-small {
@@ -661,17 +727,20 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
     color: white;
     border: none;
     border-radius: 4px;
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     cursor: pointer;
-    font-size: 18px;
+    font-size: 16px;
     line-height: 1;
     transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-delete-small:hover {
     background: #e53e3e;
-    transform: scale(1.1);
+    transform: scale(1.05);
 }
 
 /* Vista agrupada por categorías */

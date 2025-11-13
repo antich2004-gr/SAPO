@@ -384,7 +384,7 @@ if ($action == 'rename_category' && isLoggedIn() && !isAdmin()) {
             $_SESSION['error'] = $result['error'];
         }
     }
-    header('Location: index.php?view=categories');
+    header('Location: index.php');
     exit;
 }
 
@@ -407,7 +407,7 @@ if ($action == 'delete_category' && isLoggedIn() && !isAdmin()) {
             }
         }
     }
-    header('Location: index.php?view=categories');
+    header('Location: index.php');
     exit;
 }
 
