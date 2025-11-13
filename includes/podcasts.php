@@ -450,8 +450,8 @@ function writeDuraciones($username, $duraciones) {
  */
 function getDuracionesPath($username) {
     $config = getConfig();
-    $basePath = rtrim($config['base_path'], '/\');
-    $subscriptionsFolder = trim($config['subscriptions_folder'], '/\');
+    $basePath = rtrim($config['base_path'], '/\\');
+    $subscriptionsFolder = trim($config['subscriptions_folder'], '/\\');
 
     $userSlug = slugify($username);
     return $basePath . DIRECTORY_SEPARATOR . $userSlug . DIRECTORY_SEPARATOR .
