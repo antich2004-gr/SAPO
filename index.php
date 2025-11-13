@@ -360,15 +360,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 }
 
-// ========== ACCIONES GET PARA GESTOR DE CATEGORÍAS ==========
+// ========== ACCIONES POST PARA GESTOR DE CATEGORÍAS (con protección CSRF) ==========
 
-// RENAME CATEGORY (GET)
-if (isset($_GET['action']) && $_GET['action'] == 'rename_category' && isLoggedIn() && !isAdmin()) {
-    $oldName = $_GET['old_name'] ?? '';
-    $newName = $_GET['new_name'] ?? '';
+// Todas estas acciones ahora usan POST con CSRF token para prevenir ataques CSRF
+// Los tokens se validan automáticamente en el bloque POST principal (líneas 28-34)
+
+// RENAME CATEGORY (POST)
+if ($action == 'rename_category' && isLoggedIn() && !isAdmin()) {
+    $oldName = $_POST['old_name'] ?? '';
+    $newName = $_POST['new_name'] ?? '';
 
     if (empty($oldName) || empty($newName)) {
-        $error = 'Nombres de categoría inválidos';
+        $_SESSION['error'] = 'Nombres de categoría inválidos';
     } else {
         $result = renameCategory($_SESSION['username'], $oldName, $newName);
         if ($result['success']) {
@@ -377,23 +380,21 @@ if (isset($_GET['action']) && $_GET['action'] == 'rename_category' && isLoggedIn
             $_SESSION['radiobot_action'] = 'rename';
             $_SESSION['radiobot_old_name'] = $oldName;
             $_SESSION['radiobot_new_name'] = $result['new_name'];
-            header('Location: index.php?view=categories');
-            exit;
         } else {
             $_SESSION['error'] = $result['error'];
-            header('Location: index.php?view=categories');
-            exit;
         }
     }
+    header('Location: index.php?view=categories');
+    exit;
 }
 
-// MERGE CATEGORIES (GET)
-if (isset($_GET['action']) && $_GET['action'] == 'merge_categories' && isLoggedIn() && !isAdmin()) {
-    $source = $_GET['source'] ?? '';
-    $target = $_GET['target'] ?? '';
+// MERGE CATEGORIES (POST)
+if ($action == 'merge_categories' && isLoggedIn() && !isAdmin()) {
+    $source = $_POST['source'] ?? '';
+    $target = $_POST['target'] ?? '';
 
     if (empty($source) || empty($target)) {
-        $error = 'Categorías inválidas';
+        $_SESSION['error'] = 'Categorías inválidas';
     } else {
         $result = mergeCategories($_SESSION['username'], $source, $target);
         if ($result['success']) {
@@ -402,22 +403,20 @@ if (isset($_GET['action']) && $_GET['action'] == 'merge_categories' && isLoggedI
             $_SESSION['radiobot_action'] = 'merge';
             $_SESSION['radiobot_source'] = $source;
             $_SESSION['radiobot_target'] = $target;
-            header('Location: index.php?view=categories');
-            exit;
         } else {
             $_SESSION['error'] = $result['error'];
-            header('Location: index.php?view=categories');
-            exit;
         }
     }
+    header('Location: index.php?view=categories');
+    exit;
 }
 
-// DELETE CATEGORY (GET) - para categorías vacías
-if (isset($_GET['action']) && $_GET['action'] == 'delete_category' && isLoggedIn() && !isAdmin()) {
-    $categoryName = $_GET['category'] ?? '';
+// DELETE CATEGORY (POST) - para categorías vacías
+if ($action == 'delete_category' && isLoggedIn() && !isAdmin()) {
+    $categoryName = $_POST['category'] ?? '';
 
     if (empty($categoryName)) {
-        $error = 'Categoría inválida';
+        $_SESSION['error'] = 'Categoría inválida';
     } else {
         // Verificar que esté vacía
         $stats = getCategoryStats($_SESSION['username'], $categoryName);
@@ -430,9 +429,9 @@ if (isset($_GET['action']) && $_GET['action'] == 'delete_category' && isLoggedIn
                 $_SESSION['error'] = 'Error al eliminar la categoría';
             }
         }
-        header('Location: index.php?view=categories');
-        exit;
     }
+    header('Location: index.php?view=categories');
+    exit;
 }
 
 // GET CATEGORY FILES (AJAX)

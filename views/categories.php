@@ -600,6 +600,46 @@ $radiobotUrl = $config['radiobot_url'] ?? 'https://radiobot.radioslibres.info';
     </div>
 
     <script>
+        // CSRF Token para protección contra ataques CSRF
+        const csrfToken = '<?php echo generateCSRFToken(); ?>';
+
+        /**
+         * Helper para enviar acciones POST con protección CSRF
+         * @param {string} action - La acción a ejecutar
+         * @param {object} params - Parámetros adicionales
+         */
+        function submitPostAction(action, params) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = 'index.php';
+
+            // Agregar CSRF token
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = csrfToken;
+            form.appendChild(csrfInput);
+
+            // Agregar acción
+            const actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'action';
+            actionInput.value = action;
+            form.appendChild(actionInput);
+
+            // Agregar parámetros
+            for (const key in params) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = params[key];
+                form.appendChild(input);
+            }
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+
         function showRenameModal(categoryName) {
             document.getElementById('rename-old-name').value = categoryName;
             document.getElementById('rename-new-name').value = '';
@@ -670,7 +710,11 @@ $radiobotUrl = $config['radiobot_url'] ?? 'https://radiobot.radioslibres.info';
             }
 
             if (confirm('¿Estás seguro de renombrar "' + oldName + '" a "' + newName + '"?')) {
-                window.location.href = 'index.php?action=rename_category&old_name=' + encodeURIComponent(oldName) + '&new_name=' + encodeURIComponent(newName);
+                // Enviar POST con CSRF token (previene ataques CSRF)
+                submitPostAction('rename_category', {
+                    'old_name': oldName,
+                    'new_name': newName
+                });
             }
         }
 
@@ -692,13 +736,20 @@ $radiobotUrl = $config['radiobot_url'] ?? 'https://radiobot.radioslibres.info';
             }
 
             if (confirm('¿Estás seguro de fusionar "' + source + '" en "' + target + '"? Esta acción NO se puede deshacer.')) {
-                window.location.href = 'index.php?action=merge_categories&source=' + encodeURIComponent(source) + '&target=' + encodeURIComponent(target);
+                // Enviar POST con CSRF token (previene ataques CSRF)
+                submitPostAction('merge_categories', {
+                    'source': source,
+                    'target': target
+                });
             }
         }
 
         function deleteCategory(categoryName) {
             if (confirm('¿Estás seguro de eliminar la categoría "' + categoryName + '"?')) {
-                window.location.href = 'index.php?action=delete_category&category=' + encodeURIComponent(categoryName);
+                // Enviar POST con CSRF token (previene ataques CSRF)
+                submitPostAction('delete_category', {
+                    'category': categoryName
+                });
             }
         }
 
