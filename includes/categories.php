@@ -241,16 +241,20 @@ function movePodcastFiles($username, $podcastName, $oldCategory, $newCategory) {
     $fileCount = $filesBeforeMove ? count($filesBeforeMove) : 0;
 
     // Intentar mover el directorio completo
-    if (@rename($podcastDirInOldCategory, $podcastDirInNewCategory)) {
+    $renamed = @rename($podcastDirInOldCategory, $podcastDirInNewCategory);
+
+    if ($renamed) {
         return [
             'success' => true,
             'moved' => $fileCount,
             'message' => "Directorio del podcast movido correctamente con $fileCount archivo(s)"
         ];
     } else {
+        $lastError = error_get_last();
+        $errorMsg = $lastError ? $lastError['message'] : 'Error desconocido';
         return [
             'success' => false,
-            'error' => 'No se pudo mover el directorio del podcast. Verifica permisos.'
+            'error' => 'No se pudo mover el directorio del podcast. Origen: ' . $podcastDirInOldCategory . ' -> Destino: ' . $podcastDirInNewCategory . '. Error: ' . $errorMsg
         ];
     }
 }
