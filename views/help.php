@@ -20,12 +20,12 @@
         <h3 style="margin-top: 0;">📑 Contenido</h3>
         <ul style="line-height: 1.8;">
             <li><a href="#introduccion">¿Qué es SAPO?</a></li>
+            <li><a href="#como-funciona">¿Cómo funciona con Radiobot?</a></li>
             <li><a href="#primeros-pasos">Primeros pasos</a></li>
             <li><a href="#gestionar-podcasts">Gestionar podcasts</a></li>
             <li><a href="#categorias">Organizar con categorías</a></li>
             <li><a href="#descargas">Ejecutar descargas</a></li>
             <li><a href="#estado-feeds">Entender el estado de los feeds</a></li>
-            <li><a href="#importar-exportar">Importar/Exportar serverlist</a></li>
             <li><a href="#informes">Ver informes de descargas</a></li>
             <li><a href="#faq">Preguntas frecuentes (FAQ)</a></li>
         </ul>
@@ -34,22 +34,57 @@
     <!-- Sección: Introducción -->
     <div id="introduccion" style="margin-bottom: 40px;">
         <h3>🐸 ¿Qué es SAPO?</h3>
-        <p>SAPO (Sistema de Automatización de Podcasts) es una aplicación web que te ayuda a gestionar las suscripciones de podcasts para <strong>Radiobot</strong>.</p>
+        <p>SAPO (Sistema de Automatización de Podcasts) es una aplicación web que facilita la gestión de suscripciones de podcasts para <strong>Radiobot</strong>.</p>
 
         <div style="background: #edf2f7; padding: 15px; border-radius: 8px; margin: 15px 0;">
-            <strong>🎯 Objetivo principal:</strong> Facilitar la administración del archivo <code>serverlist.txt</code> y del archivo <code>caducidades.txt</code> que utiliza el script de descargas de Radiobot.
+            <strong>🎯 Objetivo:</strong> Simplificar la administración de tus podcasts mediante una interfaz web intuitiva, sin necesidad de editar archivos de configuración manualmente.
         </div>
 
         <p><strong>Funcionalidades principales:</strong></p>
         <ul>
-            <li>✅ Agregar, editar y eliminar podcasts de forma visual</li>
+            <li>✅ Agregar, editar y eliminar podcasts con unos pocos clics</li>
             <li>✅ Organizar podcasts por categorías personalizadas</li>
-            <li>✅ Ver el estado de actividad de cada feed (última actualización)</li>
-            <li>✅ Configurar días de caducidad por podcast</li>
-            <li>✅ Ejecutar descargas con un clic</li>
-            <li>✅ Ver informes de descargas por período</li>
-            <li>✅ Importar/exportar archivos serverlist.txt</li>
+            <li>✅ Ver el estado de actividad de cada feed RSS</li>
+            <li>✅ Configurar días de caducidad individuales por podcast</li>
+            <li>✅ Ejecutar descargas de episodios nuevos</li>
+            <li>✅ Ver informes detallados de descargas</li>
         </ul>
+    </div>
+
+    <!-- Sección: Cómo funciona -->
+    <div id="como-funciona" style="margin-bottom: 40px;">
+        <h3>⚙️ ¿Cómo funciona con Radiobot?</h3>
+
+        <h4>Flujo de trabajo</h4>
+        <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <ol style="line-height: 2;">
+                <li>📝 <strong>Configuras tus podcasts en SAPO</strong> - Defines qué podcasts quieres, en qué categorías y por cuántos días</li>
+                <li>🔄 <strong>SAPO sincroniza con Radiobot</strong> - Tu configuración se comunica automáticamente con el sistema de descargas</li>
+                <li>⬇️ <strong>Radiobot descarga episodios</strong> - El sistema consulta los feeds RSS y descarga nuevos episodios</li>
+                <li>📁 <strong>Organización automática</strong> - Los episodios se guardan en las carpetas de cada categoría</li>
+                <li>🗑️ <strong>Limpieza automática</strong> - Los episodios antiguos se eliminan según la caducidad configurada</li>
+            </ol>
+        </div>
+
+        <h4>Estructura de archivos en Radiobot</h4>
+        <p>SAPO organiza tus descargas en la siguiente estructura:</p>
+        <pre style="background: #2d3748; color: #e2e8f0; padding: 15px; border-radius: 6px; overflow-x: auto;">
+/tu-emisora/
+└── media/
+    └── Suscripciones/
+        ├── Categoria1/
+        │   ├── Podcast_A/
+        │   │   ├── episodio1.mp3
+        │   │   └── episodio2.mp3
+        │   └── Podcast_B/
+        │       └── episodio1.mp3
+        └── Categoria2/
+            └── Podcast_C/
+                └── episodio1.mp3</pre>
+
+        <div style="background: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 15px 0;">
+            <strong>✨ Ventaja:</strong> No necesitas preocuparte por la estructura de archivos. SAPO y Radiobot se encargan automáticamente de mantener todo organizado.
+        </div>
     </div>
 
     <!-- Sección: Primeros pasos -->
@@ -61,11 +96,11 @@
         <p>Si eres administrador, puedes crear usuarios desde el panel de administración.</p>
 
         <h4>2. Panel principal</h4>
-        <p>Una vez dentro verás:</p>
+        <p>Una vez dentro verás tres pestañas:</p>
         <ul>
-            <li><strong>Pestañas superiores:</strong> Podcasts, Descargas, Informes</li>
-            <li><strong>Listado de podcasts:</strong> Todos tus podcasts suscritos</li>
-            <li><strong>Botones de acción:</strong> Agregar podcast, gestionar categorías, filtros</li>
+            <li><strong>📻 Podcasts:</strong> Lista y gestión de tus podcasts suscritos</li>
+            <li><strong>⬇️ Descargas:</strong> Ejecutar el proceso de descarga de nuevos episodios</li>
+            <li><strong>📊 Informes:</strong> Estadísticas de descargas realizadas</li>
         </ul>
     </div>
 
@@ -78,23 +113,24 @@
             <li>Haz clic en <strong>"+ Agregar Podcast"</strong></li>
             <li>Completa el formulario:
                 <ul>
-                    <li><strong>URL del RSS:</strong> La dirección del feed del podcast (ejemplo: https://feeds.feedburner.com/nombre-podcast)</li>
-                    <li><strong>Categoría:</strong> Selecciona una categoría existente o crea una nueva</li>
-                    <li><strong>Nombre del podcast:</strong> Un nombre descriptivo (será el nombre de la carpeta de descarga)</li>
-                    <li><strong>Caducidad:</strong> Días que se conservarán los episodios (por defecto: 30 días)</li>
+                    <li><strong>URL del RSS:</strong> Dirección del feed (ejemplo: https://feeds.feedburner.com/mi-podcast)</li>
+                    <li><strong>Categoría:</strong> Selecciona una existente o crea una nueva</li>
+                    <li><strong>Nombre del podcast:</strong> Nombre descriptivo (será el nombre de la carpeta)</li>
+                    <li><strong>Caducidad:</strong> Días a conservar episodios (1-365 días, por defecto: 30)</li>
                 </ul>
             </li>
             <li>Haz clic en <strong>"Agregar Podcast"</strong></li>
         </ol>
 
         <div style="background: #fff5f5; border-left: 4px solid #f56565; padding: 15px; margin: 15px 0;">
-            <strong>⚠️ Importante:</strong> El nombre del podcast se "sanitiza" automáticamente (se eliminan espacios, acentos y caracteres especiales). Ejemplo: "Mi Podcast ñ" → "Mi_Podcast_n"
+            <strong>⚠️ Importante:</strong> El nombre del podcast se normaliza automáticamente. Los espacios se convierten en guiones bajos y se eliminan caracteres especiales.<br>
+            Ejemplo: "Mi Podcast Ñoño" → "Mi_Podcast_Nono"
         </div>
 
         <h4>✏️ Editar un podcast</h4>
         <ol>
             <li>Encuentra el podcast en el listado</li>
-            <li>Haz clic en el botón <strong>"✏️ Editar"</strong></li>
+            <li>Haz clic en <strong>"✏️ Editar"</strong></li>
             <li>Modifica los campos necesarios</li>
             <li>Haz clic en <strong>"Guardar Cambios"</strong></li>
         </ol>
@@ -102,19 +138,19 @@
         <h4>🗑️ Eliminar un podcast</h4>
         <ol>
             <li>Encuentra el podcast en el listado</li>
-            <li>Haz clic en el botón <strong>"🗑️ Eliminar"</strong></li>
+            <li>Haz clic en <strong>"🗑️ Eliminar"</strong></li>
             <li>Confirma la acción</li>
         </ol>
 
         <div style="background: #fffaf0; border-left: 4px solid #f6ad55; padding: 15px; margin: 15px 0;">
-            <strong>💡 Tip:</strong> Al eliminar un podcast, se elimina de la lista de suscripciones pero NO se borran los archivos ya descargados en el servidor.
+            <strong>💡 Nota:</strong> Al eliminar un podcast de SAPO, los episodios ya descargados permanecen en el servidor hasta la próxima limpieza automática.
         </div>
     </div>
 
     <!-- Sección: Categorías -->
     <div id="categorias" style="margin-bottom: 40px;">
         <h3>📁 Organizar con categorías</h3>
-        <p>Las categorías te ayudan a organizar tus podcasts por temática. Son las carpetas donde se descargarán los episodios.</p>
+        <p>Las categorías son carpetas que agrupan podcasts por temática (Noticias, Música, Deportes, etc.).</p>
 
         <h4>Crear una categoría</h4>
         <ol>
@@ -124,36 +160,31 @@
         </ol>
 
         <h4>Eliminar una categoría</h4>
-        <p>Solo puedes eliminar categorías que no estén siendo usadas por ningún podcast.</p>
-        <ol>
-            <li>Haz clic en <strong>"Gestionar Categorías"</strong></li>
-            <li>Haz clic en el botón <strong>"🗑️"</strong> junto a la categoría</li>
-            <li>Confirma la eliminación</li>
-        </ol>
+        <p>Solo puedes eliminar categorías vacías (sin podcasts asignados).</p>
 
         <h4>Vistas de organización</h4>
-        <p>Puedes ver tus podcasts de dos formas:</p>
         <ul>
             <li><strong>Vista alfabética:</strong> Todos los podcasts ordenados A-Z</li>
-            <li><strong>Vista por categoría:</strong> Podcasts agrupados por su categoría</li>
+            <li><strong>Vista agrupada:</strong> Podcasts organizados por categoría</li>
         </ul>
-        <p>Usa el botón <strong>"Agrupar por categoría"</strong> para alternar entre vistas.</p>
+        <p>Alterna entre vistas con el botón <strong>"Agrupar por categoría"</strong>.</p>
 
         <h4>Filtrar por categoría</h4>
-        <p>Usa el selector <strong>"Filtrar por categoría"</strong> en la parte superior para mostrar solo los podcasts de una categoría específica.</p>
+        <p>Usa el selector en la parte superior para mostrar solo podcasts de una categoría específica.</p>
     </div>
 
     <!-- Sección: Descargas -->
     <div id="descargas" style="margin-bottom: 40px;">
         <h3>⬇️ Ejecutar descargas</h3>
 
-        <h4>¿Cómo funciona?</h4>
-        <p>Cuando haces clic en <strong>"Ejecutar Descargas"</strong>, SAPO ejecuta el script de descargas de Radiobot que:</p>
+        <h4>¿Cómo funciona el proceso?</h4>
+        <p>Cuando ejecutas las descargas desde SAPO:</p>
         <ol>
-            <li>Lee tu archivo <code>serverlist.txt</code> generado por SAPO</li>
-            <li>Verifica cada feed RSS en busca de nuevos episodios</li>
-            <li>Descarga los episodios nuevos en las carpetas correspondientes</li>
-            <li>Aplica las reglas de caducidad configuradas</li>
+            <li>🔍 <strong>Radiobot consulta los feeds RSS</strong> de todos tus podcasts</li>
+            <li>🆕 <strong>Identifica episodios nuevos</strong> que aún no has descargado</li>
+            <li>⬇️ <strong>Descarga los archivos de audio</strong> en las carpetas correspondientes</li>
+            <li>📂 <strong>Organiza por categoría y podcast</strong> automáticamente</li>
+            <li>🗑️ <strong>Elimina episodios antiguos</strong> según la caducidad configurada</li>
         </ol>
 
         <h4>Ejecutar descargas</h4>
@@ -161,115 +192,76 @@
             <li>Ve a la pestaña <strong>"Descargas"</strong></li>
             <li>Haz clic en <strong>"▶️ Ejecutar Descargas"</strong></li>
             <li>Confirma la acción</li>
-            <li>Espera el mensaje de confirmación</li>
+            <li>El proceso se ejecuta en segundo plano</li>
         </ol>
 
         <div style="background: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 15px 0;">
-            <strong>✅ Nota:</strong> El proceso se ejecuta en segundo plano. Los nuevos archivos estarán disponibles en Radiobot en aproximadamente 5-10 minutos.
+            <strong>⏱️ Tiempo estimado:</strong> Los nuevos episodios estarán disponibles en Radiobot en aproximadamente 5-10 minutos, dependiendo del número de podcasts y el tamaño de los archivos.
         </div>
 
-        <h4>Caducidad de episodios</h4>
-        <p>La caducidad indica cuántos días se conservarán los episodios antes de ser eliminados automáticamente.</p>
+        <h4>Configuración de caducidad</h4>
+        <p>La caducidad determina cuántos días se conservan los episodios:</p>
         <ul>
-            <li><strong>30 días (predeterminado):</strong> Valor estándar para la mayoría de podcasts</li>
-            <li><strong>7 días:</strong> Para podcasts diarios o noticias</li>
-            <li><strong>90 días:</strong> Para contenido evergreen o podcasts poco frecuentes</li>
-            <li><strong>1-365 días:</strong> Puedes configurar cualquier valor en este rango</li>
+            <li><strong>7 días:</strong> Ideal para noticias diarias o contenido muy frecuente</li>
+            <li><strong>30 días (predeterminado):</strong> Recomendado para la mayoría de podcasts</li>
+            <li><strong>90+ días:</strong> Para podcasts poco frecuentes o contenido atemporal</li>
         </ul>
+
+        <div style="background: #fffaf0; border-left: 4px solid #f6ad55; padding: 15px; margin: 15px 0;">
+            <strong>💡 Consejo:</strong> Ajusta la caducidad según la frecuencia de publicación del podcast y el espacio disponible en tu servidor.
+        </div>
     </div>
 
     <!-- Sección: Estado de feeds -->
     <div id="estado-feeds" style="margin-bottom: 40px;">
         <h3>📊 Entender el estado de los feeds</h3>
-        <p>Cada podcast muestra un indicador de estado que refleja cuándo se publicó el último episodio:</p>
+        <p>Cada podcast muestra un indicador de actividad basado en la fecha del último episodio publicado:</p>
 
         <div style="display: grid; grid-template-columns: auto 1fr; gap: 15px; margin: 20px 0;">
             <div style="background: #d4edda; padding: 10px 20px; border-radius: 6px; font-weight: bold;">🟢 Activo</div>
-            <div style="padding: 10px 0;">Último episodio publicado hace <strong>≤ 30 días</strong>. El podcast se actualiza regularmente.</div>
+            <div style="padding: 10px 0;">Último episodio hace <strong>≤ 30 días</strong>. El podcast se actualiza regularmente.</div>
 
             <div style="background: #fff3cd; padding: 10px 20px; border-radius: 6px; font-weight: bold;">🟠 Poco activo</div>
-            <div style="padding: 10px 0;">Último episodio publicado hace <strong>31-90 días</strong>. El podcast puede estar en pausa o actualiza con poca frecuencia.</div>
+            <div style="padding: 10px 0;">Último episodio hace <strong>31-90 días</strong>. Actualizaciones poco frecuentes.</div>
 
             <div style="background: #f8d7da; padding: 10px 20px; border-radius: 6px; font-weight: bold;">🔴 Inactivo</div>
-            <div style="padding: 10px 0;">Último episodio publicado hace <strong>más de 90 días</strong>. El podcast posiblemente está abandonado.</div>
+            <div style="padding: 10px 0;">Último episodio hace <strong>más de 90 días</strong>. Posiblemente abandonado.</div>
 
             <div style="background: #e2e8f0; padding: 10px 20px; border-radius: 6px; font-weight: bold;">⚪ Desconocido</div>
-            <div style="padding: 10px 0;">No se pudo obtener información del feed. Puede ser un error temporal o URL inválida.</div>
+            <div style="padding: 10px 0;">No se pudo obtener información. Puede ser un error temporal.</div>
         </div>
 
         <h4>Actualizar estado de feeds</h4>
-        <p>Haz clic en <strong>"🔄 Actualizar Feeds"</strong> para refrescar la información de todos los podcasts (última fecha de publicación). Esta acción consulta los feeds RSS actualizados.</p>
+        <p>Haz clic en <strong>"🔄 Actualizar Feeds"</strong> para refrescar la información de todos los podcasts. Esto consulta los feeds RSS actualizados y puede tardar unos segundos.</p>
 
-        <div style="background: #fffaf0; border-left: 4px solid #f6ad55; padding: 15px; margin: 15px 0;">
-            <strong>💡 Tip:</strong> El estado se calcula en tiempo real pero se almacena en caché para mejorar el rendimiento. Usa "Actualizar Feeds" si crees que la información está desactualizada.
+        <div style="background: #e6fffa; border-left: 4px solid #38b2ac; padding: 15px; margin: 15px 0;">
+            <strong>ℹ️ Información:</strong> El estado se almacena en caché para mejorar el rendimiento. Se actualiza automáticamente cada 12 horas o cuando haces clic en "Actualizar Feeds".
         </div>
-    </div>
-
-    <!-- Sección: Importar/Exportar -->
-    <div id="importar-exportar" style="margin-bottom: 40px;">
-        <h3>📥📤 Importar/Exportar serverlist</h3>
-
-        <h4>📤 Exportar serverlist.txt</h4>
-        <p>Descarga tu archivo <code>serverlist.txt</code> actual:</p>
-        <ol>
-            <li>Ve a la pestaña <strong>"Podcasts"</strong></li>
-            <li>Haz clic en <strong>"📥 Exportar"</strong></li>
-            <li>Se descargará un archivo: <code>serverlist_tunombre_YYYY-MM-DD.txt</code></li>
-        </ol>
-
-        <p><strong>¿Para qué sirve?</strong></p>
-        <ul>
-            <li>Crear respaldos de tu configuración</li>
-            <li>Migrar podcasts a otro servidor</li>
-            <li>Compartir tu lista con otras emisoras</li>
-            <li>Editar manualmente (usuarios avanzados)</li>
-        </ul>
-
-        <h4>📥 Importar serverlist.txt</h4>
-        <p>Carga un archivo <code>serverlist.txt</code> existente:</p>
-        <ol>
-            <li>Ve a la pestaña <strong>"Podcasts"</strong></li>
-            <li>Haz clic en <strong>"Importar Serverlist"</strong></li>
-            <li>Selecciona tu archivo .txt</li>
-            <li>Haz clic en <strong>"Importar"</strong></li>
-        </ol>
-
-        <div style="background: #fff5f5; border-left: 4px solid #f56565; padding: 15px; margin: 15px 0;">
-            <strong>⚠️ Importante:</strong> La importación NO sobrescribe tus podcasts actuales. Solo agrega los podcasts que no existen en tu lista (compara por URL).
-        </div>
-
-        <h4>Formato del archivo serverlist.txt</h4>
-        <p>El archivo tiene el siguiente formato (cada línea es un podcast):</p>
-        <pre style="background: #2d3748; color: #e2e8f0; padding: 15px; border-radius: 6px; overflow-x: auto;">URL_RSS Carpeta_Categoria Nombre_Podcast</pre>
-        <p><strong>Ejemplo:</strong></p>
-        <pre style="background: #2d3748; color: #e2e8f0; padding: 15px; border-radius: 6px; overflow-x: auto;">https://feeds.example.com/podcast1 Noticias Podcast_Noticias_Diarias
-https://anchor.fm/s/12345/podcast/rss Musica Entrevistas_Musicales
-http://example.org/feed.xml Ciencia Podcast_Ciencia_Facil</pre>
     </div>
 
     <!-- Sección: Informes -->
     <div id="informes" style="margin-bottom: 40px;">
         <h3>📈 Ver informes de descargas</h3>
-        <p>La pestaña <strong>"Informes"</strong> te muestra estadísticas sobre las descargas realizadas.</p>
+        <p>La pestaña <strong>"Informes"</strong> muestra estadísticas detalladas sobre las descargas realizadas.</p>
 
         <h4>Períodos disponibles</h4>
         <ul>
-            <li><strong>7 días:</strong> Última semana</li>
-            <li><strong>30 días:</strong> Último mes</li>
-            <li><strong>90 días:</strong> Últimos 3 meses</li>
+            <li><strong>7 días:</strong> Actividad de la última semana</li>
+            <li><strong>30 días:</strong> Resumen mensual</li>
+            <li><strong>90 días:</strong> Tendencias trimestrales</li>
         </ul>
 
-        <h4>Información que muestra</h4>
+        <h4>Información mostrada</h4>
         <ul>
-            <li>📊 Total de episodios descargados</li>
+            <li>📊 Total de episodios descargados en el período</li>
             <li>📊 Total de episodios eliminados por caducidad</li>
             <li>📊 Promedio de descargas por día</li>
             <li>📊 Promedio de eliminaciones por día</li>
-            <li>📋 Detalle por podcast (nombre, episodios descargados, eliminados)</li>
+            <li>📋 Detalle por podcast (nombre, descargas, eliminaciones)</li>
         </ul>
 
         <div style="background: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 15px 0;">
-            <strong>✅ Nota:</strong> Los informes se generan automáticamente cada vez que ejecutas las descargas.
+            <strong>📝 Nota:</strong> Los informes se generan automáticamente cada vez que ejecutas las descargas desde SAPO.
         </div>
     </div>
 
@@ -284,27 +276,22 @@ http://example.org/feed.xml Ciencia Podcast_Ciencia_Facil</pre>
 
         <div style="margin-bottom: 20px;">
             <h4>¿Qué pasa si cambio el nombre de un podcast?</h4>
-            <p>Se actualizará en el <code>serverlist.txt</code>, pero los archivos ya descargados en la carpeta antigua NO se moverán automáticamente. Deberás moverlos manualmente si lo deseas.</p>
-        </div>
-
-        <div style="margin-bottom: 20px;">
-            <h4>¿Puedo usar SAPO sin Radiobot?</h4>
-            <p>SAPO está diseñado específicamente para Radiobot, pero puedes usar el <code>serverlist.txt</code> generado con otras herramientas compatibles con este formato.</p>
+            <p>El nombre se actualizará en SAPO, pero los archivos ya descargados permanecerán en la carpeta antigua. Radiobot empezará a descargar en la nueva carpeta con el nombre actualizado.</p>
         </div>
 
         <div style="margin-bottom: 20px;">
             <h4>¿Cómo sé si un feed RSS es válido?</h4>
-            <p>SAPO valida automáticamente el formato de la URL. Si el feed funciona, verás el estado actualizado después de hacer clic en "Actualizar Feeds".</p>
+            <p>SAPO valida automáticamente el formato de la URL. Si el feed funciona, verás el estado actualizado después de hacer clic en "Actualizar Feeds" o después de la primera descarga.</p>
         </div>
 
         <div style="margin-bottom: 20px;">
             <h4>¿Los cambios se aplican inmediatamente en Radiobot?</h4>
-            <p>Los cambios en SAPO actualizan el <code>serverlist.txt</code> inmediatamente, pero Radiobot aplicará los cambios la próxima vez que ejecutes las descargas.</p>
+            <p>Sí, los cambios en SAPO se sincronizan inmediatamente. Radiobot aplicará los cambios en la siguiente ejecución de descargas.</p>
         </div>
 
         <div style="margin-bottom: 20px;">
-            <h4>¿Puedo cambiar la caducidad de todos mis podcasts a la vez?</h4>
-            <p>Actualmente no hay una función para edición masiva. Deberás editar cada podcast individualmente o editar manualmente el archivo <code>caducidades.txt</code> en el servidor.</p>
+            <h4>¿Puedo cambiar la caducidad de múltiples podcasts a la vez?</h4>
+            <p>Actualmente no hay función de edición masiva. Deberás editar cada podcast individualmente para cambiar su caducidad.</p>
         </div>
 
         <div style="margin-bottom: 20px;">
@@ -314,19 +301,22 @@ http://example.org/feed.xml Ciencia Podcast_Ciencia_Facil</pre>
 
         <div style="margin-bottom: 20px;">
             <h4>¿SAPO elimina archivos de audio?</h4>
-            <p>No, SAPO no elimina archivos. El script de descargas de Radiobot es el que aplica las reglas de caducidad y elimina episodios antiguos.</p>
+            <p>No, SAPO solo gestiona la configuración. Radiobot es quien descarga y elimina archivos según las reglas de caducidad configuradas en SAPO.</p>
         </div>
 
         <div style="margin-bottom: 20px;">
             <h4>¿Por qué algunos feeds muestran "Estado desconocido"?</h4>
-            <p>Puede deberse a:</p>
-            <ul>
-                <li>El feed está temporalmente inaccesible</li>
-                <li>La URL es incorrecta</li>
-                <li>El servidor del podcast está caído</li>
-                <li>Hay problemas de conectividad desde el servidor</li>
-            </ul>
-            <p>Intenta actualizar los feeds más tarde. Si persiste, verifica la URL del feed.</p>
+            <p>Puede deberse a que el feed está temporalmente inaccesible, la URL es incorrecta, o hay problemas de conectividad. Intenta actualizar los feeds más tarde.</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <h4>¿Cuánto espacio en disco necesito?</h4>
+            <p>Depende del número de podcasts, frecuencia de publicación y configuración de caducidad. Un podcast diario con caducidad de 30 días puede ocupar entre 1-5 GB. Ajusta la caducidad según tu espacio disponible.</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <h4>¿Puedo pausar un podcast temporalmente?</h4>
+            <p>Actualmente no hay función de pausa. Si quieres dejar de recibir episodios temporalmente, elimina el podcast y agrégalo nuevamente cuando quieras reactivarlo.</p>
         </div>
     </div>
 
@@ -339,20 +329,20 @@ http://example.org/feed.xml Ciencia Podcast_Ciencia_Facil</pre>
 
 <style>
 /* Estilos específicos para la página de ayuda */
-#help h3 {
+.card h3 {
     color: #667eea;
     border-bottom: 2px solid #e2e8f0;
     padding-bottom: 10px;
     margin-top: 30px;
 }
 
-#help h4 {
+.card h4 {
     color: #4a5568;
     margin-top: 20px;
     margin-bottom: 10px;
 }
 
-#help code {
+.card code {
     background: #edf2f7;
     padding: 2px 6px;
     border-radius: 4px;
@@ -360,16 +350,16 @@ http://example.org/feed.xml Ciencia Podcast_Ciencia_Facil</pre>
     font-size: 14px;
 }
 
-#help a {
+.card a {
     color: #667eea;
     text-decoration: none;
 }
 
-#help a:hover {
+.card a:hover {
     text-decoration: underline;
 }
 
-#help ul, #help ol {
+.card ul, .card ol {
     line-height: 1.8;
 }
 </style>
