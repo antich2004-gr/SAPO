@@ -55,8 +55,7 @@
 
         echo '<div class="alert alert-warning" style="border-left: 4px solid #ffc107;">';
         echo '<strong>⚠️ RECORDATORIO IMPORTANTE:</strong><br>';
-        echo 'No olvides actualizar las playlists en Radiobot/AzuraCast para que apunten a las nuevas rutas.<br>';
-        echo '<a href="' . htmlspecialchars($radiobotUrl) . '" target="_blank" style="color: #667eea; font-weight: bold;">🔗 Abrir Radiobot</a>';
+        echo 'No olvides actualizar las playlists en Radiobot/AzuraCast para que apunten a las nuevas rutas.';
         echo '</div>';
 
         unset($_SESSION['show_radiobot_reminder']);
