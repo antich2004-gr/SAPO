@@ -223,6 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $name = trim($_POST['name'] ?? '');
         
         $caducidad = intval($_POST['caducidad'] ?? 30);
+        $duracion = trim($_POST['duracion'] ?? '');
 
         // Validar caducidad
         if ($caducidad < 1 || $caducidad > 365) {
@@ -238,7 +239,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } elseif (strlen($name) > 100) {
             $error = 'El nombre del podcast es demasiado largo';
         } else {
-            $result = addPodcast($_SESSION['username'], $url, $finalCategory, $name, $caducidad);
+            $result = addPodcast($_SESSION['username'], $url, $finalCategory, $name, $caducidad, $duracion);
             if ($result['success']) {
                 $message = $result['message'];
             } else {
@@ -255,6 +256,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $customCategory = trim($_POST['custom_category'] ?? '');
         $name = trim($_POST['name'] ?? '');
         $caducidad = intval($_POST['caducidad'] ?? 30);
+        $duracion = trim($_POST['duracion'] ?? '');
 
         // Validar caducidad
         if ($caducidad < 1 || $caducidad > 365) {
@@ -273,7 +275,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } elseif (strlen($name) > 100) {
             $error = 'El nombre del podcast es demasiado largo';
         } else {
-            $result = editPodcast($_SESSION['username'], $index, $url, $finalCategory, $name, $caducidad);
+            $result = editPodcast($_SESSION['username'], $index, $url, $finalCategory, $name, $caducidad, $duracion);
             if ($result['success']) {
                 header('Location: ' . basename($_SERVER['PHP_SELF']));
                 exit;

@@ -187,7 +187,7 @@ function writeServerList($username, $podcasts) {
     return file_put_contents($path, $content) !== false;
 }
 
-function addPodcast($username, $url, $category, $name, $caducidad = 30) {
+function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracion = '') {
     $podcasts = readServerList($username);
     
     foreach ($podcasts as $podcast) {
@@ -211,6 +211,14 @@ function addPodcast($username, $url, $category, $name, $caducidad = 30) {
             setCaducidad($username, $sanitizedName, $caducidad);
         }
         
+        
+        // Guardar duracion si no es vacia
+        if (!empty($duracion)) {
+            $duraciones = readDuraciones($username);
+            $duraciones[$sanitizedName] = $duracion;
+            writeDuraciones($username, $duraciones);
+        }
+
         return [
             'success' => true,
             'message' => 'Podcast agregado correctamente',
@@ -222,7 +230,7 @@ function addPodcast($username, $url, $category, $name, $caducidad = 30) {
     }
 }
 
-function editPodcast($username, $index, $url, $category, $name, $caducidad = 30) {
+function editPodcast($username, $index, $url, $category, $name, $caducidad = 30, $duracion = '') {
     $podcasts = readServerList($username);
     
     if ($index < 0 || $index >= count($podcasts)) {
@@ -260,6 +268,20 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30)
             // Si es 30, eliminar entrada (usará el default)
             deleteCaducidad($username, $sanitizedName);
         }
+
+        // Actualizar duraciones.txt
+        $duraciones = readDuraciones($username);
+        if (!empty($duracion)) {
+            $duraciones[$sanitizedName] = $duracion;
+        } else {
+            // Si esta vacio, eliminar la entrada
+            unset($duraciones[$sanitizedName]);
+        }
+        // Si cambio el nombre, eliminar la entrada antigua
+        if ($oldName !== $sanitizedName) {
+            unset($duraciones[$oldName]);
+        }
+        writeDuraciones($username, $duraciones);
         
         return [
             'success' => true,
@@ -362,6 +384,93 @@ function executePodget($username) {
     return [
         'success' => true,
         'message' => 'Las descargas se estan ejecutando. Log: ' . $logFile
+    ];
+}
+
+
+/**
+ * Leer archivo duraciones.txt
+ * Formato: nombre_podcast:30M
+ * Retorna array asociativo ['nombre_podcast' => '30M']
+ */
+function readDuraciones($username) {
+    $duracionesPath = getDuracionesPath($username);
+    $duraciones = [];
+
+    if (!file_exists($duracionesPath)) {
+        return $duraciones;
+    }
+
+    $lines = file($duracionesPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($lines === false) {
+        return $duraciones;
+    }
+
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if (empty($line) || strpos($line, '#') === 0) {
+            continue;
+        }
+
+        $parts = explode(':', $line, 2);
+        if (count($parts) === 2) {
+            $podcastName = trim($parts[0]);
+            $duracion = trim($parts[1]);
+            $duraciones[$podcastName] = $duracion;
+        }
+    }
+
+    return $duraciones;
+}
+
+/**
+ * Escribir archivo duraciones.txt
+ */
+function writeDuraciones($username, $duraciones) {
+    $duracionesPath = getDuracionesPath($username);
+
+    // Asegurar que el directorio existe
+    $dir = dirname($duracionesPath);
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
+
+    $content = "";
+    foreach ($duraciones as $podcastName => $duracion) {
+        if (!empty($duracion)) {
+            $content .= slugify($podcastName) . ":" . $duracion . "\n";
+        }
+    }
+
+    return file_put_contents($duracionesPath, $content, LOCK_EX) !== false;
+}
+
+/**
+ * Obtener ruta del archivo duraciones.txt
+ */
+function getDuracionesPath($username) {
+    $config = getConfig();
+    $basePath = rtrim($config['base_path'], '/\');
+    $subscriptionsFolder = trim($config['subscriptions_folder'], '/\');
+
+    $userSlug = slugify($username);
+    return $basePath . DIRECTORY_SEPARATOR . $userSlug . DIRECTORY_SEPARATOR .
+           'media' . DIRECTORY_SEPARATOR . $subscriptionsFolder . DIRECTORY_SEPARATOR .
+           'duraciones.txt';
+}
+
+/**
+ * Obtener opciones disponibles de duración
+ */
+function getDuracionesOptions() {
+    return [
+        '' => 'Sin límite',
+        '30M' => '30 minutos',
+        '1H' => '1 hora',
+        '1H30' => '1 hora 30 minutos',
+        '2H' => '2 horas',
+        '2H30' => '2 horas 30 minutos',
+        '3H' => '3 horas'
     ];
 }
 

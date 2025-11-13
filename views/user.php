@@ -3,6 +3,8 @@
 $userCategories = getUserCategories($_SESSION['username']);
 $podcasts = readServerList($_SESSION['username']);
 $caducidades = readCaducidades($_SESSION['username']);
+$duraciones = readDuraciones($_SESSION['username']);
+$duracionesOptions = getDuracionesOptions();
 
 // Agregar índice original a cada podcast
 $podcastsWithIndex = array();
@@ -52,6 +54,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
         if ($editIndex >= 0 && $editIndex < count($podcastsOriginal)) {
             $podcast = $podcastsOriginal[$editIndex];
             $podcastCaducidad = $caducidades[$podcast['name']] ?? 30;
+            $podcastDuracion = $duraciones[$podcast['name']] ?? '';
         ?>
         
         <div style="margin-top: 30px;">
@@ -102,6 +105,18 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     <label>Días de caducidad:</label>
                     <input type="number" name="caducidad" value="<?php echo htmlEsc($podcastCaducidad); ?>" min="1" max="365" required>
                     <small style="color: #718096;">Los archivos se eliminarán después de X días sin descargas nuevas (por defecto: 30 días)</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Duración máxima de episodios:</label>
+                    <select name="duracion">
+                        <?php foreach ($duracionesOptions as $value => $label): ?>
+                            <option value="<?php echo htmlEsc($value); ?>" <?php echo $podcastDuracion === $value ? 'selected' : ''; ?>>
+                                <?php echo htmlEsc($label); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <small style="color: #718096;">Los episodios que excedan esta duración serán eliminados durante la limpieza diaria</small>
                 </div>
                 
                 <div style="display: flex; gap: 10px; margin-top: 30px;">
@@ -184,6 +199,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         <div id="normal-view" class="podcast-list">
                             <?php foreach ($podcastsPaginated as $index => $podcast): 
                                 $podcastCaducidad = $caducidades[$podcast['name']] ?? 30;
+            $podcastDuracion = $duraciones[$podcast['name']] ?? '';
                             ?>
                                 <div class="podcast-item" data-category="<?php echo htmlEsc($podcast['category']); ?>">
                                     <div class="podcast-info">
@@ -308,6 +324,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     <div class="podcast-list">
                                         <?php foreach ($categoryPodcasts as $podcast): 
                                             $podcastCaducidad = $caducidades[$podcast['name']] ?? 30;
+            $podcastDuracion = $duraciones[$podcast['name']] ?? '';
                                         ?>
                                             <div class="podcast-item">
                                                 <div class="podcast-info">
@@ -542,6 +559,17 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 <label>Días de caducidad:</label>
                 <input type="number" name="caducidad" id="podcast_caducidad" value="30" min="1" max="365" required>
                 <small style="color: #718096;">Los archivos se eliminarán después de X días sin descargas nuevas (por defecto: 30 días)</small>
+            </div>
+            <div class="form-group">
+                <label>Duración máxima de episodios:</label>
+                <select name="duracion" id="podcast_duracion">
+                    <?php foreach ($duracionesOptions as $value => $label): ?>
+                        <option value="<?php echo htmlEsc($value); ?>" <?php echo $value === '' ? 'selected' : ''; ?>>
+                            <?php echo htmlEsc($label); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <small style="color: #718096;">Los episodios que excedan esta duración serán eliminados durante la limpieza diaria</small>
             </div>
             
             <div class="form-actions">
