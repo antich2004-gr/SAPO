@@ -10,8 +10,28 @@ function getServerListPath($username) {
         return false;
     }
 
-    return $basePath . DIRECTORY_SEPARATOR . $username . DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . $subsFolder . DIRECTORY_SEPARATOR . 'serverlist.txt';
+    // Construir la ruta
+    $path = $basePath . DIRECTORY_SEPARATOR . $username . DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . $subsFolder . DIRECTORY_SEPARATOR . 'serverlist.txt';
+
+    // Validar que la ruta este dentro del base_path (prevenir path traversal)
+    $realBasePath = realpath($basePath);
+    $realPath = realpath(dirname($path));
+
+    // Si el directorio no existe aun, validar el dirname hasta el nivel que exista
+    if ($realPath === false) {
+        // No validar aun si el dir no existe, pero verificar que username no contenga ../
+        if (strpos($username, '..') !== false || strpos($username, DIRECTORY_SEPARATOR) !== false) {
+            return false;
+        }
+    } elseif ($realBasePath !== false && strpos($realPath, $realBasePath) !== 0) {
+        // La ruta real esta fuera del base_path
+        return false;
+    }
+
+    return $path;
 }
+
+
 
 function getCaducidadesPath($username) {
     $config = getConfig();
@@ -22,8 +42,27 @@ function getCaducidadesPath($username) {
         return false;
     }
 
-    return $basePath . DIRECTORY_SEPARATOR . $username . DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . $subsFolder . DIRECTORY_SEPARATOR . 'caducidades.txt';
+    // Construir la ruta
+    $path = $basePath . DIRECTORY_SEPARATOR . $username . DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . $subsFolder . DIRECTORY_SEPARATOR . 'caducidades.txt';
+
+    // Validar que la ruta este dentro del base_path (prevenir path traversal)
+    $realBasePath = realpath($basePath);
+    $realPath = realpath(dirname($path));
+
+    // Si el directorio no existe aun, validar el dirname hasta el nivel que exista
+    if ($realPath === false) {
+        // No validar aun si el dir no existe, pero verificar que username no contenga ../
+        if (strpos($username, '..') !== false || strpos($username, DIRECTORY_SEPARATOR) !== false) {
+            return false;
+        }
+    } elseif ($realBasePath !== false && strpos($realPath, $realBasePath) !== 0) {
+        // La ruta real esta fuera del base_path
+        return false;
+    }
+
+    return $path;
 }
+
 
 function readCaducidades($username) {
     $path = getCaducidadesPath($username);
