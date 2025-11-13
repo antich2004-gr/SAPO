@@ -236,6 +236,13 @@ function getCategoryStats($username, $category) {
                     DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR .
                     'Podcasts' . DIRECTORY_SEPARATOR . $category;
 
+    // DEBUG TEMPORAL - Eliminar después de diagnosticar
+    error_log("DEBUG getCategoryStats - Username: $username");
+    error_log("DEBUG getCategoryStats - Category: $category");
+    error_log("DEBUG getCategoryStats - BasePath: $basePath");
+    error_log("DEBUG getCategoryStats - Full path: $categoryPath");
+    error_log("DEBUG getCategoryStats - Directory exists: " . (is_dir($categoryPath) ? 'YES' : 'NO'));
+
     $stats = [
         'podcasts' => 0,
         'files' => 0,
@@ -247,6 +254,7 @@ function getCategoryStats($username, $category) {
 
     // Verificar si la carpeta existe
     if (!is_dir($categoryPath)) {
+        error_log("DEBUG getCategoryStats - Returning empty stats (directory not found)");
         return $stats;
     }
 
@@ -257,6 +265,11 @@ function getCategoryStats($username, $category) {
 
     if ($files === false) {
         $files = [];
+    }
+
+    error_log("DEBUG getCategoryStats - Files found: " . count($files));
+    if (count($files) > 0) {
+        error_log("DEBUG getCategoryStats - First 3 files: " . implode(', ', array_slice(array_map('basename', $files), 0, 3)));
     }
 
     $stats['files'] = count($files);

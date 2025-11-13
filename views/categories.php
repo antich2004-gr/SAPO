@@ -6,6 +6,32 @@ if (!isset($username)) {
     die('Acceso no autorizado');
 }
 
+// DEBUG TEMPORAL - Mostrar información de sesión
+echo '<!-- DEBUG INFO -->';
+echo '<div style="background: #ffffcc; border: 2px solid #ffaa00; padding: 15px; margin: 20px 0; font-family: monospace;">';
+echo '<strong>🐛 DEBUG - Información de Diagnóstico:</strong><br>';
+echo 'Session Username: ' . htmlspecialchars($username) . '<br>';
+$config = getConfig();
+echo 'Base Path: ' . htmlspecialchars($config['base_path']) . '<br>';
+echo 'Expected Path Format: ' . htmlspecialchars($config['base_path'] . '/' . $username . '/media/Podcasts/{category}') . '<br>';
+
+// Verificar si el directorio base del usuario existe
+$userPath = $config['base_path'] . DIRECTORY_SEPARATOR . $username;
+echo 'User Path: ' . htmlspecialchars($userPath) . ' - ' . (is_dir($userPath) ? '✅ EXISTS' : '❌ NOT FOUND') . '<br>';
+
+$userMediaPath = $userPath . DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . 'Podcasts';
+echo 'User Media/Podcasts Path: ' . htmlspecialchars($userMediaPath) . ' - ' . (is_dir($userMediaPath) ? '✅ EXISTS' : '❌ NOT FOUND') . '<br>';
+
+if (is_dir($userMediaPath)) {
+    $dirs = glob($userMediaPath . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR);
+    if ($dirs) {
+        echo 'Categories found on disk: ' . implode(', ', array_map('basename', $dirs)) . '<br>';
+    } else {
+        echo 'Categories found on disk: NONE<br>';
+    }
+}
+echo '</div>';
+
 // Obtener todas las categorías con estadísticas
 $categoriesWithStats = getAllCategoriesWithStats($username);
 
