@@ -59,7 +59,24 @@ function getGlobalDB() {
  */
 function saveGlobalDB($data) {
     initDBStructure();
-    return file_put_contents(GLOBAL_DB_FILE, json_encode($data, JSON_PRETTY_PRINT)) !== false;
+
+    // Usar flock para prevenir race conditions
+    $fp = fopen(GLOBAL_DB_FILE, 'c');
+    if (!$fp) {
+        return false;
+    }
+
+    if (flock($fp, LOCK_EX)) {
+        ftruncate($fp, 0);
+        fwrite($fp, json_encode($data, JSON_PRETTY_PRINT));
+        fflush($fp);
+        flock($fp, LOCK_UN);
+        fclose($fp);
+        return true;
+    } else {
+        fclose($fp);
+        return false;
+    }
 }
 
 /**
@@ -88,7 +105,24 @@ function saveUserDB($username, $data) {
     initDBStructure();
 
     $userFile = USERS_DIR . '/' . $username . '.json';
-    return file_put_contents($userFile, json_encode($data, JSON_PRETTY_PRINT)) !== false;
+
+    // Usar flock para prevenir race conditions
+    $fp = fopen($userFile, 'c');
+    if (!$fp) {
+        return false;
+    }
+
+    if (flock($fp, LOCK_EX)) {
+        ftruncate($fp, 0);
+        fwrite($fp, json_encode($data, JSON_PRETTY_PRINT));
+        fflush($fp);
+        flock($fp, LOCK_UN);
+        fclose($fp);
+        return true;
+    } else {
+        fclose($fp);
+        return false;
+    }
 }
 
 /**
@@ -110,7 +144,24 @@ function getFeedCacheDB() {
  */
 function saveFeedCacheDB($data) {
     initDBStructure();
-    return file_put_contents(FEED_CACHE_FILE, json_encode($data, JSON_PRETTY_PRINT)) !== false;
+
+    // Usar flock para prevenir race conditions
+    $fp = fopen(FEED_CACHE_FILE, 'c');
+    if (!$fp) {
+        return false;
+    }
+
+    if (flock($fp, LOCK_EX)) {
+        ftruncate($fp, 0);
+        fwrite($fp, json_encode($data, JSON_PRETTY_PRINT));
+        fflush($fp);
+        flock($fp, LOCK_UN);
+        fclose($fp);
+        return true;
+    } else {
+        fclose($fp);
+        return false;
+    }
 }
 
 // ==========================================
