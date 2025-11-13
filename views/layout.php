@@ -21,13 +21,13 @@
     <?php if ($message): ?>
         <div class="alert alert-success"><?php echo htmlEsc($message); ?></div>
     <?php endif; ?>
-    
+
     <?php if ($error): ?>
         <div class="alert alert-error"><?php echo htmlEsc($error); ?></div>
     <?php endif; ?>
-    
-    <?php 
-    if (isset($_SESSION['imported_categories']) && $_SESSION['imported_categories'] > 0): 
+
+    <?php
+    if (isset($_SESSION['imported_categories']) && $_SESSION['imported_categories'] > 0):
         $count = $_SESSION['imported_categories'];
         unset($_SESSION['imported_categories']);
     ?>
@@ -76,6 +76,11 @@
     <?php else: ?>
         <?php require_once 'views/user.php'; ?>
     <?php endif; ?>
+
+    <footer style="margin-top: 40px; padding: 20px 0; border-top: 1px solid #e2e8f0; text-align: center; color: #718096; font-size: 14px;">
+        <p style="margin: 0;">🐸 <strong>SAPO</strong> - Sistema de Automatización de Podcasts para Radiobot</p>
+        <p style="margin: 5px 0 0 0;">Versión 1.0 beta</p>
+    </footer>
 </div>
 
 <script src="assets/app.js"></script>
