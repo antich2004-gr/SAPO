@@ -311,14 +311,10 @@ function toggleGroupView() {
         normalView.style.display = 'none';
         groupedView.style.display = 'block';
         if (btnText) btnText.textContent = 'Vista alfabetica';
-        // Ocultar paginacion en vista agrupada
-        if (paginationControls) paginationControls.style.display = 'none';
     } else {
         normalView.style.display = 'block';
         groupedView.style.display = 'none';
         if (btnText) btnText.textContent = 'Agrupar por categoria';
-        // Mostrar paginacion en vista normal
-        if (paginationControls) paginationControls.style.display = '';
     }
     
     // Aplicar filtro en la nueva vista
@@ -365,7 +361,6 @@ document.addEventListener('DOMContentLoaded', function() {
             normalView.style.display = 'none';
             groupedView.style.display = 'block';
             if (btnText) btnText.textContent = 'Vista alfabetica';
-            if (paginationControls) paginationControls.style.display = 'none';
         }
     }
 });
