@@ -221,40 +221,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             <?php endforeach; ?>
 
 
-                                        <?php
-                                        // Mostrar números de página (máximo 5)
-                                        $startPage = max(1, $currentCategoryPage - 2);
-                                        $endPage = min($totalCategoryPages, $currentCategoryPage + 2);
-
-                                        if ($startPage > 1): ?>
-                                            <a href="?p=1" class="btn btn-secondary pagination-btn">1</a>
-                                            <?php if ($startPage > 2): ?>
-                                                <span style="padding: 0 5px; color: #718096;">...</span>
-                                            <?php endif; ?>
-                                        <?php endif; ?>
-
-                                        <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
-                                            <a href="?p=<?php echo htmlEsc($i); ?>"
-                                               class="btn btn-secondary pagination-btn <?php echo $i === $currentCategoryPage ? 'active' : ''; ?>">
-                                                <?php echo htmlEsc($i); ?>
-                                            </a>
-                                        <?php endfor; ?>
-
-                                        <?php if ($endPage < $totalCategoryPages): ?>
-                                            <?php if ($endPage < $totalCategoryPages - 1): ?>
-                                                <span style="padding: 0 5px; color: #718096;">...</span>
-                                            <?php endif; ?>
-                                            <a href="?p=<?php echo htmlEsc($totalCategoryPages); ?>" class="btn btn-secondary pagination-btn"><?php echo htmlEsc($totalCategoryPages); ?></a>
-                                        <?php endif; ?>
-
-                                        <?php if ($currentCategoryPage < $totalCategoryPages): ?>
-                                            <a href="?p=<?php echo htmlEsc($currentCategoryPage + 1); ?>" class="btn btn-secondary pagination-btn">Siguiente →</a>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-
                         <!-- Controles de paginación -->
                         <?php if ($totalPages > 1): ?>
                             <div class="pagination-controls">
@@ -377,39 +343,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                             </div>
                                         <?php endforeach; ?>
 
-
-                                        <?php
-                                        // Mostrar números de página (máximo 5)
-                                        $startPage = max(1, $currentCategoryPage - 2);
-                                        $endPage = min($totalCategoryPages, $currentCategoryPage + 2);
-
-                                        if ($startPage > 1): ?>
-                                            <a href="?p=1" class="btn btn-secondary pagination-btn">1</a>
-                                            <?php if ($startPage > 2): ?>
-                                                <span style="padding: 0 5px; color: #718096;">...</span>
-                                            <?php endif; ?>
-                                        <?php endif; ?>
-
-                                        <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
-                                            <a href="?p=<?php echo htmlEsc($i); ?>"
-                                               class="btn btn-secondary pagination-btn <?php echo $i === $currentCategoryPage ? 'active' : ''; ?>">
-                                                <?php echo htmlEsc($i); ?>
-                                            </a>
-                                        <?php endfor; ?>
-
-                                        <?php if ($endPage < $totalCategoryPages): ?>
-                                            <?php if ($endPage < $totalCategoryPages - 1): ?>
-                                                <span style="padding: 0 5px; color: #718096;">...</span>
-                                            <?php endif; ?>
-                                            <a href="?p=<?php echo htmlEsc($totalCategoryPages); ?>" class="btn btn-secondary pagination-btn"><?php echo htmlEsc($totalCategoryPages); ?></a>
-                                        <?php endif; ?>
-
-                                        <?php if ($currentCategoryPage < $totalCategoryPages): ?>
-                                            <a href="?p=<?php echo htmlEsc($currentCategoryPage + 1); ?>" class="btn btn-secondary pagination-btn">Siguiente →</a>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
