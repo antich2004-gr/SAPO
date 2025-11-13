@@ -152,15 +152,57 @@
         <h3>📁 Organizar con categorías</h3>
         <p>Las categorías son carpetas que agrupan podcasts por temática (Noticias, Música, Deportes, etc.).</p>
 
-        <h4>Crear una categoría</h4>
+        <h4>✨ Gestionar categorías</h4>
+        <p>Haz clic en <strong>"🗂️ Gestionar Categorías"</strong> para abrir el gestor de categorías, donde podrás:</p>
+
+        <h4>➕ Crear una categoría</h4>
         <ol>
-            <li>Haz clic en <strong>"Gestionar Categorías"</strong></li>
-            <li>Escribe el nombre de la nueva categoría</li>
-            <li>Haz clic en <strong>"Agregar Categoría"</strong></li>
+            <li>En el gestor de categorías, escribe el nombre de la nueva categoría</li>
+            <li>Haz clic en <strong>"✅ Añadir"</strong></li>
         </ol>
 
-        <h4>Eliminar una categoría</h4>
-        <p>Solo puedes eliminar categorías vacías (sin podcasts asignados).</p>
+        <h4>✏️ Renombrar una categoría</h4>
+        <ol>
+            <li>En el gestor de categorías, haz clic en el botón <strong>"✏️"</strong> junto a la categoría</li>
+            <li>Escribe el nuevo nombre</li>
+            <li>Confirma el cambio</li>
+        </ol>
+
+        <div style="background: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 15px 0;">
+            <strong>✨ Movimiento automático:</strong> Cuando renombras una categoría, SAPO mueve automáticamente todos los podcasts y archivos a la nueva carpeta. No necesitas hacer nada más.
+        </div>
+
+        <div style="background: #fffaf0; border-left: 4px solid #f6ad55; padding: 15px; margin: 15px 0;">
+            <strong>⚠️ Importante:</strong> Después de renombrar una categoría, recuerda actualizar las playlists en Radiobot/AzuraCast para que apunten a la nueva ruta.
+        </div>
+
+        <h4>🗑️ Eliminar una categoría</h4>
+        <p>Solo puedes eliminar categorías vacías (sin podcasts ni archivos asignados).</p>
+        <ol>
+            <li>En el gestor de categorías, verás un botón <strong>"🗑️"</strong> junto a las categorías vacías</li>
+            <li>Haz clic en el botón y confirma</li>
+            <li>La categoría y su carpeta física serán eliminadas del sistema</li>
+        </ol>
+
+        <div style="background: #fff5f5; border-left: 4px solid #f56565; padding: 15px; margin: 15px 0;">
+            <strong>🔒 Nota:</strong> Las categorías con contenido mostrarán un icono de candado y no podrán eliminarse hasta que estén vacías.
+        </div>
+
+        <h4>🔄 Cambiar la categoría de un podcast</h4>
+        <p>Cuando editas un podcast y cambias su categoría:</p>
+        <ul>
+            <li>✅ El podcast y todos sus archivos se mueven automáticamente a la nueva categoría</li>
+            <li>✅ Se mantiene la estructura de directorios (un directorio por podcast)</li>
+            <li>✅ Recibirás un recordatorio para actualizar las playlists en Radiobot</li>
+        </ul>
+
+        <h4>📊 Estadísticas de categorías</h4>
+        <p>El gestor de categorías muestra para cada una:</p>
+        <ul>
+            <li><strong>Número de podcasts:</strong> Cuántos podcasts están asignados</li>
+            <li><strong>Número de archivos:</strong> Total de episodios descargados</li>
+            <li><strong>Estado:</strong> Badge "Vacía" si no tiene contenido</li>
+        </ul>
 
         <h4>Vistas de organización</h4>
         <ul>
@@ -171,6 +213,10 @@
 
         <h4>Filtrar por categoría</h4>
         <p>Usa el selector en la parte superior para mostrar solo podcasts de una categoría específica.</p>
+
+        <div style="background: #e6fffa; border-left: 4px solid #38b2ac; padding: 15px; margin: 15px 0;">
+            <strong>💡 Tip:</strong> SAPO detecta automáticamente los sufijos que podget agrega a los nombres de directorios (como "_OPT_FILENAME_RENAME_...") y los maneja correctamente durante los movimientos.
+        </div>
     </div>
 
     <!-- Sección: Descargas -->
@@ -277,6 +323,21 @@
         <div style="margin-bottom: 20px;">
             <h4>¿Qué pasa si cambio el nombre de un podcast?</h4>
             <p>El nombre se actualizará en SAPO, pero los archivos ya descargados permanecerán en la carpeta antigua. Radiobot empezará a descargar en la nueva carpeta con el nombre actualizado.</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <h4>¿Qué pasa si cambio la categoría de un podcast?</h4>
+            <p>SAPO moverá automáticamente el directorio completo del podcast (con todos sus archivos) a la nueva categoría. Recibirás un recordatorio para actualizar las playlists en Radiobot/AzuraCast.</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <h4>¿Puedo renombrar una categoría que tiene podcasts?</h4>
+            <p>Sí, SAPO moverá automáticamente todos los podcasts y archivos de esa categoría a la nueva carpeta. Solo necesitarás actualizar las playlists en Radiobot después del cambio.</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <h4>¿Por qué no puedo eliminar una categoría?</h4>
+            <p>Solo se pueden eliminar categorías completamente vacías (sin podcasts asignados ni archivos descargados). Reasigna todos los podcasts a otras categorías antes de eliminarla.</p>
         </div>
 
         <div style="margin-bottom: 20px;">
