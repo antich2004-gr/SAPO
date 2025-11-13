@@ -218,74 +218,41 @@ function movePodcastFiles($username, $podcastName, $oldCategory, $newCategory) {
         return ['success' => false, 'error' => 'Sin permisos de escritura en carpeta destino'];
     }
 
-    // Buscar archivos del podcast
-    // Patrón: buscar archivos que empiecen con el nombre del podcast
-    $pattern = $oldCategoryPath . DIRECTORY_SEPARATOR . $podcastName . '*';
-    $files = glob($pattern);
+    // ESTRUCTURA REAL: /Categoría/NombrePodcast/archivos.mp3
+    // Necesitamos mover el DIRECTORIO completo del podcast
+    $podcastDirInOldCategory = $oldCategoryPath . DIRECTORY_SEPARATOR . $podcastName;
+    $podcastDirInNewCategory = $newCategoryPath . DIRECTORY_SEPARATOR . $podcastName;
 
-    if (empty($files)) {
-        return ['success' => true, 'moved' => 0, 'message' => 'No se encontraron archivos del podcast'];
+    // Si el directorio del podcast no existe en origen, no hay nada que mover
+    if (!is_dir($podcastDirInOldCategory)) {
+        return ['success' => true, 'moved' => 0, 'message' => 'El directorio del podcast no existe en la categoría origen'];
     }
 
-    // Mover archivos
-    $movedCount = 0;
-    $errors = [];
-    $movedFiles = []; // Para poder revertir si hay error
-
-    foreach ($files as $file) {
-        // Solo procesar archivos regulares
-        if (!is_file($file)) {
-            continue;
-        }
-
-        $filename = basename($file);
-        $destFile = $newCategoryPath . DIRECTORY_SEPARATOR . $filename;
-
-        // DECISIÓN: Sobrescribir si existe (según preferencia del usuario)
-        // Si ya existe, lo eliminamos primero para poder sobrescribirlo
-        if (file_exists($destFile)) {
-            if (!@unlink($destFile)) {
-                $errors[] = "No se pudo sobrescribir archivo existente: $filename";
-
-                // DECISIÓN CRÍTICA: Revertir todo (según preferencia 1.A)
-                foreach ($movedFiles as $moved) {
-                    @rename($moved['to'], $moved['from']);
-                }
-
-                return [
-                    'success' => false,
-                    'error' => 'Error al sobrescribir archivos: ' . implode(', ', $errors),
-                    'moved' => 0
-                ];
-            }
-        }
-
-        // Intentar mover
-        if (@rename($file, $destFile)) {
-            $movedCount++;
-            $movedFiles[] = ['from' => $file, 'to' => $destFile];
-        } else {
-            $errors[] = "No se pudo mover: $filename";
-
-            // DECISIÓN CRÍTICA: Revertir todo (según preferencia 1.A)
-            foreach ($movedFiles as $moved) {
-                @rename($moved['to'], $moved['from']);
-            }
-
-            return [
-                'success' => false,
-                'error' => 'Error al mover archivos: ' . implode(', ', $errors),
-                'moved' => 0
-            ];
-        }
+    // Si el directorio ya existe en destino, error (no sobrescribir directorios)
+    if (is_dir($podcastDirInNewCategory)) {
+        return [
+            'success' => false,
+            'error' => 'Ya existe un directorio con el mismo nombre en la categoría destino'
+        ];
     }
 
-    return [
-        'success' => true,
-        'moved' => $movedCount,
-        'message' => "$movedCount archivo(s) movido(s) correctamente",
-        'files' => array_map('basename', array_column($movedFiles, 'from'))
-    ];
+    // Contar archivos antes de mover (para estadísticas)
+    $filesBeforeMove = glob($podcastDirInOldCategory . DIRECTORY_SEPARATOR . '*.{mp3,ogg,wav,m4a}', GLOB_BRACE);
+    $fileCount = $filesBeforeMove ? count($filesBeforeMove) : 0;
+
+    // Intentar mover el directorio completo
+    if (@rename($podcastDirInOldCategory, $podcastDirInNewCategory)) {
+        return [
+            'success' => true,
+            'moved' => $fileCount,
+            'message' => "Directorio del podcast movido correctamente con $fileCount archivo(s)"
+        ];
+    } else {
+        return [
+            'success' => false,
+            'error' => 'No se pudo mover el directorio del podcast. Verifica permisos.'
+        ];
+    }
 }
 
 /**
@@ -329,7 +296,10 @@ function getCategoryStats($username, $category) {
     $stats['exists'] = true;
 
     // Contar archivos de audio
-    $files = glob($categoryPath . DIRECTORY_SEPARATOR . '*.{mp3,ogg,wav,m4a}', GLOB_BRACE);
+    // NOTA: Los archivos están en subdirectorios (un subdirectorio por podcast)
+    // Estructura: /Categoría/Podcast/archivo.mp3
+    // Por lo tanto, buscamos en subdirectorios: /Categoría/*/*.{mp3,ogg,wav,m4a}
+    $files = glob($categoryPath . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*.{mp3,ogg,wav,m4a}', GLOB_BRACE);
 
     if ($files === false) {
         $files = [];
@@ -638,8 +608,11 @@ function mergeCategories($username, $sourceCategory, $targetCategory) {
     ];
 
     try {
-        // PASO 1: Mover todos los archivos de origen a destino
-        $filesMoved = 0;
+        // PASO 1: Mover todos los SUBDIRECTORIOS (podcasts) de origen a destino
+        // ESTRUCTURA: /Categoría/NombrePodcast/archivos.mp3
+        $dirsMoved = 0;
+        $totalFilesMoved = 0;
+
         if (is_dir($sourcePath)) {
             // Crear carpeta destino si no existe
             if (!is_dir($targetPath)) {
@@ -648,29 +621,32 @@ function mergeCategories($username, $sourceCategory, $targetCategory) {
                 }
             }
 
-            $files = glob($sourcePath . DIRECTORY_SEPARATOR . '*.*');
-            if ($files !== false) {
-                foreach ($files as $file) {
-                    if (!is_file($file)) {
-                        continue;
+            // Buscar subdirectorios (cada uno es un podcast)
+            $podcastDirs = glob($sourcePath . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR);
+            if ($podcastDirs !== false) {
+                foreach ($podcastDirs as $podcastDir) {
+                    $podcastName = basename($podcastDir);
+                    $destDir = $targetPath . DIRECTORY_SEPARATOR . $podcastName;
+
+                    // Si el directorio ya existe en destino, error
+                    if (is_dir($destDir)) {
+                        throw new Exception("El directorio '$podcastName' ya existe en la categoría destino");
                     }
 
-                    $filename = basename($file);
-                    $destFile = $targetPath . DIRECTORY_SEPARATOR . $filename;
+                    // Contar archivos en este directorio
+                    $audioFiles = glob($podcastDir . DIRECTORY_SEPARATOR . '*.{mp3,ogg,wav,m4a}', GLOB_BRACE);
+                    $audioFileCount = $audioFiles ? count($audioFiles) : 0;
 
-                    // Si existe, sobrescribir (según decisión 2.A)
-                    if (file_exists($destFile)) {
-                        @unlink($destFile);
-                    }
-
-                    if (@rename($file, $destFile)) {
-                        $filesMoved++;
+                    // Mover directorio completo
+                    if (@rename($podcastDir, $destDir)) {
+                        $dirsMoved++;
+                        $totalFilesMoved += $audioFileCount;
                         $backupState['movedFiles'][] = [
-                            'from' => $destFile,
-                            'to' => $file
+                            'from' => $destDir,
+                            'to' => $podcastDir
                         ];
                     } else {
-                        throw new Exception("No se pudo mover el archivo: $filename");
+                        throw new Exception("No se pudo mover el directorio del podcast: $podcastName");
                     }
                 }
             }
@@ -708,8 +684,8 @@ function mergeCategories($username, $sourceCategory, $targetCategory) {
 
         return [
             'success' => true,
-            'files_moved' => $filesMoved,
-            'message' => "Categoría '$sourceCategory' fusionada en '$targetCategory'. $filesMoved archivo(s) movido(s)."
+            'files_moved' => $totalFilesMoved,
+            'message' => "Categoría '$sourceCategory' fusionada en '$targetCategory'. $dirsMoved directorio(s) de podcast movido(s) con $totalFilesMoved archivo(s)."
         ];
 
     } catch (Exception $e) {
