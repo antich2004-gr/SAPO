@@ -450,8 +450,7 @@ function renameCategory($username, $oldName, $newName) {
     $backupState = [
         'serverlist' => readServerList($username),
         'userData' => getUserDB($username),
-        'folderRenamed' => false,
-        'filesRenamed' => []
+        'folderRenamed' => false
     ];
 
     try {
@@ -461,37 +460,10 @@ function renameCategory($username, $oldName, $newName) {
         }
         $backupState['folderRenamed'] = true;
 
-        // PASO 2: Renombrar archivos dentro de la carpeta
-        $files = glob($newPath . DIRECTORY_SEPARATOR . '*.*');
-        if ($files !== false) {
-            foreach ($files as $file) {
-                if (!is_file($file)) {
-                    continue;
-                }
+        // NOTA: NO renombramos archivos dentro porque se nombran por PODCAST, no por categoría
+        // Ejemplo: /Deportes/La_Grada13112025.mp3 sigue siendo La_Grada13112025.mp3 en /Noticias/
 
-                $filename = basename($file);
-                $ext = pathinfo($file, PATHINFO_EXTENSION);
-
-                // Si el archivo empieza con el nombre viejo de la categoría
-                if (stripos($filename, $oldName) === 0) {
-                    // Extraer la parte después del nombre de categoría
-                    $suffix = substr($filename, strlen($oldName));
-
-                    // Nuevo nombre: NuevoNombre + sufijo + extensión
-                    $newFilename = $newNameSanitized . $suffix;
-                    $newFilePath = dirname($file) . DIRECTORY_SEPARATOR . $newFilename;
-
-                    if (@rename($file, $newFilePath)) {
-                        $backupState['filesRenamed'][] = [
-                            'from' => $newFilePath,
-                            'to' => $file
-                        ];
-                    }
-                }
-            }
-        }
-
-        // PASO 3: Actualizar serverlist.txt
+        // PASO 2: Actualizar serverlist.txt
         $podcasts = readServerList($username);
         foreach ($podcasts as &$podcast) {
             if ($podcast['category'] === $oldName) {
@@ -502,7 +474,7 @@ function renameCategory($username, $oldName, $newName) {
             throw new Exception('Error al actualizar serverlist.txt');
         }
 
-        // PASO 4: Actualizar users.json
+        // PASO 3: Actualizar users.json
         $userData = getUserDB($username);
         $key = array_search($oldName, $userData['categories']);
         if ($key !== false) {
@@ -519,17 +491,11 @@ function renameCategory($username, $oldName, $newName) {
         return [
             'success' => true,
             'new_name' => $newNameSanitized,
-            'files_renamed' => count($backupState['filesRenamed']),
             'message' => "Categoría renombrada correctamente de '$oldName' a '$newNameSanitized'"
         ];
 
     } catch (Exception $e) {
         // REVERTIR TODO si algo falló
-
-        // Revertir archivos renombrados
-        foreach ($backupState['filesRenamed'] as $fileOp) {
-            @rename($fileOp['from'], $fileOp['to']);
-        }
 
         // Revertir carpeta renombrada
         if ($backupState['folderRenamed']) {

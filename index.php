@@ -372,7 +372,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'rename_category' && isLoggedIn
     } else {
         $result = renameCategory($_SESSION['username'], $oldName, $newName);
         if ($result['success']) {
-            $_SESSION['message'] = $result['message'] . ' - ' . $result['files_renamed'] . ' archivo(s) renombrado(s).';
+            $_SESSION['message'] = $result['message'];
             $_SESSION['show_radiobot_reminder'] = true;
             $_SESSION['radiobot_action'] = 'rename';
             $_SESSION['radiobot_old_name'] = $oldName;
