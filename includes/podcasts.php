@@ -265,14 +265,8 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
         if ($oldCategory !== $sanitizedCategory) {
             $categoryChanged = true;
 
-            // DEBUG: Log antes de mover
-            error_log("SAPO DEBUG: Intentando mover podcast. Usuario: $username, Podcast: $oldName, De: $oldCategory, A: $sanitizedCategory");
-
             // Usar el nombre ANTIGUO del podcast para buscar los archivos
             $moveResult = movePodcastFiles($username, $oldName, $oldCategory, $sanitizedCategory);
-
-            // DEBUG: Log resultado
-            error_log("SAPO DEBUG: Resultado movimiento: " . json_encode($moveResult));
 
             // DECISIÓN 1.A: Si falla el movimiento, revertir TODO
             if (!$moveResult['success']) {
