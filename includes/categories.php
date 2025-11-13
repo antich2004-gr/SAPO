@@ -76,6 +76,74 @@ function importCategoriesFromServerList($username) {
     return $categoriesFound;
 }
 
+/**
+ * Sincronizar categorías desde el disco físico
+ * Escanea la carpeta media/Podcasts y registra todas las carpetas encontradas
+ *
+ * @param string $username Usuario propietario
+ * @return array Array con 'success', 'synced' (cantidad), 'categories' (nombres)
+ */
+function syncCategoriesFromDisk($username) {
+    $config = getConfig();
+    $basePath = $config['base_path'];
+
+    if (empty($basePath)) {
+        return ['success' => false, 'error' => 'Base path no configurado'];
+    }
+
+    $userMediaPath = $basePath . DIRECTORY_SEPARATOR . $username .
+                     DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . 'Podcasts';
+
+    if (!is_dir($userMediaPath)) {
+        return ['success' => false, 'error' => 'Directorio de podcasts no existe'];
+    }
+
+    // Obtener todas las carpetas del disco
+    $diskDirs = glob($userMediaPath . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR);
+    if ($diskDirs === false) {
+        return ['success' => false, 'error' => 'Error al leer directorio'];
+    }
+
+    $diskCategories = array_map('basename', $diskDirs);
+
+    // Obtener categorías actuales del sistema
+    $userData = getUserDB($username);
+    if (!isset($userData['categories'])) {
+        $userData['categories'] = [];
+    }
+
+    // Encontrar categorías nuevas (en disco pero no en sistema)
+    $newCategories = array_diff($diskCategories, $userData['categories']);
+
+    if (empty($newCategories)) {
+        return [
+            'success' => true,
+            'synced' => 0,
+            'categories' => [],
+            'message' => 'No hay categorías nuevas para sincronizar'
+        ];
+    }
+
+    // Agregar nuevas categorías al sistema
+    foreach ($newCategories as $category) {
+        $userData['categories'][] = $category;
+    }
+
+    $userData['categories'] = array_unique($userData['categories']);
+    sort($userData['categories']);
+
+    if (!saveUserDB($username, $userData)) {
+        return ['success' => false, 'error' => 'Error al guardar users.json'];
+    }
+
+    return [
+        'success' => true,
+        'synced' => count($newCategories),
+        'categories' => array_values($newCategories),
+        'message' => count($newCategories) . ' categoría(s) sincronizada(s) desde el disco'
+    ];
+}
+
 function isCategoryInUse($username, $category) {
     $podcasts = readServerList($username);
     foreach ($podcasts as $podcast) {

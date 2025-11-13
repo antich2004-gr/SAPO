@@ -30,6 +30,39 @@ if (is_dir($userMediaPath)) {
         echo 'Categories found on disk: NONE<br>';
     }
 }
+
+// Mostrar categorías registradas en el sistema ANTES de sincronizar
+$userCategories = getUserCategories($username);
+echo 'Categories in users.json (before sync): ';
+if (empty($userCategories)) {
+    echo '<strong style="color: red;">NONE</strong><br>';
+} else {
+    echo implode(', ', $userCategories) . '<br>';
+}
+
+// SINCRONIZACIÓN AUTOMÁTICA: Si hay categorías en disco que no están en sistema, sincronizar
+if (is_dir($userMediaPath)) {
+    $diskDirs = glob($userMediaPath . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR);
+    $diskCategories = $diskDirs ? array_map('basename', $diskDirs) : [];
+    $missingInSystem = array_diff($diskCategories, $userCategories);
+
+    if (!empty($missingInSystem)) {
+        echo '<strong style="color: orange;">🔄 SINCRONIZANDO...</strong> Se encontraron ' . count($missingInSystem) . ' categorías en el disco que no están en el sistema.<br>';
+
+        $syncResult = syncCategoriesFromDisk($username);
+
+        if ($syncResult['success'] && $syncResult['synced'] > 0) {
+            echo '<strong style="color: green;">✅ SINCRONIZACIÓN EXITOSA:</strong> Se han registrado ' . $syncResult['synced'] . ' categorías: <strong>' . implode(', ', $syncResult['categories']) . '</strong><br>';
+        } elseif ($syncResult['success'] && $syncResult['synced'] == 0) {
+            echo '<strong style="color: blue;">ℹ️ YA SINCRONIZADO:</strong> ' . $syncResult['message'] . '<br>';
+        } else {
+            echo '<strong style="color: red;">❌ ERROR EN SINCRONIZACIÓN:</strong> ' . ($syncResult['error'] ?? 'Error desconocido') . '<br>';
+        }
+    } else {
+        echo '<strong style="color: green;">✅ SINCRONIZADO:</strong> Todas las categorías del disco están registradas en el sistema.<br>';
+    }
+}
+
 echo '</div>';
 
 // Obtener todas las categorías con estadísticas
