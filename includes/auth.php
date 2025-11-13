@@ -1,6 +1,33 @@
 <?php
 // includes/auth.php - Autenticación y seguridad
 
+/**
+ * Limpiar intentos de login antiguos para prevenir crecimiento indefinido
+ * Se ejecuta periódicamente para mantener la base de datos limpia
+ */
+function cleanOldLoginAttempts() {
+    $db = getGlobalDB();
+    if (!isset($db['login_attempts']) || empty($db['login_attempts'])) {
+        return;
+    }
+
+    $now = time();
+    $cleaned = false;
+
+    foreach ($db['login_attempts'] as $username => $data) {
+        // Eliminar intentos más antiguos que 2x el tiempo de lockout
+        if ($now - $data['last_attempt'] > (LOCKOUT_TIME * 2)) {
+            unset($db['login_attempts'][$username]);
+            $cleaned = true;
+        }
+    }
+
+    if ($cleaned) {
+        saveGlobalDB($db);
+    }
+}
+
+
 function checkLoginAttempts($username) {
     $db = getGlobalDB();
     if (!isset($db['login_attempts'])) {
@@ -37,6 +64,11 @@ function recordLoginAttempt($username, $success = false) {
 }
 
 function authenticateUser($username, $password) {
+    // Limpiar intentos antiguos periódicamente (10% de probabilidad)
+    if (rand(1, 10) === 1) {
+        cleanOldLoginAttempts();
+    }
+
     $attempts = checkLoginAttempts($username);
     
     if ($attempts['count'] >= MAX_LOGIN_ATTEMPTS) {

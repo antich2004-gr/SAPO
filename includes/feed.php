@@ -1,7 +1,62 @@
 <?php
 // includes/feed.php - Gestión de feeds RSS y caché
 
+/**
+ * Validar URL contra SSRF (Server-Side Request Forgery)
+ * Bloquea IPs privadas, localhost y esquemas inseguros
+ */
+function validateRssFeedUrl($url) {
+    // Validar formato básico
+    if (!filter_var($url, FILTER_VALIDATE_URL)) {
+        return false;
+    }
+
+    // Solo permitir HTTP y HTTPS
+    $parsed = parse_url($url);
+    if (!isset($parsed['scheme']) || !in_array(strtolower($parsed['scheme']), ['http', 'https'])) {
+        return false;
+    }
+
+    // Obtener el host
+    $host = $parsed['host'] ?? '';
+    if (empty($host)) {
+        return false;
+    }
+
+    // Resolver el hostname a IP
+    $ip = gethostbyname($host);
+    if ($ip === $host) {
+        // No se pudo resolver, permitir solo si es un hostname válido
+        // (algunos feeds usan CDNs que pueden no resolver desde el servidor)
+        if (!preg_match('/^[a-zA-Z0-9.-]+$/', $host)) {
+            return false;
+        }
+    } else {
+        // Validar que la IP no sea privada/localhost
+        if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            return false;
+        }
+    }
+
+    // Validar que el hostname no sea localhost
+    $localhostPatterns = ['localhost', '127.0.0.1', '0.0.0.0', '::1', '169.254.'];
+    foreach ($localhostPatterns as $pattern) {
+        if (stripos($host, $pattern) !== false) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
 function getLastEpisodeDate($rssFeedUrl) {
+    // Validar URL contra SSRF
+    if (!validateRssFeedUrl($rssFeedUrl)) {
+        error_log("SSRF attempt blocked: " . $rssFeedUrl);
+        return null;
+    }
+
     $context = stream_context_create([
         'http' => [
             'timeout' => 5,
@@ -16,7 +71,12 @@ function getLastEpisodeDate($rssFeedUrl) {
     }
     
     libxml_use_internal_errors(true);
-    $xml = simplexml_load_string($xmlContent);
+
+    // Prevenir ataques XXE (XML External Entity)
+    $previousValue = libxml_disable_entity_loader(true);
+    $xml = simplexml_load_string($xmlContent, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_NOCDATA);
+    libxml_disable_entity_loader($previousValue);
+
     libxml_clear_errors();
     
     if ($xml === false) {
