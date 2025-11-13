@@ -360,6 +360,132 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 }
 
+// ========== ACCIONES GET PARA GESTOR DE CATEGORÍAS ==========
+
+// RENAME CATEGORY (GET)
+if (isset($_GET['action']) && $_GET['action'] == 'rename_category' && isLoggedIn() && !isAdmin()) {
+    $oldName = $_GET['old_name'] ?? '';
+    $newName = $_GET['new_name'] ?? '';
+
+    if (empty($oldName) || empty($newName)) {
+        $error = 'Nombres de categoría inválidos';
+    } else {
+        $result = renameCategory($_SESSION['username'], $oldName, $newName);
+        if ($result['success']) {
+            $_SESSION['message'] = $result['message'] . ' - ' . $result['files_renamed'] . ' archivo(s) renombrado(s).';
+            $_SESSION['show_radiobot_reminder'] = true;
+            $_SESSION['radiobot_action'] = 'rename';
+            $_SESSION['radiobot_old_name'] = $oldName;
+            $_SESSION['radiobot_new_name'] = $result['new_name'];
+            header('Location: index.php?view=categories');
+            exit;
+        } else {
+            $_SESSION['error'] = $result['error'];
+            header('Location: index.php?view=categories');
+            exit;
+        }
+    }
+}
+
+// MERGE CATEGORIES (GET)
+if (isset($_GET['action']) && $_GET['action'] == 'merge_categories' && isLoggedIn() && !isAdmin()) {
+    $source = $_GET['source'] ?? '';
+    $target = $_GET['target'] ?? '';
+
+    if (empty($source) || empty($target)) {
+        $error = 'Categorías inválidas';
+    } else {
+        $result = mergeCategories($_SESSION['username'], $source, $target);
+        if ($result['success']) {
+            $_SESSION['message'] = $result['message'];
+            $_SESSION['show_radiobot_reminder'] = true;
+            $_SESSION['radiobot_action'] = 'merge';
+            $_SESSION['radiobot_source'] = $source;
+            $_SESSION['radiobot_target'] = $target;
+            header('Location: index.php?view=categories');
+            exit;
+        } else {
+            $_SESSION['error'] = $result['error'];
+            header('Location: index.php?view=categories');
+            exit;
+        }
+    }
+}
+
+// DELETE CATEGORY (GET) - para categorías vacías
+if (isset($_GET['action']) && $_GET['action'] == 'delete_category' && isLoggedIn() && !isAdmin()) {
+    $categoryName = $_GET['category'] ?? '';
+
+    if (empty($categoryName)) {
+        $error = 'Categoría inválida';
+    } else {
+        // Verificar que esté vacía
+        $stats = getCategoryStats($_SESSION['username'], $categoryName);
+        if ($stats['files'] > 0 || $stats['podcasts'] > 0) {
+            $_SESSION['error'] = 'No se puede eliminar una categoría con archivos o podcasts asignados';
+        } else {
+            if (deleteUserCategory($_SESSION['username'], $categoryName)) {
+                $_SESSION['message'] = 'Categoría eliminada correctamente';
+            } else {
+                $_SESSION['error'] = 'Error al eliminar la categoría';
+            }
+        }
+        header('Location: index.php?view=categories');
+        exit;
+    }
+}
+
+// GET CATEGORY FILES (AJAX)
+if (isset($_GET['action']) && $_GET['action'] == 'get_category_files' && isLoggedIn() && !isAdmin()) {
+    $categoryName = $_GET['category'] ?? '';
+
+    if (empty($categoryName)) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'Categoría inválida']);
+        exit;
+    }
+
+    $config = getConfig();
+    $basePath = $config['base_path'];
+    $categoryPath = $basePath . DIRECTORY_SEPARATOR . $_SESSION['username'] .
+                    DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR .
+                    'Podcast' . DIRECTORY_SEPARATOR . $categoryName;
+
+    if (!is_dir($categoryPath)) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'Carpeta no encontrada']);
+        exit;
+    }
+
+    $files = glob($categoryPath . DIRECTORY_SEPARATOR . '*.{mp3,ogg,wav,m4a}', GLOB_BRACE);
+
+    if ($files === false) {
+        $files = [];
+    }
+
+    $fileList = [];
+    foreach ($files as $file) {
+        if (is_file($file)) {
+            $fileList[] = [
+                'name' => basename($file),
+                'size' => formatBytes(filesize($file)),
+                'date' => date('d/m/Y H:i', filemtime($file))
+            ];
+        }
+    }
+
+    // Ordenar por fecha, más reciente primero
+    usort($fileList, function($a, $b) {
+        return strcmp($b['date'], $a['date']);
+    });
+
+    header('Content-Type: application/json');
+    echo json_encode(['success' => true, 'files' => $fileList]);
+    exit;
+}
+
+// ========== FIN ACCIONES GESTOR DE CATEGORÍAS ==========
+
 // Cargar vista
 require_once 'views/layout.php';
 ?>

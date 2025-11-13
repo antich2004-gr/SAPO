@@ -170,13 +170,13 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             <button type="submit" class="btn btn-warning">🔄 Actualizar estado de feeds</button>
                         </form>
                         <small style="color: #718096;">🟢 ≤30d | 🟠 31-90d | 🔴 >90d</small>
-                        
+
                         <?php if (!empty($userCategories)): ?>
                             <div style="display: flex; gap: 10px; align-items: center; flex: 1;">
                                 <label for="filter_category" style="margin: 0; white-space: nowrap;">Filtrar por:</label>
                                 <select id="filter_category" onchange="filterByCategory()" style="max-width: 200px;">
                                     <option value="">Todas las categorías</option>
-                                    <?php foreach ($userCategories as $cat): 
+                                    <?php foreach ($userCategories as $cat):
                                         $countInCategory = count(array_filter($podcasts, function($p) use ($cat) {
                                             return $p['category'] === $cat;
                                         }));
@@ -184,10 +184,14 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         <option value="<?php echo htmlEsc($cat); ?>"><?php echo htmlEsc(displayName($cat)); ?> (<?php echo htmlEsc($countInCategory); ?>)</option>
                                     <?php endforeach; ?>
                                 </select>
-                                
+
                                 <button type="button" class="btn btn-secondary" onclick="toggleGroupView()" id="toggleViewBtn">
                                     <span id="viewModeText">Agrupar por categoría</span>
                                 </button>
+
+                                <a href="index.php?view=categories" class="btn btn-primary" style="text-decoration: none; white-space: nowrap;">
+                                    🗂️ Gestionar Categorías
+                                </a>
                             </div>
                         <?php endif; ?>
                     </div>

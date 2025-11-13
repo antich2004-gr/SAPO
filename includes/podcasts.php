@@ -232,35 +232,59 @@ function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracio
 
 function editPodcast($username, $index, $url, $category, $name, $caducidad = 30, $duracion = '') {
     $podcasts = readServerList($username);
-    
+
     if ($index < 0 || $index >= count($podcasts)) {
         return ['success' => false, 'error' => 'Podcast no encontrado'];
     }
-    
+
+    // Guardar estado original para poder revertir si es necesario
     $oldCategory = $podcasts[$index]['category'];
     $oldName = $podcasts[$index]['name'];
-    
+    $oldPodcasts = $podcasts; // Backup completo
+
     foreach ($podcasts as $i => $podcast) {
         if ($i != $index && $podcast['url'] == $url) {
             return ['success' => false, 'error' => 'Esta URL ya existe en otro podcast'];
         }
     }
-    
+
     $sanitizedCategory = sanitizePodcastName($category);
     $sanitizedName = sanitizePodcastName($name);
-    
+
     $podcasts[$index] = [
         'url' => $url,
         'category' => $sanitizedCategory,
         'name' => $sanitizedName
     ];
-    
+
     if (writeServerList($username, $podcasts)) {
+        // NUEVO: Si cambió la categoría, mover archivos físicos
+        $moveResult = ['success' => true, 'moved' => 0];
+        $categoryChanged = false;
+
+        if ($oldCategory !== $sanitizedCategory) {
+            $categoryChanged = true;
+
+            // Usar el nombre ANTIGUO del podcast para buscar los archivos
+            $moveResult = movePodcastFiles($username, $oldName, $oldCategory, $sanitizedCategory);
+
+            // DECISIÓN 1.A: Si falla el movimiento, revertir TODO
+            if (!$moveResult['success']) {
+                // Revertir serverlist.txt al estado original
+                writeServerList($username, $oldPodcasts);
+
+                return [
+                    'success' => false,
+                    'error' => 'Error al mover archivos: ' . ($moveResult['error'] ?? 'Error desconocido') . '. Se han revertido todos los cambios.'
+                ];
+            }
+        }
+
         // Si cambió el nombre del podcast, eliminar la entrada antigua
         if ($oldName !== $sanitizedName) {
             deleteCaducidad($username, $oldName);
         }
-        
+
         // Actualizar caducidades.txt solo si no es 30 (valor por defecto)
         if ($caducidad != 30) {
             setCaducidad($username, $sanitizedName, $caducidad);
@@ -282,13 +306,24 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
             unset($duraciones[$oldName]);
         }
         writeDuraciones($username, $duraciones);
-        
-        return [
+
+        $result = [
             'success' => true,
             'message' => 'Podcast actualizado correctamente',
             'sanitized_category' => $sanitizedCategory,
             'sanitized_name' => $sanitizedName
         ];
+
+        // Agregar información del movimiento de archivos
+        if ($categoryChanged) {
+            $result['category_changed'] = true;
+            $result['files_moved'] = $moveResult['moved'];
+            if (isset($moveResult['message'])) {
+                $result['move_message'] = $moveResult['message'];
+            }
+        }
+
+        return $result;
     } else {
         return ['success' => false, 'error' => 'Error al actualizar el podcast'];
     }

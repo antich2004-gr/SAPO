@@ -36,12 +36,49 @@
         </div>
     <?php endif; ?>
 
+    <?php
+    // Mostrar mensajes de sesión
+    if (isset($_SESSION['message'])) {
+        echo '<div class="alert alert-success">' . htmlEsc($_SESSION['message']) . '</div>';
+        unset($_SESSION['message']);
+    }
+    if (isset($_SESSION['error'])) {
+        echo '<div class="alert alert-error">' . htmlEsc($_SESSION['error']) . '</div>';
+        unset($_SESSION['error']);
+    }
+
+    // Mostrar recordatorio de Radiobot si es necesario
+    if (isset($_SESSION['show_radiobot_reminder']) && $_SESSION['show_radiobot_reminder']) {
+        $radiobotAction = $_SESSION['radiobot_action'] ?? '';
+        $config = getConfig();
+        $radiobotUrl = $config['radiobot_url'] ?? 'https://radiobot.radioslibres.info';
+
+        echo '<div class="alert alert-warning" style="border-left: 4px solid #ffc107;">';
+        echo '<strong>⚠️ RECORDATORIO IMPORTANTE:</strong><br>';
+        echo 'No olvides actualizar las playlists en Radiobot/AzuraCast para que apunten a las nuevas rutas.<br>';
+        echo '<a href="' . htmlspecialchars($radiobotUrl) . '" target="_blank" style="color: #667eea; font-weight: bold;">🔗 Abrir Radiobot</a>';
+        echo '</div>';
+
+        unset($_SESSION['show_radiobot_reminder']);
+        unset($_SESSION['radiobot_action']);
+        unset($_SESSION['radiobot_old_name']);
+        unset($_SESSION['radiobot_new_name']);
+        unset($_SESSION['radiobot_source']);
+        unset($_SESSION['radiobot_target']);
+    }
+    ?>
+
     <?php if (isset($_GET['page']) && $_GET['page'] == 'help'): ?>
         <?php require_once 'views/help.php'; ?>
     <?php elseif (!isLoggedIn()): ?>
         <?php require_once 'views/login.php'; ?>
     <?php elseif (isAdmin()): ?>
         <?php require_once 'views/admin.php'; ?>
+    <?php elseif (isset($_GET['view']) && $_GET['view'] == 'categories' && !isAdmin()): ?>
+        <?php
+        $username = $_SESSION['username'];
+        require_once 'views/categories.php';
+        ?>
     <?php elseif (isset($_GET['status']) && $_GET['status'] == 'podget'): ?>
         <?php require_once 'views/podget_status.php'; ?>
     <?php else: ?>
