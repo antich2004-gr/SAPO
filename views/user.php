@@ -862,66 +862,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
 </style>
 
-<script>
-// Datos de todos los podcasts para JavaScript
-const podcastsData = <?php echo json_encode($podcastsData); ?>;
-
-// Funciones para el modal de editar podcast
-function showEditPodcastModal(index) {
-    const podcast = podcastsData[index];
-    if (!podcast) {
-        alert('Podcast no encontrado');
-        return;
-    }
-
-    // Llenar el formulario con los datos del podcast
-    document.getElementById('edit_podcast_index').value = podcast.index;
-    document.getElementById('edit_podcast_url').value = podcast.url;
-    document.getElementById('edit_podcast_name').value = podcast.name;
-    document.getElementById('edit_podcast_category').value = podcast.category;
-    document.getElementById('edit_podcast_caducidad').value = podcast.caducidad;
-    document.getElementById('edit_podcast_duracion').value = podcast.duracion;
-
-    // Mostrar el modal
-    document.getElementById('editPodcastModal').style.display = 'block';
-}
-
-function closeEditPodcastModal() {
-    document.getElementById('editPodcastModal').style.display = 'none';
-}
-
-// Cerrar modal al hacer clic fuera de él
-window.onclick = function(event) {
-    const editModal = document.getElementById('editPodcastModal');
-    if (event.target === editModal) {
-        closeEditPodcastModal();
-    }
-}
-
-// Reabrir el modal de categorías si se acabó de añadir o eliminar una categoría
-document.addEventListener('DOMContentLoaded', function() {
-    // Verificar si hay mensajes relacionados con categorías
-    const alerts = document.querySelectorAll('.alert');
-    let shouldOpenCategoryModal = false;
-
-    alerts.forEach(alert => {
-        const text = alert.textContent.toLowerCase();
-        if (text.includes('categoría agregada') ||
-            text.includes('categoría eliminada') ||
-            text.includes('categoria agregada') ||
-            text.includes('categoria eliminada')) {
-            shouldOpenCategoryModal = true;
-        }
-    });
-
-    if (shouldOpenCategoryModal) {
-        // Abrir el modal después de un pequeño delay para que se vea el mensaje
-        setTimeout(() => {
-            showCategoryManager();
-        }, 100);
-    }
-});
-
 <!-- Modal de progreso de actualización de feeds -->
 <div id="feedsProgressModal" style="display: none;">
     <div class="modal-content" style="max-width: 600px;">
@@ -1018,5 +958,66 @@ document.addEventListener('DOMContentLoaded', function() {
     background: #a0aec0;
 }
 </style>
+
+<script>
+// Datos de todos los podcasts para JavaScript
+const podcastsData = <?php echo json_encode($podcastsData); ?>;
+
+// Funciones para el modal de editar podcast
+function showEditPodcastModal(index) {
+    const podcast = podcastsData[index];
+    if (!podcast) {
+        alert('Podcast no encontrado');
+        return;
+    }
+
+    // Llenar el formulario con los datos del podcast
+    document.getElementById('edit_podcast_index').value = podcast.index;
+    document.getElementById('edit_podcast_url').value = podcast.url;
+    document.getElementById('edit_podcast_name').value = podcast.name;
+    document.getElementById('edit_podcast_category').value = podcast.category;
+    document.getElementById('edit_podcast_caducidad').value = podcast.caducidad;
+    document.getElementById('edit_podcast_duracion').value = podcast.duracion;
+
+    // Mostrar el modal
+    document.getElementById('editPodcastModal').style.display = 'block';
+}
+
+function closeEditPodcastModal() {
+    document.getElementById('editPodcastModal').style.display = 'none';
+}
+
+// Cerrar modal al hacer clic fuera de él
+window.onclick = function(event) {
+    const editModal = document.getElementById('editPodcastModal');
+    if (event.target === editModal) {
+        closeEditPodcastModal();
+    }
+}
+
+// Reabrir el modal de categorías si se acabó de añadir o eliminar una categoría
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar si hay mensajes relacionados con categorías
+    const alerts = document.querySelectorAll('.alert');
+    let shouldOpenCategoryModal = false;
+
+    alerts.forEach(alert => {
+        const text = alert.textContent.toLowerCase();
+        if (text.includes('categoría agregada') ||
+            text.includes('categoría eliminada') ||
+            text.includes('categoria agregada') ||
+            text.includes('categoria eliminada')) {
+            shouldOpenCategoryModal = true;
+        }
+    });
+
+    if (shouldOpenCategoryModal) {
+        // Abrir el modal después de un pequeño delay para que se vea el mensaje
+        setTimeout(() => {
+            showCategoryManager();
+        }, 100);
+    }
+});
+
 
 </script>
