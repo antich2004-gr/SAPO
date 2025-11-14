@@ -481,7 +481,7 @@
 
         <div style="margin-bottom: 20px;">
             <h4>¿Para qué sirve la duración máxima de episodios?</h4>
-            <p>La duración máxima te permite filtrar episodios demasiado largos. Por ejemplo, si configuras 60 minutos, los episodios que duren más de 1 hora serán eliminados automáticamente durante la limpieza. Esto es útil para ahorrar espacio en disco.</p>
+            <p>La duración máxima te permite filtrar episodios demasiado largos. Por ejemplo, si configuras 60 minutos, los episodios que duren más de 1 hora serán eliminados automáticamente durante la limpieza. Esto es útil para evitar retrasos excesivos en la parrilla que provoquen que algunos programas no se emitan por espera excesiva detrás de podcast que pueden ser más largos de lo debido.</p>
         </div>
 
         <div style="margin-bottom: 20px;">
