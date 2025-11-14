@@ -24,7 +24,7 @@
             <li><a href="#primeros-pasos">Primeros pasos</a></li>
             <li><a href="#gestionar-podcasts">Gestionar podcasts</a></li>
             <li><a href="#buscar-podcasts">Buscar podcasts</a></li>
-            <li><a href="#categorias">Organizar con categorías</a></li>
+            <li><a href="#categorias">Organizar categorías</a></li>
             <li><a href="#descargas">Ejecutar descargas</a></li>
             <li><a href="#estado-feeds">Entender el estado de los feeds</a></li>
             <li><a href="#importar-exportar">Importar y exportar</a></li>
@@ -204,7 +204,7 @@
 
     <!-- Sección: Categorías -->
     <div id="categorias" style="margin-bottom: 40px;">
-        <h3>📁 Organizar con categorías</h3>
+        <h3>📁 Organizar categorías</h3>
         <p>Las categorías son carpetas que agrupan podcasts por temática (Podcast Externos, Producción propia, Reposiciones, etc.).</p>
 
         <h4>✨ Gestionar categorías</h4>
