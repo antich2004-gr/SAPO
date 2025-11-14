@@ -421,7 +421,7 @@
 
         <div style="margin-bottom: 20px;">
             <h4>¿Puedo renombrar una categoría que tiene podcasts?</h4>
-            <p>Sí, SAPO moverá automáticamente todos los podcasts y archivos de esa categoría a la nueva carpeta. Solo necesitarás actualizar las playlists en Radiobot después del cambio.</p>
+            <p>Sí, SAPO moverá automáticamente todos los podcasts y archivos de esa categoría a la nueva carpeta. Solo necesitarás actualizar la vinculación entre las playlists y las nuevas carpetas en Radiobot después del cambio.</p>
         </div>
 
         <div style="margin-bottom: 20px;">
