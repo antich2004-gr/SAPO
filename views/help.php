@@ -23,10 +23,12 @@
             <li><a href="#como-funciona">¿Cómo funciona con Radiobot?</a></li>
             <li><a href="#primeros-pasos">Primeros pasos</a></li>
             <li><a href="#gestionar-podcasts">Gestionar podcasts</a></li>
+            <li><a href="#buscar-podcasts">Buscar podcasts</a></li>
             <li><a href="#categorias">Organizar con categorías</a></li>
             <li><a href="#descargas">Ejecutar descargas</a></li>
             <li><a href="#estado-feeds">Entender el estado de los feeds</a></li>
-            <li><a href="#informes">Ver informes de descargas</a></li>
+            <li><a href="#importar-exportar">Importar y exportar</a></li>
+            <li><a href="#ultimas-descargas">Ver últimas descargas</a></li>
             <li><a href="#faq">Preguntas frecuentes (FAQ)</a></li>
         </ul>
     </div>
@@ -43,11 +45,13 @@
         <p><strong>Funcionalidades principales:</strong></p>
         <ul>
             <li>✅ Agregar, editar y eliminar podcasts con unos pocos clics</li>
+            <li>✅ Buscar podcasts en tiempo real por nombre</li>
             <li>✅ Organizar podcasts por categorías personalizadas</li>
             <li>✅ Ver el estado de actividad de cada feed RSS</li>
-            <li>✅ Configurar días de caducidad individuales por podcast</li>
+            <li>✅ Configurar días de caducidad y duración máxima individuales por podcast</li>
             <li>✅ Ejecutar descargas de episodios nuevos</li>
-            <li>✅ Ver informes detallados de descargas</li>
+            <li>✅ Importar y exportar listas de podcasts</li>
+            <li>✅ Ver listado de últimas descargas realizadas</li>
         </ul>
     </div>
 
@@ -98,9 +102,9 @@
         <h4>2. Panel principal</h4>
         <p>Una vez dentro verás tres pestañas:</p>
         <ul>
-            <li><strong>📻 Podcasts:</strong> Lista y gestión de tus podcasts suscritos</li>
-            <li><strong>⬇️ Descargas:</strong> Ejecutar el proceso de descarga de nuevos episodios</li>
-            <li><strong>📊 Informes:</strong> Estadísticas de descargas realizadas</li>
+            <li><strong>🎙️ Mis Podcasts:</strong> Lista, gestión y búsqueda de tus podcasts suscritos</li>
+            <li><strong>📥 Importar/Exportar:</strong> Importar y exportar tu lista de podcasts (serverlist.txt)</li>
+            <li><strong>⬇️ Descargas:</strong> Ejecutar el proceso de descarga y ver últimas descargas realizadas</li>
         </ul>
     </div>
 
@@ -110,13 +114,14 @@
 
         <h4>➕ Agregar un podcast</h4>
         <ol>
-            <li>Haz clic en <strong>"+ Agregar Podcast"</strong></li>
+            <li>Haz clic en <strong>"+ Agregar Nuevo Podcast"</strong></li>
             <li>Completa el formulario:
                 <ul>
                     <li><strong>URL del RSS:</strong> Dirección del feed (ejemplo: https://feeds.feedburner.com/mi-podcast)</li>
                     <li><strong>Categoría:</strong> Selecciona una existente o crea una nueva</li>
                     <li><strong>Nombre del podcast:</strong> Nombre descriptivo (será el nombre de la carpeta)</li>
                     <li><strong>Caducidad:</strong> Días a conservar episodios (1-365 días, por defecto: 30)</li>
+                    <li><strong>Duración máxima:</strong> Límite de duración de episodios (opcional). Los episodios que excedan este tiempo serán eliminados automáticamente</li>
                 </ul>
             </li>
             <li>Haz clic en <strong>"Agregar Podcast"</strong></li>
@@ -144,6 +149,37 @@
 
         <div style="background: #fffaf0; border-left: 4px solid #f6ad55; padding: 15px; margin: 15px 0;">
             <strong>💡 Nota:</strong> Al eliminar un podcast de SAPO, los episodios ya descargados permanecen en el servidor hasta la próxima limpieza automática.
+        </div>
+    </div>
+
+    <!-- Sección: Buscar podcasts -->
+    <div id="buscar-podcasts" style="margin-bottom: 40px;">
+        <h3>🔍 Buscar podcasts</h3>
+        <p>SAPO incluye un buscador en tiempo real que te permite encontrar rápidamente cualquier podcast en tu lista, sin importar en qué página esté ubicado.</p>
+
+        <h4>¿Cómo usar la búsqueda?</h4>
+        <ol>
+            <li>En la pestaña <strong>"Mis Podcasts"</strong>, localiza el campo de búsqueda en la parte superior</li>
+            <li>Escribe el nombre (o parte del nombre) del podcast que buscas</li>
+            <li>Los resultados se muestran automáticamente mientras escribes</li>
+            <li>Para volver a la vista normal, borra el texto del campo de búsqueda</li>
+        </ol>
+
+        <h4>Características de la búsqueda</h4>
+        <ul>
+            <li>🔎 <strong>Búsqueda en tiempo real:</strong> Los resultados aparecen mientras escribes</li>
+            <li>📄 <strong>Búsqueda global:</strong> Busca en TODOS los podcasts, no solo en la página actual</li>
+            <li>💨 <strong>Rápida y eficiente:</strong> No necesita recargar la página</li>
+            <li>📊 <strong>Muestra toda la información:</strong> Estado del feed, categoría, caducidad, etc.</li>
+            <li>✏️ <strong>Acciones disponibles:</strong> Puedes editar o eliminar directamente desde los resultados</li>
+        </ul>
+
+        <div style="background: #e6fffa; border-left: 4px solid #38b2ac; padding: 15px; margin: 15px 0;">
+            <strong>💡 Tip:</strong> Si tienes muchos podcasts (más de 25), la búsqueda te ahorra tiempo al encontrar rápidamente lo que necesitas sin navegar por múltiples páginas.
+        </div>
+
+        <div style="background: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 15px 0;">
+            <strong>✨ Ventaja:</strong> La búsqueda funciona tanto en vista alfabética como en vista agrupada por categorías.
         </div>
     </div>
 
@@ -285,29 +321,63 @@
         </div>
     </div>
 
-    <!-- Sección: Informes -->
-    <div id="informes" style="margin-bottom: 40px;">
-        <h3>📈 Ver informes de descargas</h3>
-        <p>La pestaña <strong>"Informes"</strong> muestra estadísticas detalladas sobre las descargas realizadas.</p>
+    <!-- Sección: Importar y exportar -->
+    <div id="importar-exportar" style="margin-bottom: 40px;">
+        <h3>📥 Importar y exportar</h3>
+        <p>La pestaña <strong>"Importar/Exportar"</strong> te permite hacer respaldos de tu configuración o migrar podcasts entre instalaciones.</p>
 
-        <h4>Períodos disponibles</h4>
-        <ul>
-            <li><strong>7 días:</strong> Actividad de la última semana</li>
-            <li><strong>30 días:</strong> Resumen mensual</li>
-            <li><strong>90 días:</strong> Tendencias trimestrales</li>
-        </ul>
+        <h4>📤 Exportar tu lista de podcasts</h4>
+        <p>Descarga un archivo <code>serverlist.txt</code> con todos tus podcasts configurados.</p>
+        <ol>
+            <li>Ve a la pestaña <strong>"Importar/Exportar"</strong></li>
+            <li>En la sección "Exportar podcasts", haz clic en <strong>"📤 Descargar mi serverlist.txt"</strong></li>
+            <li>El archivo se descargará automáticamente a tu computadora</li>
+        </ol>
 
-        <h4>Información mostrada</h4>
-        <ul>
-            <li>📊 Total de episodios descargados en el período</li>
-            <li>📊 Total de episodios eliminados por caducidad</li>
-            <li>📊 Promedio de descargas por día</li>
-            <li>📊 Promedio de eliminaciones por día</li>
-            <li>📋 Detalle por podcast (nombre, descargas, eliminaciones)</li>
-        </ul>
+        <h4>📥 Importar una lista de podcasts</h4>
+        <p>Sube un archivo <code>serverlist.txt</code> existente para agregar múltiples podcasts de una vez.</p>
+        <ol>
+            <li>Ve a la pestaña <strong>"Importar/Exportar"</strong></li>
+            <li>En la sección "Importar podcasts", haz clic en <strong>"Seleccionar archivo..."</strong></li>
+            <li>Elige tu archivo <code>serverlist.txt</code></li>
+            <li>Haz clic en <strong>"📥 Importar"</strong></li>
+        </ol>
 
         <div style="background: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 15px 0;">
-            <strong>📝 Nota:</strong> Los informes se generan automáticamente cada vez que ejecutas las descargas desde SAPO.
+            <strong>✨ Usos prácticos:</strong>
+            <ul style="margin: 10px 0 0 0;">
+                <li>Hacer respaldos periódicos de tu configuración</li>
+                <li>Migrar podcasts entre diferentes instalaciones de SAPO</li>
+                <li>Compartir listas de podcasts con otros usuarios</li>
+            </ul>
+        </div>
+
+        <div style="background: #fffaf0; border-left: 4px solid #f6ad55; padding: 15px; margin: 15px 0;">
+            <strong>⚠️ Importante:</strong> Al importar un serverlist.txt, los podcasts se agregarán a tu lista actual. No se eliminarán los podcasts existentes.
+        </div>
+    </div>
+
+    <!-- Sección: Ver últimas descargas -->
+    <div id="ultimas-descargas" style="margin-bottom: 40px;">
+        <h3>📋 Ver últimas descargas</h3>
+        <p>En la pestaña <strong>"Descargas"</strong>, además de ejecutar las descargas, puedes ver un listado de los episodios descargados recientemente.</p>
+
+        <h4>¿Qué muestra?</h4>
+        <ul>
+            <li>📅 <strong>Fecha y hora:</strong> Cuándo se descargó cada episodio</li>
+            <li>🎙️ <strong>Nombre del podcast:</strong> De qué podcast es el episodio</li>
+            <li>📁 <strong>Nombre del archivo:</strong> El archivo de audio descargado</li>
+        </ul>
+
+        <h4>Período de visualización</h4>
+        <p>Se muestran los episodios descargados en los <strong>últimos 7 días</strong>, limitados a los 30 más recientes.</p>
+
+        <div style="background: #e6fffa; border-left: 4px solid #38b2ac; padding: 15px; margin: 15px 0;">
+            <strong>💡 Tip:</strong> Usa esta información para verificar que las descargas se están ejecutando correctamente y ver qué contenido nuevo tienes disponible.
+        </div>
+
+        <div style="background: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 15px 0;">
+            <strong>📝 Nota:</strong> La información de descargas se actualiza cada vez que ejecutas el proceso de descarga desde SAPO.
         </div>
     </div>
 
@@ -378,6 +448,26 @@
         <div style="margin-bottom: 20px;">
             <h4>¿Puedo pausar un podcast temporalmente?</h4>
             <p>Actualmente no hay función de pausa. Si quieres dejar de recibir episodios temporalmente, elimina el podcast y agrégalo nuevamente cuando quieras reactivarlo.</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <h4>¿Cómo busco un podcast si tengo muchos en mi lista?</h4>
+            <p>Usa el campo de búsqueda en la parte superior de la pestaña "Mis Podcasts". La búsqueda funciona en tiempo real y busca en TODAS las páginas, no solo en la actual.</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <h4>¿Para qué sirve la duración máxima de episodios?</h4>
+            <p>La duración máxima te permite filtrar episodios demasiado largos. Por ejemplo, si configuras 60 minutos, los episodios que duren más de 1 hora serán eliminados automáticamente durante la limpieza. Esto es útil para ahorrar espacio en disco.</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <h4>¿Qué formato tiene el archivo serverlist.txt?</h4>
+            <p>Es un archivo de texto plano que contiene la configuración de tus podcasts en el formato que usa Radiobot/podget. Puedes exportarlo desde SAPO para hacer respaldos o compartir tu lista de podcasts.</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <h4>¿Pierdo mis podcasts actuales al importar un serverlist.txt?</h4>
+            <p>No, la importación AGREGA los podcasts del archivo a tu lista actual. Los podcasts existentes no se eliminan. Si hay duplicados, se mostrarán como entradas separadas.</p>
         </div>
     </div>
 
