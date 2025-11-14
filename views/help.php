@@ -461,7 +461,7 @@
 
         <div style="margin-bottom: 20px;">
             <h4>¿Cuánto espacio en disco necesito?</h4>
-            <p>Depende del número de podcasts, frecuencia de publicación y configuración de caducidad. Un podcast diario con caducidad de 30 días puede ocupar entre 1-5 GB. Ajusta la caducidad según tu espacio disponible.</p>
+            <p>Depende del número de podcasts, frecuencia de publicación y configuración de caducidad. Ajusta la caducidad según tu espacio disponible.</p>
         </div>
 
         <div style="margin-bottom: 20px;">
