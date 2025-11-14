@@ -411,7 +411,7 @@
 
         <div style="margin-bottom: 20px;">
             <h4>¿Qué pasa si cambio el nombre de un podcast?</h4>
-            <p>El nombre se actualizará en SAPO, pero los archivos ya descargados permanecerán en la carpeta antigua. Radiobot empezará a descargar en la nueva carpeta con el nombre actualizado.</p>
+            <p>El nombre se actualizará en SAPO y la carpeta de archivos se renombrará automáticamente para mantener todos los episodios ya descargados. Deberás actualizar la vinculación de las carpetas con sus playlist correspondientes de Radiobot.</p>
         </div>
 
         <div style="margin-bottom: 20px;">

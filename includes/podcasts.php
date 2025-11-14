@@ -300,6 +300,32 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
             }
         }
 
+        // Si cambió el nombre del podcast, renombrar directorio
+        // (ya sea en la misma categoría o después de haberlo movido a nueva categoría)
+        if ($oldName !== $sanitizedName) {
+            // Determinar en qué categoría está ahora el podcast
+            $currentCategory = $categoryChanged ? $sanitizedCategory : $oldCategory;
+
+            $renameResult = renamePodcastDirectory($username, $oldName, $sanitizedName, $currentCategory);
+
+            // Si falla el renombrado, revertir TODO
+            if (!$renameResult['success']) {
+                // Revertir serverlist.txt al estado original
+                writeServerList($username, $oldPodcasts);
+
+                // Si se había movido de categoría, intentar revertir el movimiento también
+                if ($categoryChanged) {
+                    // Intentar mover de vuelta (best effort, puede fallar)
+                    @movePodcastFiles($username, $oldName, $sanitizedCategory, $oldCategory);
+                }
+
+                return [
+                    'success' => false,
+                    'error' => 'Error al renombrar directorio: ' . ($renameResult['error'] ?? 'Error desconocido') . '. Se han revertido todos los cambios.'
+                ];
+            }
+        }
+
         // Si cambió el nombre del podcast, eliminar la entrada antigua
         if ($oldName !== $sanitizedName) {
             deleteCaducidad($username, $oldName);

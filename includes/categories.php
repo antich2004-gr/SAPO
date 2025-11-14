@@ -587,4 +587,125 @@ function renameCategory($username, $oldName, $newName) {
     }
 }
 
+
+/**
+ * Renombrar directorio de un podcast dentro de la misma categoría
+ * @param string $username Usuario
+ * @param string $oldPodcastName Nombre anterior del podcast
+ * @param string $newPodcastName Nuevo nombre del podcast
+ * @param string $category Categoría donde está el podcast
+ * @return array ['success' => bool, 'moved' => int, 'message' => string, 'error' => string]
+ */
+function renamePodcastDirectory($username, $oldPodcastName, $newPodcastName, $category) {
+    // VALIDACIÓN 1: Configuración
+    $config = getConfig();
+    if (empty($config['base_path'])) {
+        return ['success' => false, 'error' => 'Base path no configurado'];
+    }
+
+    // VALIDACIÓN 2: Seguridad - path traversal
+    if (strpos($username, '..') !== false ||
+        strpos($username, '/') !== false ||
+        strpos($username, '\') !== false) {
+        return ['success' => false, 'error' => 'Username contiene caracteres inválidos'];
+    }
+
+    // VALIDACIÓN 3: Nombres vacíos
+    if (empty($oldPodcastName) || empty($newPodcastName) || empty($category)) {
+        return ['success' => false, 'error' => 'Parámetros vacíos'];
+    }
+
+    // VALIDACIÓN 4: Si son el mismo nombre, no hacer nada
+    if ($oldPodcastName === $newPodcastName) {
+        return ['success' => true, 'moved' => 0, 'message' => 'Nombres idénticos, sin cambios'];
+    }
+
+    // Construir ruta de la categoría
+    $basePath = $config['base_path'];
+    $categoryPath = $basePath . DIRECTORY_SEPARATOR . $username .
+                    DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR .
+                    'Podcasts' . DIRECTORY_SEPARATOR . $category;
+
+    // VALIDACIÓN 5: Carpeta de categoría existe
+    if (!is_dir($categoryPath)) {
+        // No es error crítico, simplemente no hay archivos
+        return ['success' => true, 'moved' => 0, 'message' => 'Carpeta de categoría no existe, sin archivos que renombrar'];
+    }
+
+    // Buscar el directorio del podcast con el nombre antiguo
+    $oldPodcastDir = $categoryPath . DIRECTORY_SEPARATOR . $oldPodcastName;
+    
+    // IMPORTANTE: Podget a veces agrega sufijos a los nombres de directorios
+    // Si no existe exactamente, buscar directorios que empiecen con el nombre del podcast
+    $actualOldPodcastDir = null;
+    $actualOldPodcastDirName = null;
+    $podgetSuffix = '';  // Para preservar el sufijo si existe
+
+    if (is_dir($oldPodcastDir)) {
+        // Coincidencia exacta
+        $actualOldPodcastDir = $oldPodcastDir;
+        $actualOldPodcastDirName = $oldPodcastName;
+    } else {
+        // Buscar directorios que empiecen con el nombre del podcast
+        $dirs = scandir($categoryPath);
+        foreach ($dirs as $dir) {
+            if ($dir === '.' || $dir === '..') continue;
+
+            $fullPath = $categoryPath . DIRECTORY_SEPARATOR . $dir;
+            if (is_dir($fullPath) && strpos($dir, $oldPodcastName) === 0) {
+                // Encontrado un directorio que empieza con el nombre del podcast
+                $actualOldPodcastDir = $fullPath;
+                $actualOldPodcastDirName = $dir;
+                // Extraer el sufijo (lo que viene después del nombre base)
+                $podgetSuffix = substr($dir, strlen($oldPodcastName));
+                break;
+            }
+        }
+    }
+
+    // Si no se encontró ningún directorio
+    if ($actualOldPodcastDir === null) {
+        return ['success' => true, 'moved' => 0, 'message' => 'El directorio del podcast no existe'];
+    }
+
+    // VALIDACIÓN 6: Permisos de escritura
+    if (!is_writable($categoryPath)) {
+        return ['success' => false, 'error' => 'Sin permisos de escritura en la carpeta de categoría'];
+    }
+
+    // Construir la ruta del nuevo nombre (preservando el sufijo de Podget si existe)
+    $newPodcastDirName = $newPodcastName . $podgetSuffix;
+    $newPodcastDir = $categoryPath . DIRECTORY_SEPARATOR . $newPodcastDirName;
+
+    // VALIDACIÓN 7: El nuevo nombre no debe existir ya
+    if (file_exists($newPodcastDir)) {
+        return [
+            'success' => false,
+            'error' => 'Ya existe un directorio con el nuevo nombre en esta categoría'
+        ];
+    }
+
+    // Contar archivos antes de renombrar (para estadísticas)
+    $filesBeforeRename = glob($actualOldPodcastDir . DIRECTORY_SEPARATOR . '*.{mp3,ogg,wav,m4a}', GLOB_BRACE);
+    $fileCount = $filesBeforeRename ? count($filesBeforeRename) : 0;
+
+    // Intentar renombrar el directorio
+    $renamed = @rename($actualOldPodcastDir, $newPodcastDir);
+
+    if ($renamed) {
+        return [
+            'success' => true,
+            'moved' => $fileCount,
+            'message' => "Directorio del podcast renombrado correctamente con $fileCount archivo(s)"
+        ];
+    } else {
+        $lastError = error_get_last();
+        $errorMsg = $lastError ? $lastError['message'] : 'Error desconocido';
+        return [
+            'success' => false,
+            'error' => 'No se pudo renombrar el directorio del podcast. Origen: ' . $actualOldPodcastDir . ' -> Destino: ' . $newPodcastDir . '. Error: ' . $errorMsg
+        ];
+    }
+}
+
 ?>
