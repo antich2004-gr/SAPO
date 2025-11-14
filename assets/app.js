@@ -814,3 +814,23 @@ function loadReport(days, button) {
     });
 }
 
+
+/**
+ * Auto-ocultar mensajes de alerta después de 5 segundos
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    const alerts = document.querySelectorAll('.alert-success, .alert-error, .alert-warning, .alert-info');
+    
+    alerts.forEach(alert => {
+        // Auto-ocultar después de 5 segundos
+        setTimeout(() => {
+            alert.style.transition = 'opacity 0.5s ease';
+            alert.style.opacity = '0';
+            
+            // Eliminar del DOM después de la transición
+            setTimeout(() => {
+                alert.remove();
+            }, 500);
+        }, 5000);
+    });
+});
