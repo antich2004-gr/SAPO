@@ -97,7 +97,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             if ($result['success']) {
                 loginUser($result['user']);
 
-                header('Location: ' . basename($_SERVER['PHP_SELF']));
+                // Verificar si han pasado más de 12 horas desde la última actualización de feeds
+                $redirect_url = basename($_SERVER['PHP_SELF']);
+                if (isset($_SESSION['last_feeds_update'])) {
+                    $hours_passed = (time() - $_SESSION['last_feeds_update']) / 3600;
+                    if ($hours_passed >= 12) {
+                        $redirect_url .= '?auto_refresh_feeds=1';
+                    }
+                } else {
+                    // Primera vez: inicializar timestamp
+                    $_SESSION['last_feeds_update'] = time();
+                }
+
+                header('Location: ' . $redirect_url);
                 exit;
             } else {
                 $error = $result['error'];
@@ -426,6 +438,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($action == 'refresh_feeds' && isLoggedIn() && !isAdmin()) {
         $updated = refreshAllFeeds($_SESSION['username']);
         $_SESSION['feeds_updated'] = true;
+        $_SESSION['last_feeds_update'] = time(); // Guardar timestamp de última actualización
         $message = "Se actualizaron $updated feeds correctamente";
     }
 
