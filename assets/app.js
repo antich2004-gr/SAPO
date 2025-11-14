@@ -528,10 +528,10 @@ function searchPodcasts() {
                             </div>
                         </div>
                         <div class="podcast-actions">
-                            ${pauseResumeButton}
                             <button type="button" class="btn btn-warning" onclick="showEditPodcastModal(${podcast.index})">
                                 <span class="btn-icon">✏️</span> Editar
                             </button>
+                            ${pauseResumeButton}
                             <form method="POST" style="display: inline;">
                                 <input type="hidden" name="action" value="delete_podcast">
                                 <input type="hidden" name="csrf_token" value="${getCsrfToken()}">

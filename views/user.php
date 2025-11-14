@@ -182,6 +182,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         </div>
                                     </div>
                                     <div class="podcast-actions">
+                                        <button type="button" class="btn btn-warning" onclick="showEditPodcastModal(<?php echo htmlEsc($podcast['original_index']); ?>)"><span class="btn-icon">✏️</span> Editar</button>
                                         <?php if (isset($podcast['paused']) && $podcast['paused']): ?>
                                             <form method="POST" style="display: inline;">
                                                 <input type="hidden" name="action" value="resume_podcast">
@@ -197,7 +198,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                 <button type="submit" class="btn btn-secondary"><span class="btn-icon">⏸️</span> Pausar</button>
                                             </form>
                                         <?php endif; ?>
-                                        <button type="button" class="btn btn-warning" onclick="showEditPodcastModal(<?php echo htmlEsc($podcast['original_index']); ?>)"><span class="btn-icon">✏️</span> Editar</button>
                                         <form method="POST" style="display: inline;">
                                             <input type="hidden" name="action" value="delete_podcast">
                                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
@@ -325,6 +325,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                     </div>
                                                 </div>
                                                 <div class="podcast-actions">
+                                                    <button type="button" class="btn btn-warning" onclick="showEditPodcastModal(<?php echo htmlEsc($podcast['original_index']); ?>)"><span class="btn-icon">✏️</span> Editar</button>
                                                     <?php if (isset($podcast['paused']) && $podcast['paused']): ?>
                                                         <form method="POST" style="display: inline;">
                                                             <input type="hidden" name="action" value="resume_podcast">
@@ -340,7 +341,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                             <button type="submit" class="btn btn-secondary"><span class="btn-icon">⏸️</span> Pausar</button>
                                                         </form>
                                                     <?php endif; ?>
-                                                    <button type="button" class="btn btn-warning" onclick="showEditPodcastModal(<?php echo htmlEsc($podcast['original_index']); ?>)"><span class="btn-icon">✏️</span> Editar</button>
                                                     <form method="POST" style="display: inline;">
                                                         <input type="hidden" name="action" value="delete_podcast">
                                                         <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
