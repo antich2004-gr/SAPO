@@ -205,7 +205,7 @@
     <!-- Sección: Categorías -->
     <div id="categorias" style="margin-bottom: 40px;">
         <h3>📁 Organizar con categorías</h3>
-        <p>Las categorías son carpetas que agrupan podcasts por temática (Noticias, Música, Deportes, etc.).</p>
+        <p>Las categorías son carpetas que agrupan podcasts por temática (Podcast Externos, Producción propia, Reposiciones, etc.).</p>
 
         <h4>✨ Gestionar categorías</h4>
         <p>Haz clic en <strong>"🗂️ Gestionar Categorías"</strong> para abrir el gestor de categorías, donde podrás:</p>
