@@ -317,16 +317,17 @@ function filterByCategory() {
     const selectedCategory = select.value;
     const items = document.querySelectorAll('#normal-view .podcast-item');
     const groups = document.querySelectorAll('#grouped-view .category-group');
-    const paginationControls = document.querySelector('.pagination-controls');
+    // Obtener TODAS las paginaciones (vista normal y agrupada)
+    const allPaginationControls = document.querySelectorAll('.pagination-controls');
 
     if (selectedCategory === '') {
         // Mostrar todos
         items.forEach(item => item.style.display = '');
         groups.forEach(group => group.style.display = '');
-        // Restaurar paginación
-        if (paginationControls) {
-            paginationControls.style.display = '';
-        }
+        // Restaurar todas las paginaciones
+        allPaginationControls.forEach(pagination => {
+            pagination.style.display = '';
+        });
     } else {
         // Filtrar por categoría
         items.forEach(item => {
@@ -345,11 +346,11 @@ function filterByCategory() {
             }
         });
 
-        // Ocultar paginación durante el filtrado
-        // (la paginación se calculó para todos los podcasts, no para la categoría filtrada)
-        if (paginationControls) {
-            paginationControls.style.display = 'none';
-        }
+        // Ocultar TODAS las paginaciones durante el filtrado
+        // (la paginación se calculó para todos los podcasts/categorías, no para la categoría filtrada)
+        allPaginationControls.forEach(pagination => {
+            pagination.style.display = 'none';
+        });
     }
 }
 
