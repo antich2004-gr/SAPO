@@ -918,13 +918,28 @@ async function refreshFeedsWithProgress() {
 
         // Obtener total de podcasts
         const initResponse = await fetch('?action=refresh_feeds');
+        
+        if (!initResponse.ok) {
+            throw new Error('Error de red: ' + initResponse.status);
+        }
+        
         const initData = await initResponse.json();
 
         if (!initData.success) {
-            throw new Error('Error al inicializar actualización');
+            throw new Error(initData.error || 'Error al inicializar actualización');
         }
 
         const total = initData.total;
+        
+        // Si no hay podcasts
+        if (total === 0) {
+            document.getElementById('feedsProgressText').innerHTML = '<span style="color: #f59e0b;">⚠️ No hay podcasts para actualizar</span>';
+            document.getElementById('feedsProgressBar').style.width = '100%';
+            document.getElementById('feedsProgressBar').style.background = '#f59e0b';
+            document.getElementById('feedsProgressPercent').textContent = '100%';
+            document.getElementById('feedsCloseButtonContainer').style.display = 'block';
+            return;
+        }
 
         // Actualizar cada feed uno por uno
         for (let i = 0; i < total; i++) {
@@ -943,7 +958,7 @@ async function refreshFeedsWithProgress() {
 
     } catch (error) {
         console.error('Error en actualización de feeds:', error);
-        document.getElementById('feedsProgressText').innerHTML = '<span style="color: #ef4444;">❌ Error en la actualización</span>';
+        document.getElementById('feedsProgressText').innerHTML = '<span style="color: #ef4444;">❌ Error: ' + error.message + '</span>';
         document.getElementById('feedsCloseButtonContainer').style.display = 'block';
     }
 }

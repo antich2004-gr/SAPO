@@ -329,7 +329,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     // AJAX: Actualizar feeds progresivamente
-    if (isset($_GET['action']) && $_GET['action'] == 'refresh_feeds' && isLoggedIn() && !isAdmin()) {
+    if (isset($_GET['action']) && $_GET['action'] == 'refresh_feeds' && isLoggedIn()) {
         header('Content-Type: application/json');
         
         $username = $_SESSION['username'];
