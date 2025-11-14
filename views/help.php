@@ -466,7 +466,7 @@
 
         <div style="margin-bottom: 20px;">
             <h4>¿Puedo pausar un podcast temporalmente?</h4>
-            <p>Sí, usa el botón "⏸️ Pausar" junto al podcast. Los podcasts pausados no descargarán nuevos episodios, pero mantienen toda su configuración. Cuando quieras reactivarlo, haz clic en "▶️ Reanudar".</p>
+            <p>Puedes pausar la suscripción de un podcast. Si quieres dejar de recibir episodios temporalmente, activa la pausa del podcast y reactívalo cuando quieras.</p>
         </div>
 
         <div style="margin-bottom: 20px;">
