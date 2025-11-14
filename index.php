@@ -97,17 +97,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             if ($result['success']) {
                 loginUser($result['user']);
 
-                // Verificar si han pasado más de 12 horas desde la última actualización de feeds
+                // TEMPORAL: Siempre activar auto-refresh para pruebas
                 $redirect_url = basename($_SERVER['PHP_SELF']);
+                $redirect_url .= '?auto_refresh_feeds=1';
+                
+                // TODO: Restaurar lógica de 8 horas después de pruebas
+                /*
                 if (isset($_SESSION['last_feeds_update'])) {
                     $hours_passed = (time() - $_SESSION['last_feeds_update']) / 3600;
-                    if ($hours_passed >= 12) {
+                    if ($hours_passed >= 8) {
                         $redirect_url .= '?auto_refresh_feeds=1';
                     }
                 } else {
                     // Primera vez: inicializar timestamp
                     $_SESSION['last_feeds_update'] = time();
                 }
+                */
 
                 header('Location: ' . $redirect_url);
                 exit;
