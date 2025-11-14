@@ -315,21 +315,167 @@ function filterByCategory() {
     if (!select) return;
 
     const selectedCategory = select.value;
-    const items = document.querySelectorAll('#normal-view .podcast-item');
-    const groups = document.querySelectorAll('#grouped-view .category-group');
+    const normalView = document.getElementById('normal-view');
+    const groupedView = document.getElementById('grouped-view');
     // Obtener TODAS las paginaciones (vista normal y agrupada)
     const allPaginationControls = document.querySelectorAll('.pagination-controls');
 
     if (selectedCategory === '') {
-        // Mostrar todos
-        items.forEach(item => item.style.display = '');
-        groups.forEach(group => group.style.display = '');
-        // Restaurar todas las paginaciones
+        // Restaurar vista original: recargar la página para volver al estado inicial
+        window.location.reload();
+    } else if (typeof podcastsData !== 'undefined') {
+        // Filtrar TODOS los podcasts por categoría usando podcastsData
+        const filteredPodcasts = podcastsData.filter(podcast => podcast.category === selectedCategory);
+
+        // Renderizar en vista normal
+        if (normalView) {
+            const podcastContainer = normalView.querySelector('.row') || normalView;
+            podcastContainer.innerHTML = filteredPodcasts.map(podcast => {
+                const statusClass = podcast.statusInfo.class || 'unknown';
+                const statusText = podcast.statusInfo.status || 'No disponible';
+                const statusDate = podcast.statusInfo.date || '';
+                const statusDays = podcast.statusInfo.days || 0;
+                const cacheAge = podcast.feedInfo.cache_age ? Math.floor(podcast.feedInfo.cache_age / 3600) : 0;
+                const isCached = podcast.feedInfo.cached && cacheAge > 0;
+
+                let lastEpisodeHtml = '';
+                if (podcast.feedInfo.timestamp !== null) {
+                    lastEpisodeHtml = `${statusText} - Último episodio: ${statusDate} (hace ${statusDays} días)`;
+                    if (isCached) {
+                        lastEpisodeHtml += ` <span class="cache-indicator">(comprobado hace ${cacheAge}h)</span>`;
+                    }
+                } else {
+                    lastEpisodeHtml = `⚠️ ${statusText}`;
+                }
+
+                const pausedClass = podcast.paused ? 'podcast-paused' : '';
+                const pausedBadge = podcast.paused ? '<span class="badge-paused">⏸️ PAUSADO</span>' : '';
+
+                const pauseResumeButton = podcast.paused
+                    ? `<form method="POST" style="display: inline;">
+                        <input type="hidden" name="action" value="resume_podcast">
+                        <input type="hidden" name="csrf_token" value="${getCsrfToken()}">
+                        <input type="hidden" name="index" value="${podcast.index}">
+                        <button type="submit" class="btn btn-success"><span class="btn-icon">▶️</span> Reanudar</button>
+                    </form>`
+                    : `<form method="POST" style="display: inline;">
+                        <input type="hidden" name="action" value="pause_podcast">
+                        <input type="hidden" name="csrf_token" value="${getCsrfToken()}">
+                        <input type="hidden" name="index" value="${podcast.index}">
+                        <button type="submit" class="btn btn-secondary"><span class="btn-icon">⏸️</span> Pausar</button>
+                    </form>`;
+
+                return `
+                    <div class="podcast-item podcast-item-${statusClass} ${pausedClass}" data-category="${escapeHtml(podcast.category)}">
+                        <div class="podcast-info">
+                            <strong>${escapeHtml(podcast.name)} ${pausedBadge}</strong>
+                            <small>Categoría: ${escapeHtml(podcast.category)} | Caducidad: ${podcast.caducidad} días</small>
+                            <small>${escapeHtml(podcast.url)}</small>
+                            <div class="last-episode ${statusClass}">
+                                ${lastEpisodeHtml}
+                            </div>
+                        </div>
+                        <div class="podcast-actions">
+                            <button type="button" class="btn btn-warning" onclick="showEditPodcastModal(${podcast.index})">
+                                <span class="btn-icon">✏️</span> Editar
+                            </button>
+                            ${pauseResumeButton}
+                            <form method="POST" style="display: inline;">
+                                <input type="hidden" name="action" value="delete_podcast">
+                                <input type="hidden" name="csrf_token" value="${getCsrfToken()}">
+                                <input type="hidden" name="index" value="${podcast.index}">
+                                <button type="submit" class="btn btn-danger" onclick="return confirm('Eliminar este podcast?')">
+                                    <span class="btn-icon">🗑️</span> Eliminar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Renderizar en vista agrupada (un solo grupo con todos los podcasts de esa categoría)
+        if (groupedView) {
+            groupedView.innerHTML = `
+                <div class="category-group" data-category="${escapeHtml(selectedCategory)}">
+                    <h3 class="category-title">${escapeHtml(selectedCategory)} (${filteredPodcasts.length})</h3>
+                    <div class="row">
+                        ${filteredPodcasts.map(podcast => {
+                            const statusClass = podcast.statusInfo.class || 'unknown';
+                            const statusText = podcast.statusInfo.status || 'No disponible';
+                            const statusDate = podcast.statusInfo.date || '';
+                            const statusDays = podcast.statusInfo.days || 0;
+                            const cacheAge = podcast.feedInfo.cache_age ? Math.floor(podcast.feedInfo.cache_age / 3600) : 0;
+                            const isCached = podcast.feedInfo.cached && cacheAge > 0;
+
+                            let lastEpisodeHtml = '';
+                            if (podcast.feedInfo.timestamp !== null) {
+                                lastEpisodeHtml = `${statusText} - Último episodio: ${statusDate} (hace ${statusDays} días)`;
+                                if (isCached) {
+                                    lastEpisodeHtml += ` <span class="cache-indicator">(comprobado hace ${cacheAge}h)</span>`;
+                                }
+                            } else {
+                                lastEpisodeHtml = `⚠️ ${statusText}`;
+                            }
+
+                            const pausedClass = podcast.paused ? 'podcast-paused' : '';
+                            const pausedBadge = podcast.paused ? '<span class="badge-paused">⏸️ PAUSADO</span>' : '';
+
+                            const pauseResumeButton = podcast.paused
+                                ? `<form method="POST" style="display: inline;">
+                                    <input type="hidden" name="action" value="resume_podcast">
+                                    <input type="hidden" name="csrf_token" value="${getCsrfToken()}">
+                                    <input type="hidden" name="index" value="${podcast.index}">
+                                    <button type="submit" class="btn btn-success"><span class="btn-icon">▶️</span> Reanudar</button>
+                                </form>`
+                                : `<form method="POST" style="display: inline;">
+                                    <input type="hidden" name="action" value="pause_podcast">
+                                    <input type="hidden" name="csrf_token" value="${getCsrfToken()}">
+                                    <input type="hidden" name="index" value="${podcast.index}">
+                                    <button type="submit" class="btn btn-secondary"><span class="btn-icon">⏸️</span> Pausar</button>
+                                </form>`;
+
+                            return `
+                                <div class="podcast-item podcast-item-${statusClass} ${pausedClass}" data-category="${escapeHtml(podcast.category)}">
+                                    <div class="podcast-info">
+                                        <strong>${escapeHtml(podcast.name)} ${pausedBadge}</strong>
+                                        <small>Categoría: ${escapeHtml(podcast.category)} | Caducidad: ${podcast.caducidad} días</small>
+                                        <small>${escapeHtml(podcast.url)}</small>
+                                        <div class="last-episode ${statusClass}">
+                                            ${lastEpisodeHtml}
+                                        </div>
+                                    </div>
+                                    <div class="podcast-actions">
+                                        <button type="button" class="btn btn-warning" onclick="showEditPodcastModal(${podcast.index})">
+                                            <span class="btn-icon">✏️</span> Editar
+                                        </button>
+                                        ${pauseResumeButton}
+                                        <form method="POST" style="display: inline;">
+                                            <input type="hidden" name="action" value="delete_podcast">
+                                            <input type="hidden" name="csrf_token" value="${getCsrfToken()}">
+                                            <input type="hidden" name="index" value="${podcast.index}">
+                                            <button type="submit" class="btn btn-danger" onclick="return confirm('Eliminar este podcast?')">
+                                                <span class="btn-icon">🗑️</span> Eliminar
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Ocultar TODAS las paginaciones durante el filtrado
         allPaginationControls.forEach(pagination => {
-            pagination.style.display = '';
+            pagination.style.display = 'none';
         });
     } else {
-        // Filtrar por categoría
+        // Fallback: método anterior de ocultar/mostrar elementos del DOM
+        const items = document.querySelectorAll('#normal-view .podcast-item');
+        const groups = document.querySelectorAll('#grouped-view .category-group');
+
         items.forEach(item => {
             if (item.dataset.category === selectedCategory) {
                 item.style.display = '';
@@ -346,8 +492,6 @@ function filterByCategory() {
             }
         });
 
-        // Ocultar TODAS las paginaciones durante el filtrado
-        // (la paginación se calculó para todos los podcasts/categorías, no para la categoría filtrada)
         allPaginationControls.forEach(pagination => {
             pagination.style.display = 'none';
         });
