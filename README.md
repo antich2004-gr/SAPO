@@ -22,6 +22,11 @@ SAPO es una aplicación web desarrollada en PHP que permite a múltiples emisora
 - ✅ **Importar/Exportar**: Soporte para serverlist.txt de Podget
 - ✅ **Panel de administración**: Gestión centralizada de usuarios y configuración
 - ✅ **Seguridad robusta**: CSRF protection, rate limiting, BCrypt, validación de uploads, sesiones seguras
+- ✅ **Pausar/Reanudar podcasts**: Control de suscripciones sin eliminarlas
+- ✅ **Búsqueda global**: Buscar podcasts en toda la base de datos, no solo en la página actual
+- ✅ **Filtrado avanzado**: Filtrar por categoría mostrando todos los podcasts, independientemente de la paginación
+- ✅ **Renombrado inteligente**: Al cambiar el nombre de un podcast, la carpeta se renombra automáticamente conservando archivos
+- ✅ **Notificaciones auto-ocultables**: Los mensajes de alerta desaparecen automáticamente después de 5 segundos
 
 ## 🏗️ Arquitectura
 
@@ -355,7 +360,17 @@ SAPO implementa múltiples capas de seguridad. Ver [SECURITY.md](SECURITY.md) pa
 
 ## 📊 Versiones
 
-### v1.1.0 (Noviembre 2024) - Actual
+### v1.2.0 (Noviembre 2024) - Actual
+- ⏸️ **Pausar/Reanudar podcasts**: Nueva funcionalidad para pausar descargas sin eliminar la suscripción
+- 🔄 **Renombrado automático de carpetas**: Al cambiar el nombre de un podcast, la carpeta física se renombra conservando todos los archivos
+- 🔍 **Búsqueda mejorada**: Buscar podcasts en toda la base de datos, no solo en los 25 de la página actual
+- 🎯 **Filtrado por categoría mejorado**: Muestra todos los podcasts de una categoría, ignorando la paginación
+- ⏱️ **Auto-ocultación de mensajes**: Los mensajes de alerta desaparecen automáticamente después de 5 segundos
+- 🎨 **Mejoras visuales**: Badge de "PAUSADO" en rojo para mayor visibilidad
+- 📝 **Ayuda actualizada**: Documentación completa de todas las funcionalidades
+- 🐛 **Correcciones**: Múltiples fixes en paginación, filtrado y sintaxis PHP
+
+### v1.1.0 (Noviembre 2024)
 - 🔒 **[CRÍTICO] Corrección de vulnerabilidad XXE** en feed.php (LIBXML_NOENT → LIBXML_NONET)
 - 🔒 Agregado header Content-Security-Policy faltante
 - 🔒 Agregado header Strict-Transport-Security (HSTS) condicional para HTTPS
