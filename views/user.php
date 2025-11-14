@@ -52,13 +52,28 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
     $podcastsOriginal = readServerList($_SESSION['username']);
     $podcastsData = [];
     foreach ($podcastsOriginal as $index => $podcast) {
+        $feedInfo = getCachedFeedInfo($podcast['url']);
+        $statusInfo = formatFeedStatus($feedInfo['timestamp']);
+
         $podcastsData[] = [
             'index' => $index,
             'url' => $podcast['url'],
             'name' => displayName($podcast['name']),
             'category' => $podcast['category'],
             'caducidad' => $caducidades[$podcast['name']] ?? 30,
-            'duracion' => $duraciones[$podcast['name']] ?? ''
+            'duracion' => $duraciones[$podcast['name']] ?? '',
+            'feedInfo' => [
+                'timestamp' => $feedInfo['timestamp'],
+                'cached' => $feedInfo['cached'],
+                'cache_age' => $feedInfo['cache_age']
+            ],
+            'statusInfo' => [
+                'class' => $statusInfo['class'],
+                'status' => $statusInfo['status'],
+                'icon' => $statusInfo['icon'],
+                'date' => $statusInfo['date'] ?? '',
+                'days' => $statusInfo['days'] ?? 0
+            ]
         ];
     }
     ?>
@@ -125,6 +140,14 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     <?php if (empty($podcasts)): ?>
                         <p style="color: #718096; margin-top: 20px;">No hay podcasts suscritos aún.</p>
                     <?php else: ?>
+                        <!-- Contenedor de resultados de búsqueda -->
+                        <div id="search-results" style="display: none;">
+                            <div class="search-info" style="background: #f7fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #667eea;">
+                                <span id="search-count" style="font-weight: 600; color: #667eea;"></span>
+                            </div>
+                            <div id="search-results-list" class="podcast-list"></div>
+                        </div>
+
                         <!-- Vista Normal (Alfabética) -->
                         <div id="normal-view" class="podcast-list">
                             <?php foreach ($podcastsPaginated as $index => $podcast):

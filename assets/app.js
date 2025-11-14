@@ -445,55 +445,157 @@ function searchPodcasts() {
     const filter = input.value.toLowerCase();
     const normalView = document.getElementById('normal-view');
     const groupedView = document.getElementById('grouped-view');
+    const searchResults = document.getElementById('search-results');
+    const searchResultsList = document.getElementById('search-results-list');
+    const searchCount = document.getElementById('search-count');
+    const paginationControls = document.querySelector('.pagination-controls');
 
-    // Buscar en vista normal
-    if (normalView) {
-        const items = normalView.querySelectorAll('.podcast-item');
-        items.forEach(item => {
-            const podcastName = item.querySelector('strong')?.textContent.toLowerCase() || '';
-            if (podcastName.includes(filter)) {
-                item.style.display = '';
-            } else {
-                item.style.display = 'none';
-            }
-        });
+    // Si no hay filtro, restaurar la vista normal con paginación
+    if (filter === '') {
+        if (searchResults) searchResults.style.display = 'none';
+        if (normalView) normalView.style.display = 'block';
+        if (groupedView && isGroupedView) {
+            groupedView.style.display = 'block';
+            normalView.style.display = 'none';
+        }
+        if (paginationControls) paginationControls.style.display = '';
+        return;
     }
 
-    // Buscar en vista agrupada
-    if (groupedView) {
-        const groups = groupedView.querySelectorAll('.category-group');
-        groups.forEach(group => {
-            const items = group.querySelectorAll('.podcast-item');
-            let visibleCount = 0;
+    // Ocultar controles de paginación durante la búsqueda
+    if (paginationControls) paginationControls.style.display = 'none';
 
+    // Buscar en TODOS los podcasts usando podcastsData
+    if (typeof podcastsData !== 'undefined' && searchResults && searchResultsList) {
+        // Filtrar podcasts que coinciden con la búsqueda
+        const matchingPodcasts = podcastsData.filter(podcast => {
+            return podcast.name.toLowerCase().includes(filter);
+        });
+
+        // Ocultar vistas normales y mostrar resultados de búsqueda
+        if (normalView) normalView.style.display = 'none';
+        if (groupedView) groupedView.style.display = 'none';
+        searchResults.style.display = 'block';
+
+        // Actualizar contador
+        searchCount.textContent = `Se encontraron ${matchingPodcasts.length} podcast${matchingPodcasts.length !== 1 ? 's' : ''} con "${filter}"`;
+
+        // Renderizar resultados
+        if (matchingPodcasts.length > 0) {
+            searchResultsList.innerHTML = matchingPodcasts.map(podcast => {
+                const statusClass = podcast.statusInfo.class || 'unknown';
+                const statusText = podcast.statusInfo.status || 'No disponible';
+                const statusDate = podcast.statusInfo.date || '';
+                const statusDays = podcast.statusInfo.days || 0;
+                const cacheAge = podcast.feedInfo.cache_age ? Math.floor(podcast.feedInfo.cache_age / 3600) : 0;
+                const isCached = podcast.feedInfo.cached && cacheAge > 0;
+
+                let lastEpisodeHtml = '';
+                if (podcast.feedInfo.timestamp !== null) {
+                    lastEpisodeHtml = `${statusText} - Último episodio: ${statusDate} (hace ${statusDays} días)`;
+                    if (isCached) {
+                        lastEpisodeHtml += ` <span class="cache-indicator">(comprobado hace ${cacheAge}h)</span>`;
+                    }
+                } else {
+                    lastEpisodeHtml = `⚠️ ${statusText}`;
+                }
+
+                return `
+                    <div class="podcast-item podcast-item-${statusClass}" data-category="${escapeHtml(podcast.category)}">
+                        <div class="podcast-info">
+                            <strong>${escapeHtml(podcast.name)}</strong>
+                            <small>Categoría: ${escapeHtml(podcast.category)} | Caducidad: ${podcast.caducidad} días</small>
+                            <small>${escapeHtml(podcast.url)}</small>
+                            <div class="last-episode ${statusClass}">
+                                ${lastEpisodeHtml}
+                            </div>
+                        </div>
+                        <div class="podcast-actions">
+                            <button type="button" class="btn btn-warning" onclick="showEditPodcastModal(${podcast.index})">
+                                <span class="btn-icon">✏️</span> Editar
+                            </button>
+                            <form method="POST" style="display: inline;">
+                                <input type="hidden" name="action" value="delete_podcast">
+                                <input type="hidden" name="csrf_token" value="${getCsrfToken()}">
+                                <input type="hidden" name="index" value="${podcast.index}">
+                                <button type="submit" class="btn btn-danger" onclick="return confirm('Eliminar este podcast?')">
+                                    <span class="btn-icon">🗑️</span> Eliminar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            searchResultsList.innerHTML = `
+                <div style="padding: 40px; text-align: center; color: #718096;">
+                    <p style="font-size: 16px; margin: 0;">No se encontraron podcasts que coincidan con "${escapeHtml(filter)}"</p>
+                </div>
+            `;
+        }
+    } else {
+        // Fallback al método anterior si no hay podcastsData o elementos de búsqueda
+        // Buscar en vista normal
+        if (normalView) {
+            const items = normalView.querySelectorAll('.podcast-item');
             items.forEach(item => {
                 const podcastName = item.querySelector('strong')?.textContent.toLowerCase() || '';
                 if (podcastName.includes(filter)) {
                     item.style.display = '';
-                    visibleCount++;
                 } else {
                     item.style.display = 'none';
                 }
             });
+        }
 
-            // Ocultar categoria si no hay podcasts visibles
-            if (visibleCount === 0 && filter !== '') {
-                group.style.display = 'none';
-            } else {
-                group.style.display = '';
-            }
-        });
-    }
+        // Buscar en vista agrupada
+        if (groupedView) {
+            const groups = groupedView.querySelectorAll('.category-group');
+            groups.forEach(group => {
+                const items = group.querySelectorAll('.podcast-item');
+                let visibleCount = 0;
 
-    // Ocultar controles de paginacion durante la busqueda
-    const paginationControls = document.querySelector('.pagination-controls');
-    if (paginationControls) {
-        if (filter !== '') {
-            paginationControls.style.display = 'none';
-        } else {
-            paginationControls.style.display = '';
+                items.forEach(item => {
+                    const podcastName = item.querySelector('strong')?.textContent.toLowerCase() || '';
+                    if (podcastName.includes(filter)) {
+                        item.style.display = '';
+                        visibleCount++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+
+                // Ocultar categoria si no hay podcasts visibles
+                if (visibleCount === 0 && filter !== '') {
+                    group.style.display = 'none';
+                } else {
+                    group.style.display = '';
+                }
+            });
         }
     }
+}
+
+/**
+ * Escapar HTML para prevenir XSS
+ */
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
+/**
+ * Obtener el token CSRF del DOM
+ */
+function getCsrfToken() {
+    const csrfInput = document.querySelector('input[name="csrf_token"]');
+    return csrfInput ? csrfInput.value : '';
 }
 
 /**
