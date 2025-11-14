@@ -850,6 +850,12 @@ function closeFeedsProgressModal() {
     const modal = document.getElementById('feedsProgressModal');
     if (modal) {
         modal.style.display = 'none';
+        
+        // Si la actualización se completó, recargar la página
+        if (window.feedsUpdateCompleted) {
+            window.feedsUpdateCompleted = false;
+            location.reload();
+        }
     }
 }
 
@@ -898,6 +904,9 @@ function finishFeedsProgress(total) {
     document.getElementById('feedsProgressBar').style.background = 'linear-gradient(90deg, #48bb78, #38a169)';
     document.getElementById('feedsCurrentPodcast').style.display = 'none';
     document.getElementById('feedsCloseButtonContainer').style.display = 'block';
+    
+    // Marcar que se debe recargar al cerrar
+    window.feedsUpdateCompleted = true;
 }
 
 /**
@@ -931,11 +940,6 @@ async function refreshFeedsWithProgress() {
 
         // Finalizar
         finishFeedsProgress(total);
-
-        // Recargar la página después de 2 segundos al cerrar el modal
-        setTimeout(() => {
-            location.reload();
-        }, 500);
 
     } catch (error) {
         console.error('Error en actualización de feeds:', error);

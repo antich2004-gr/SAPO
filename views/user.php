@@ -106,12 +106,9 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     </div>
 
                     <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap;">
-                        <form method="POST" style="display: inline-block;">
-                            <input type="hidden" name="action" value="refresh_feeds">
-                            <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                            <button type="submit" class="btn btn-warning">🔄 Actualizar estado de feeds</button>
-                        </form>
-                        <small style="color: #718096;">🟢 ≤30d | 🟠 31-90d | 🔴 >90d</small>
+                        <button type="button" class="btn btn-warning" onclick="refreshFeedsWithProgress()" style="margin-left: 0;">
+                            🔄 Actualizar estado de feeds
+                        </button>
 
                         <?php if (!empty($userCategories)): ?>
                             <div style="display: flex; gap: 10px; align-items: center; flex: 1;">
@@ -926,7 +923,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 <!-- Modal de progreso de actualización de feeds -->
-<div id="feedsProgressModal" class="modal" style="display: none;">
+<div id="feedsProgressModal" style="display: none;">
     <div class="modal-content" style="max-width: 600px;">
         <div class="modal-header">
             <h3 style="margin: 0;">🔄 Actualizando Feeds</h3>
@@ -963,7 +960,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <style>
-#feedsProgressModal .modal {
+#feedsProgressModal {
     display: none;
     position: fixed;
     z-index: 2000;
