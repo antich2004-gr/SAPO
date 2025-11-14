@@ -752,8 +752,8 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 }
 
 .badge-paused {
-    background: #e2e8f0;
-    color: #4a5568;
+    background: #dc2626;
+    color: #ffffff;
     padding: 3px 10px;
     border-radius: 4px;
     font-size: 11px;
