@@ -305,7 +305,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $error = $result['error'];
         }
     }
-    
+
+    // PAUSE PODCAST
+    if ($action == 'pause_podcast' && isLoggedIn() && !isAdmin()) {
+        $index = intval($_POST['index'] ?? -1);
+        $result = pausePodcast($_SESSION['username'], $index);
+        if ($result['success']) {
+            $message = $result['message'];
+        } else {
+            $error = $result['message'];
+        }
+    }
+
+    // RESUME PODCAST
+    if ($action == 'resume_podcast' && isLoggedIn() && !isAdmin()) {
+        $index = intval($_POST['index'] ?? -1);
+        $result = resumePodcast($_SESSION['username'], $index);
+        if ($result['success']) {
+            $message = $result['message'];
+        } else {
+            $error = $result['message'];
+        }
+    }
+
     // RUN PODGET
     if ($action == 'run_podget' && isLoggedIn() && !isAdmin()) {
         $result = executePodget($_SESSION['username']);

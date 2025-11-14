@@ -140,6 +140,25 @@
             <li>Haz clic en <strong>"Guardar Cambios"</strong></li>
         </ol>
 
+        <h4>⏸️ Pausar un podcast</h4>
+        <p>Puedes pausar temporalmente un podcast sin eliminarlo. Los podcasts pausados NO descargarán nuevos episodios.</p>
+        <ol>
+            <li>Encuentra el podcast en el listado</li>
+            <li>Haz clic en <strong>"⏸️ Pausar"</strong></li>
+            <li>El podcast se marcará con un badge "PAUSADO" y se mostrará con fondo grisáceo</li>
+        </ol>
+
+        <h4>▶️ Reanudar un podcast</h4>
+        <ol>
+            <li>Encuentra el podcast pausado en el listado</li>
+            <li>Haz clic en <strong>"▶️ Reanudar"</strong></li>
+            <li>El podcast volverá a descargar nuevos episodios en la siguiente ejecución</li>
+        </ol>
+
+        <div style="background: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 15px 0;">
+            <strong>✨ Ventaja de pausar:</strong> Al pausar un podcast mantienes toda su configuración (categoría, caducidad, duración máxima) para cuando quieras reactivarlo. Es ideal para podcasts de temporada o contenido que no quieres eliminar permanentemente.
+        </div>
+
         <h4>🗑️ Eliminar un podcast</h4>
         <ol>
             <li>Encuentra el podcast en el listado</li>
@@ -447,7 +466,12 @@
 
         <div style="margin-bottom: 20px;">
             <h4>¿Puedo pausar un podcast temporalmente?</h4>
-            <p>Actualmente no hay función de pausa. Si quieres dejar de recibir episodios temporalmente, elimina el podcast y agrégalo nuevamente cuando quieras reactivarlo.</p>
+            <p>Sí, usa el botón "⏸️ Pausar" junto al podcast. Los podcasts pausados no descargarán nuevos episodios, pero mantienen toda su configuración. Cuando quieras reactivarlo, haz clic en "▶️ Reanudar".</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <h4>¿Qué pasa con los episodios ya descargados cuando pauso un podcast?</h4>
+            <p>Los episodios ya descargados permanecen en el servidor. Solo se detienen las descargas de nuevos episodios. La limpieza por caducidad sigue aplicándose normalmente.</p>
         </div>
 
         <div style="margin-bottom: 20px;">

@@ -500,10 +500,27 @@ function searchPodcasts() {
                     lastEpisodeHtml = `⚠️ ${statusText}`;
                 }
 
+                const pausedClass = podcast.paused ? 'podcast-paused' : '';
+                const pausedBadge = podcast.paused ? '<span class="badge-paused">⏸️ PAUSADO</span>' : '';
+
+                const pauseResumeButton = podcast.paused
+                    ? `<form method="POST" style="display: inline;">
+                        <input type="hidden" name="action" value="resume_podcast">
+                        <input type="hidden" name="csrf_token" value="${getCsrfToken()}">
+                        <input type="hidden" name="index" value="${podcast.index}">
+                        <button type="submit" class="btn btn-success"><span class="btn-icon">▶️</span> Reanudar</button>
+                    </form>`
+                    : `<form method="POST" style="display: inline;">
+                        <input type="hidden" name="action" value="pause_podcast">
+                        <input type="hidden" name="csrf_token" value="${getCsrfToken()}">
+                        <input type="hidden" name="index" value="${podcast.index}">
+                        <button type="submit" class="btn btn-secondary"><span class="btn-icon">⏸️</span> Pausar</button>
+                    </form>`;
+
                 return `
-                    <div class="podcast-item podcast-item-${statusClass}" data-category="${escapeHtml(podcast.category)}">
+                    <div class="podcast-item podcast-item-${statusClass} ${pausedClass}" data-category="${escapeHtml(podcast.category)}">
                         <div class="podcast-info">
-                            <strong>${escapeHtml(podcast.name)}</strong>
+                            <strong>${escapeHtml(podcast.name)} ${pausedBadge}</strong>
                             <small>Categoría: ${escapeHtml(podcast.category)} | Caducidad: ${podcast.caducidad} días</small>
                             <small>${escapeHtml(podcast.url)}</small>
                             <div class="last-episode ${statusClass}">
@@ -511,6 +528,7 @@ function searchPodcasts() {
                             </div>
                         </div>
                         <div class="podcast-actions">
+                            ${pauseResumeButton}
                             <button type="button" class="btn btn-warning" onclick="showEditPodcastModal(${podcast.index})">
                                 <span class="btn-icon">✏️</span> Editar
                             </button>

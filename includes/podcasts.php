@@ -125,28 +125,40 @@ function deleteCaducidad($username, $podcastName) {
 function readServerList($username) {
     $path = getServerListPath($username);
     if (!$path || !file_exists($path)) return [];
-    
+
     $podcasts = [];
     $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
         $line = trim($line);
-        if (empty($line) || $line[0] == '#') {
+        if (empty($line)) {
             continue;
         }
-        
+
+        // Detectar si es un podcast pausado
+        $paused = false;
+        if (strpos($line, '# PAUSADO:') === 0) {
+            $paused = true;
+            $line = trim(substr($line, 10)); // Eliminar "# PAUSADO:"
+        } elseif ($line[0] == '#') {
+            // Otros comentarios se ignoran
+            continue;
+        }
+
         $parts = preg_split('/\s+/', $line, 3);
-        
+
         if (count($parts) == 2) {
             $podcasts[] = [
                 'url' => $parts[0],
                 'category' => 'Sin_categoria',
-                'name' => $parts[1]
+                'name' => $parts[1],
+                'paused' => $paused
             ];
         } elseif (count($parts) == 3) {
             $podcasts[] = [
                 'url' => $parts[0],
                 'category' => $parts[1],
-                'name' => $parts[2]
+                'name' => $parts[2],
+                'paused' => $paused
             ];
         }
     }
@@ -175,13 +187,21 @@ function writeServerList($username, $podcasts) {
     $content .= "# Emisora: $stationName\n";
     $content .= "# Fecha de generacion: $dateTime\n";
     $content .= "# Formato: URL_RSS Carpeta_categoria Nombre_Podcast\n";
+    $content .= "# Los podcasts pausados se comentan con '# PAUSADO:' y no se descargan\n";
     $content .= "\n";
-    
+
     foreach ($podcasts as $podcast) {
         $sanitizedCategory = sanitizePodcastName($podcast['category']);
         $sanitizedName = sanitizePodcastName($podcast['name']);
-        
-        $content .= $podcast['url'] . ' ' . $sanitizedCategory . ' ' . $sanitizedName . "\n";
+
+        $line = $podcast['url'] . ' ' . $sanitizedCategory . ' ' . $sanitizedName;
+
+        // Si el podcast está pausado, comentar la línea
+        if (isset($podcast['paused']) && $podcast['paused'] === true) {
+            $content .= "# PAUSADO: " . $line . "\n";
+        } else {
+            $content .= $line . "\n";
+        }
     }
     
     return file_put_contents($path, $content) !== false;
@@ -507,6 +527,54 @@ function getDuracionesOptions() {
         '2H30' => '2 horas 30 minutos',
         '3H' => '3 horas'
     ];
+}
+
+/**
+ * Pausar un podcast (comentar línea en serverlist.txt)
+ */
+function pausePodcast($username, $index) {
+    $podcasts = readServerList($username);
+
+    if (!isset($podcasts[$index])) {
+        return ['success' => false, 'message' => 'Podcast no encontrado'];
+    }
+
+    // Marcar como pausado
+    $podcasts[$index]['paused'] = true;
+
+    // Guardar
+    if (writeServerList($username, $podcasts)) {
+        return [
+            'success' => true,
+            'message' => 'Podcast pausado correctamente. No se descargarán nuevos episodios.'
+        ];
+    } else {
+        return ['success' => false, 'message' => 'Error al pausar el podcast'];
+    }
+}
+
+/**
+ * Reanudar un podcast (descomentar línea en serverlist.txt)
+ */
+function resumePodcast($username, $index) {
+    $podcasts = readServerList($username);
+
+    if (!isset($podcasts[$index])) {
+        return ['success' => false, 'message' => 'Podcast no encontrado'];
+    }
+
+    // Marcar como no pausado
+    $podcasts[$index]['paused'] = false;
+
+    // Guardar
+    if (writeServerList($username, $podcasts)) {
+        return [
+            'success' => true,
+            'message' => 'Podcast reanudado correctamente. Se reanudarán las descargas.'
+        ];
+    } else {
+        return ['success' => false, 'message' => 'Error al reanudar el podcast'];
+    }
 }
 
 ?>

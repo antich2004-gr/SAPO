@@ -62,6 +62,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
             'category' => $podcast['category'],
             'caducidad' => $caducidades[$podcast['name']] ?? 30,
             'duracion' => $duraciones[$podcast['name']] ?? '',
+            'paused' => isset($podcast['paused']) ? $podcast['paused'] : false,
             'feedInfo' => [
                 'timestamp' => $feedInfo['timestamp'],
                 'cached' => $feedInfo['cached'],
@@ -156,9 +157,14 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 $feedInfo = getCachedFeedInfo($podcast['url']);
                                 $statusInfo = formatFeedStatus($feedInfo['timestamp']);
                             ?>
-                                <div class="podcast-item podcast-item-<?php echo htmlEsc($statusInfo['class']); ?>" data-category="<?php echo htmlEsc($podcast['category']); ?>">
+                                <div class="podcast-item podcast-item-<?php echo htmlEsc($statusInfo['class']); ?> <?php echo (isset($podcast['paused']) && $podcast['paused']) ? 'podcast-paused' : ''; ?>" data-category="<?php echo htmlEsc($podcast['category']); ?>">
                                     <div class="podcast-info">
-                                        <strong><?php echo htmlEsc(displayName($podcast['name'])); ?></strong>
+                                        <strong>
+                                            <?php echo htmlEsc(displayName($podcast['name'])); ?>
+                                            <?php if (isset($podcast['paused']) && $podcast['paused']): ?>
+                                                <span class="badge-paused">⏸️ PAUSADO</span>
+                                            <?php endif; ?>
+                                        </strong>
                                         <small>Categoría: <?php echo htmlEsc(displayName($podcast['category'])); ?> | Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días</small>
                                         <small><?php echo htmlEsc($podcast['url']); ?></small>
 
@@ -176,6 +182,21 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         </div>
                                     </div>
                                     <div class="podcast-actions">
+                                        <?php if (isset($podcast['paused']) && $podcast['paused']): ?>
+                                            <form method="POST" style="display: inline;">
+                                                <input type="hidden" name="action" value="resume_podcast">
+                                                <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                                                <input type="hidden" name="index" value="<?php echo htmlEsc($podcast['original_index']); ?>">
+                                                <button type="submit" class="btn btn-success"><span class="btn-icon">▶️</span> Reanudar</button>
+                                            </form>
+                                        <?php else: ?>
+                                            <form method="POST" style="display: inline;">
+                                                <input type="hidden" name="action" value="pause_podcast">
+                                                <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                                                <input type="hidden" name="index" value="<?php echo htmlEsc($podcast['original_index']); ?>">
+                                                <button type="submit" class="btn btn-secondary"><span class="btn-icon">⏸️</span> Pausar</button>
+                                            </form>
+                                        <?php endif; ?>
                                         <button type="button" class="btn btn-warning" onclick="showEditPodcastModal(<?php echo htmlEsc($podcast['original_index']); ?>)"><span class="btn-icon">✏️</span> Editar</button>
                                         <form method="POST" style="display: inline;">
                                             <input type="hidden" name="action" value="delete_podcast">
@@ -279,9 +300,14 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                             $feedInfo = getCachedFeedInfo($podcast['url']);
                                             $statusInfo = formatFeedStatus($feedInfo['timestamp']);
                                         ?>
-                                            <div class="podcast-item podcast-item-<?php echo htmlEsc($statusInfo['class']); ?>">
+                                            <div class="podcast-item podcast-item-<?php echo htmlEsc($statusInfo['class']); ?> <?php echo (isset($podcast['paused']) && $podcast['paused']) ? 'podcast-paused' : ''; ?>">
                                                 <div class="podcast-info">
-                                                    <strong><?php echo htmlEsc(displayName($podcast['name'])); ?></strong>
+                                                    <strong>
+                                                        <?php echo htmlEsc(displayName($podcast['name'])); ?>
+                                                        <?php if (isset($podcast['paused']) && $podcast['paused']): ?>
+                                                            <span class="badge-paused">⏸️ PAUSADO</span>
+                                                        <?php endif; ?>
+                                                    </strong>
                                                     <small>Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días</small>
                                                     <small><?php echo htmlEsc($podcast['url']); ?></small>
 
@@ -299,6 +325,21 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                     </div>
                                                 </div>
                                                 <div class="podcast-actions">
+                                                    <?php if (isset($podcast['paused']) && $podcast['paused']): ?>
+                                                        <form method="POST" style="display: inline;">
+                                                            <input type="hidden" name="action" value="resume_podcast">
+                                                            <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                                                            <input type="hidden" name="index" value="<?php echo htmlEsc($podcast['original_index']); ?>">
+                                                            <button type="submit" class="btn btn-success"><span class="btn-icon">▶️</span> Reanudar</button>
+                                                        </form>
+                                                    <?php else: ?>
+                                                        <form method="POST" style="display: inline;">
+                                                            <input type="hidden" name="action" value="pause_podcast">
+                                                            <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                                                            <input type="hidden" name="index" value="<?php echo htmlEsc($podcast['original_index']); ?>">
+                                                            <button type="submit" class="btn btn-secondary"><span class="btn-icon">⏸️</span> Pausar</button>
+                                                        </form>
+                                                    <?php endif; ?>
                                                     <button type="button" class="btn btn-warning" onclick="showEditPodcastModal(<?php echo htmlEsc($podcast['original_index']); ?>)"><span class="btn-icon">✏️</span> Editar</button>
                                                     <form method="POST" style="display: inline;">
                                                         <input type="hidden" name="action" value="delete_podcast">
@@ -708,6 +749,27 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
     border-radius: 3px;
     font-size: 11px;
     font-weight: 600;
+}
+
+.badge-paused {
+    background: #e2e8f0;
+    color: #4a5568;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 8px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.podcast-paused {
+    opacity: 0.7;
+    background: #f7fafc !important;
+}
+
+.podcast-paused:hover {
+    opacity: 0.85;
 }
 
 .category-actions {
