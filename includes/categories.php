@@ -606,7 +606,7 @@ function renamePodcastDirectory($username, $oldPodcastName, $newPodcastName, $ca
     // VALIDACIÓN 2: Seguridad - path traversal
     if (strpos($username, '..') !== false ||
         strpos($username, '/') !== false ||
-        strpos($username, '\') !== false) {
+        strpos($username, '\\') !== false) {
         return ['success' => false, 'error' => 'Username contiene caracteres inválidos'];
     }
 
