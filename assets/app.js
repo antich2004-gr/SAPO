@@ -313,15 +313,20 @@ function deleteCategoryConfirm(categoryName) {
 function filterByCategory() {
     const select = document.getElementById('filter_category');
     if (!select) return;
-    
+
     const selectedCategory = select.value;
     const items = document.querySelectorAll('#normal-view .podcast-item');
     const groups = document.querySelectorAll('#grouped-view .category-group');
-    
+    const paginationControls = document.querySelector('.pagination-controls');
+
     if (selectedCategory === '') {
         // Mostrar todos
         items.forEach(item => item.style.display = '');
         groups.forEach(group => group.style.display = '');
+        // Restaurar paginación
+        if (paginationControls) {
+            paginationControls.style.display = '';
+        }
     } else {
         // Filtrar por categoría
         items.forEach(item => {
@@ -331,7 +336,7 @@ function filterByCategory() {
                 item.style.display = 'none';
             }
         });
-        
+
         groups.forEach(group => {
             if (group.dataset.category === selectedCategory) {
                 group.style.display = '';
@@ -339,6 +344,12 @@ function filterByCategory() {
                 group.style.display = 'none';
             }
         });
+
+        // Ocultar paginación durante el filtrado
+        // (la paginación se calculó para todos los podcasts, no para la categoría filtrada)
+        if (paginationControls) {
+            paginationControls.style.display = 'none';
+        }
     }
 }
 
