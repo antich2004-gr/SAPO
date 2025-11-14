@@ -834,3 +834,127 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
 });
+
+/**
+ * Modal de progreso de actualización de feeds
+ */
+function showFeedsProgressModal() {
+    const modal = document.getElementById('feedsProgressModal');
+    if (modal) {
+        modal.style.display = 'block';
+        resetFeedsProgress();
+    }
+}
+
+function closeFeedsProgressModal() {
+    const modal = document.getElementById('feedsProgressModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function resetFeedsProgress() {
+    document.getElementById('feedsProgressText').textContent = 'Preparando actualización...';
+    document.getElementById('feedsProgressBar').style.width = '0%';
+    document.getElementById('feedsProgressPercent').textContent = '0%';
+    document.getElementById('feedsCurrentPodcast').style.display = 'none';
+    document.getElementById('feedsLog').style.display = 'none';
+    document.getElementById('feedsLogContent').innerHTML = '';
+    document.getElementById('feedsCloseButtonContainer').style.display = 'none';
+}
+
+function updateFeedsProgress(current, total, podcastName) {
+    const percent = Math.round((current / total) * 100);
+
+    // Actualizar barra de progreso
+    document.getElementById('feedsProgressBar').style.width = percent + '%';
+    document.getElementById('feedsProgressPercent').textContent = percent + '%';
+
+    // Actualizar texto principal
+    document.getElementById('feedsProgressText').textContent = 'Actualizando feeds... ' + current + ' de ' + total;
+
+    // Mostrar podcast actual
+    if (podcastName) {
+        document.getElementById('feedsCurrentPodcast').style.display = 'block';
+        document.getElementById('feedsCurrentPodcastName').textContent = podcastName;
+
+        // Añadir al log
+        const logContent = document.getElementById('feedsLogContent');
+        const logEntry = document.createElement('div');
+        logEntry.style.padding = '3px 0';
+        logEntry.style.color = '#4a5568';
+        logEntry.innerHTML = '<span style="color: #48bb78;">✓</span> ' + escapeHtml(podcastName);
+        logContent.appendChild(logEntry);
+
+        // Scroll automático al último elemento
+        const feedsLog = document.getElementById('feedsLog');
+        feedsLog.style.display = 'block';
+        feedsLog.scrollTop = feedsLog.scrollHeight;
+    }
+}
+
+function finishFeedsProgress(total) {
+    document.getElementById('feedsProgressText').innerHTML = '<span style="color: #48bb78;">✓</span> ¡Actualización completada! ' + total + ' feeds actualizados';
+    document.getElementById('feedsProgressBar').style.background = 'linear-gradient(90deg, #48bb78, #38a169)';
+    document.getElementById('feedsCurrentPodcast').style.display = 'none';
+    document.getElementById('feedsCloseButtonContainer').style.display = 'block';
+}
+
+/**
+ * Iniciar actualización progresiva de feeds
+ */
+async function refreshFeedsWithProgress() {
+    try {
+        showFeedsProgressModal();
+
+        // Obtener total de podcasts
+        const initResponse = await fetch('?action=refresh_feeds');
+        const initData = await initResponse.json();
+
+        if (!initData.success) {
+            throw new Error('Error al inicializar actualización');
+        }
+
+        const total = initData.total;
+
+        // Actualizar cada feed uno por uno
+        for (let i = 0; i < total; i++) {
+            const response = await fetch('?action=refresh_feeds&index=' + i);
+            const data = await response.json();
+
+            if (data.success) {
+                updateFeedsProgress(i + 1, total, data.podcast);
+            } else {
+                console.error('Error al actualizar feed:', data.error);
+            }
+        }
+
+        // Finalizar
+        finishFeedsProgress(total);
+
+        // Recargar la página después de 2 segundos al cerrar el modal
+        setTimeout(() => {
+            location.reload();
+        }, 500);
+
+    } catch (error) {
+        console.error('Error en actualización de feeds:', error);
+        document.getElementById('feedsProgressText').innerHTML = '<span style="color: #ef4444;">❌ Error en la actualización</span>';
+        document.getElementById('feedsCloseButtonContainer').style.display = 'block';
+    }
+}
+
+// Iniciar actualización al cargar la página (si es login reciente)
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar si se debe actualizar automáticamente
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('auto_refresh_feeds') === '1') {
+        // Pequeña espera para que el usuario vea la página
+        setTimeout(() => {
+            refreshFeedsWithProgress();
+        }, 500);
+
+        // Limpiar el parámetro de la URL sin recargar
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+});

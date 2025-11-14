@@ -924,4 +924,102 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 100);
     }
 });
+
+<!-- Modal de progreso de actualización de feeds -->
+<div id="feedsProgressModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3 style="margin: 0;">🔄 Actualizando Feeds</h3>
+        </div>
+        <div class="modal-body">
+            <p id="feedsProgressText" style="margin-bottom: 15px; color: #4a5568;">Preparando actualización...</p>
+            
+            <!-- Barra de progreso -->
+            <div style="background: #e2e8f0; border-radius: 8px; overflow: hidden; height: 30px; position: relative;">
+                <div id="feedsProgressBar" style="background: linear-gradient(90deg, #3b82f6, #2563eb); height: 100%; width: 0%; transition: width 0.3s ease; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px;">
+                    <span id="feedsProgressPercent">0%</span>
+                </div>
+            </div>
+            
+            <!-- Podcast actual -->
+            <div id="feedsCurrentPodcast" style="margin-top: 15px; padding: 10px; background: #f7fafc; border-radius: 4px; border-left: 3px solid #3b82f6; font-size: 14px; color: #2d3748; display: none;">
+                <strong>Procesando:</strong> <span id="feedsCurrentPodcastName"></span>
+            </div>
+            
+            <!-- Log de actualizaciones -->
+            <div id="feedsLog" style="margin-top: 15px; max-height: 150px; overflow-y: auto; font-size: 13px; color: #718096; display: none;">
+                <div style="border-top: 1px solid #e2e8f0; padding-top: 10px;">
+                    <strong style="color: #2d3748;">Actualizados:</strong>
+                    <div id="feedsLogContent" style="margin-top: 5px;"></div>
+                </div>
+            </div>
+            
+            <!-- Botón de cerrar (solo visible al terminar) -->
+            <div id="feedsCloseButtonContainer" style="margin-top: 20px; text-align: right; display: none;">
+                <button onclick="closeFeedsProgressModal()" class="btn btn-primary">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+#feedsProgressModal .modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(3px);
+}
+
+#feedsProgressModal .modal-content {
+    background-color: #ffffff;
+    margin: 10% auto;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalFadeIn 0.3s ease;
+}
+
+#feedsProgressModal .modal-header {
+    padding: 20px 25px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+#feedsProgressModal .modal-body {
+    padding: 25px;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#feedsLog::-webkit-scrollbar {
+    width: 6px;
+}
+
+#feedsLog::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+#feedsLog::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 10px;
+}
+
+#feedsLog::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}
+</style>
+
 </script>

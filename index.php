@@ -328,6 +328,44 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
+    // AJAX: Actualizar feeds progresivamente
+    if (isset($_GET['action']) && $_GET['action'] == 'refresh_feeds' && isLoggedIn() && !isAdmin()) {
+        header('Content-Type: application/json');
+        
+        $username = $_SESSION['username'];
+        $podcasts = readServerList($username);
+        
+        // Si se especifica un índice, actualizar solo ese podcast
+        if (isset($_GET['index']) && is_numeric($_GET['index'])) {
+            $index = intval($_GET['index']);
+            
+            if ($index >= 0 && $index < count($podcasts)) {
+                $podcast = $podcasts[$index];
+                
+                // Actualizar feed
+                $feedInfo = getCachedFeedInfo($podcast['url'], true);
+                
+                echo json_encode([
+                    'success' => true,
+                    'index' => $index,
+                    'total' => count($podcasts),
+                    'podcast' => $podcast['name'],
+                    'timestamp' => $feedInfo['timestamp']
+                ]);
+            } else {
+                echo json_encode(['success' => false, 'error' => 'Índice inválido']);
+            }
+        } else {
+            // Devolver información inicial (total de podcasts)
+            echo json_encode([
+                'success' => true,
+                'total' => count($podcasts),
+                'podcasts' => array_map(function($p) { return $p['name']; }, $podcasts)
+            ]);
+        }
+        exit;
+    }
+
     // RUN PODGET
     if ($action == 'run_podget' && isLoggedIn() && !isAdmin()) {
         $result = executePodget($_SESSION['username']);
