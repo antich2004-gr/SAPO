@@ -386,11 +386,14 @@ function adjustBrightness($hex, $steps) {
                     if (info.event.end) {
                         details += 'Fin: ' + info.event.end.toLocaleString('es-ES') + '\n';
                     }
-                    if (props.playlist) {
-                        details += 'Playlist: ' + props.playlist + '\n';
-                    }
                     if (props.description) {
-                        details += 'Descripción: ' + props.description;
+                        details += '\nDescripción: ' + props.description + '\n';
+                    }
+                    if (props.programType) {
+                        details += 'Temática: ' + props.programType + '\n';
+                    }
+                    if (props.programUrl) {
+                        details += '\nMás información: ' + props.programUrl;
                     }
                     alert(details);
                 },

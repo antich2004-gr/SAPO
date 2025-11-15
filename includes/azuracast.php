@@ -152,6 +152,14 @@ function formatEventsForCalendar($events, $color = '#3b82f6') {
 
         $endTime = $endDateTime->format('H:i:s');
 
+        // Parsear descripción (formato: descripción;temática;url)
+        $rawDescription = $event['description'] ?? '';
+        $descriptionParts = explode(';', $rawDescription);
+
+        $programDescription = trim($descriptionParts[0] ?? '');
+        $programType = trim($descriptionParts[1] ?? '');
+        $programUrl = trim($descriptionParts[2] ?? '');
+
         // Crear evento recurrente semanal usando daysOfWeek
         $formattedEvents[] = [
             'title' => $title,
@@ -163,7 +171,9 @@ function formatEventsForCalendar($events, $color = '#3b82f6') {
             'extendedProps' => [
                 'type' => $event['type'] ?? 'playlist',
                 'playlist' => $event['playlist'] ?? '',
-                'description' => $event['description'] ?? ''
+                'description' => $programDescription,
+                'programType' => $programType,
+                'programUrl' => $programUrl
             ]
         ];
     }
