@@ -172,7 +172,6 @@ function adjustBrightness($hex, $steps) {
             cursor: pointer !important;
             box-shadow: none !important;
             background: #fafafa !important;
-            color: #333 !important;
         }
 
         .fc-event:hover {
@@ -181,8 +180,9 @@ function adjustBrightness($hex, $steps) {
         }
 
         .fc-event-title {
-            font-weight: 600 !important;
+            font-weight: 500 !important;
             line-height: 1.4 !important;
+            color: #333 !important;
         }
 
         .fc-timegrid-event {
