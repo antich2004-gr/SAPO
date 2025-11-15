@@ -336,6 +336,7 @@ function adjustBrightness($hex, $steps) {
                 initialView: 'timeGridWeek',
                 locale: 'es',
                 timeZone: 'local',
+                firstDay: 1, // Empezar semana en Lunes
                 headerToolbar: {
                     left: '',
                     center: 'title',
@@ -345,10 +346,6 @@ function adjustBrightness($hex, $steps) {
                     return 'Programación Semanal';
                 },
                 dayHeaderFormat: { weekday: 'long' },
-                validRange: {
-                    start: '2024-01-01',
-                    end: '2024-01-08'
-                },
                 slotMinTime: '00:00:00',
                 slotMaxTime: '24:00:00',
                 allDaySlot: false,
