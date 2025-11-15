@@ -267,8 +267,16 @@ error_log("Parrilla Widget - Station: $station, Events: " . count($events));
             console.log('Eventos cargados:', events);
             console.log('Total eventos:', events.length);
 
+            // Detectar la fecha del primer evento para posicionar el calendario
+            var initialDate = new Date();
+            if (events.length > 0 && events[0].start) {
+                initialDate = new Date(events[0].start);
+                console.log('Posicionando calendario en:', initialDate);
+            }
+
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'timeGridWeek',
+                initialDate: initialDate,
                 locale: 'es',
                 headerToolbar: {
                     left: 'prev,next today',
