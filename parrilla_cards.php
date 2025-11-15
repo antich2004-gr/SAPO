@@ -57,6 +57,17 @@ $eventsByDay = [
     0 => []  // Domingo
 ];
 
+// Organizar bloques musicales por día
+$musicBlocksByDay = [
+    1 => [], // Lunes
+    2 => [], // Martes
+    3 => [], // Miércoles
+    4 => [], // Jueves
+    5 => [], // Viernes
+    6 => [], // Sábado
+    0 => []  // Domingo
+];
+
 $daysOfWeek = [
     1 => 'Lunes',
     2 => 'Martes',
@@ -123,12 +134,24 @@ foreach ($schedule as $event) {
         'instagram' => $programInfo['social_instagram'] ?? ''
     ];
 
-    $eventsByDay[$dayOfWeek][] = $eventData;
+    // Separar bloques musicales de programas
+    if ($playlistType === 'music_block') {
+        $musicBlocksByDay[$dayOfWeek][] = $eventData;
+    } else {
+        $eventsByDay[$dayOfWeek][] = $eventData;
+    }
 }
 
 // Ordenar eventos de cada día por hora de inicio
 foreach ($eventsByDay as &$dayEvents) {
     usort($dayEvents, function($a, $b) {
+        return $a['start_timestamp'] - $b['start_timestamp'];
+    });
+}
+
+// Ordenar bloques musicales de cada día por hora de inicio
+foreach ($musicBlocksByDay as &$dayBlocks) {
+    usort($dayBlocks, function($a, $b) {
         return $a['start_timestamp'] - $b['start_timestamp'];
     });
 }
@@ -255,15 +278,27 @@ function htmlEsc($str) {
         }
 
         .day-content.active {
-            display: block;
+            display: flex;
+            gap: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+            align-items: flex-start;
+        }
+
+        .programs-column {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .music-blocks-column {
+            width: 320px;
+            flex-shrink: 0;
         }
 
         .programs-list {
             display: flex;
             flex-direction: column;
             gap: 20px;
-            max-width: 900px;
-            margin: 0 auto;
         }
 
         .program-card {
@@ -440,6 +475,62 @@ function htmlEsc($str) {
             text-decoration: underline;
         }
 
+        .music-blocks-sidebar {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            position: sticky;
+            top: 20px;
+        }
+
+        .music-blocks-sidebar h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .music-block-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #f9fafb;
+            border-left: 3px solid #9ca3af;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .music-block-time {
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 4px;
+            font-size: 12px;
+        }
+
+        .music-block-name {
+            color: #4b5563;
+            font-style: italic;
+        }
+
+        @media (max-width: 1024px) {
+            .day-content.active {
+                flex-direction: column;
+            }
+
+            .music-blocks-column {
+                width: 100%;
+                order: -1;
+            }
+
+            .music-blocks-sidebar {
+                position: relative;
+                top: 0;
+            }
+        }
+
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 28px;
@@ -512,13 +603,20 @@ function htmlEsc($str) {
 
         <?php foreach ($daysOfWeek as $dayNum => $dayName): ?>
             <div class="day-content <?php echo $dayNum === 1 ? 'active' : ''; ?>" data-day="<?php echo $dayNum; ?>">
-                <?php if (empty($eventsByDay[$dayNum])): ?>
+                <?php if (empty($eventsByDay[$dayNum]) && empty($musicBlocksByDay[$dayNum])): ?>
                     <div class="empty-day">
                         <div class="empty-day-icon">📭</div>
                         <p>No hay programación disponible para este día</p>
                     </div>
                 <?php else: ?>
-                    <div class="programs-list">
+                    <!-- Columna de programas -->
+                    <div class="programs-column">
+                        <?php if (empty($eventsByDay[$dayNum])): ?>
+                            <div style="text-align: center; padding: 40px; color: #9ca3af;">
+                                <p>No hay programas para este día</p>
+                            </div>
+                        <?php else: ?>
+                            <div class="programs-list">
                         <?php foreach ($eventsByDay[$dayNum] as $event): ?>
                             <?php
                             // Determinar si el programa está en vivo ahora
@@ -608,7 +706,28 @@ function htmlEsc($str) {
                                 </div>
                             </div>
                         <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
+
+                    <!-- Columna de bloques musicales -->
+                    <?php if (!empty($musicBlocksByDay[$dayNum])): ?>
+                        <div class="music-blocks-column">
+                            <div class="music-blocks-sidebar">
+                                <h3>🎵 Bloques Musicales</h3>
+                                <?php foreach ($musicBlocksByDay[$dayNum] as $block): ?>
+                                    <div class="music-block-item">
+                                        <div class="music-block-time">
+                                            <?php echo htmlEsc($block['start_time']); ?>
+                                        </div>
+                                        <div class="music-block-name">
+                                            <?php echo htmlEsc($block['title']); ?>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 <?php endif; ?>
             </div>
         <?php endforeach; ?>
