@@ -209,6 +209,34 @@ function adjustBrightness($hex, $steps) {
             color: #1f2937 !important;
         }
 
+        /* Bloques musicales - estilo atenuado */
+        .fc-event.music-block {
+            background: #f3f4f6 !important;
+            border-left-color: #9ca3af !important;
+            opacity: 0.75;
+        }
+
+        .fc-event.music-block .fc-event-title {
+            color: #6b7280 !important;
+            font-weight: 500 !important;
+            font-style: italic;
+        }
+
+        .fc-event.music-block:hover {
+            opacity: 1;
+            background: #e5e7eb !important;
+        }
+
+        .fc-event.music-block::after {
+            content: "🎵";
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            opacity: 0.5;
+        }
+
         .fc-timegrid-event {
             border-left: 4px solid rgba(255,255,255,0.5) !important;
         }

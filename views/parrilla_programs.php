@@ -53,6 +53,31 @@ $editingProgram = $_GET['edit'] ?? null;
                     <input type="hidden" name="program_name" value="<?php echo htmlEsc($editingProgram); ?>">
 
                     <div class="form-group">
+                        <label>Tipo de lista de reproducción: <small>(importante para la parrilla)</small></label>
+                        <select name="playlist_type" required>
+                            <?php
+                            $playlistTypes = [
+                                'program' => '📻 Programa (se muestra en la parrilla)',
+                                'music_block' => '🎵 Bloque Musical (se muestra atenuado)',
+                                'jingles' => '🔊 Jingles/Cortinillas (no se muestra)'
+                            ];
+                            $currentType = $programInfo['playlist_type'] ?? 'program';
+                            foreach ($playlistTypes as $value => $label):
+                                $selected = $currentType === $value ? 'selected' : '';
+                            ?>
+                                <option value="<?php echo htmlEsc($value); ?>" <?php echo $selected; ?>>
+                                    <?php echo htmlEsc($label); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <small style="color: #6b7280;">
+                            • <strong>Programa</strong>: Contenido producido (tu programa de radio)<br>
+                            • <strong>Bloque Musical</strong>: Música automatizada entre programas<br>
+                            • <strong>Jingles/Cortinillas</strong>: Efectos de audio, separadores (no se mostrarán)
+                        </small>
+                    </div>
+
+                    <div class="form-group">
                         <label>Descripción corta: <small>(para cards y previews)</small></label>
                         <input type="text" name="short_description"
                                value="<?php echo htmlEsc($programInfo['short_description'] ?? ''); ?>"

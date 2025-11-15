@@ -250,6 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $error = 'Nombre de programa no especificado';
         } else {
             $programInfo = [
+                'playlist_type' => trim($_POST['playlist_type'] ?? 'program'),
                 'short_description' => trim($_POST['short_description'] ?? ''),
                 'long_description' => trim($_POST['long_description'] ?? ''),
                 'type' => trim($_POST['type'] ?? ''),

@@ -163,7 +163,16 @@ function formatEventsForCalendar($events, $color = '#3b82f6', $username = null) 
         // Intentar obtener información adicional de SAPO primero
         $programInfo = $programsData[$title] ?? null;
 
+        // Obtener tipo de lista (program, music_block, jingles)
+        $playlistType = 'program'; // Por defecto
         if ($programInfo) {
+            $playlistType = $programInfo['playlist_type'] ?? 'program';
+
+            // FILTRAR: No mostrar jingles/cortinillas en la parrilla
+            if ($playlistType === 'jingles') {
+                continue; // Saltar este evento
+            }
+
             // Usar información de SAPO (prioritaria)
             $programDescription = $programInfo['short_description'] ?? '';
             $programLongDescription = $programInfo['long_description'] ?? '';
@@ -188,17 +197,31 @@ function formatEventsForCalendar($events, $color = '#3b82f6', $username = null) 
             $programInstagram = '';
         }
 
+        // Determinar estilo según el tipo de lista
+        $backgroundColor = $color;
+        $borderColor = $color;
+        $className = '';
+
+        if ($playlistType === 'music_block') {
+            // Bloques musicales: color más suave, atenuado
+            $backgroundColor = '#e5e7eb'; // Gris claro
+            $borderColor = '#9ca3af';     // Gris medio
+            $className = 'music-block';
+        }
+
         // Crear evento recurrente semanal usando daysOfWeek
         $formattedEvents[] = [
             'title' => $title,
             'daysOfWeek' => [$dayOfWeek], // Día de la semana que se repite (como entero)
             'startTime' => $startTime,     // Hora de inicio
             'endTime' => $endTime,         // Hora de fin
-            'backgroundColor' => $color,
-            'borderColor' => $color,
+            'backgroundColor' => $backgroundColor,
+            'borderColor' => $borderColor,
+            'className' => $className,
             'extendedProps' => [
                 'type' => $event['type'] ?? 'playlist',
                 'playlist' => $event['playlist'] ?? '',
+                'playlistType' => $playlistType,
                 'description' => $programDescription,
                 'longDescription' => $programLongDescription,
                 'programType' => $programType,
