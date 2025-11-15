@@ -346,8 +346,8 @@ function adjustBrightness($hex, $steps) {
                     return 'Programación Semanal';
                 },
                 dayHeaderFormat: { weekday: 'long' },
-                slotMinTime: '00:00:00',
-                slotMaxTime: '24:00:00',
+                slotMinTime: '08:00:00',  // Empezar a las 8:00
+                slotMaxTime: '32:00:00',  // Hasta las 8:00 del día siguiente (32h = 24h + 8h)
                 allDaySlot: false,
                 height: 'auto',
                 expandRows: true,
