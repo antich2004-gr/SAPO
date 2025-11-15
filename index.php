@@ -21,6 +21,7 @@ require_once INCLUDES_DIR . '/categories.php';
 require_once INCLUDES_DIR . '/podcasts.php';
 require_once INCLUDES_DIR . '/feed.php';
 require_once INCLUDES_DIR . '/reports.php';
+require_once INCLUDES_DIR . '/azuracast.php';
 
 initSession();
     // AJAX: Guardar timestamp de última actualización de feeds
@@ -148,13 +149,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($action == 'save_config' && isAdmin()) {
         $basePath = trim($_POST['base_path'] ?? '');
         $subsFolder = trim($_POST['subscriptions_folder'] ?? 'Suscripciones');
-        
+        $azuracastApiUrl = trim($_POST['azuracast_api_url'] ?? '');
+
         if (empty($basePath)) {
             $error = 'La ruta base es obligatoria';
         } elseif (!is_dir($basePath)) {
             $error = 'La ruta base no existe o no es accesible';
         } else {
-            if (saveConfig($basePath, $subsFolder)) {
+            if (saveConfig($basePath, $subsFolder, $azuracastApiUrl)) {
                 $message = 'Configuracion guardada correctamente';
             } else {
                 $error = 'Error al guardar la configuracion';
@@ -206,6 +208,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $message = 'Usuario eliminado correctamente';
         } else {
             $error = 'No se puede eliminar el usuario administrador principal';
+        }
+    }
+
+    // UPDATE AZURACAST CONFIG (admin)
+    if ($action == 'update_azuracast_config' && isAdmin()) {
+        $username = $_POST['username'] ?? '';
+        $stationId = $_POST['station_id'] ?? '';
+        $widgetColor = $_POST['widget_color'] ?? '#3b82f6';
+
+        if (empty($username)) {
+            $error = 'Usuario no especificado';
+        } else {
+            if (updateAzuracastConfig($username, $stationId, $widgetColor)) {
+                $message = "Configuración de AzuraCast actualizada para $username";
+            } else {
+                $error = 'Error al actualizar la configuración';
+            }
         }
     }
     

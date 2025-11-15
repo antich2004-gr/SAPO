@@ -43,7 +43,8 @@ function getGlobalDB() {
             'config' => [
                 'base_path' => '',
                 'subscriptions_folder' => 'Suscripciones',
-                'cache_duration' => 43200
+                'cache_duration' => 43200,
+                'azuracast_api_url' => 'https://radio.radiobot.org/api'
             ],
             'login_attempts' => []
         ];
@@ -90,13 +91,31 @@ function getUserDB($username) {
     if (!file_exists($userFile)) {
         $initialData = [
             'categories' => [],
-            'last_feeds_update' => 0  // Timestamp de última actualización de feeds
+            'last_feeds_update' => 0,  // Timestamp de última actualización de feeds
+            'azuracast' => [
+                'station_id' => null,
+                'widget_color' => '#3b82f6',  // Color azul por defecto
+                'show_logo' => false,
+                'logo_url' => ''
+            ]
         ];
         file_put_contents($userFile, json_encode($initialData, JSON_PRETTY_PRINT));
         chmod($userFile, 0640);
     }
 
-    return json_decode(file_get_contents($userFile), true);
+    // Asegurar que existe la estructura azuracast en datos existentes
+    $data = json_decode(file_get_contents($userFile), true);
+    if (!isset($data['azuracast'])) {
+        $data['azuracast'] = [
+            'station_id' => null,
+            'widget_color' => '#3b82f6',
+            'show_logo' => false,
+            'logo_url' => ''
+        ];
+        file_put_contents($userFile, json_encode($data, JSON_PRETTY_PRINT));
+    }
+
+    return $data;
 }
 
 /**
@@ -206,16 +225,18 @@ function getConfig() {
     return $db['config'] ?? [
         'base_path' => '',
         'subscriptions_folder' => 'Suscripciones',
-        'cache_duration' => 43200
+        'cache_duration' => 43200,
+        'azuracast_api_url' => 'https://radio.radiobot.org/api'
     ];
 }
 
-function saveConfig($basePath, $subscriptionsFolder) {
+function saveConfig($basePath, $subscriptionsFolder, $azuracastApiUrl = null) {
     $db = getGlobalDB();
     $db['config'] = [
         'base_path' => rtrim($basePath, '/\\'),
         'subscriptions_folder' => trim($subscriptionsFolder, '/\\'),
-        'cache_duration' => $db['config']['cache_duration'] ?? 43200
+        'cache_duration' => $db['config']['cache_duration'] ?? 43200,
+        'azuracast_api_url' => $azuracastApiUrl !== null ? rtrim($azuracastApiUrl, '/') : ($db['config']['azuracast_api_url'] ?? 'https://radio.radiobot.org/api')
     ];
     return saveGlobalDB($db);
 }

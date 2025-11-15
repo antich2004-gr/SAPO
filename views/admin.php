@@ -42,6 +42,10 @@ $users = getAllUsers();
                 <label>Carpeta de Suscripciones: <small>(donde estara serverlist.txt)</small></label>
                 <input type="text" name="subscriptions_folder" value="<?php echo htmlEsc($config['subscriptions_folder']); ?>" required placeholder="Suscripciones" maxlength="100">
             </div>
+            <div class="form-group">
+                <label>URL API de AzuraCast: <small>(para parrilla de programación)</small></label>
+                <input type="text" name="azuracast_api_url" value="<?php echo htmlEsc($config['azuracast_api_url'] ?? 'https://radio.radiobot.org/api'); ?>" placeholder="https://radio.radiobot.org/api" maxlength="255">
+            </div>
             <button type="submit" class="btn btn-warning"><span class="btn-icon">💾</span> Guardar Configuracion</button>
         </form>
     </div>
@@ -81,12 +85,37 @@ $users = getAllUsers();
                 <div class="user-info">
                     <strong><?php echo htmlEsc($user['station_name']); ?></strong>
                     <small>Usuario: <?php echo htmlEsc($user['username']); ?></small>
-                    <?php 
+                    <?php
                     $userPath = getServerListPath($user['username']);
-                    if ($userPath): 
+                    if ($userPath):
                     ?>
                         <small>Ruta: <?php echo htmlEsc($userPath); ?></small>
                     <?php endif; ?>
+
+                    <?php
+                    $azuracastConfig = getAzuracastConfig($user['username']);
+                    ?>
+                    <div style="margin-top: 15px; padding: 10px; background: #f7fafc; border-radius: 4px;">
+                        <form method="POST" style="margin: 0;">
+                            <input type="hidden" name="action" value="update_azuracast_config">
+                            <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                            <input type="hidden" name="username" value="<?php echo htmlEsc($user['username']); ?>">
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: end;">
+                                <div class="form-group" style="margin: 0;">
+                                    <label style="font-size: 12px; margin-bottom: 5px;">Station ID AzuraCast:</label>
+                                    <input type="number" name="station_id" value="<?php echo htmlEsc($azuracastConfig['station_id'] ?? ''); ?>" placeholder="34" style="padding: 6px;">
+                                </div>
+                                <div class="form-group" style="margin: 0;">
+                                    <label style="font-size: 12px; margin-bottom: 5px;">Color del widget:</label>
+                                    <input type="color" name="widget_color" value="<?php echo htmlEsc($azuracastConfig['widget_color'] ?? '#3b82f6'); ?>" style="padding: 2px; height: 34px;">
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="padding: 6px 12px; font-size: 14px;">
+                                    <span class="btn-icon">💾</span> Guardar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
                 <form method="POST" style="display: inline;">
                     <input type="hidden" name="action" value="delete_user">
