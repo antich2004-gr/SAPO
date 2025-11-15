@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test FullCalendar</title>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f7fafc;
+        }
+        #calendar {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .debug {
+            background: #fef2f2;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            max-width: 1200px;
+            margin: 0 auto 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug">
+        <h3>🧪 Test de FullCalendar - Debug</h3>
+        <p id="status">Cargando...</p>
+    </div>
+
+    <div id="calendar"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/es.global.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== INICIO TEST FULLCALENDAR ===');
+
+            var calendarEl = document.getElementById('calendar');
+            console.log('Elemento calendario:', calendarEl);
+
+            // Eventos de prueba recurrentes
+            var testEvents = [
+                {
+                    title: 'Test Lunes 09:00',
+                    daysOfWeek: [1], // Lunes
+                    startTime: '09:00:00',
+                    endTime: '10:00:00',
+                    backgroundColor: '#ef4444',
+                    borderColor: '#ef4444'
+                },
+                {
+                    title: 'Test Martes 14:00',
+                    daysOfWeek: [2], // Martes
+                    startTime: '14:00:00',
+                    endTime: '15:00:00',
+                    backgroundColor: '#10b981',
+                    borderColor: '#10b981'
+                },
+                {
+                    title: 'Test Miércoles 16:00',
+                    daysOfWeek: [3], // Miércoles
+                    startTime: '16:00:00',
+                    endTime: '17:30:00',
+                    backgroundColor: '#3b82f6',
+                    borderColor: '#3b82f6'
+                },
+                {
+                    title: 'Test Jueves 11:00',
+                    daysOfWeek: [4], // Jueves
+                    startTime: '11:00:00',
+                    endTime: '12:00:00',
+                    backgroundColor: '#f59e0b',
+                    borderColor: '#f59e0b'
+                },
+                {
+                    title: 'Test Viernes 18:00',
+                    daysOfWeek: [5], // Viernes
+                    startTime: '18:00:00',
+                    endTime: '20:00:00',
+                    backgroundColor: '#8b5cf6',
+                    borderColor: '#8b5cf6'
+                }
+            ];
+
+            console.log('Eventos de prueba:', testEvents);
+
+            try {
+                var calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'timeGridWeek',
+                    locale: 'es',
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'timeGridWeek,timeGridDay'
+                    },
+                    slotMinTime: '06:00:00',
+                    slotMaxTime: '24:00:00',
+                    allDaySlot: false,
+                    height: 'auto',
+                    nowIndicator: true,
+                    events: testEvents,
+                    eventDidMount: function(info) {
+                        console.log('Evento montado:', info.event.title);
+                    }
+                });
+
+                console.log('Calendario creado, renderizando...');
+                calendar.render();
+                console.log('Calendario renderizado correctamente');
+
+                document.getElementById('status').innerHTML = '✅ Calendario cargado correctamente con ' + testEvents.length + ' eventos de prueba';
+            } catch (error) {
+                console.error('ERROR:', error);
+                document.getElementById('status').innerHTML = '❌ Error: ' + error.message;
+                calendarEl.innerHTML = '<p style="color: red;">Error al cargar: ' + error.message + '</p>';
+            }
+        });
+    </script>
+</body>
+</html>
