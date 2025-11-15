@@ -49,8 +49,8 @@ error_log("Parrilla Widget - Station: $station, Events: " . count($events));
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parrilla - <?php echo htmlspecialchars($stationName); ?></title>
 
-    <!-- FullCalendar JS - debe cargarse en HEAD -->
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
+    <!-- FullCalendar JS - versión local -->
+    <script src='assets/fullcalendar.min.js'></script>
 
     <style>
         * {
