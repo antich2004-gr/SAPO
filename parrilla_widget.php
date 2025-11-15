@@ -291,8 +291,8 @@ error_log("Parrilla Widget - Station: $station, Events: " . count($events));
                     hour12: false
                 },
                 eventDisplay: 'block',
-                displayEventTime: true,
-                displayEventEnd: true,
+                displayEventTime: false,  // No mostrar hora en el evento
+                displayEventEnd: false,   // No mostrar hora final
                 events: events,
                 eventClick: function(info) {
                     // Mostrar información del evento
