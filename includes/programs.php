@@ -103,6 +103,11 @@ function syncProgramsFromAzuracast($username) {
         }
     }
 
+    // Log para debug
+    error_log("syncProgramsFromAzuracast: Total eventos recibidos: " . count($schedule));
+    error_log("syncProgramsFromAzuracast: Programas únicos detectados: " . count($detectedPrograms));
+    error_log("syncProgramsFromAzuracast: Nombres detectados: " . implode(', ', $detectedPrograms));
+
     // Cargar programas existentes
     $data = loadProgramsDB($username);
     $newCount = 0;

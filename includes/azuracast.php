@@ -27,13 +27,19 @@ function getAzuracastSchedule($username) {
     }
 
     // Construir URL de la API
+    // Obtener programación de toda la semana (7 días desde hoy)
+    $now = time();
+    $startDate = date('Y-m-d\T00:00:00P', $now); // Hoy a las 00:00
+    $endDate = date('Y-m-d\T23:59:59P', strtotime('+7 days', $now)); // +7 días
+
     $scheduleUrl = rtrim($apiUrl, '/') . '/station/' . $stationId . '/schedule';
+    $scheduleUrl .= '?start=' . urlencode($startDate) . '&end=' . urlencode($endDate);
 
     // Hacer petición a la API
     try {
         $context = stream_context_create([
             'http' => [
-                'timeout' => 10,  // Timeout de 10 segundos
+                'timeout' => 15,  // Timeout de 15 segundos (puede ser más datos)
                 'user_agent' => 'SAPO/1.0'
             ]
         ]);
@@ -51,6 +57,9 @@ function getAzuracastSchedule($username) {
             error_log("AzuraCast: Error al decodificar JSON: " . json_last_error_msg());
             return false;
         }
+
+        // Log para debug
+        error_log("AzuraCast: Obtenidos " . count($data) . " eventos para station $stationId");
 
         return $data;
 
