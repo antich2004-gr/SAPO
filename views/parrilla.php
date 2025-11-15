@@ -61,7 +61,6 @@ if ($hasStationId) {
         <!-- VISTA PREVIA DEL WIDGET -->
         <div class="section">
             <h3>Vista Previa de tu Parrilla</h3>
-            <p style="color: #10b981; font-size: 12px;">✓ Sección preview cargada</p>
 
             <?php if (!$hasStationId): ?>
                 <div class="alert alert-warning">
@@ -92,16 +91,7 @@ if ($hasStationId) {
 
     <?php elseif ($section === 'programs'): ?>
         <!-- GESTIÓN DE PROGRAMAS -->
-        <div class="section">
-            <p style="color: #10b981; font-size: 12px;">✓ Sección programs cargada, username: <?php echo htmlspecialchars($username); ?></p>
-        </div>
-        <?php
-        try {
-            require_once 'views/parrilla_programs.php';
-        } catch (Exception $e) {
-            echo '<div class="alert alert-error">Error: ' . htmlspecialchars($e->getMessage()) . '</div>';
-        }
-        ?>
+        <?php require_once 'views/parrilla_programs.php'; ?>
 
     <?php elseif ($section === 'config'): ?>
         <!-- CONFIGURACIÓN -->
