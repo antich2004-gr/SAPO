@@ -21,25 +21,46 @@
 
 ### Características Implementadas
 
-**Formato de Descripción en AzuraCast:**
-```
-Descripción del programa;Temática;https://url-del-programa.com
-```
+#### Sistema de Gestión de Programas (NUEVO)
 
-**Ejemplo:**
-```
-Un programa dedicado a la música alternativa;Musical;https://radio.com/alternativa
-```
+**Auto-descubrimiento desde AzuraCast:**
+- Botón "🔄 Sincronizar con AzuraCast" detecta automáticamente todos los programas
+- No sobrescribe información ya existente
+- Detecta programas nuevos sin perder datos anteriores
 
-**Campos parseados:**
-- `description`: Descripción del programa
-- `programType`: Temática/tipo de programa
-- `programUrl`: URL para más información
+**Panel de Gestión (`views/programs.php`):**
+- Acceso desde dashboard de usuario: botón "📺 Gestión de Programas"
+- Lista de todos los programas detectados con estados:
+  - ✅ Completo: Todos los campos importantes rellenados
+  - ⚠️ Parcial: Algunos campos rellenados
+  - ❌ Sin información: Solo título (funciona igual que antes)
+- Barra de progreso de completitud por programa
+- Edición individual con preview de imagen
 
-**Interacción:**
-- Click en evento → Muestra información completa en alert
+**Campos editables por programa:**
+- Descripción corta (para previews)
+- Descripción larga (para página de detalle)
+- Temática (desplegable: Musical, Informativo, Cultural, etc.)
+- URL del programa
+- Imagen/portada del programa
+- Presentadores (separados por comas)
+- Twitter (sin @)
+- Instagram (sin @)
+
+**Integración automática:**
+- `formatEventsForCalendar()` usa información de SAPO si está disponible
+- Fallback: Si no hay info en SAPO, parsea campo Description de AzuraCast
+- Formato fallback: `Descripción;Temática;URL` (separado por punto y coma)
+
+**Base de datos:**
+- Archivos JSON en `data/programs/{username}.json`
+- Estructura con timestamp de sincronización
+- Matching por nombre de programa/playlist
+
+**Interacción en la parrilla:**
+- Click en evento → Muestra información completa (descripción, temática, presentadores, RRSS, URL)
 - Programa actual → Destacado con color de la estación
-- Tooltip al pasar el ratón
+- Tooltip al pasar el ratón con nombre del programa
 
 ### 🔄 Pendiente / Mejoras Futuras
 
@@ -70,18 +91,24 @@ Un programa dedicado a la música alternativa;Musical;https://radio.com/alternat
 
 **Modificados:**
 - `includes/database.php` - Añadido soporte para configuración AzuraCast
-- `index.php` - Añadida acción `update_azuracast_config`
+- `includes/azuracast.php` - formatEventsForCalendar acepta username, integra info de SAPO
+- `index.php` - Acciones: `update_azuracast_config`, `sync_programs`, `save_program`
 - `views/admin.php` - UI para configurar Station ID y color del widget
+- `views/user.php` - Botón "Gestión de Programas" en dashboard
+- `views/layout.php` - Routing para page=programs
+- `parrilla_widget.php` - Pasa username a formatEventsForCalendar
 
 ### Branch y Commits
 
 **Branch:** `feature/parrilla-azuracast`
 
 **Commits recientes:**
-1. `186ae2a` - Parsear información adicional de programas
-2. `25c705e` - Simplificar destacado del programa actual
-3. `10a40af` - Destacar programa EN VIVO
-4. Anteriores: Implementación base del widget y diseño
+1. `b6616b5` - Sistema de gestión de programas con auto-descubrimiento
+2. `7ff89ca` - Documentación del desarrollo de la parrilla
+3. `186ae2a` - Parsear información adicional de programas
+4. `25c705e` - Simplificar destacado del programa actual
+5. `10a40af` - Destacar programa EN VIVO
+6. Anteriores: Implementación base del widget y diseño
 
 ### Próximos Pasos Sugeridos
 
