@@ -125,10 +125,23 @@ function formatEventsForCalendar($events, $color = '#3b82f6') {
             continue; // Saltar eventos sin hora de inicio
         }
 
+        // Convertir timestamp a DateTime para extraer día y hora
+        $startDateTime = is_numeric($start) ? new DateTime('@' . $start) : new DateTime($start);
+        $endDateTime = $end ? (is_numeric($end) ? new DateTime('@' . $end) : new DateTime($end)) : null;
+
+        // Obtener día de la semana (0=Domingo, 1=Lunes, etc.)
+        $dayOfWeek = $startDateTime->format('w');
+
+        // Obtener solo la hora (formato HH:mm:ss)
+        $startTime = $startDateTime->format('H:i:s');
+        $endTime = $endDateTime ? $endDateTime->format('H:i:s') : null;
+
+        // Crear evento recurrente semanal usando daysOfWeek
         $formattedEvents[] = [
             'title' => $title,
-            'start' => is_numeric($start) ? date('c', $start) : $start,
-            'end' => $end ? (is_numeric($end) ? date('c', $end) : $end) : null,
+            'daysOfWeek' => [$dayOfWeek], // Día de la semana que se repite
+            'startTime' => $startTime,     // Hora de inicio
+            'endTime' => $endTime,         // Hora de fin
             'backgroundColor' => $color,
             'borderColor' => $color,
             'extendedProps' => [
