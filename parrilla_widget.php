@@ -78,8 +78,8 @@ function adjustBrightness($hex, $steps) {
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
             padding: 0;
             margin: 0;
         }
@@ -87,15 +87,30 @@ function adjustBrightness($hex, $steps) {
         .widget-container {
             max-width: 100%;
             margin: 0;
-            background: white;
+            background: #ffffff;
             min-height: 100vh;
+            box-shadow: 0 0 40px rgba(0,0,0,0.08);
         }
 
         .widget-header {
-            background: <?php echo htmlspecialchars($widgetColor); ?>;
+            background: linear-gradient(135deg, <?php echo htmlspecialchars($widgetColor); ?> 0%, <?php echo htmlspecialchars(adjustBrightness($widgetColor, -25)); ?> 100%);
             color: white;
-            padding: 20px 30px;
-            border-bottom: 3px solid <?php echo htmlspecialchars(adjustBrightness($widgetColor, -30)); ?>;
+            padding: 25px 35px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .widget-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(to right,
+                rgba(255,255,255,0) 0%,
+                rgba(255,255,255,0.3) 50%,
+                rgba(255,255,255,0) 100%);
         }
 
         .widget-header-content {
@@ -104,27 +119,32 @@ function adjustBrightness($hex, $steps) {
         }
 
         .widget-header h1 {
-            font-size: 24px;
-            font-weight: 600;
+            font-size: 28px;
+            font-weight: 700;
             margin: 0;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 15px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .widget-header h1::before {
             content: '📻';
-            font-size: 28px;
+            font-size: 36px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
         }
 
         .calendar-container {
-            padding: 20px;
+            padding: 25px;
             max-width: 1400px;
             margin: 0 auto;
         }
 
         #calendar {
             background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
         }
 
         /* Personalización de FullCalendar */
@@ -133,26 +153,35 @@ function adjustBrightness($hex, $steps) {
         }
 
         .fc-toolbar {
-            padding: 0 0 20px 0 !important;
+            padding: 20px 20px 15px 20px !important;
             margin-bottom: 0 !important;
-            background: white;
+            background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+            border-bottom: 2px solid #e9ecef;
         }
 
         .fc-toolbar-title {
-            font-size: 20px !important;
-            font-weight: 600 !important;
-            color: #333;
+            font-size: 22px !important;
+            font-weight: 700 !important;
+            color: #2c3e50;
+            text-align: center;
         }
 
         /* Días de la semana - Solo nombres, sin fechas */
         .fc-col-header-cell {
-            background: <?php echo htmlspecialchars($widgetColor); ?> !important;
-            padding: 12px 8px !important;
-            font-weight: 600 !important;
-            text-transform: capitalize !important;
-            font-size: 14px !important;
+            background: linear-gradient(to bottom, <?php echo htmlspecialchars($widgetColor); ?> 0%, <?php echo htmlspecialchars(adjustBrightness($widgetColor, -15)); ?> 100%) !important;
+            padding: 14px 8px !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            font-size: 13px !important;
+            letter-spacing: 0.5px !important;
             color: white !important;
-            border: 1px solid <?php echo htmlspecialchars(adjustBrightness($widgetColor, -10)); ?> !important;
+            border-right: 1px solid <?php echo htmlspecialchars(adjustBrightness($widgetColor, -20)); ?> !important;
+            border-bottom: 3px solid <?php echo htmlspecialchars(adjustBrightness($widgetColor, -30)); ?> !important;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .fc-col-header-cell:last-child {
+            border-right: none !important;
         }
 
         .fc-col-header-cell-cushion {
@@ -162,28 +191,37 @@ function adjustBrightness($hex, $steps) {
 
         /* Celdas de horas */
         .fc-timegrid-slot {
-            height: 50px !important;
-            border-color: #e5e7eb !important;
+            height: 55px !important;
+            border-color: #e9ecef !important;
+        }
+
+        .fc-timegrid-slot:nth-child(even) {
+            background: #fafbfc !important;
         }
 
         .fc-timegrid-slot-label {
-            font-size: 11px !important;
-            color: #9ca3af !important;
+            font-size: 12px !important;
+            color: #6c757d !important;
             font-weight: 600 !important;
+            padding: 0 8px !important;
         }
 
         /* Eventos */
         .fc-event {
             border: none !important;
-            border-radius: 4px !important;
-            padding: 4px 8px !important;
-            font-size: 12px !important;
-            font-weight: 500 !important;
+            border-left: 4px solid rgba(0,0,0,0.2) !important;
+            border-radius: 6px !important;
+            padding: 6px 10px !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
             cursor: pointer !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+            transition: all 0.2s ease !important;
         }
 
         .fc-event:hover {
-            opacity: 0.9 !important;
+            transform: translateX(2px) !important;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15) !important;
         }
 
         .fc-event-title {
@@ -205,16 +243,31 @@ function adjustBrightness($hex, $steps) {
             border-color: #ef4444 !important;
         }
 
-        /* Bordes más suaves */
+        /* Bordes y estructura */
         .fc-theme-standard td,
         .fc-theme-standard th {
-            border-color: #e5e7eb !important;
+            border-color: #dee2e6 !important;
         }
 
         .fc-scrollgrid {
-            border-color: #e5e7eb !important;
-            border-radius: 8px !important;
-            overflow: hidden !important;
+            border: 1px solid #dee2e6 !important;
+            border-radius: 0 !important;
+        }
+
+        .fc-timegrid-divider {
+            display: none !important;
+        }
+
+        /* Línea actual NOW */
+        .fc-timegrid-now-indicator-line {
+            border-color: #dc3545 !important;
+            border-width: 2px !important;
+            opacity: 0.8;
+        }
+
+        .fc-timegrid-now-indicator-arrow {
+            border-color: #dc3545 !important;
+            border-width: 8px !important;
         }
 
         /* Responsive */
