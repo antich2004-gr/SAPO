@@ -323,6 +323,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (empty($programName)) {
             $error = 'Nombre de programa no especificado';
         } else {
+            // Procesar días de emisión
+            $scheduleDays = $_POST['schedule_days'] ?? [];
+            if (!is_array($scheduleDays)) {
+                $scheduleDays = [];
+            }
+
             $programInfo = [
                 'playlist_type' => trim($_POST['playlist_type'] ?? 'program'),
                 'short_description' => trim($_POST['short_description'] ?? ''),
@@ -332,7 +338,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'image' => trim($_POST['image'] ?? ''),
                 'presenters' => trim($_POST['presenters'] ?? ''),
                 'social_twitter' => trim($_POST['social_twitter'] ?? ''),
-                'social_instagram' => trim($_POST['social_instagram'] ?? '')
+                'social_instagram' => trim($_POST['social_instagram'] ?? ''),
+                'schedule_days' => $scheduleDays,
+                'schedule_start_time' => trim($_POST['schedule_start_time'] ?? ''),
+                'schedule_duration' => (int)($_POST['schedule_duration'] ?? 60)
             ];
 
             if (saveProgramInfo($username, $programName, $programInfo)) {
