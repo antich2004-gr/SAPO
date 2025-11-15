@@ -78,8 +78,8 @@ function adjustBrightness($hex, $steps) {
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #ffffff;
             padding: 0;
             margin: 0;
         }
@@ -89,28 +89,13 @@ function adjustBrightness($hex, $steps) {
             margin: 0;
             background: #ffffff;
             min-height: 100vh;
-            box-shadow: 0 0 40px rgba(0,0,0,0.08);
         }
 
         .widget-header {
-            background: linear-gradient(135deg, <?php echo htmlspecialchars($widgetColor); ?> 0%, <?php echo htmlspecialchars(adjustBrightness($widgetColor, -25)); ?> 100%);
-            color: white;
-            padding: 25px 35px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: relative;
-        }
-
-        .widget-header::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(to right,
-                rgba(255,255,255,0) 0%,
-                rgba(255,255,255,0.3) 50%,
-                rgba(255,255,255,0) 100%);
+            background: #ffffff;
+            color: #333;
+            padding: 30px 40px 20px 40px;
+            border-bottom: 1px solid #e0e0e0;
         }
 
         .widget-header-content {
@@ -120,31 +105,20 @@ function adjustBrightness($hex, $steps) {
 
         .widget-header h1 {
             font-size: 28px;
-            font-weight: 700;
+            font-weight: 600;
             margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .widget-header h1::before {
-            content: '📻';
-            font-size: 36px;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+            color: #222;
+            letter-spacing: -0.5px;
         }
 
         .calendar-container {
-            padding: 25px;
+            padding: 0;
             max-width: 1400px;
             margin: 0 auto;
         }
 
         #calendar {
             background: white;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            overflow: hidden;
         }
 
         /* Personalización de FullCalendar */
@@ -153,75 +127,57 @@ function adjustBrightness($hex, $steps) {
         }
 
         .fc-toolbar {
-            padding: 20px 20px 15px 20px !important;
-            margin-bottom: 0 !important;
-            background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
-            border-bottom: 2px solid #e9ecef;
+            display: none !important;
         }
 
-        .fc-toolbar-title {
-            font-size: 22px !important;
-            font-weight: 700 !important;
-            color: #2c3e50;
-            text-align: center;
-        }
-
-        /* Días de la semana - Solo nombres, sin fechas */
+        /* Días de la semana - estilo minimalista */
         .fc-col-header-cell {
-            background: linear-gradient(to bottom, <?php echo htmlspecialchars($widgetColor); ?> 0%, <?php echo htmlspecialchars(adjustBrightness($widgetColor, -15)); ?> 100%) !important;
-            padding: 14px 8px !important;
-            font-weight: 700 !important;
-            text-transform: uppercase !important;
-            font-size: 13px !important;
-            letter-spacing: 0.5px !important;
-            color: white !important;
-            border-right: 1px solid <?php echo htmlspecialchars(adjustBrightness($widgetColor, -20)); ?> !important;
-            border-bottom: 3px solid <?php echo htmlspecialchars(adjustBrightness($widgetColor, -30)); ?> !important;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-        }
-
-        .fc-col-header-cell:last-child {
-            border-right: none !important;
+            background: #f5f5f5 !important;
+            padding: 16px 10px !important;
+            font-weight: 600 !important;
+            text-transform: capitalize !important;
+            font-size: 15px !important;
+            color: #333 !important;
+            border: 1px solid #e0e0e0 !important;
+            border-top: 3px solid <?php echo htmlspecialchars($widgetColor); ?> !important;
         }
 
         .fc-col-header-cell-cushion {
-            color: white !important;
+            color: #333 !important;
             text-decoration: none !important;
         }
 
         /* Celdas de horas */
         .fc-timegrid-slot {
-            height: 55px !important;
-            border-color: #e9ecef !important;
-        }
-
-        .fc-timegrid-slot:nth-child(even) {
-            background: #fafbfc !important;
+            height: 60px !important;
+            border-color: #e0e0e0 !important;
+            background: #ffffff !important;
         }
 
         .fc-timegrid-slot-label {
-            font-size: 12px !important;
-            color: #6c757d !important;
-            font-weight: 600 !important;
-            padding: 0 8px !important;
+            font-size: 13px !important;
+            color: #666 !important;
+            font-weight: 500 !important;
+            padding: 0 12px !important;
         }
 
-        /* Eventos */
+        /* Eventos - estilo minimalista tipo El Salto */
         .fc-event {
-            border: none !important;
-            border-left: 4px solid rgba(0,0,0,0.2) !important;
-            border-radius: 6px !important;
-            padding: 6px 10px !important;
-            font-size: 13px !important;
-            font-weight: 600 !important;
+            border: 1px solid #ddd !important;
+            border-left: 4px solid <?php echo htmlspecialchars($widgetColor); ?> !important;
+            border-radius: 0 !important;
+            padding: 8px 12px !important;
+            font-size: 14px !important;
+            font-weight: 500 !important;
             cursor: pointer !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-            transition: all 0.2s ease !important;
+            box-shadow: none !important;
+            background: #fafafa !important;
+            color: #333 !important;
         }
 
         .fc-event:hover {
-            transform: translateX(2px) !important;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.15) !important;
+            background: #f0f0f0 !important;
+            border-left-width: 5px !important;
         }
 
         .fc-event-title {
@@ -243,14 +199,14 @@ function adjustBrightness($hex, $steps) {
             border-color: #ef4444 !important;
         }
 
-        /* Bordes y estructura */
+        /* Bordes y estructura - estilo tabla */
         .fc-theme-standard td,
         .fc-theme-standard th {
-            border-color: #dee2e6 !important;
+            border-color: #e0e0e0 !important;
         }
 
         .fc-scrollgrid {
-            border: 1px solid #dee2e6 !important;
+            border: 1px solid #e0e0e0 !important;
             border-radius: 0 !important;
         }
 
@@ -258,16 +214,25 @@ function adjustBrightness($hex, $steps) {
             display: none !important;
         }
 
-        /* Línea actual NOW */
+        /* Línea actual NOW - más discreta */
         .fc-timegrid-now-indicator-line {
-            border-color: #dc3545 !important;
+            border-color: <?php echo htmlspecialchars($widgetColor); ?> !important;
             border-width: 2px !important;
-            opacity: 0.8;
+            opacity: 0.6;
         }
 
         .fc-timegrid-now-indicator-arrow {
-            border-color: #dc3545 !important;
-            border-width: 8px !important;
+            border-color: <?php echo htmlspecialchars($widgetColor); ?> !important;
+            border-width: 6px !important;
+        }
+
+        /* Ajustes para look tipo tabla */
+        .fc-timegrid-axis {
+            background: #fafafa !important;
+        }
+
+        .fc-timegrid-slot-lane {
+            background: white !important;
         }
 
         /* Responsive */
