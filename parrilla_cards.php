@@ -542,7 +542,7 @@ function htmlEsc($str) {
 
                                 <div class="program-content">
                                     <div class="program-time">
-                                        🕐 <?php echo htmlEsc($event['start_time']); ?> - <?php echo htmlEsc($event['end_time']); ?>
+                                        🕐 <?php echo htmlEsc($event['start_time']); ?>
                                         <?php if ($isLive): ?>
                                             <span class="live-badge">🔴 EN VIVO</span>
                                         <?php endif; ?>
