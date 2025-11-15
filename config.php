@@ -23,6 +23,7 @@ ini_set('session.cookie_lifetime', 0); // Cookie de sesión (se borra al cerrar 
 // Directorio del proyecto
 define('PROJECT_DIR', dirname(__FILE__));
 define('INCLUDES_DIR', PROJECT_DIR . '/includes');
+define('DATA_DIR', PROJECT_DIR . '/data');
 
 // Tipos de rol
 define('ROLE_ADMIN', 'admin');
