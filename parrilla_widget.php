@@ -49,8 +49,8 @@ error_log("Parrilla Widget - Station: $station, Events: " . count($events));
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parrilla - <?php echo htmlspecialchars($stationName); ?></title>
 
-    <!-- FullCalendar CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+    <!-- FullCalendar JS - debe cargarse en HEAD -->
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
 
     <style>
         * {
@@ -251,10 +251,6 @@ error_log("Parrilla Widget - Station: $station, Events: " . count($events));
             Generado con <a href="https://github.com/antich2004-gr/SAPO" target="_blank">SAPO</a>
         </div>
     </div>
-
-    <!-- FullCalendar JS -->
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/es.global.min.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
