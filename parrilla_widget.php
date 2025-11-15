@@ -189,15 +189,14 @@ function adjustBrightness($hex, $steps) {
             border: none !important;
             border-left: 4px solid <?php echo htmlspecialchars($widgetColor); ?> !important;
             border-radius: 4px !important;
-            padding: 6px 10px !important;
+            padding: 8px 8px !important;
             font-size: 13px !important;
             font-weight: 500 !important;
             cursor: pointer !important;
             background: #ffffff !important;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
             transition: all 0.2s ease !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
+            overflow: visible !important;
         }
 
         .fc-event:hover {
@@ -210,20 +209,40 @@ function adjustBrightness($hex, $steps) {
 
         .fc-event-title {
             font-weight: 600 !important;
-            line-height: 1.3 !important;
+            line-height: 1.2 !important;
             color: #1f2937 !important;
-            white-space: nowrap !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
+            white-space: normal !important;
+            overflow: visible !important;
             display: block !important;
+            word-wrap: break-word !important;
+            hyphens: auto !important;
         }
 
         .fc-event-time {
-            font-size: 11px !important;
+            font-size: 10px !important;
             color: #6b7280 !important;
-            font-weight: 500 !important;
+            font-weight: 600 !important;
             display: block !important;
-            margin-bottom: 2px !important;
+            margin-bottom: 3px !important;
+            white-space: nowrap !important;
+        }
+
+        /* Ajustar tamaño de fuente según duración del evento */
+        .fc-event.fc-short {
+            font-size: 11px !important;
+        }
+
+        .fc-event.fc-short .fc-event-title {
+            font-size: 11px !important;
+            line-height: 1.1 !important;
+        }
+
+        .fc-event.fc-medium {
+            font-size: 12px !important;
+        }
+
+        .fc-event.fc-long {
+            font-size: 13px !important;
         }
 
         /* Bloques musicales - estilo atenuado */
@@ -569,12 +588,32 @@ function adjustBrightness($hex, $steps) {
                     alert(details);
                 },
                 eventDidMount: function(info) {
-                    // Añadir tooltip
+                    // Añadir tooltip con información completa
                     var tooltip = info.event.title;
-                    if (info.event.extendedProps.playlist) {
-                        tooltip += ' (' + info.event.extendedProps.playlist + ')';
+                    var props = info.event.extendedProps;
+
+                    if (props.description) {
+                        tooltip += '\n' + props.description;
                     }
+                    if (props.programType) {
+                        tooltip += '\nTemática: ' + props.programType;
+                    }
+
                     info.el.setAttribute('title', tooltip);
+
+                    // Clasificar evento por duración
+                    var duration = 0;
+                    if (info.event.start && info.event.end) {
+                        duration = (info.event.end - info.event.start) / (1000 * 60); // minutos
+                    }
+
+                    if (duration < 30) {
+                        info.el.classList.add('fc-short');
+                    } else if (duration < 90) {
+                        info.el.classList.add('fc-medium');
+                    } else {
+                        info.el.classList.add('fc-long');
+                    }
 
                     // Marcar evento actual (EN VIVO)
                     var now = new Date();
