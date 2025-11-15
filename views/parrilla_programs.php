@@ -23,11 +23,7 @@ $editingProgram = $_GET['edit'] ?? null;
                 <strong>Última sincronización:</strong> <?php echo htmlEsc($programsData['last_sync']); ?>
             </p>
             <p style="margin: 5px 0 0 0; color: #4a5568; font-size: 14px;">
-                <strong>Programas:</strong>
-                <?php echo $programsData['total']; ?> total
-                (<?php echo $programsData['complete']; ?> ✅ completos,
-                <?php echo $programsData['partial']; ?> ⚠️ parciales,
-                <?php echo $programsData['empty']; ?> ❌ vacíos)
+                <strong>Total de programas:</strong> <?php echo $programsData['total']; ?>
             </p>
         </div>
     <?php endif; ?>
@@ -156,31 +152,23 @@ $editingProgram = $_GET['edit'] ?? null;
                         <div style="flex: 1;">
                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
                                 <strong style="font-size: 16px;"><?php echo htmlEsc($program['name']); ?></strong>
-                                <span style="font-size: 13px; color: #6b7280;"><?php echo $program['status_label']; ?></span>
                             </div>
 
-                            <?php if ($program['status'] !== 'empty'): ?>
-                                <div style="font-size: 13px; color: #4a5568; margin-top: 5px;">
-                                    <?php if (!empty($program['info']['type'])): ?>
-                                        <span style="background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-right: 5px;">
-                                            <?php echo htmlEsc($program['info']['type']); ?>
-                                        </span>
-                                    <?php endif; ?>
+                            <div style="font-size: 13px; color: #4a5568; margin-top: 5px;">
+                                <?php if (!empty($program['info']['type'])): ?>
+                                    <span style="background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-right: 5px;">
+                                        <?php echo htmlEsc($program['info']['type']); ?>
+                                    </span>
+                                <?php endif; ?>
 
-                                    <?php if (!empty($program['info']['short_description'])): ?>
-                                        <span><?php echo htmlEsc(substr($program['info']['short_description'], 0, 100)); ?><?php echo strlen($program['info']['short_description']) > 100 ? '...' : ''; ?></span>
-                                    <?php endif; ?>
-                                </div>
-
-                                <div style="font-size: 12px; color: #9ca3af; margin-top: 8px;">
-                                    Completitud: <?php echo round($program['completeness']); ?>%
-                                    <div style="width: 200px; height: 6px; background: #e5e7eb; border-radius: 3px; display: inline-block; margin-left: 10px;">
-                                        <div style="width: <?php echo $program['completeness']; ?>%; height: 100%; background: <?php
-                                            echo $program['completeness'] === 100 ? '#10b981' : ($program['completeness'] > 0 ? '#f59e0b' : '#ef4444');
-                                        ?>; border-radius: 3px;"></div>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
+                                <?php if (!empty($program['info']['short_description'])): ?>
+                                    <span><?php echo htmlEsc(substr($program['info']['short_description'], 0, 100)); ?><?php echo strlen($program['info']['short_description']) > 100 ? '...' : ''; ?></span>
+                                <?php elseif (!empty($program['info']['type'])): ?>
+                                    <span style="color: #9ca3af;">Sin descripción</span>
+                                <?php else: ?>
+                                    <span style="color: #9ca3af;">Haz clic en "Editar" para añadir información</span>
+                                <?php endif; ?>
+                            </div>
                         </div>
 
                         <div>

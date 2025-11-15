@@ -187,48 +187,19 @@ function saveProgramInfo($username, $programName, $info) {
 }
 
 /**
- * Obtener todos los programas con estadísticas de completitud
+ * Obtener todos los programas
  *
  * @param string $username Nombre de usuario
- * @return array Array con programas y estadísticas
+ * @return array Array con programas
  */
 function getAllProgramsWithStats($username) {
     $data = loadProgramsDB($username);
     $programs = [];
 
     foreach ($data['programs'] as $name => $info) {
-        // Calcular completitud
-        $requiredFields = ['short_description', 'type', 'url', 'image'];
-        $filledFields = 0;
-
-        foreach ($requiredFields as $field) {
-            if (!empty($info[$field])) {
-                $filledFields++;
-            }
-        }
-
-        $completeness = count($requiredFields) > 0
-            ? ($filledFields / count($requiredFields)) * 100
-            : 0;
-
-        // Determinar estado
-        if ($completeness === 100) {
-            $status = 'complete';
-            $statusLabel = '✅ Completo';
-        } elseif ($completeness > 0) {
-            $status = 'partial';
-            $statusLabel = '⚠️ Parcial';
-        } else {
-            $status = 'empty';
-            $statusLabel = '❌ Sin información';
-        }
-
         $programs[] = [
             'name' => $name,
-            'info' => $info,
-            'completeness' => $completeness,
-            'status' => $status,
-            'status_label' => $statusLabel
+            'info' => $info
         ];
     }
 
@@ -240,9 +211,6 @@ function getAllProgramsWithStats($username) {
     return [
         'programs' => $programs,
         'last_sync' => $data['last_sync'] ?? null,
-        'total' => count($programs),
-        'complete' => count(array_filter($programs, function($p) { return $p['status'] === 'complete'; })),
-        'partial' => count(array_filter($programs, function($p) { return $p['status'] === 'partial'; })),
-        'empty' => count(array_filter($programs, function($p) { return $p['status'] === 'empty'; }))
+        'total' => count($programs)
     ];
 }
