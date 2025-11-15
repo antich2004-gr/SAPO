@@ -197,6 +197,18 @@ function adjustBrightness($hex, $steps) {
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
             transition: all 0.2s ease !important;
             overflow: visible !important;
+            height: auto !important;
+            min-height: 0 !important;
+        }
+
+        .fc-event .fc-event-main {
+            height: auto !important;
+            overflow: visible !important;
+        }
+
+        .fc-event .fc-event-main-frame {
+            height: auto !important;
+            overflow: visible !important;
         }
 
         .fc-event:hover {
