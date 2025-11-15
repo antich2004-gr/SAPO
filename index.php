@@ -212,6 +212,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
+    // ADMIN: CHANGE USER PASSWORD
+    if ($action == 'admin_change_password' && isAdmin()) {
+        $username = $_POST['username'] ?? '';
+        $newPassword = $_POST['new_password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+
+        if (empty($username) || empty($newPassword)) {
+            $error = 'Datos incompletos';
+        } elseif (strlen($newPassword) < 8) {
+            $error = 'La contraseña debe tener al menos 8 caracteres';
+        } elseif ($newPassword !== $confirmPassword) {
+            $error = 'Las contraseñas no coinciden';
+        } else {
+            $user = findUserByUsername($username);
+            if (!$user) {
+                $error = 'Usuario no encontrado';
+            } else {
+                $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+                if (updateUserPassword($user['id'], $hashedPassword)) {
+                    $message = "Contraseña actualizada correctamente para el usuario $username";
+                } else {
+                    $error = 'Error al actualizar la contraseña';
+                }
+            }
+        }
+    }
+
     // UPDATE AZURACAST CONFIG (admin)
     if ($action == 'update_azuracast_config' && isAdmin()) {
         $username = $_POST['username'] ?? '';

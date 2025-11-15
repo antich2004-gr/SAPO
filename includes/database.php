@@ -316,6 +316,22 @@ function deleteUser($userId) {
     return $result;
 }
 
+/**
+ * Actualizar contraseña de un usuario (solo admin)
+ */
+function updateUserPassword($userId, $hashedPassword) {
+    $db = getGlobalDB();
+
+    foreach ($db['users'] as &$user) {
+        if ($user['id'] == $userId) {
+            $user['password'] = $hashedPassword;
+            return saveGlobalDB($db);
+        }
+    }
+
+    return false;
+}
+
 function updateUser($userId, $username, $password, $station_name) {
     if ($userId == 1) {
         return false; // No permitir editar el admin principal

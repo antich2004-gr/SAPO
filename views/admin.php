@@ -117,12 +117,17 @@ $users = getAllUsers();
                         </form>
                     </div>
                 </div>
-                <form method="POST" style="display: inline;">
-                    <input type="hidden" name="action" value="delete_user">
-                    <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                    <input type="hidden" name="user_id" value="<?php echo htmlEsc($user['id']); ?>">
-                    <button type="submit" class="btn btn-danger" onclick="return confirm('Eliminar este usuario?')"><span class="btn-icon">🗑️</span> Eliminar</button>
-                </form>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn btn-warning" onclick="showPasswordModal('<?php echo htmlEsc($user['username']); ?>', '<?php echo htmlEsc($user['station_name']); ?>')">
+                        <span class="btn-icon">🔑</span> Cambiar Contraseña
+                    </button>
+                    <form method="POST" style="display: inline;">
+                        <input type="hidden" name="action" value="delete_user">
+                        <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                        <input type="hidden" name="user_id" value="<?php echo htmlEsc($user['id']); ?>">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Eliminar este usuario?')"><span class="btn-icon">🗑️</span> Eliminar</button>
+                    </form>
+                </div>
             </div>
         <?php endforeach; ?>
         <?php if (!$hasUsers): ?>
@@ -130,3 +135,75 @@ $users = getAllUsers();
         <?php endif; ?>
     </div>
 </div>
+
+<!-- Modal para cambiar contraseña -->
+<div id="passwordModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 8px; max-width: 500px; width: 90%;">
+        <h3 style="margin: 0 0 20px 0;">🔑 Cambiar Contraseña</h3>
+        <p style="color: #6b7280; margin-bottom: 20px;">
+            Usuario: <strong id="modalStationName"></strong> (<span id="modalUsername"></span>)
+        </p>
+
+        <form method="POST" id="passwordForm">
+            <input type="hidden" name="action" value="admin_change_password">
+            <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+            <input type="hidden" name="username" id="formUsername">
+
+            <div class="form-group">
+                <label>Nueva Contraseña:</label>
+                <input type="password" name="new_password" id="newPassword" required minlength="8" placeholder="Mínimo 8 caracteres">
+            </div>
+
+            <div class="form-group">
+                <label>Confirmar Contraseña:</label>
+                <input type="password" name="confirm_password" id="confirmPassword" required minlength="8" placeholder="Repite la contraseña">
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" class="btn btn-secondary" onclick="hidePasswordModal()">Cancelar</button>
+                <button type="submit" class="btn btn-success">
+                    <span class="btn-icon">💾</span> Cambiar Contraseña
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function showPasswordModal(username, stationName) {
+    document.getElementById('modalUsername').textContent = username;
+    document.getElementById('modalStationName').textContent = stationName;
+    document.getElementById('formUsername').value = username;
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmPassword').value = '';
+    document.getElementById('passwordModal').style.display = 'flex';
+}
+
+function hidePasswordModal() {
+    document.getElementById('passwordModal').style.display = 'none';
+}
+
+document.getElementById('passwordForm').addEventListener('submit', function(e) {
+    const password = document.getElementById('newPassword').value;
+    const confirm = document.getElementById('confirmPassword').value;
+
+    if (password !== confirm) {
+        e.preventDefault();
+        alert('❌ Las contraseñas no coinciden');
+        return false;
+    }
+
+    if (password.length < 8) {
+        e.preventDefault();
+        alert('❌ La contraseña debe tener al menos 8 caracteres');
+        return false;
+    }
+});
+
+// Cerrar modal al hacer clic fuera
+document.getElementById('passwordModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hidePasswordModal();
+    }
+});
+</script>
