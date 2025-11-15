@@ -2,12 +2,19 @@
 // views/parrilla_programs.php - Gestión de información de programas (subsección)
 echo '<p style="color: blue; font-size: 11px;">DEBUG: Inicio de parrilla_programs.php, username=' . htmlspecialchars($username ?? 'NO DEFINIDO') . '</p>';
 
-try {
-    $programsData = getAllProgramsWithStats($username);
-    echo '<p style="color: green; font-size: 11px;">DEBUG: getAllProgramsWithStats ejecutado, total programas: ' . count($programsData['programs'] ?? []) . '</p>';
-} catch (Exception $e) {
-    echo '<p style="color: red;">ERROR en getAllProgramsWithStats: ' . htmlspecialchars($e->getMessage()) . '</p>';
+if (!function_exists('getAllProgramsWithStats')) {
+    echo '<p style="color: red;">ERROR FATAL: La función getAllProgramsWithStats() no está definida!</p>';
+    echo '<p style="color: orange;">Funciones disponibles: ' . implode(', ', get_defined_functions()['user']) . '</p>';
     $programsData = ['programs' => [], 'last_sync' => null, 'total' => 0, 'complete' => 0, 'partial' => 0, 'empty' => 0];
+} else {
+    echo '<p style="color: green; font-size: 11px;">DEBUG: Función getAllProgramsWithStats existe</p>';
+    try {
+        $programsData = getAllProgramsWithStats($username);
+        echo '<p style="color: green; font-size: 11px;">DEBUG: getAllProgramsWithStats ejecutado, total programas: ' . count($programsData['programs'] ?? []) . '</p>';
+    } catch (Exception $e) {
+        echo '<p style="color: red;">ERROR en getAllProgramsWithStats: ' . htmlspecialchars($e->getMessage()) . '</p>';
+        $programsData = ['programs' => [], 'last_sync' => null, 'total' => 0, 'complete' => 0, 'partial' => 0, 'empty' => 0];
+    }
 }
 
 $editingProgram = $_GET['edit'] ?? null;
