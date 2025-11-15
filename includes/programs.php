@@ -237,8 +237,8 @@ function getAllProgramsWithStats($username) {
         'programs' => $programs,
         'last_sync' => $data['last_sync'] ?? null,
         'total' => count($programs),
-        'complete' => count(array_filter($programs, fn($p) => $p['status'] === 'complete')),
-        'partial' => count(array_filter($programs, fn($p) => $p['status'] === 'partial')),
-        'empty' => count(array_filter($programs, fn($p) => $p['status'] === 'empty'))
+        'complete' => count(array_filter($programs, function($p) { return $p['status'] === 'complete'; })),
+        'partial' => count(array_filter($programs, function($p) { return $p['status'] === 'partial'; })),
+        'empty' => count(array_filter($programs, function($p) { return $p['status'] === 'empty'; }))
     ];
 }
