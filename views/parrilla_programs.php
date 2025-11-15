@@ -242,55 +242,61 @@ $creatingProgram = $_GET['create'] ?? null;
                                   placeholder="Descripción detallada del programa, presentadores, temáticas, etc."><?php echo htmlEsc($programInfo['long_description'] ?? ''); ?></textarea>
                     </div>
 
-                    <div class="form-group">
-                        <label>Días de emisión: <small>(marcar los días en que se emite)</small></label>
-                        <div style="display: flex; flex-wrap: wrap; gap: 10px; padding: 10px; background: #f9fafb; border-radius: 6px;">
-                            <?php
-                            $days = [
-                                '1' => 'Lunes',
-                                '2' => 'Martes',
-                                '3' => 'Miércoles',
-                                '4' => 'Jueves',
-                                '5' => 'Viernes',
-                                '6' => 'Sábado',
-                                '0' => 'Domingo'
-                            ];
-                            $currentScheduleDays = $programInfo['schedule_days'] ?? [];
-                            foreach ($days as $value => $label):
-                                $checked = in_array($value, $currentScheduleDays) ? 'checked' : '';
-                            ?>
-                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                                    <input type="checkbox" name="schedule_days[]" value="<?php echo $value; ?>" <?php echo $checked; ?> style="cursor: pointer;">
-                                    <?php echo htmlEsc($label); ?>
-                                </label>
-                            <?php endforeach; ?>
+                    <?php
+                    // Mostrar campos de horario solo si es programa en directo
+                    $isLiveProgram = ($programInfo['playlist_type'] ?? 'program') === 'live';
+                    if ($isLiveProgram):
+                    ?>
+                        <div class="form-group">
+                            <label>Días de emisión: <small>(marcar los días en que se emite)</small></label>
+                            <div style="display: flex; flex-wrap: wrap; gap: 10px; padding: 10px; background: #f9fafb; border-radius: 6px;">
+                                <?php
+                                $days = [
+                                    '1' => 'Lunes',
+                                    '2' => 'Martes',
+                                    '3' => 'Miércoles',
+                                    '4' => 'Jueves',
+                                    '5' => 'Viernes',
+                                    '6' => 'Sábado',
+                                    '0' => 'Domingo'
+                                ];
+                                $currentScheduleDays = $programInfo['schedule_days'] ?? [];
+                                foreach ($days as $value => $label):
+                                    $checked = in_array($value, $currentScheduleDays) ? 'checked' : '';
+                                ?>
+                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                        <input type="checkbox" name="schedule_days[]" value="<?php echo $value; ?>" <?php echo $checked; ?> style="cursor: pointer;">
+                                        <?php echo htmlEsc($label); ?>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                            <small style="color: #6b7280;">
+                                Marca los días en que se emite el programa en directo
+                            </small>
                         </div>
-                        <small style="color: #6b7280;">
-                            Si no seleccionas ningún día, el programa solo aparecerá cuando AzuraCast lo programe
-                        </small>
-                    </div>
 
-                    <div class="form-group">
-                        <label>Hora de inicio: <small>(formato 24h)</small></label>
-                        <input type="time" name="schedule_start_time"
-                               value="<?php echo htmlEsc($programInfo['schedule_start_time'] ?? ''); ?>"
-                               placeholder="20:00">
-                        <small style="color: #6b7280;">
-                            Hora a la que comienza la emisión (ej: 20:00)
-                        </small>
-                    </div>
+                        <div class="form-group">
+                            <label>Hora de inicio: <small>(formato 24h)</small></label>
+                            <input type="time" name="schedule_start_time"
+                                   value="<?php echo htmlEsc($programInfo['schedule_start_time'] ?? ''); ?>"
+                                   placeholder="20:00">
+                            <small style="color: #6b7280;">
+                                Hora a la que comienza la emisión (ej: 20:00)
+                            </small>
+                        </div>
 
-                    <div class="form-group">
-                        <label>Duración (minutos):</label>
-                        <input type="number" name="schedule_duration"
-                               value="<?php echo htmlEsc($programInfo['schedule_duration'] ?? '60'); ?>"
-                               placeholder="60"
-                               min="1"
-                               max="1440">
-                        <small style="color: #6b7280;">
-                            Duración del programa en minutos (ej: 60 para 1 hora, 120 para 2 horas)
-                        </small>
-                    </div>
+                        <div class="form-group">
+                            <label>Duración (minutos):</label>
+                            <input type="number" name="schedule_duration"
+                                   value="<?php echo htmlEsc($programInfo['schedule_duration'] ?? '60'); ?>"
+                                   placeholder="60"
+                                   min="1"
+                                   max="1440">
+                            <small style="color: #6b7280;">
+                                Duración del programa en minutos (ej: 60 para 1 hora, 120 para 2 horas)
+                            </small>
+                        </div>
+                    <?php endif; ?>
 
                     <div class="form-group">
                         <label>Temática:</label>
