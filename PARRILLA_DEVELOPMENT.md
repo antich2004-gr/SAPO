@@ -21,21 +21,43 @@
 
 ### Características Implementadas
 
-#### Sistema de Gestión de Programas (NUEVO)
+#### Pestaña "Parrilla" - Gestión Unificada (NUEVO)
+
+Toda la funcionalidad de parrilla está organizada en una única pestaña con 4 subsecciones:
+
+**1. 👁️ Vista Previa**
+- Preview en iframe del widget real
+- Botón para abrir en nueva pestaña
+- Muestra la parrilla tal como se verá en la web
+
+**2. 📝 Gestión de Programas**
+- Auto-descubrimiento desde AzuraCast
+- Lista de programas con estados (✅ Completo, ⚠️ Parcial, ❌ Vacío)
+- Edición de información adicional por programa
+- Barra de progreso de completitud
+
+**3. ⚙️ Configuración**
+- Station ID de AzuraCast (requerido)
+- Color del widget personalizable
+- Enlace a test de conexión
+- Interfaz auto-contenida (no requiere admin)
+
+**4. 🔗 Código de Embebido**
+- Snippet HTML listo para copiar
+- Botón "Copiar al portapapeles"
+- Instrucciones de personalización
+- Consejos de uso
 
 **Auto-descubrimiento desde AzuraCast:**
 - Botón "🔄 Sincronizar con AzuraCast" detecta automáticamente todos los programas
 - No sobrescribe información ya existente
 - Detecta programas nuevos sin perder datos anteriores
 
-**Panel de Gestión (`views/programs.php`):**
-- Acceso desde dashboard de usuario: botón "📺 Gestión de Programas"
-- Lista de todos los programas detectados con estados:
-  - ✅ Completo: Todos los campos importantes rellenados
-  - ⚠️ Parcial: Algunos campos rellenados
-  - ❌ Sin información: Solo título (funciona igual que antes)
-- Barra de progreso de completitud por programa
-- Edición individual con preview de imagen
+**Navegación:**
+- Acceso desde dashboard: botón "📺 Parrilla"
+- Tabs visuales con color personalizado
+- Estado persistente al editar programas
+- URLs: `?page=parrilla&section=preview|programs|config|embed`
 
 **Campos editables por programa:**
 - Descripción corta (para previews)
@@ -85,17 +107,21 @@
 
 **Nuevos:**
 - `parrilla_widget.php` - Widget público embebible
+- `views/parrilla.php` - Vista principal con tabs y subsecciones
+- `views/parrilla_programs.php` - Subsección de gestión de programas
 - `includes/azuracast.php` - Funciones de integración con AzuraCast
+- `includes/programs.php` - Funciones CRUD para gestión de programas
 - `test_azuracast.php` - Script de testing
 - `assets/fullcalendar.min.js` - Librería FullCalendar local
+- `data/programs/` - Directorio para datos de programas
 
 **Modificados:**
 - `includes/database.php` - Añadido soporte para configuración AzuraCast
 - `includes/azuracast.php` - formatEventsForCalendar acepta username, integra info de SAPO
-- `index.php` - Acciones: `update_azuracast_config`, `sync_programs`, `save_program`
+- `index.php` - Acciones: `update_azuracast_config`, `update_azuracast_config_user`, `sync_programs`, `save_program`
 - `views/admin.php` - UI para configurar Station ID y color del widget
-- `views/user.php` - Botón "Gestión de Programas" en dashboard
-- `views/layout.php` - Routing para page=programs
+- `views/user.php` - Botón "Parrilla" en dashboard
+- `views/layout.php` - Routing para page=parrilla
 - `parrilla_widget.php` - Pasa username a formatEventsForCalendar
 
 ### Branch y Commits
@@ -103,12 +129,13 @@
 **Branch:** `feature/parrilla-azuracast`
 
 **Commits recientes:**
-1. `b6616b5` - Sistema de gestión de programas con auto-descubrimiento
-2. `7ff89ca` - Documentación del desarrollo de la parrilla
-3. `186ae2a` - Parsear información adicional de programas
-4. `25c705e` - Simplificar destacado del programa actual
-5. `10a40af` - Destacar programa EN VIVO
-6. Anteriores: Implementación base del widget y diseño
+1. `4a30911` - Reorganizar gestión de parrilla en pestaña unificada con subsecciones
+2. `6608ea3` - Fix: Actualizar test_azuracast.php para nueva firma
+3. `a20e83a` - Actualizar documentación con sistema de gestión de programas
+4. `b6616b5` - Sistema de gestión de programas con auto-descubrimiento
+5. `7ff89ca` - Documentación del desarrollo de la parrilla
+6. `186ae2a` - Parsear información adicional de programas
+7. Anteriores: Diseño, NOW indicator, etc.
 
 ### Próximos Pasos Sugeridos
 
