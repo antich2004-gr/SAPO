@@ -165,7 +165,7 @@ function adjustBrightness($hex, $steps) {
 
         /* Celdas de horas */
         .fc-timegrid-slot {
-            height: 65px !important;
+            height: 50px !important;
             border-color: #e5e7eb !important;
             background: #ffffff !important;
             transition: background-color 0.2s ease;
@@ -176,37 +176,54 @@ function adjustBrightness($hex, $steps) {
         }
 
         .fc-timegrid-slot-label {
-            font-size: 12px !important;
+            font-size: 11px !important;
             color: #6b7280 !important;
             font-weight: 600 !important;
-            padding: 0 14px !important;
+            padding: 0 10px !important;
+            vertical-align: top !important;
+            padding-top: 4px !important;
         }
 
         /* Eventos - estilo mejorado con sombras sutiles */
         .fc-event {
             border: none !important;
             border-left: 4px solid <?php echo htmlspecialchars($widgetColor); ?> !important;
-            border-radius: 6px !important;
-            padding: 10px 14px !important;
-            font-size: 14px !important;
+            border-radius: 4px !important;
+            padding: 6px 10px !important;
+            font-size: 13px !important;
             font-weight: 500 !important;
             cursor: pointer !important;
             background: #ffffff !important;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
             transition: all 0.2s ease !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
         }
 
         .fc-event:hover {
             background: #f9fafb !important;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12) !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
             transform: translateY(-1px);
             border-left-width: 5px !important;
+            z-index: 100 !important;
         }
 
         .fc-event-title {
             font-weight: 600 !important;
-            line-height: 1.5 !important;
+            line-height: 1.3 !important;
             color: #1f2937 !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            display: block !important;
+        }
+
+        .fc-event-time {
+            font-size: 11px !important;
+            color: #6b7280 !important;
+            font-weight: 500 !important;
+            display: block !important;
+            margin-bottom: 2px !important;
         }
 
         /* Bloques musicales - estilo atenuado */
@@ -507,21 +524,30 @@ function adjustBrightness($hex, $steps) {
                     return 'Programación Semanal';
                 },
                 dayHeaderFormat: { weekday: 'long' },
-                slotMinTime: '08:00:00',  // Empezar a las 8:00
-                slotMaxTime: '32:00:00',  // Hasta las 8:00 del día siguiente (32h = 24h + 8h)
+                slotMinTime: '00:00:00',  // Mostrar día completo
+                slotMaxTime: '24:00:00',
+                slotDuration: '00:30:00', // Slots de 30 minutos
+                slotLabelInterval: '01:00:00', // Etiquetas cada 1 hora
+                slotLabelFormat: {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false,
+                    omitZeroMinute: false
+                },
                 allDaySlot: false,
                 height: 'auto',
                 expandRows: true,
                 slotEventOverlap: false,
-                nowIndicator: false,  // Ocultar línea NOW
+                nowIndicator: true,  // Mostrar línea actual
                 eventTimeFormat: {
                     hour: '2-digit',
                     minute: '2-digit',
                     hour12: false
                 },
                 eventDisplay: 'block',
-                displayEventTime: false,  // No mostrar hora en el evento
-                displayEventEnd: false,   // No mostrar hora final
+                displayEventTime: true,  // Mostrar hora en el evento
+                displayEventEnd: false,
+                eventMinHeight: 30, // Altura mínima para eventos cortos
                 events: events,
                 eventClick: function(info) {
                     // Mostrar información del evento
