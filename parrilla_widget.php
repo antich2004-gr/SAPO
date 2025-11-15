@@ -78,137 +78,86 @@ function adjustBrightness($hex, $steps) {
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
-            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 0;
+            margin: 0;
         }
 
         .widget-container {
-            max-width: 1400px;
-            margin: 0 auto;
+            max-width: 100%;
+            margin: 0;
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
+            min-height: 100vh;
         }
 
         .widget-header {
-            background: linear-gradient(135deg, <?php echo htmlspecialchars($widgetColor); ?> 0%, <?php echo htmlspecialchars(adjustBrightness($widgetColor, -20)); ?> 100%);
+            background: <?php echo htmlspecialchars($widgetColor); ?>;
             color: white;
-            padding: 30px 40px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .widget-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="rgba(255,255,255,0.05)"/></svg>');
-            opacity: 0.1;
+            padding: 20px 30px;
+            border-bottom: 3px solid <?php echo htmlspecialchars(adjustBrightness($widgetColor, -30)); ?>;
         }
 
         .widget-header-content {
-            position: relative;
-            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
         .widget-header h1 {
-            font-size: 32px;
-            font-weight: 700;
+            font-size: 24px;
+            font-weight: 600;
             margin: 0;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
         }
 
         .widget-header h1::before {
             content: '📻';
-            font-size: 40px;
-            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2));
-        }
-
-        .widget-header .subtitle {
-            font-size: 16px;
-            opacity: 0.95;
-            margin-top: 8px;
-            font-weight: 300;
-            letter-spacing: 0.5px;
+            font-size: 28px;
         }
 
         .calendar-container {
-            padding: 30px;
-            background: #fafbfc;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
         #calendar {
             background: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
 
-        /* Personalización moderna de FullCalendar */
+        /* Personalización de FullCalendar */
         .fc {
             font-family: inherit;
         }
 
         .fc-toolbar {
-            padding: 15px 0;
-            margin-bottom: 20px !important;
+            padding: 0 0 20px 0 !important;
+            margin-bottom: 0 !important;
+            background: white;
         }
 
         .fc-toolbar-title {
-            font-size: 1.75em !important;
-            font-weight: 700 !important;
-            color: #1f2937;
-            text-transform: capitalize;
-        }
-
-        .fc-button {
-            background: linear-gradient(135deg, <?php echo htmlspecialchars($widgetColor); ?> 0%, <?php echo htmlspecialchars(adjustBrightness($widgetColor, -15)); ?> 100%) !important;
-            border: none !important;
-            text-transform: capitalize !important;
-            padding: 10px 18px !important;
-            border-radius: 10px !important;
+            font-size: 20px !important;
             font-weight: 600 !important;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15) !important;
-            transition: all 0.3s ease !important;
+            color: #333;
         }
 
-        .fc-button:hover {
-            transform: translateY(-2px) !important;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2) !important;
-        }
-
-        .fc-button:active {
-            transform: translateY(0) !important;
-        }
-
-        .fc-button:disabled {
-            opacity: 0.5 !important;
-            transform: none !important;
-        }
-
-        .fc-button-primary:not(:disabled).fc-button-active {
-            background: linear-gradient(135deg, <?php echo htmlspecialchars(adjustBrightness($widgetColor, -20)); ?> 0%, <?php echo htmlspecialchars(adjustBrightness($widgetColor, -35)); ?> 100%) !important;
-        }
-
-        /* Días de la semana */
+        /* Días de la semana - Solo nombres, sin fechas */
         .fc-col-header-cell {
-            background: #f8f9fa !important;
-            padding: 15px 5px !important;
-            font-weight: 700 !important;
-            text-transform: uppercase !important;
-            font-size: 11px !important;
-            letter-spacing: 1px !important;
-            color: #6b7280 !important;
-            border: none !important;
+            background: <?php echo htmlspecialchars($widgetColor); ?> !important;
+            padding: 12px 8px !important;
+            font-weight: 600 !important;
+            text-transform: capitalize !important;
+            font-size: 14px !important;
+            color: white !important;
+            border: 1px solid <?php echo htmlspecialchars(adjustBrightness($widgetColor, -10)); ?> !important;
+        }
+
+        .fc-col-header-cell-cushion {
+            color: white !important;
+            text-decoration: none !important;
         }
 
         /* Celdas de horas */
@@ -223,22 +172,18 @@ function adjustBrightness($hex, $steps) {
             font-weight: 600 !important;
         }
 
-        /* Eventos modernos */
+        /* Eventos */
         .fc-event {
             border: none !important;
-            border-radius: 8px !important;
-            padding: 6px 10px !important;
-            font-size: 13px !important;
-            font-weight: 600 !important;
+            border-radius: 4px !important;
+            padding: 4px 8px !important;
+            font-size: 12px !important;
+            font-weight: 500 !important;
             cursor: pointer !important;
-            transition: all 0.2s ease !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
         }
 
         .fc-event:hover {
-            transform: scale(1.02) !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
-            z-index: 999 !important;
+            opacity: 0.9 !important;
         }
 
         .fc-event-title {
@@ -340,7 +285,6 @@ function adjustBrightness($hex, $steps) {
         <div class="widget-header">
             <div class="widget-header-content">
                 <h1><?php echo htmlspecialchars($stationName); ?></h1>
-                <div class="subtitle">Parrilla de Programación Semanal</div>
             </div>
         </div>
 
@@ -393,15 +337,17 @@ function adjustBrightness($hex, $steps) {
                 locale: 'es',
                 timeZone: 'local',
                 headerToolbar: {
-                    left: 'prev,next today',
+                    left: '',
                     center: 'title',
-                    right: 'timeGridWeek,timeGridDay,listWeek'
+                    right: ''
                 },
-                buttonText: {
-                    today: 'Hoy',
-                    week: 'Semana',
-                    day: 'Día',
-                    list: 'Lista'
+                titleFormat: function() {
+                    return 'Programación Semanal';
+                },
+                dayHeaderFormat: { weekday: 'long' },
+                validRange: {
+                    start: '2024-01-01',
+                    end: '2024-01-08'
                 },
                 slotMinTime: '00:00:00',
                 slotMaxTime: '24:00:00',
