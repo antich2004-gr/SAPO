@@ -169,7 +169,7 @@ function htmlEsc($str) {
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: #ffffff;
+            background: linear-gradient(135deg, #fafafa 0%, #e5e5e5 100%);
             color: #1f2937;
             line-height: 1.6;
         }
@@ -181,22 +181,25 @@ function htmlEsc($str) {
         }
 
         .header {
-            background: linear-gradient(135deg, <?php echo htmlEsc($widgetColor); ?> 0%, <?php echo adjustBrightness($widgetColor, -30); ?> 100%);
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border-bottom: 3px solid #10b981;
             color: white;
             padding: 40px 30px;
             text-align: center;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
         .header h1 {
             font-size: 36px;
             font-weight: 700;
             margin-bottom: 8px;
+            color: #ffffff;
+            letter-spacing: 0.5px;
         }
 
         .header p {
             font-size: 16px;
-            opacity: 0.95;
+            color: rgba(255, 255, 255, 0.85);
         }
 
         .day-selector {
@@ -236,8 +239,8 @@ function htmlEsc($str) {
         }
 
         .day-tab.active {
-            color: <?php echo htmlEsc($widgetColor); ?>;
-            border-bottom-color: <?php echo htmlEsc($widgetColor); ?>;
+            color: #10b981;
+            border-bottom-color: #10b981;
             font-weight: 600;
         }
 
@@ -273,7 +276,7 @@ function htmlEsc($str) {
         .program-card:hover {
             transform: translateX(4px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-            border-color: <?php echo htmlEsc($widgetColor); ?>;
+            border-color: #10b981;
         }
 
         .program-card.music-block {
@@ -311,7 +314,7 @@ function htmlEsc($str) {
         }
 
         .program-time {
-            background: <?php echo htmlEsc($widgetColor); ?>;
+            background: #10b981;
             color: white;
             padding: 12px 20px;
             font-weight: 600;
@@ -380,7 +383,7 @@ function htmlEsc($str) {
         }
 
         .social-link:hover {
-            color: <?php echo htmlEsc($widgetColor); ?>;
+            color: #10b981;
         }
 
         .program-url {
@@ -389,7 +392,7 @@ function htmlEsc($str) {
 
         .program-url a {
             display: inline-block;
-            color: <?php echo htmlEsc($widgetColor); ?>;
+            color: #10b981;
             text-decoration: none;
             font-size: 14px;
             font-weight: 500;
@@ -422,12 +425,13 @@ function htmlEsc($str) {
         }
 
         .footer a {
-            color: <?php echo htmlEsc($widgetColor); ?>;
+            color: #10b981;
             text-decoration: none;
             font-weight: 600;
         }
 
         .footer a:hover {
+            color: #0ea575;
             text-decoration: underline;
         }
 
