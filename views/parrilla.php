@@ -76,22 +76,17 @@ if ($hasStationId) {
                 $widgetUrl = rtrim($baseUrl, '/') . '/parrilla_cards.php?station=' . urlencode($username);
                 ?>
 
-                <p style="color: #6b7280; margin-bottom: 20px;">
-                    Así es como se ve tu parrilla de programación cuando se embebe en tu sitio web:
-                </p>
-
-                <div style="border: 2px solid #e0e0e0; border-radius: 8px; overflow: hidden; background: #f9fafb;">
-                    <iframe src="<?php echo htmlspecialchars($widgetUrl); ?>"
-                            style="width: 100%; height: 800px; border: none; display: block;"
-                            title="Vista previa de la parrilla">
-                    </iframe>
-                </div>
-
-                <div style="margin-top: 15px; text-align: center;">
+                <div style="text-align: center; padding: 60px 20px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 12px;">
+                    <div style="font-size: 64px; margin-bottom: 20px;">📺</div>
+                    <h3 style="color: #1f2937; margin-bottom: 12px; font-size: 24px;">Vista Previa de tu Parrilla</h3>
+                    <p style="color: #6b7280; margin-bottom: 30px; font-size: 16px;">
+                        Haz clic en el botón para ver tu parrilla de programación
+                    </p>
                     <a href="<?php echo htmlspecialchars($widgetUrl); ?>"
                        target="_blank"
-                       class="btn btn-secondary">
-                        🔗 Abrir en nueva pestaña
+                       class="btn btn-primary"
+                       style="display: inline-flex; align-items: center; gap: 8px; font-size: 16px; padding: 12px 24px;">
+                        🔗 Abrir Parrilla en Nueva Pestaña
                     </a>
                 </div>
             <?php endif; ?>
