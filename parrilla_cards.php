@@ -149,11 +149,23 @@ foreach ($eventsByDay as &$dayEvents) {
     });
 }
 
-// Ordenar bloques musicales de cada día por hora de inicio
+// Ordenar y eliminar duplicados de bloques musicales de cada día
 foreach ($musicBlocksByDay as &$dayBlocks) {
     usort($dayBlocks, function($a, $b) {
         return $a['start_timestamp'] - $b['start_timestamp'];
     });
+
+    // Eliminar duplicados basados en título y hora
+    $uniqueBlocks = [];
+    $seen = [];
+    foreach ($dayBlocks as $block) {
+        $key = $block['title'] . '|' . $block['start_time'];
+        if (!isset($seen[$key])) {
+            $seen[$key] = true;
+            $uniqueBlocks[] = $block;
+        }
+    }
+    $dayBlocks = $uniqueBlocks;
 }
 
 /**
