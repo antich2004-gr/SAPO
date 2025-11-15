@@ -1,6 +1,11 @@
 <?php
 // parrilla_cards.php - Widget de parrilla estilo fichas por días
-// Similar a https://cadenaser.com/cadena-ser/programacion/
+
+// Headers de seguridad para permitir embebido
+header("X-Content-Type-Options: nosniff");
+header("X-Frame-Options: SAMEORIGIN");
+header("X-XSS-Protection: 1; mode=block");
+header("Referrer-Policy: strict-origin-when-cross-origin");
 
 require_once 'config.php';
 require_once INCLUDES_DIR . '/database.php';
