@@ -953,6 +953,9 @@ async function refreshFeedsWithProgress() {
             }
         }
 
+        // Guardar timestamp de última actualización
+        await fetch('?action=save_feeds_timestamp');
+
         // Finalizar
         finishFeedsProgress(total);
 

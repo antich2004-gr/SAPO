@@ -23,6 +23,19 @@ require_once INCLUDES_DIR . '/feed.php';
 require_once INCLUDES_DIR . '/reports.php';
 
 initSession();
+    // AJAX: Guardar timestamp de última actualización de feeds
+    if (isset($_GET['action']) && $_GET['action'] == 'save_feeds_timestamp' && isLoggedIn() && !isAdmin()) {
+        header('Content-Type: application/json');
+
+        $username = $_SESSION['username'];
+        $userData = getUserDB($username);
+        $userData['last_feeds_update'] = time();
+        saveUserDB($username, $userData);
+
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
     // AJAX: Actualizar feeds progresivamente
     if (isset($_GET['action']) && $_GET['action'] == 'refresh_feeds' && isLoggedIn()) {
         header('Content-Type: application/json');
@@ -99,14 +112,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                 // Verificar si han pasado más de 8 horas desde la última actualización de feeds
                 $redirect_url = basename($_SERVER['PHP_SELF']);
-                if (isset($_SESSION['last_feeds_update'])) {
-                    $hours_passed = (time() - $_SESSION['last_feeds_update']) / 3600;
-                    if ($hours_passed >= 8) {
+
+                // Solo verificar para usuarios no-admin
+                if (!isAdmin()) {
+                    $userData = getUserDB($username);
+                    $lastUpdate = $userData['last_feeds_update'] ?? 0;
+
+                    if ($lastUpdate > 0) {
+                        $hours_passed = (time() - $lastUpdate) / 3600;
+                        if ($hours_passed >= 8) {
+                            $redirect_url .= '?auto_refresh_feeds=1';
+                        }
+                    } else {
+                        // Primera vez: forzar actualización
                         $redirect_url .= '?auto_refresh_feeds=1';
                     }
-                } else {
-                    // Primera vez: inicializar timestamp
-                    $_SESSION['last_feeds_update'] = time();
                 }
 
                 header('Location: ' . $redirect_url);
@@ -438,7 +458,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($action == 'refresh_feeds' && isLoggedIn() && !isAdmin()) {
         $updated = refreshAllFeeds($_SESSION['username']);
         $_SESSION['feeds_updated'] = true;
-        $_SESSION['last_feeds_update'] = time(); // Guardar timestamp de última actualización
+
+        // Guardar timestamp de última actualización en la base de datos
+        $username = $_SESSION['username'];
+        $userData = getUserDB($username);
+        $userData['last_feeds_update'] = time();
+        saveUserDB($username, $userData);
+
         $message = "Se actualizaron $updated feeds correctamente";
     }
 

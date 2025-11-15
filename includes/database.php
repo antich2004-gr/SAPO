@@ -89,7 +89,8 @@ function getUserDB($username) {
 
     if (!file_exists($userFile)) {
         $initialData = [
-            'categories' => []
+            'categories' => [],
+            'last_feeds_update' => 0  // Timestamp de última actualización de feeds
         ];
         file_put_contents($userFile, json_encode($initialData, JSON_PRETTY_PRINT));
         chmod($userFile, 0640);
