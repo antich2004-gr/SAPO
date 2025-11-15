@@ -315,6 +315,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
+    // DELETE PROGRAM
+    if ($action == 'delete_program' && isLoggedIn() && !isAdmin()) {
+        $username = $_SESSION['username'];
+        $programName = $_POST['program_name'] ?? '';
+
+        if (empty($programName)) {
+            $error = 'Nombre de programa no especificado';
+        } else {
+            // Verificar que el programa existe y es de tipo 'live'
+            $programInfo = getProgramInfo($username, $programName);
+            if ($programInfo === null) {
+                $error = 'El programa no existe';
+            } elseif (($programInfo['playlist_type'] ?? '') !== 'live') {
+                $error = 'Solo se pueden eliminar programas en directo creados manualmente';
+            } else {
+                if (deleteProgram($username, $programName)) {
+                    $message = "Programa \"$programName\" eliminado correctamente";
+                    // Redirigir para limpiar la vista
+                    header('Location: ?page=parrilla&section=programs');
+                    exit;
+                } else {
+                    $error = 'Error al eliminar el programa';
+                }
+            }
+        }
+    }
+
     // SAVE PROGRAM INFO
     if ($action == 'save_program' && isLoggedIn() && !isAdmin()) {
         $username = $_SESSION['username'];
@@ -362,8 +389,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $username = $_SESSION['username'];
         $stationId = $_POST['station_id'] ?? '';
         $widgetColor = $_POST['widget_color'] ?? $_POST['widget_color_text'] ?? '#3b82f6';
+        $widgetStyle = $_POST['widget_style'] ?? 'modern';
+        $widgetFontSize = $_POST['widget_font_size'] ?? 'medium';
 
-        if (updateAzuracastConfig($username, $stationId, $widgetColor)) {
+        if (updateAzuracastConfig($username, $stationId, $widgetColor, false, '', $widgetStyle, $widgetFontSize)) {
             $message = "Configuración de AzuraCast actualizada correctamente";
         } else {
             $error = 'Error al actualizar la configuración';

@@ -220,3 +220,24 @@ function getAllProgramsWithStats($username) {
         'total' => count($programs)
     ];
 }
+
+/**
+ * Eliminar un programa
+ *
+ * @param string $username Nombre de usuario
+ * @param string $programName Nombre del programa a eliminar
+ * @return bool True si se eliminó correctamente
+ */
+function deleteProgram($username, $programName) {
+    $data = loadProgramsDB($username);
+
+    // Verificar que el programa existe
+    if (!isset($data['programs'][$programName])) {
+        return false;
+    }
+
+    // Eliminar el programa
+    unset($data['programs'][$programName]);
+
+    return saveProgramsDB($username, $data);
+}

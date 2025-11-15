@@ -28,7 +28,9 @@ if (!$user) {
 // Obtener configuración de AzuraCast
 $azConfig = getAzuracastConfig($station);
 $stationName = $user['station_name'] ?? $station;
-$widgetColor = $azConfig['widget_color'] ?? '#3b82f6';
+$widgetColor = $azConfig['widget_color'] ?? '#10b981';
+$widgetStyle = $azConfig['widget_style'] ?? 'modern';
+$widgetFontSize = $azConfig['widget_font_size'] ?? 'medium';
 $stationId = $azConfig['station_id'] ?? null;
 
 if (!$stationId) {
@@ -230,11 +232,22 @@ function htmlEsc($str) {
             box-sizing: border-box;
         }
 
+        <?php
+        // Mapear tamaños de fuente
+        $fontSizeMap = [
+            'small' => '14px',
+            'medium' => '16px',
+            'large' => '18px'
+        ];
+        $baseFontSize = $fontSizeMap[$widgetFontSize] ?? '16px';
+        ?>
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background: linear-gradient(135deg, #fafafa 0%, #e5e5e5 100%);
             color: #1f2937;
             line-height: 1.6;
+            font-size: <?php echo $baseFontSize; ?>;
         }
 
         .container {
@@ -245,7 +258,7 @@ function htmlEsc($str) {
 
         .header {
             background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            border-bottom: 3px solid #10b981;
+            border-bottom: 3px solid <?php echo htmlEsc($widgetColor); ?>;
             color: white;
             padding: 40px 30px;
             text-align: center;
@@ -302,8 +315,8 @@ function htmlEsc($str) {
         }
 
         .day-tab.active {
-            color: #10b981;
-            border-bottom-color: #10b981;
+            color: <?php echo htmlEsc($widgetColor); ?>;
+            border-bottom-color: <?php echo htmlEsc($widgetColor); ?>;
             font-weight: 600;
         }
 
@@ -326,11 +339,26 @@ function htmlEsc($str) {
 
         .program-card {
             background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
+            <?php if ($widgetStyle === 'modern'): ?>
+                border: 1px solid #e5e7eb;
+                border-radius: 12px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            <?php elseif ($widgetStyle === 'classic'): ?>
+                border: 2px solid #d1d5db;
+                border-radius: 4px;
+                box-shadow: none;
+            <?php elseif ($widgetStyle === 'compact'): ?>
+                border: 1px solid #e5e7eb;
+                border-radius: 6px;
+                box-shadow: none;
+            <?php elseif ($widgetStyle === 'minimal'): ?>
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+                border-bottom: 1px solid #f3f4f6;
+            <?php endif; ?>
             overflow: hidden;
             transition: all 0.3s ease;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
             display: flex;
             flex-direction: row;
             align-items: stretch;
@@ -339,7 +367,7 @@ function htmlEsc($str) {
         .program-card:hover {
             transform: translateX(4px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-            border-color: #10b981;
+            border-color: <?php echo htmlEsc($widgetColor); ?>;
         }
 
         .program-card.music-block {
@@ -411,7 +439,7 @@ function htmlEsc($str) {
         }
 
         .program-time {
-            background: #10b981;
+            background: <?php echo htmlEsc($widgetColor); ?>;
             color: white;
             padding: 12px 20px;
             font-weight: 600;
@@ -426,7 +454,11 @@ function htmlEsc($str) {
         }
 
         .program-body {
-            padding: 20px;
+            <?php if ($widgetStyle === 'compact'): ?>
+                padding: 12px 16px;
+            <?php else: ?>
+                padding: 20px;
+            <?php endif; ?>
             flex: 1;
         }
 
@@ -480,7 +512,7 @@ function htmlEsc($str) {
         }
 
         .social-link:hover {
-            color: #10b981;
+            color: <?php echo htmlEsc($widgetColor); ?>;
         }
 
         .program-url {
@@ -489,7 +521,7 @@ function htmlEsc($str) {
 
         .program-url a {
             display: inline-block;
-            color: #10b981;
+            color: <?php echo htmlEsc($widgetColor); ?>;
             text-decoration: none;
             font-size: 14px;
             font-weight: 500;
@@ -522,7 +554,7 @@ function htmlEsc($str) {
         }
 
         .footer a {
-            color: #10b981;
+            color: <?php echo htmlEsc($widgetColor); ?>;
             text-decoration: none;
             font-weight: 600;
         }

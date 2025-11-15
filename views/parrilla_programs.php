@@ -403,10 +403,24 @@ $creatingProgram = $_GET['create'] ?? null;
                             </div>
                         </div>
 
-                        <div>
+                        <div style="display: flex; gap: 10px;">
                             <a href="?page=parrilla&section=programs&edit=<?php echo urlencode($program['name']); ?>" class="btn btn-primary">
                                 <span class="btn-icon">✏️</span> Editar
                             </a>
+                            <?php
+                            // Mostrar botón de eliminar solo para programas creados manualmente (tipo 'live')
+                            $isManualProgram = isset($program['info']['created_at']) && ($program['info']['playlist_type'] ?? '') === 'live';
+                            if ($isManualProgram):
+                            ?>
+                                <form method="POST" style="display: inline;" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este programa en directo?');">
+                                    <input type="hidden" name="action" value="delete_program">
+                                    <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                                    <input type="hidden" name="program_name" value="<?php echo htmlEsc($program['name']); ?>">
+                                    <button type="submit" class="btn btn-danger">
+                                        <span class="btn-icon">🗑️</span> Eliminar
+                                    </button>
+                                </form>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>

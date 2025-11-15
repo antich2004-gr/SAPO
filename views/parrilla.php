@@ -118,22 +118,69 @@ if ($hasStationId) {
                     </small>
                 </div>
 
+                <h4 style="margin-top: 30px; margin-bottom: 15px; color: #374151;">🎨 Personalización del Widget</h4>
+
                 <div class="form-group">
-                    <label>Color del widget:</label>
+                    <label>Color principal de la parrilla:</label>
                     <div style="display: flex; align-items: center; gap: 15px;">
                         <input type="color"
                                name="widget_color"
                                value="<?php echo htmlEsc($widgetColor); ?>"
-                               style="width: 80px; height: 40px; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer;">
+                               style="width: 80px; height: 40px; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer;"
+                               onchange="document.querySelector('input[name=widget_color_text]').value = this.value">
                         <input type="text"
                                name="widget_color_text"
                                value="<?php echo htmlEsc($widgetColor); ?>"
                                pattern="^#[0-9A-Fa-f]{6}$"
-                               placeholder="#3b82f6"
+                               placeholder="#10b981"
                                style="width: 120px; font-family: monospace;"
                                onchange="document.querySelector('input[name=widget_color]').value = this.value">
-                        <small style="color: #6b7280;">Color para destacar el programa actual</small>
+                        <small style="color: #6b7280;">Color para headers, bordes y acentos</small>
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Estilo de las cards:</label>
+                    <select name="widget_style">
+                        <?php
+                        $currentStyle = $azConfig['widget_style'] ?? 'modern';
+                        $styles = [
+                            'modern' => '🔲 Moderno (bordes suaves, sombras)',
+                            'classic' => '📋 Clásico (bordes simples)',
+                            'compact' => '📦 Compacto (menos espaciado)',
+                            'minimal' => '⬜ Minimalista (sin bordes)'
+                        ];
+                        foreach ($styles as $value => $label):
+                            $selected = $currentStyle === $value ? 'selected' : '';
+                        ?>
+                            <option value="<?php echo htmlEsc($value); ?>" <?php echo $selected; ?>>
+                                <?php echo htmlEsc($label); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <small style="color: #6b7280;">
+                        Cambia el aspecto visual de las cards de programas
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label>Tamaño de fuente:</label>
+                    <select name="widget_font_size">
+                        <?php
+                        $currentFontSize = $azConfig['widget_font_size'] ?? 'medium';
+                        $fontSizes = [
+                            'small' => 'Pequeño',
+                            'medium' => 'Mediano (recomendado)',
+                            'large' => 'Grande'
+                        ];
+                        foreach ($fontSizes as $value => $label):
+                            $selected = $currentFontSize === $value ? 'selected' : '';
+                        ?>
+                            <option value="<?php echo htmlEsc($value); ?>" <?php echo $selected; ?>>
+                                <?php echo htmlEsc($label); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
 
                 <button type="submit" class="btn btn-success">
