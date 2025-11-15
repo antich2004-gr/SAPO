@@ -10,7 +10,8 @@ $section = $_GET['section'] ?? 'preview';
 
 // Generar URL del widget
 $widgetUrl = '';
-if ($stationId) {
+$hasStationId = !empty($stationId) && $stationId !== '';
+if ($hasStationId) {
     $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'];
     $baseUrl = $protocol . '://' . $host . dirname($_SERVER['PHP_SELF']);
@@ -61,7 +62,7 @@ if ($stationId) {
         <div class="section">
             <h3>Vista Previa de tu Parrilla</h3>
 
-            <?php if (!$stationId): ?>
+            <?php if (!$hasStationId): ?>
                 <div class="alert alert-warning">
                     ⚠️ Primero debes configurar el <strong>Station ID de AzuraCast</strong> en la pestaña
                     <a href="?page=parrilla&section=config" style="color: #3b82f6; text-decoration: underline;">Configuración</a>
@@ -90,7 +91,7 @@ if ($stationId) {
 
     <?php elseif ($section === 'programs'): ?>
         <!-- GESTIÓN DE PROGRAMAS -->
-        <?php include 'views/parrilla_programs.php'; ?>
+        <?php require_once 'views/parrilla_programs.php'; ?>
 
     <?php elseif ($section === 'config'): ?>
         <!-- CONFIGURACIÓN -->
@@ -138,7 +139,7 @@ if ($stationId) {
             </form>
         </div>
 
-        <?php if ($stationId): ?>
+        <?php if ($hasStationId): ?>
         <div class="section" style="background: #f0f9ff; border: 1px solid #bae6fd;">
             <h3>🧪 Probar Conexión</h3>
             <p style="color: #0c4a6e; margin-bottom: 15px;">
@@ -155,7 +156,7 @@ if ($stationId) {
         <div class="section">
             <h3>Código para Embedar en tu Web</h3>
 
-            <?php if (!$stationId): ?>
+            <?php if (!$hasStationId): ?>
                 <div class="alert alert-warning">
                     ⚠️ Primero debes configurar el <strong>Station ID de AzuraCast</strong> en la pestaña
                     <a href="?page=parrilla&section=config" style="color: #3b82f6; text-decoration: underline;">Configuración</a>
