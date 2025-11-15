@@ -214,16 +214,35 @@ function adjustBrightness($hex, $steps) {
             display: none !important;
         }
 
-        /* Línea actual NOW - más discreta */
-        .fc-timegrid-now-indicator-line {
-            border-color: <?php echo htmlspecialchars($widgetColor); ?> !important;
-            border-width: 2px !important;
-            opacity: 0.6;
+        /* Programa EN VIVO - destacar con fondo y borde */
+        .fc-event.fc-event-now {
+            background: <?php echo htmlspecialchars($widgetColor); ?> !important;
+            color: white !important;
+            border-left-width: 6px !important;
+            font-weight: 600 !important;
+            box-shadow: 0 0 0 3px rgba(<?php
+                // Convertir hex a rgba
+                $hex = str_replace('#', '', $widgetColor);
+                $r = hexdec(substr($hex, 0, 2));
+                $g = hexdec(substr($hex, 2, 2));
+                $b = hexdec(substr($hex, 4, 2));
+                echo "$r, $g, $b";
+            ?>, 0.2) !important;
         }
 
-        .fc-timegrid-now-indicator-arrow {
-            border-color: <?php echo htmlspecialchars($widgetColor); ?> !important;
-            border-width: 6px !important;
+        .fc-event.fc-event-now .fc-event-title {
+            color: white !important;
+            font-weight: 600 !important;
+        }
+
+        .fc-event.fc-event-now::before {
+            content: '🔴 EN VIVO';
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+            opacity: 0.95;
         }
 
         /* Ajustes para look tipo tabla */
@@ -370,7 +389,7 @@ function adjustBrightness($hex, $steps) {
                 height: 'auto',
                 expandRows: true,
                 slotEventOverlap: false,
-                nowIndicator: true,
+                nowIndicator: false,  // Ocultar línea NOW
                 eventTimeFormat: {
                     hour: '2-digit',
                     minute: '2-digit',
@@ -403,6 +422,15 @@ function adjustBrightness($hex, $steps) {
                         tooltip += ' (' + info.event.extendedProps.playlist + ')';
                     }
                     info.el.setAttribute('title', tooltip);
+
+                    // Marcar evento actual (EN VIVO)
+                    var now = new Date();
+                    var eventStart = info.event.start;
+                    var eventEnd = info.event.end;
+
+                    if (eventStart && eventEnd && now >= eventStart && now < eventEnd) {
+                        info.el.classList.add('fc-event-now');
+                    }
                 }
             });
 
