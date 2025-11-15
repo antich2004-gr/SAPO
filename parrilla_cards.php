@@ -294,6 +294,40 @@ function htmlEsc($str) {
             opacity: 1;
         }
 
+        /* Emisiones en directo - estilo destacado */
+        .program-card.live-broadcast {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px solid #f59e0b;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+            position: relative;
+        }
+
+        .program-card.live-broadcast:hover {
+            transform: translateX(4px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+            border-color: #d97706;
+        }
+
+        .program-card.live-broadcast .program-time {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .program-card.live-broadcast::after {
+            content: "🔴 EN DIRECTO";
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #dc2626;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
         .program-image {
             width: 140px;
             min-width: 140px;
@@ -539,14 +573,22 @@ function htmlEsc($str) {
                                 $isLive = ($now >= $todayStart && $now < $todayEnd);
                             }
                             ?>
-                            <div class="program-card <?php echo $event['playlist_type'] === 'music_block' ? 'music-block' : ''; ?> <?php echo $isLive ? 'live' : ''; ?>">
+                            <div class="program-card <?php echo $event['playlist_type'] === 'live' ? 'live-broadcast' : ''; ?> <?php echo $isLive ? 'live' : ''; ?>">
                                 <div class="program-image">
                                     <?php if (!empty($event['image'])): ?>
                                         <img src="<?php echo htmlEsc($event['image']); ?>"
                                              alt="<?php echo htmlEsc($event['title']); ?>"
                                              onerror="this.parentElement.innerHTML='📻';">
                                     <?php else: ?>
-                                        <?php echo $event['playlist_type'] === 'music_block' ? '🎵' : '📻'; ?>
+                                        <?php
+                                        if ($event['playlist_type'] === 'live') {
+                                            echo '🔴';
+                                        } elseif ($event['playlist_type'] === 'music_block') {
+                                            echo '🎵';
+                                        } else {
+                                            echo '📻';
+                                        }
+                                        ?>
                                     <?php endif; ?>
                                 </div>
 

@@ -58,8 +58,9 @@ $editingProgram = $_GET['edit'] ?? null;
                             <?php
                             $playlistTypes = [
                                 'program' => '📻 Programa (se muestra en la parrilla)',
-                                'music_block' => '🎵 Bloque Musical (se muestra atenuado)',
-                                'jingles' => '🔊 Jingles/Cortinillas (no se muestra)'
+                                'live' => '🔴 Emisión en Directo (destacado especial)',
+                                'music_block' => '🎵 Bloque Musical (oculto)',
+                                'jingles' => '🔊 Jingles/Cortinillas (oculto)'
                             ];
                             $currentType = $programInfo['playlist_type'] ?? 'program';
                             foreach ($playlistTypes as $value => $label):
@@ -71,9 +72,10 @@ $editingProgram = $_GET['edit'] ?? null;
                             <?php endforeach; ?>
                         </select>
                         <small style="color: #6b7280;">
-                            • <strong>Programa</strong>: Contenido producido (tu programa de radio)<br>
-                            • <strong>Bloque Musical</strong>: Música automatizada entre programas<br>
-                            • <strong>Jingles/Cortinillas</strong>: Efectos de audio, separadores (no se mostrarán)
+                            • <strong>Programa</strong>: Contenido producido (repeticiones, podcast)<br>
+                            • <strong>Emisión en Directo</strong>: Programas en vivo, destacados con estilo especial<br>
+                            • <strong>Bloque Musical</strong>: Música automatizada (se oculta de la parrilla)<br>
+                            • <strong>Jingles/Cortinillas</strong>: Efectos de audio (se ocultan de la parrilla)
                         </small>
                     </div>
 
