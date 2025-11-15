@@ -137,8 +137,8 @@ require_once INCLUDES_DIR . '/azuracast.php';
                 echo '</details>';
 
                 // Formatear para FullCalendar
-                $formattedEvents = formatEventsForCalendar($schedule, $azConfig['widget_color'] ?? '#3b82f6');
-                echo '<details><summary>Ver eventos formateados para FullCalendar</summary>';
+                $formattedEvents = formatEventsForCalendar($schedule, $azConfig['widget_color'] ?? '#3b82f6', $username);
+                echo '<details><summary>Ver eventos formateados para FullCalendar (con info de SAPO si está disponible)</summary>';
                 echo '<pre>' . json_encode($formattedEvents, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . '</pre>';
                 echo '</details>';
             }
