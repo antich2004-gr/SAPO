@@ -18,6 +18,7 @@ require_once INCLUDES_DIR . '/database.php';
 require_once INCLUDES_DIR . '/auth.php';
 require_once INCLUDES_DIR . '/utils.php';
 require_once INCLUDES_DIR . '/categories.php';
+require_once INCLUDES_DIR . '/programs.php';
 require_once INCLUDES_DIR . '/podcasts.php';
 require_once INCLUDES_DIR . '/feed.php';
 require_once INCLUDES_DIR . '/reports.php';
@@ -227,7 +228,46 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         }
     }
-    
+
+    // SYNC PROGRAMS FROM AZURACAST
+    if ($action == 'sync_programs' && isLoggedIn() && !isAdmin()) {
+        $username = $_SESSION['username'];
+        $result = syncProgramsFromAzuracast($username);
+
+        if ($result['success']) {
+            $message = $result['message'] . " (Total: {$result['total_count']})";
+        } else {
+            $error = $result['message'];
+        }
+    }
+
+    // SAVE PROGRAM INFO
+    if ($action == 'save_program' && isLoggedIn() && !isAdmin()) {
+        $username = $_SESSION['username'];
+        $programName = $_POST['program_name'] ?? '';
+
+        if (empty($programName)) {
+            $error = 'Nombre de programa no especificado';
+        } else {
+            $programInfo = [
+                'short_description' => trim($_POST['short_description'] ?? ''),
+                'long_description' => trim($_POST['long_description'] ?? ''),
+                'type' => trim($_POST['type'] ?? ''),
+                'url' => trim($_POST['url'] ?? ''),
+                'image' => trim($_POST['image'] ?? ''),
+                'presenters' => trim($_POST['presenters'] ?? ''),
+                'social_twitter' => trim($_POST['social_twitter'] ?? ''),
+                'social_instagram' => trim($_POST['social_instagram'] ?? '')
+            ];
+
+            if (saveProgramInfo($username, $programName, $programInfo)) {
+                $message = "Información del programa guardada correctamente";
+            } else {
+                $error = 'Error al guardar la información del programa';
+            }
+        }
+    }
+
     // IMPORT SERVERLIST
     if ($action == 'import_serverlist' && isLoggedIn() && !isAdmin()) {
         if (isset($_FILES['serverlist_file']) && $_FILES['serverlist_file']['error'] == 0) {

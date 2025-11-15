@@ -104,11 +104,19 @@ function getAzuracastConfig($username) {
  *
  * @param array $events Eventos desde la API de AzuraCast
  * @param string $color Color para los eventos
+ * @param string $username Nombre de usuario (para obtener info adicional de SAPO)
  * @return array Eventos formateados para FullCalendar
  */
-function formatEventsForCalendar($events, $color = '#3b82f6') {
+function formatEventsForCalendar($events, $color = '#3b82f6', $username = null) {
     if (!is_array($events)) {
         return [];
+    }
+
+    // Cargar información adicional de programas desde SAPO si se proporciona username
+    $programsData = [];
+    if ($username !== null && function_exists('loadProgramsDB')) {
+        $programsDB = loadProgramsDB($username);
+        $programsData = $programsDB['programs'] ?? [];
     }
 
     $formattedEvents = [];
@@ -152,13 +160,33 @@ function formatEventsForCalendar($events, $color = '#3b82f6') {
 
         $endTime = $endDateTime->format('H:i:s');
 
-        // Parsear descripción (formato: descripción;temática;url)
-        $rawDescription = $event['description'] ?? '';
-        $descriptionParts = explode(';', $rawDescription);
+        // Intentar obtener información adicional de SAPO primero
+        $programInfo = $programsData[$title] ?? null;
 
-        $programDescription = trim($descriptionParts[0] ?? '');
-        $programType = trim($descriptionParts[1] ?? '');
-        $programUrl = trim($descriptionParts[2] ?? '');
+        if ($programInfo) {
+            // Usar información de SAPO (prioritaria)
+            $programDescription = $programInfo['short_description'] ?? '';
+            $programLongDescription = $programInfo['long_description'] ?? '';
+            $programType = $programInfo['type'] ?? '';
+            $programUrl = $programInfo['url'] ?? '';
+            $programImage = $programInfo['image'] ?? '';
+            $programPresenters = $programInfo['presenters'] ?? '';
+            $programTwitter = $programInfo['social_twitter'] ?? '';
+            $programInstagram = $programInfo['social_instagram'] ?? '';
+        } else {
+            // Fallback: parsear descripción de AzuraCast (formato: descripción;temática;url)
+            $rawDescription = $event['description'] ?? '';
+            $descriptionParts = explode(';', $rawDescription);
+
+            $programDescription = trim($descriptionParts[0] ?? '');
+            $programLongDescription = '';
+            $programType = trim($descriptionParts[1] ?? '');
+            $programUrl = trim($descriptionParts[2] ?? '');
+            $programImage = '';
+            $programPresenters = '';
+            $programTwitter = '';
+            $programInstagram = '';
+        }
 
         // Crear evento recurrente semanal usando daysOfWeek
         $formattedEvents[] = [
@@ -172,8 +200,13 @@ function formatEventsForCalendar($events, $color = '#3b82f6') {
                 'type' => $event['type'] ?? 'playlist',
                 'playlist' => $event['playlist'] ?? '',
                 'description' => $programDescription,
+                'longDescription' => $programLongDescription,
                 'programType' => $programType,
-                'programUrl' => $programUrl
+                'programUrl' => $programUrl,
+                'programImage' => $programImage,
+                'presenters' => $programPresenters,
+                'twitter' => $programTwitter,
+                'instagram' => $programInstagram
             ]
         ];
     }

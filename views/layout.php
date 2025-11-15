@@ -69,6 +69,8 @@
 
     <?php if (isset($_GET['page']) && $_GET['page'] == 'help'): ?>
         <?php require_once 'views/help.php'; ?>
+    <?php elseif (isset($_GET['page']) && $_GET['page'] == 'programs' && isLoggedIn() && !isAdmin()): ?>
+        <?php require_once 'views/programs.php'; ?>
     <?php elseif (!isLoggedIn()): ?>
         <?php require_once 'views/login.php'; ?>
     <?php elseif (isAdmin()): ?>

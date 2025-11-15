@@ -36,8 +36,8 @@ if ($schedule === false) {
     $error = 'No se pudo obtener la programación';
 }
 
-// Formatear eventos para FullCalendar
-$events = formatEventsForCalendar($schedule, $widgetColor);
+// Formatear eventos para FullCalendar (con información adicional de SAPO)
+$events = formatEventsForCalendar($schedule, $widgetColor, $station);
 
 // Debug: registrar en error log
 error_log("Parrilla Widget - Station: $station, Events: " . count($events));
