@@ -32,11 +32,16 @@ if ($hasStationId) {
 
     <!-- Navegación por pestañas -->
     <div style="border-bottom: 2px solid #e0e0e0; margin-bottom: 20px;">
-        <div style="display: flex; gap: 0;">
+        <div style="display: flex; gap: 0; flex-wrap: wrap;">
             <a href="?page=parrilla&section=preview"
                class="<?php echo $section === 'preview' ? 'tab-active' : 'tab-inactive'; ?>"
                style="padding: 12px 24px; text-decoration: none; border-bottom: 3px solid <?php echo $section === 'preview' ? $widgetColor : 'transparent'; ?>; color: <?php echo $section === 'preview' ? $widgetColor : '#6b7280'; ?>; font-weight: <?php echo $section === 'preview' ? '600' : '400'; ?>; transition: all 0.2s;">
-                👁️ Vista Previa
+                📅 Vista Parrilla
+            </a>
+            <a href="?page=parrilla&section=cards"
+               class="<?php echo $section === 'cards' ? 'tab-active' : 'tab-inactive'; ?>"
+               style="padding: 12px 24px; text-decoration: none; border-bottom: 3px solid <?php echo $section === 'cards' ? $widgetColor : 'transparent'; ?>; color: <?php echo $section === 'cards' ? $widgetColor : '#6b7280'; ?>; font-weight: <?php echo $section === 'cards' ? '600' : '400'; ?>; transition: all 0.2s;">
+                🎴 Vista Fichas
             </a>
             <a href="?page=parrilla&section=programs"
                class="<?php echo $section === 'programs' ? 'tab-active' : 'tab-inactive'; ?>"
@@ -81,6 +86,46 @@ if ($hasStationId) {
 
                 <div style="margin-top: 15px; text-align: center;">
                     <a href="<?php echo htmlspecialchars($widgetUrl); ?>"
+                       target="_blank"
+                       class="btn btn-secondary">
+                        🔗 Abrir en nueva pestaña
+                    </a>
+                </div>
+            <?php endif; ?>
+        </div>
+
+    <?php elseif ($section === 'cards'): ?>
+        <!-- VISTA DE FICHAS -->
+        <div class="section">
+            <h3>Vista de Fichas por Días</h3>
+
+            <?php if (!$hasStationId): ?>
+                <div class="alert alert-warning">
+                    ⚠️ Primero debes configurar el <strong>Station ID de AzuraCast</strong> en la pestaña
+                    <a href="?page=parrilla&section=config" style="color: #3b82f6; text-decoration: underline;">Configuración</a>
+                </div>
+            <?php else: ?>
+                <p style="color: #6b7280; margin-bottom: 20px;">
+                    Vista de programación con fichas organizadas por días de la semana, similar a Cadena SER:
+                </p>
+
+                <?php
+                // Generar URL del widget de fichas
+                $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                $host = $_SERVER['HTTP_HOST'];
+                $baseUrl = $protocol . '://' . $host . dirname($_SERVER['PHP_SELF']);
+                $cardsUrl = rtrim($baseUrl, '/') . '/parrilla_cards.php?station=' . urlencode($username);
+                ?>
+
+                <div style="border: 2px solid #e0e0e0; border-radius: 8px; overflow: hidden; background: #f9fafb;">
+                    <iframe src="<?php echo htmlspecialchars($cardsUrl); ?>"
+                            style="width: 100%; height: 800px; border: none; display: block;"
+                            title="Vista de fichas de programación">
+                    </iframe>
+                </div>
+
+                <div style="margin-top: 15px; text-align: center;">
+                    <a href="<?php echo htmlspecialchars($cardsUrl); ?>"
                        target="_blank"
                        class="btn btn-secondary">
                         🔗 Abrir en nueva pestaña
@@ -162,16 +207,26 @@ if ($hasStationId) {
                     <a href="?page=parrilla&section=config" style="color: #3b82f6; text-decoration: underline;">Configuración</a>
                 </div>
             <?php else: ?>
+                <?php
+                // Generar URL del widget de fichas
+                $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                $host = $_SERVER['HTTP_HOST'];
+                $baseUrl = $protocol . '://' . $host . dirname($_SERVER['PHP_SELF']);
+                $cardsUrl = rtrim($baseUrl, '/') . '/parrilla_cards.php?station=' . urlencode($username);
+                ?>
+
                 <p style="color: #6b7280; margin-bottom: 20px;">
-                    Copia este código HTML e insértalo en tu sitio web donde quieras mostrar la parrilla:
+                    Tienes dos opciones de visualización para embedar en tu sitio web:
                 </p>
 
-                <div style="background: #1f2937; color: #e5e7eb; padding: 20px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 13px; overflow-x: auto; position: relative;">
-                    <button onclick="copyEmbedCode()"
+                <!-- Vista Parrilla (FullCalendar) -->
+                <h4 style="color: #1f2937; margin-bottom: 15px;">📅 Vista Parrilla (Calendario Semanal)</h4>
+                <div style="background: #1f2937; color: #e5e7eb; padding: 20px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 13px; overflow-x: auto; position: relative; margin-bottom: 30px;">
+                    <button onclick="copyEmbedCodeGrid()"
                             style="position: absolute; top: 10px; right: 10px; background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
                         📋 Copiar
                     </button>
-                    <pre id="embed-code" style="margin: 0; color: #e5e7eb; white-space: pre-wrap; word-wrap: break-word;">&lt;!-- Parrilla de Programación - <?php echo htmlEsc($_SESSION['station_name']); ?> --&gt;
+                    <pre id="embed-code-grid" style="margin: 0; color: #e5e7eb; white-space: pre-wrap; word-wrap: break-word;">&lt;!-- Parrilla de Programación (Vista Parrilla) - <?php echo htmlEsc($_SESSION['station_name']); ?> --&gt;
 &lt;iframe src="<?php echo htmlspecialchars($widgetUrl); ?>"
         width="100%"
         height="800"
@@ -181,11 +236,37 @@ if ($hasStationId) {
 &lt;/iframe&gt;</pre>
                 </div>
 
+                <!-- Vista Fichas (Cards) -->
+                <h4 style="color: #1f2937; margin-bottom: 15px; margin-top: 30px;">🎴 Vista Fichas (Estilo Cadena SER)</h4>
+                <div style="background: #1f2937; color: #e5e7eb; padding: 20px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 13px; overflow-x: auto; position: relative; margin-bottom: 30px;">
+                    <button onclick="copyEmbedCodeCards()"
+                            style="position: absolute; top: 10px; right: 10px; background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                        📋 Copiar
+                    </button>
+                    <pre id="embed-code-cards" style="margin: 0; color: #e5e7eb; white-space: pre-wrap; word-wrap: break-word;">&lt;!-- Parrilla de Programación (Vista Fichas) - <?php echo htmlEsc($_SESSION['station_name']); ?> --&gt;
+&lt;iframe src="<?php echo htmlspecialchars($cardsUrl); ?>"
+        width="100%"
+        height="800"
+        frameborder="0"
+        style="border: none; border-radius: 8px;"
+        title="Programación por Días"&gt;
+&lt;/iframe&gt;</pre>
+                </div>
+
                 <script>
-                function copyEmbedCode() {
-                    const code = document.getElementById('embed-code').textContent;
+                function copyEmbedCodeGrid() {
+                    const code = document.getElementById('embed-code-grid').textContent;
                     navigator.clipboard.writeText(code).then(function() {
-                        alert('✅ Código copiado al portapapeles');
+                        alert('✅ Código de Vista Parrilla copiado al portapapeles');
+                    }, function() {
+                        alert('❌ Error al copiar el código');
+                    });
+                }
+
+                function copyEmbedCodeCards() {
+                    const code = document.getElementById('embed-code-cards').textContent;
+                    navigator.clipboard.writeText(code).then(function() {
+                        alert('✅ Código de Vista Fichas copiado al portapapeles');
                     }, function() {
                         alert('❌ Error al copiar el código');
                     });
@@ -196,14 +277,17 @@ if ($hasStationId) {
                     <h4 style="margin: 0 0 10px 0; color: #166534;">✅ Personalización</h4>
                     <p style="margin: 0; color: #166534; font-size: 14px;">
                         Puedes ajustar el <code>height</code> (altura) del iframe según el espacio disponible en tu web.<br>
-                        Recomendado: entre 600 y 1000 píxeles.
+                        <strong>Vista Parrilla:</strong> Recomendado 600-1000 píxeles.<br>
+                        <strong>Vista Fichas:</strong> Recomendado 800-1200 píxeles.
                     </p>
                 </div>
 
                 <div style="margin-top: 15px; background: #fffbeb; border: 1px solid #fde68a; padding: 15px; border-radius: 8px;">
                     <h4 style="margin: 0 0 10px 0; color: #92400e;">💡 Consejo</h4>
                     <p style="margin: 0; color: #92400e; font-size: 14px;">
-                        La parrilla se actualiza automáticamente con los cambios que hagas en AzuraCast y en la gestión de programas de SAPO.
+                        Ambas vistas se actualizan automáticamente con los cambios que hagas en AzuraCast y en la gestión de programas de SAPO.<br>
+                        <strong>Vista Parrilla:</strong> Ideal para ver toda la semana de un vistazo.<br>
+                        <strong>Vista Fichas:</strong> Ideal para detalles de cada programa con imágenes y descripciones.
                     </p>
                 </div>
             <?php endif; ?>
