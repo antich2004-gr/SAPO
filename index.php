@@ -268,6 +268,44 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
+    // CREATE PROGRAM
+    if ($action == 'create_program' && isLoggedIn() && !isAdmin()) {
+        $username = $_SESSION['username'];
+        $programName = trim($_POST['program_name'] ?? '');
+
+        if (empty($programName)) {
+            $error = 'El nombre del programa es requerido';
+        } else {
+            // Verificar que el programa no exista ya
+            $existingProgram = getProgramInfo($username, $programName);
+            if ($existingProgram !== null) {
+                $error = 'Ya existe un programa con ese nombre';
+            } else {
+                $programInfo = [
+                    'playlist_type' => trim($_POST['playlist_type'] ?? 'live'),
+                    'short_description' => trim($_POST['short_description'] ?? ''),
+                    'long_description' => trim($_POST['long_description'] ?? ''),
+                    'type' => trim($_POST['type'] ?? ''),
+                    'url' => trim($_POST['url'] ?? ''),
+                    'image' => trim($_POST['image'] ?? ''),
+                    'presenters' => trim($_POST['presenters'] ?? ''),
+                    'social_twitter' => trim($_POST['social_twitter'] ?? ''),
+                    'social_instagram' => trim($_POST['social_instagram'] ?? ''),
+                    'created_at' => date('Y-m-d H:i:s')
+                ];
+
+                if (saveProgramInfo($username, $programName, $programInfo)) {
+                    $message = "Programa \"$programName\" creado correctamente";
+                    // Redirigir para que no se quede en modo creación
+                    header('Location: ?page=parrilla&section=programs');
+                    exit;
+                } else {
+                    $error = 'Error al crear el programa';
+                }
+            }
+        }
+    }
+
     // SAVE PROGRAM INFO
     if ($action == 'save_program' && isLoggedIn() && !isAdmin()) {
         $username = $_SESSION['username'];

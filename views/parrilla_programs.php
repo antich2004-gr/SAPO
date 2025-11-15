@@ -3,18 +3,24 @@
 
 $programsData = getAllProgramsWithStats($username);
 $editingProgram = $_GET['edit'] ?? null;
+$creatingProgram = $_GET['create'] ?? null;
 ?>
 
 <div class="section">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h3 style="margin: 0;">Gestión de Programas</h3>
-        <form method="POST" style="display: inline;">
-            <input type="hidden" name="action" value="sync_programs">
-            <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-            <button type="submit" class="btn btn-primary">
-                <span class="btn-icon">🔄</span> Sincronizar con AzuraCast
-            </button>
-        </form>
+        <div style="display: flex; gap: 10px;">
+            <a href="?page=parrilla&section=programs&create=1" class="btn btn-success">
+                <span class="btn-icon">➕</span> Crear Programa
+            </a>
+            <form method="POST" style="display: inline;">
+                <input type="hidden" name="action" value="sync_programs">
+                <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                <button type="submit" class="btn btn-primary">
+                    <span class="btn-icon">🔄</span> Sincronizar con AzuraCast
+                </button>
+            </form>
+        </div>
     </div>
 
     <?php if ($programsData['last_sync']): ?>
@@ -25,6 +31,121 @@ $editingProgram = $_GET['edit'] ?? null;
             <p style="margin: 5px 0 0 0; color: #4a5568; font-size: 14px;">
                 <strong>Total de programas:</strong> <?php echo $programsData['total']; ?>
             </p>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($creatingProgram !== null): ?>
+        <!-- Formulario de creación de programa -->
+        <div class="section" style="background: #f0fdf4; border: 2px solid #10b981;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0;">➕ Crear Nuevo Programa</h3>
+                <a href="?page=parrilla&section=programs" class="btn btn-secondary">❌ Cancelar</a>
+            </div>
+
+            <form method="POST">
+                <input type="hidden" name="action" value="create_program">
+                <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+
+                <div class="form-group">
+                    <label>Nombre del programa: <small>(requerido)</small></label>
+                    <input type="text" name="program_name" required
+                           placeholder="Mi Programa en Directo"
+                           maxlength="200">
+                    <small style="color: #6b7280;">
+                        Este nombre se mostrará en la parrilla de programación
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label>Tipo de lista de reproducción: <small>(importante para la parrilla)</small></label>
+                    <select name="playlist_type" required>
+                        <?php
+                        $playlistTypes = [
+                            'live' => '🔴 Emisión en Directo (destacado especial)',
+                            'program' => '📻 Programa (se muestra en la parrilla)',
+                            'music_block' => '🎵 Bloque Musical (oculto)',
+                            'jingles' => '🔊 Jingles/Cortinillas (oculto)'
+                        ];
+                        foreach ($playlistTypes as $value => $label):
+                        ?>
+                            <option value="<?php echo htmlEsc($value); ?>">
+                                <?php echo htmlEsc($label); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <small style="color: #6b7280;">
+                        • <strong>Emisión en Directo</strong>: Programas en vivo, destacados con estilo especial<br>
+                        • <strong>Programa</strong>: Contenido producido (repeticiones, podcast)<br>
+                        • <strong>Bloque Musical</strong>: Música automatizada (se oculta de la parrilla)<br>
+                        • <strong>Jingles/Cortinillas</strong>: Efectos de audio (se ocultan de la parrilla)
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label>Descripción corta: <small>(para cards y previews)</small></label>
+                    <input type="text" name="short_description"
+                           placeholder="Programa de música alternativa de los 90"
+                           maxlength="200">
+                </div>
+
+                <div class="form-group">
+                    <label>Descripción larga: <small>(para página de detalle)</small></label>
+                    <textarea name="long_description" rows="4"
+                              placeholder="Descripción detallada del programa, presentadores, temáticas, etc."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Temática:</label>
+                    <select name="type">
+                        <option value="">-- Sin especificar --</option>
+                        <?php
+                        $types = ['Musical', 'Informativo', 'Cultural', 'Deportivo', 'Entretenimiento', 'Educativo', 'Político', 'Magazine', 'Tertulia', 'Otro'];
+                        foreach ($types as $type):
+                        ?>
+                            <option value="<?php echo htmlEsc($type); ?>">
+                                <?php echo htmlEsc($type); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>URL del programa: <small>(web con más información)</small></label>
+                    <input type="url" name="url"
+                           placeholder="https://turadio.com/programas/alternativa">
+                </div>
+
+                <div class="form-group">
+                    <label>URL de imagen: <small>(logo o portada del programa)</small></label>
+                    <input type="url" name="image"
+                           placeholder="https://turadio.com/img/programas/alternativa.jpg">
+                </div>
+
+                <div class="form-group">
+                    <label>Presentadores: <small>(separados por comas)</small></label>
+                    <input type="text" name="presenters"
+                           placeholder="Ana García, Carlos Ruiz">
+                </div>
+
+                <div class="form-group">
+                    <label>Twitter: <small>(sin @)</small></label>
+                    <input type="text" name="social_twitter"
+                           placeholder="alternativa90">
+                </div>
+
+                <div class="form-group">
+                    <label>Instagram: <small>(sin @)</small></label>
+                    <input type="text" name="social_instagram"
+                           placeholder="alternativa90">
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-success">
+                        <span class="btn-icon">💾</span> Crear Programa
+                    </button>
+                    <a href="?page=parrilla&section=programs" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
         </div>
     <?php endif; ?>
 
