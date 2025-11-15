@@ -38,6 +38,9 @@ if ($schedule === false) {
 
 // Formatear eventos para FullCalendar
 $events = formatEventsForCalendar($schedule, $widgetColor);
+
+// Debug: registrar en error log
+error_log("Parrilla Widget - Station: $station, Events: " . count($events));
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -224,6 +227,24 @@ $events = formatEventsForCalendar($schedule, $widgetColor);
 
         <div class="calendar-container">
             <div id="calendar"></div>
+
+            <?php if (isset($_GET['debug'])): ?>
+                <div style="margin-top: 20px; padding: 15px; background: #f3f4f6; border-radius: 8px;">
+                    <h3>🐛 Modo Debug</h3>
+                    <p><strong>Station:</strong> <?php echo htmlspecialchars($station); ?></p>
+                    <p><strong>Station ID:</strong> <?php echo htmlspecialchars($stationId ?? 'N/A'); ?></p>
+                    <p><strong>Color:</strong> <span style="background: <?php echo htmlspecialchars($widgetColor); ?>; padding: 2px 10px; color: white; border-radius: 3px;"><?php echo htmlspecialchars($widgetColor); ?></span></p>
+                    <p><strong>Total eventos:</strong> <?php echo count($events); ?></p>
+                    <details>
+                        <summary>Ver datos crudos de programación</summary>
+                        <pre style="background: #1f2937; color: #e5e7eb; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 11px;"><?php echo json_encode($schedule, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE); ?></pre>
+                    </details>
+                    <details>
+                        <summary>Ver eventos formateados</summary>
+                        <pre style="background: #1f2937; color: #e5e7eb; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 11px;"><?php echo json_encode($events, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE); ?></pre>
+                    </details>
+                </div>
+            <?php endif; ?>
         </div>
 
         <div class="powered-by">
@@ -237,7 +258,14 @@ $events = formatEventsForCalendar($schedule, $widgetColor);
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Inicializando calendario...');
+
             var calendarEl = document.getElementById('calendar');
+            console.log('Elemento calendario:', calendarEl);
+
+            var events = <?php echo json_encode($events); ?>;
+            console.log('Eventos cargados:', events);
+            console.log('Total eventos:', events.length);
 
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'timeGridWeek',
@@ -265,7 +293,7 @@ $events = formatEventsForCalendar($schedule, $widgetColor);
                     minute: '2-digit',
                     hour12: false
                 },
-                events: <?php echo json_encode($events); ?>,
+                events: events,
                 eventClick: function(info) {
                     // Mostrar información del evento
                     var props = info.event.extendedProps;
@@ -292,7 +320,13 @@ $events = formatEventsForCalendar($schedule, $widgetColor);
                 }
             });
 
-            calendar.render();
+            try {
+                calendar.render();
+                console.log('Calendario renderizado correctamente');
+            } catch (error) {
+                console.error('Error al renderizar calendario:', error);
+                document.getElementById('calendar').innerHTML = '<div class="error-message">Error al cargar el calendario: ' + error.message + '</div>';
+            }
         });
     </script>
 </body>
