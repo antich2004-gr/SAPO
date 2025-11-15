@@ -78,47 +78,62 @@ function adjustBrightness($hex, $steps) {
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #fafafa;
             padding: 0;
             margin: 0;
+            color: #1f2937;
         }
 
         .widget-container {
             max-width: 100%;
             margin: 0;
-            background: #ffffff;
+            background: #fafafa;
             min-height: 100vh;
         }
 
         .widget-header {
-            background: #ffffff;
-            color: #333;
-            padding: 30px 40px 20px 40px;
-            border-bottom: 1px solid #e0e0e0;
+            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+            color: #1f2937;
+            padding: 32px 40px 24px 40px;
+            border-bottom: 2px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         .widget-header-content {
             max-width: 1400px;
             margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
         .widget-header h1 {
-            font-size: 28px;
-            font-weight: 600;
+            font-size: 32px;
+            font-weight: 700;
             margin: 0;
-            color: #222;
-            letter-spacing: -0.5px;
+            color: #111827;
+            letter-spacing: -0.8px;
+            line-height: 1.2;
+        }
+
+        .widget-header h1::before {
+            content: "📻";
+            margin-right: 12px;
+            font-size: 28px;
         }
 
         .calendar-container {
-            padding: 0;
+            padding: 24px 20px;
             max-width: 1400px;
             margin: 0 auto;
         }
 
         #calendar {
             background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
 
         /* Personalización de FullCalendar */
@@ -130,59 +145,68 @@ function adjustBrightness($hex, $steps) {
             display: none !important;
         }
 
-        /* Días de la semana - estilo minimalista */
+        /* Días de la semana - estilo mejorado */
         .fc-col-header-cell {
-            background: #f5f5f5 !important;
-            padding: 16px 10px !important;
-            font-weight: 600 !important;
-            text-transform: capitalize !important;
-            font-size: 15px !important;
-            color: #333 !important;
-            border: 1px solid #e0e0e0 !important;
-            border-top: 3px solid <?php echo htmlspecialchars($widgetColor); ?> !important;
+            background: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%) !important;
+            padding: 18px 10px !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            font-size: 13px !important;
+            letter-spacing: 0.5px !important;
+            color: #374151 !important;
+            border: 1px solid #e5e7eb !important;
+            border-top: 4px solid <?php echo htmlspecialchars($widgetColor); ?> !important;
         }
 
         .fc-col-header-cell-cushion {
-            color: #333 !important;
+            color: #374151 !important;
             text-decoration: none !important;
         }
 
         /* Celdas de horas */
         .fc-timegrid-slot {
-            height: 60px !important;
-            border-color: #e0e0e0 !important;
+            height: 65px !important;
+            border-color: #e5e7eb !important;
             background: #ffffff !important;
+            transition: background-color 0.2s ease;
         }
 
-        .fc-timegrid-slot-label {
-            font-size: 13px !important;
-            color: #666 !important;
-            font-weight: 500 !important;
-            padding: 0 12px !important;
-        }
-
-        /* Eventos - estilo minimalista tipo El Salto */
-        .fc-event {
-            border: 1px solid #ddd !important;
-            border-left: 4px solid <?php echo htmlspecialchars($widgetColor); ?> !important;
-            border-radius: 0 !important;
-            padding: 8px 12px !important;
-            font-size: 14px !important;
-            font-weight: 500 !important;
-            cursor: pointer !important;
-            box-shadow: none !important;
+        .fc-timegrid-slot:hover {
             background: #fafafa !important;
         }
 
+        .fc-timegrid-slot-label {
+            font-size: 12px !important;
+            color: #6b7280 !important;
+            font-weight: 600 !important;
+            padding: 0 14px !important;
+        }
+
+        /* Eventos - estilo mejorado con sombras sutiles */
+        .fc-event {
+            border: none !important;
+            border-left: 4px solid <?php echo htmlspecialchars($widgetColor); ?> !important;
+            border-radius: 6px !important;
+            padding: 10px 14px !important;
+            font-size: 14px !important;
+            font-weight: 500 !important;
+            cursor: pointer !important;
+            background: #ffffff !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+            transition: all 0.2s ease !important;
+        }
+
         .fc-event:hover {
-            background: #f0f0f0 !important;
+            background: #f9fafb !important;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12) !important;
+            transform: translateY(-1px);
             border-left-width: 5px !important;
         }
 
         .fc-event-title {
-            font-weight: 500 !important;
-            line-height: 1.4 !important;
-            color: #333 !important;
+            font-weight: 600 !important;
+            line-height: 1.5 !important;
+            color: #1f2937 !important;
         }
 
         .fc-timegrid-event {
@@ -199,14 +223,14 @@ function adjustBrightness($hex, $steps) {
             border-color: #ef4444 !important;
         }
 
-        /* Bordes y estructura - estilo tabla */
+        /* Bordes y estructura - estilo mejorado */
         .fc-theme-standard td,
         .fc-theme-standard th {
-            border-color: #e0e0e0 !important;
+            border-color: #e5e7eb !important;
         }
 
         .fc-scrollgrid {
-            border: 1px solid #e0e0e0 !important;
+            border: none !important;
             border-radius: 0 !important;
         }
 
@@ -214,14 +238,57 @@ function adjustBrightness($hex, $steps) {
             display: none !important;
         }
 
-        /* Programa actual - destacar con color */
+        /* Programa actual - destacar con color y animación */
         .fc-event.fc-event-now {
             background: <?php echo htmlspecialchars($widgetColor); ?> !important;
             border-left-color: <?php echo htmlspecialchars($widgetColor); ?> !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 3px <?php echo htmlspecialchars($widgetColor); ?>33 !important;
+            animation: pulse-glow 2s ease-in-out infinite;
+            position: relative;
+        }
+
+        .fc-event.fc-event-now::before {
+            content: "🔴 EN VIVO";
+            position: absolute;
+            top: -8px;
+            right: 8px;
+            background: #ef4444;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+            animation: pulse-badge 2s ease-in-out infinite;
         }
 
         .fc-event.fc-event-now .fc-event-title {
             color: white !important;
+            font-weight: 700 !important;
+        }
+
+        .fc-event.fc-event-now:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2), 0 0 0 3px <?php echo htmlspecialchars($widgetColor); ?>44 !important;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 3px <?php echo htmlspecialchars($widgetColor); ?>33;
+            }
+            50% {
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 5px <?php echo htmlspecialchars($widgetColor); ?>55;
+            }
+        }
+
+        @keyframes pulse-badge {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.85;
+            }
         }
 
         /* Ajustes para look tipo tabla */
@@ -236,30 +303,75 @@ function adjustBrightness($hex, $steps) {
         /* Responsive */
         @media (max-width: 768px) {
             body {
-                padding: 10px;
+                background: #ffffff;
+            }
+
+            .widget-container {
+                background: #ffffff;
             }
 
             .widget-header {
-                padding: 15px 20px;
+                padding: 20px 16px;
             }
 
             .widget-header h1 {
+                font-size: 22px;
+            }
+
+            .widget-header h1::before {
                 font-size: 20px;
+                margin-right: 8px;
             }
 
             .calendar-container {
-                padding: 10px;
+                padding: 16px 8px;
             }
 
-            .fc-toolbar {
-                flex-direction: column !important;
-                gap: 10px;
+            #calendar {
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
             }
 
-            .fc-toolbar-chunk {
-                width: 100%;
-                display: flex;
-                justify-content: center;
+            .fc-col-header-cell {
+                padding: 12px 6px !important;
+                font-size: 11px !important;
+            }
+
+            .fc-timegrid-slot {
+                height: 50px !important;
+            }
+
+            .fc-timegrid-slot-label {
+                font-size: 11px !important;
+                padding: 0 8px !important;
+            }
+
+            .fc-event {
+                padding: 8px 10px !important;
+                font-size: 12px !important;
+            }
+
+            .fc-event.fc-event-now::before {
+                font-size: 9px;
+                padding: 2px 6px;
+                top: -6px;
+                right: 4px;
+            }
+
+            .powered-by {
+                padding: 16px;
+                font-size: 11px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .widget-header h1 {
+                font-size: 18px;
+            }
+
+            .fc-col-header-cell {
+                padding: 10px 4px !important;
+                font-size: 10px !important;
             }
         }
 
@@ -280,18 +392,23 @@ function adjustBrightness($hex, $steps) {
 
         .powered-by {
             text-align: center;
-            padding: 15px;
-            font-size: 12px;
+            padding: 20px;
+            font-size: 13px;
             color: #9ca3af;
+            background: linear-gradient(180deg, #fafafa 0%, #f3f4f6 100%);
             border-top: 1px solid #e5e7eb;
+            margin-top: 24px;
         }
 
         .powered-by a {
             color: <?php echo htmlspecialchars($widgetColor); ?>;
             text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s ease;
         }
 
         .powered-by a:hover {
+            color: <?php echo adjustBrightness($widgetColor, -20); ?>;
             text-decoration: underline;
         }
     </style>
