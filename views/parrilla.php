@@ -57,6 +57,7 @@ if ($hasStationId) {
     </div>
 
     <!-- Contenido de las secciones -->
+    <!-- DEBUG: section = <?php echo htmlspecialchars($section); ?> -->
     <?php if ($section === 'preview'): ?>
         <!-- VISTA PREVIA DEL WIDGET -->
         <div class="section">
@@ -91,9 +92,11 @@ if ($hasStationId) {
 
     <?php elseif ($section === 'programs'): ?>
         <!-- GESTIÓN DE PROGRAMAS -->
+        <!-- DEBUG: Entrando en section programs -->
         <?php require_once 'views/parrilla_programs.php'; ?>
 
     <?php elseif ($section === 'config'): ?>
+        <!-- DEBUG: Entrando en section config -->
         <!-- CONFIGURACIÓN -->
         <div class="section">
             <h3>Configuración de AzuraCast</h3>
