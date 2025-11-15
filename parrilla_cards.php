@@ -250,11 +250,11 @@ function htmlEsc($str) {
             display: block;
         }
 
-        .programs-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 24px;
-            max-width: 1400px;
+        .programs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 900px;
             margin: 0 auto;
         }
 
@@ -265,11 +265,14 @@ function htmlEsc($str) {
             overflow: hidden;
             transition: all 0.3s ease;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
         }
 
         .program-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
             border-color: <?php echo htmlEsc($widgetColor); ?>;
         }
 
@@ -283,8 +286,9 @@ function htmlEsc($str) {
         }
 
         .program-image {
-            width: 100%;
-            height: 180px;
+            width: 140px;
+            min-width: 140px;
+            height: auto;
             object-fit: cover;
             background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
             display: flex;
@@ -300,12 +304,18 @@ function htmlEsc($str) {
             object-fit: cover;
         }
 
+        .program-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
         .program-time {
             background: <?php echo htmlEsc($widgetColor); ?>;
             color: white;
-            padding: 10px 16px;
+            padding: 12px 20px;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 15px;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -317,6 +327,7 @@ function htmlEsc($str) {
 
         .program-body {
             padding: 20px;
+            flex: 1;
         }
 
         .program-title {
@@ -425,8 +436,14 @@ function htmlEsc($str) {
                 font-size: 28px;
             }
 
-            .programs-grid {
-                grid-template-columns: 1fr;
+            .program-card {
+                flex-direction: column;
+            }
+
+            .program-image {
+                width: 100%;
+                height: 160px;
+                min-width: auto;
             }
 
             .day-tab {
@@ -492,7 +509,7 @@ function htmlEsc($str) {
                         <p>No hay programación disponible para este día</p>
                     </div>
                 <?php else: ?>
-                    <div class="programs-grid">
+                    <div class="programs-list">
                         <?php foreach ($eventsByDay[$dayNum] as $event): ?>
                             <?php
                             // Determinar si el programa está en vivo ahora
@@ -523,60 +540,62 @@ function htmlEsc($str) {
                                     <?php endif; ?>
                                 </div>
 
-                                <div class="program-time">
-                                    🕐 <?php echo htmlEsc($event['start_time']); ?> - <?php echo htmlEsc($event['end_time']); ?>
-                                    <?php if ($isLive): ?>
-                                        <span class="live-badge">🔴 EN VIVO</span>
-                                    <?php endif; ?>
-                                </div>
+                                <div class="program-content">
+                                    <div class="program-time">
+                                        🕐 <?php echo htmlEsc($event['start_time']); ?> - <?php echo htmlEsc($event['end_time']); ?>
+                                        <?php if ($isLive): ?>
+                                            <span class="live-badge">🔴 EN VIVO</span>
+                                        <?php endif; ?>
+                                    </div>
 
-                                <div class="program-body">
-                                    <h3 class="program-title"><?php echo htmlEsc($event['title']); ?></h3>
+                                    <div class="program-body">
+                                        <h3 class="program-title"><?php echo htmlEsc($event['title']); ?></h3>
 
-                                    <?php if (!empty($event['type'])): ?>
-                                        <span class="program-type"><?php echo htmlEsc($event['type']); ?></span>
-                                    <?php endif; ?>
+                                        <?php if (!empty($event['type'])): ?>
+                                            <span class="program-type"><?php echo htmlEsc($event['type']); ?></span>
+                                        <?php endif; ?>
 
-                                    <?php if (!empty($event['description'])): ?>
-                                        <p class="program-description">
-                                            <?php echo htmlEsc($event['description']); ?>
-                                        </p>
-                                    <?php endif; ?>
+                                        <?php if (!empty($event['description'])): ?>
+                                            <p class="program-description">
+                                                <?php echo htmlEsc($event['description']); ?>
+                                            </p>
+                                        <?php endif; ?>
 
-                                    <?php if (!empty($event['presenters'])): ?>
-                                        <p class="program-presenters">
-                                            👤 <?php echo htmlEsc($event['presenters']); ?>
-                                        </p>
-                                    <?php endif; ?>
+                                        <?php if (!empty($event['presenters'])): ?>
+                                            <p class="program-presenters">
+                                                👤 <?php echo htmlEsc($event['presenters']); ?>
+                                            </p>
+                                        <?php endif; ?>
 
-                                    <?php if (!empty($event['twitter']) || !empty($event['instagram'])): ?>
-                                        <div class="program-social">
-                                            <?php if (!empty($event['twitter'])): ?>
-                                                <a href="https://twitter.com/<?php echo htmlEsc(ltrim($event['twitter'], '@')); ?>"
-                                                   target="_blank"
-                                                   class="social-link">
-                                                    🐦 @<?php echo htmlEsc(ltrim($event['twitter'], '@')); ?>
+                                        <?php if (!empty($event['twitter']) || !empty($event['instagram'])): ?>
+                                            <div class="program-social">
+                                                <?php if (!empty($event['twitter'])): ?>
+                                                    <a href="https://twitter.com/<?php echo htmlEsc(ltrim($event['twitter'], '@')); ?>"
+                                                       target="_blank"
+                                                       class="social-link">
+                                                        🐦 @<?php echo htmlEsc(ltrim($event['twitter'], '@')); ?>
+                                                    </a>
+                                                <?php endif; ?>
+
+                                                <?php if (!empty($event['instagram'])): ?>
+                                                    <a href="https://instagram.com/<?php echo htmlEsc(ltrim($event['instagram'], '@')); ?>"
+                                                       target="_blank"
+                                                       class="social-link">
+                                                        📷 @<?php echo htmlEsc(ltrim($event['instagram'], '@')); ?>
+                                                    </a>
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php endif; ?>
+
+                                        <?php if (!empty($event['url'])): ?>
+                                            <div class="program-url">
+                                                <a href="<?php echo htmlEsc($event['url']); ?>"
+                                                   target="_blank">
+                                                    🔗 Más información
                                                 </a>
-                                            <?php endif; ?>
-
-                                            <?php if (!empty($event['instagram'])): ?>
-                                                <a href="https://instagram.com/<?php echo htmlEsc(ltrim($event['instagram'], '@')); ?>"
-                                                   target="_blank"
-                                                   class="social-link">
-                                                    📷 @<?php echo htmlEsc(ltrim($event['instagram'], '@')); ?>
-                                                </a>
-                                            <?php endif; ?>
-                                        </div>
-                                    <?php endif; ?>
-
-                                    <?php if (!empty($event['url'])): ?>
-                                        <div class="program-url">
-                                            <a href="<?php echo htmlEsc($event['url']); ?>"
-                                               target="_blank">
-                                                🔗 Más información
-                                            </a>
-                                        </div>
-                                    <?php endif; ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             </div>
                         <?php endforeach; ?>
