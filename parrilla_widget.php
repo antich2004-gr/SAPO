@@ -214,35 +214,14 @@ function adjustBrightness($hex, $steps) {
             display: none !important;
         }
 
-        /* Programa EN VIVO - destacar con fondo y borde */
+        /* Programa actual - destacar con color */
         .fc-event.fc-event-now {
             background: <?php echo htmlspecialchars($widgetColor); ?> !important;
-            color: white !important;
-            border-left-width: 6px !important;
-            font-weight: 600 !important;
-            box-shadow: 0 0 0 3px rgba(<?php
-                // Convertir hex a rgba
-                $hex = str_replace('#', '', $widgetColor);
-                $r = hexdec(substr($hex, 0, 2));
-                $g = hexdec(substr($hex, 2, 2));
-                $b = hexdec(substr($hex, 4, 2));
-                echo "$r, $g, $b";
-            ?>, 0.2) !important;
+            border-left-color: <?php echo htmlspecialchars($widgetColor); ?> !important;
         }
 
         .fc-event.fc-event-now .fc-event-title {
             color: white !important;
-            font-weight: 600 !important;
-        }
-
-        .fc-event.fc-event-now::before {
-            content: '🔴 EN VIVO';
-            display: block;
-            font-size: 11px;
-            font-weight: 700;
-            margin-bottom: 4px;
-            letter-spacing: 0.5px;
-            opacity: 0.95;
         }
 
         /* Ajustes para look tipo tabla */
