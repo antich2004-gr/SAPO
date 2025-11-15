@@ -613,6 +613,190 @@ function htmlEsc($str) {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
         }
+
+        /* ========================================
+           RESPONSIVE DESIGN - TABLETS & MOBILE
+           ======================================== */
+
+        /* Tablets (768px - 1024px) */
+        @media (max-width: 1024px) {
+            .container {
+                max-width: 100%;
+            }
+
+            .header {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 28px;
+            }
+
+            .programs-list {
+                max-width: 100%;
+                padding: 0 10px;
+            }
+        }
+
+        /* Mobile (hasta 768px) */
+        @media (max-width: 768px) {
+            body {
+                font-size: <?php
+                    $mobileFontSize = [
+                        'small' => '13px',
+                        'medium' => '15px',
+                        'large' => '17px'
+                    ];
+                    echo $mobileFontSize[$widgetFontSize] ?? '15px';
+                ?>;
+            }
+
+            .header {
+                padding: 20px 15px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+                letter-spacing: 0.3px;
+            }
+
+            .header p {
+                font-size: 14px;
+            }
+
+            /* Tabs horizontales con scroll */
+            .day-tabs {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+                scrollbar-color: <?php echo htmlEsc($widgetColor); ?> #f3f4f6;
+            }
+
+            .day-tabs::-webkit-scrollbar {
+                height: 4px;
+            }
+
+            .day-tabs::-webkit-scrollbar-track {
+                background: #f3f4f6;
+            }
+
+            .day-tabs::-webkit-scrollbar-thumb {
+                background: <?php echo htmlEsc($widgetColor); ?>;
+                border-radius: 2px;
+            }
+
+            .day-tab {
+                padding: 12px 16px;
+                font-size: 14px;
+                flex-shrink: 0;
+            }
+
+            .day-content {
+                padding: 20px 10px;
+            }
+
+            /* Cards en móvil - layout vertical */
+            .program-card {
+                flex-direction: column;
+                border-radius: 8px;
+            }
+
+            .program-time {
+                padding: 10px 15px;
+                font-size: 14px;
+                border-radius: 0;
+            }
+
+            .program-body {
+                padding: 15px !important;
+            }
+
+            .program-title {
+                font-size: 16px;
+            }
+
+            .program-description {
+                font-size: 13px;
+                line-height: 1.5;
+            }
+
+            .program-meta {
+                font-size: 12px;
+                flex-wrap: wrap;
+            }
+
+            .program-type {
+                font-size: 11px;
+            }
+
+            .program-presenters {
+                font-size: 13px;
+            }
+
+            /* Programas en directo - badge más pequeño */
+            .program-card.live-broadcast .live-badge {
+                font-size: 10px;
+                padding: 3px 8px;
+                position: static;
+                display: inline-block;
+                margin-top: 8px;
+            }
+
+            /* Footer */
+            .footer {
+                padding: 20px 15px;
+                font-size: 13px;
+            }
+
+            .empty-day-icon {
+                font-size: 48px;
+            }
+
+            .empty-day h3 {
+                font-size: 18px;
+            }
+        }
+
+        /* Mobile pequeño (hasta 480px) */
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .header p {
+                font-size: 13px;
+            }
+
+            .day-tab {
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+
+            .programs-list {
+                gap: 15px;
+            }
+
+            .program-title {
+                font-size: 15px;
+            }
+
+            .program-description {
+                font-size: 12px;
+            }
+
+            .program-time {
+                font-size: 13px;
+                padding: 8px 12px;
+            }
+
+            .social-links {
+                gap: 8px;
+            }
+
+            .social-link {
+                font-size: 18px;
+            }
+        }
     </style>
 </head>
 <body>
