@@ -129,17 +129,33 @@ function formatEventsForCalendar($events, $color = '#3b82f6') {
         $startDateTime = is_numeric($start) ? new DateTime('@' . $start) : new DateTime($start);
         $endDateTime = $end ? (is_numeric($end) ? new DateTime('@' . $end) : new DateTime($end)) : null;
 
-        // Obtener día de la semana (0=Domingo, 1=Lunes, etc.)
-        $dayOfWeek = $startDateTime->format('w');
+        // Obtener día de la semana (0=Domingo, 1=Lunes, etc.) como ENTERO
+        $dayOfWeek = (int)$startDateTime->format('w');
 
         // Obtener solo la hora (formato HH:mm:ss)
         $startTime = $startDateTime->format('H:i:s');
-        $endTime = $endDateTime ? $endDateTime->format('H:i:s') : null;
+
+        // Si no hay endTime o es igual a startTime, calcular duración desde el título
+        // Muchos nombres tienen el formato "NOMBRE - DURACION" ej: "PROGRAMA - 30" (30 minutos)
+        if (!$endDateTime || $endDateTime->getTimestamp() <= $startDateTime->getTimestamp()) {
+            // Intentar extraer duración del título (ej: "PROGRAMA - 30" = 30 minutos)
+            if (preg_match('/-\s*(\d+)\s*$/', $title, $matches)) {
+                $durationMinutes = (int)$matches[1];
+                $endDateTime = clone $startDateTime;
+                $endDateTime->modify("+{$durationMinutes} minutes");
+            } else {
+                // Por defecto, 1 hora si no se puede determinar
+                $endDateTime = clone $startDateTime;
+                $endDateTime->modify('+1 hour');
+            }
+        }
+
+        $endTime = $endDateTime->format('H:i:s');
 
         // Crear evento recurrente semanal usando daysOfWeek
         $formattedEvents[] = [
             'title' => $title,
-            'daysOfWeek' => [$dayOfWeek], // Día de la semana que se repite
+            'daysOfWeek' => [$dayOfWeek], // Día de la semana que se repite (como entero)
             'startTime' => $startTime,     // Hora de inicio
             'endTime' => $endTime,         // Hora de fin
             'backgroundColor' => $color,

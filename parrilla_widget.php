@@ -266,6 +266,7 @@ error_log("Parrilla Widget - Station: $station, Events: " . count($events));
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'timeGridWeek',
                 locale: 'es',
+                timeZone: 'local',
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
@@ -289,6 +290,9 @@ error_log("Parrilla Widget - Station: $station, Events: " . count($events));
                     minute: '2-digit',
                     hour12: false
                 },
+                eventDisplay: 'block',
+                displayEventTime: true,
+                displayEventEnd: true,
                 events: events,
                 eventClick: function(info) {
                     // Mostrar información del evento
