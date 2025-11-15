@@ -199,15 +199,28 @@ function adjustBrightness($hex, $steps) {
             overflow: visible !important;
             height: auto !important;
             min-height: 0 !important;
+            max-height: none !important;
         }
 
         .fc-event .fc-event-main {
             height: auto !important;
             overflow: visible !important;
+            max-height: none !important;
+            white-space: normal !important;
         }
 
         .fc-event .fc-event-main-frame {
             height: auto !important;
+            overflow: visible !important;
+            max-height: none !important;
+            padding: 6px 12px !important;
+        }
+
+        .fc-timegrid-event-harness {
+            overflow: visible !important;
+        }
+
+        .fc-timegrid-event {
             overflow: visible !important;
         }
 
@@ -221,13 +234,16 @@ function adjustBrightness($hex, $steps) {
 
         .fc-event-title {
             font-weight: 600 !important;
-            line-height: 1.2 !important;
+            line-height: 1.3 !important;
             color: #1f2937 !important;
             white-space: normal !important;
             overflow: visible !important;
             display: block !important;
             word-wrap: break-word !important;
+            word-break: break-word !important;
             hyphens: auto !important;
+            max-height: none !important;
+            height: auto !important;
         }
 
         .fc-event-time {
@@ -578,7 +594,6 @@ function adjustBrightness($hex, $steps) {
                 eventDisplay: 'block',
                 displayEventTime: true,  // Mostrar hora en el evento
                 displayEventEnd: false,
-                eventMinHeight: 30, // Altura mínima para eventos cortos
                 events: events,
                 eventClick: function(info) {
                     // Mostrar información del evento
