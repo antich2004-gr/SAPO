@@ -1,5 +1,8 @@
 <?php
 // views/parrilla_programs.php - Gestión de información de programas (subsección)
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 echo '<p style="color: blue; font-size: 11px;">DEBUG: Inicio de parrilla_programs.php, username=' . htmlspecialchars($username ?? 'NO DEFINIDO') . '</p>';
 
 if (!function_exists('getAllProgramsWithStats')) {

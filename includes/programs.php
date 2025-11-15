@@ -189,7 +189,9 @@ function saveProgramInfo($username, $programName, $info) {
  * @return array Array con programas y estadísticas
  */
 function getAllProgramsWithStats($username) {
+    error_log("DEBUG getAllProgramsWithStats: Inicio, username=$username");
     $data = loadProgramsDB($username);
+    error_log("DEBUG getAllProgramsWithStats: loadProgramsDB OK, programs count=" . count($data['programs'] ?? []));
     $programs = [];
 
     foreach ($data['programs'] as $name => $info) {
