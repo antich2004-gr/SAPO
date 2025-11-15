@@ -67,7 +67,7 @@ $daysOfWeek = [
     0 => 'Domingo'
 ];
 
-// Procesar eventos y organizarlos por día
+// Procesar eventos de AzuraCast y organizarlos por día
 foreach ($schedule as $event) {
     $title = $event['name'] ?? $event['playlist'] ?? 'Sin nombre';
     $start = $event['start_timestamp'] ?? $event['start'] ?? null;
@@ -125,6 +125,54 @@ foreach ($schedule as $event) {
 
     // Agregar solo programas (jingles y bloques musicales ya filtrados arriba)
     $eventsByDay[$dayOfWeek][] = $eventData;
+}
+
+// Añadir programas creados manualmente con horario definido
+foreach ($programsData as $programName => $programInfo) {
+    // Solo procesar programas con horario definido
+    if (empty($programInfo['schedule_days']) || empty($programInfo['schedule_start_time'])) {
+        continue;
+    }
+
+    $playlistType = $programInfo['playlist_type'] ?? 'program';
+
+    // Filtrar jingles y bloques musicales
+    if ($playlistType === 'jingles' || $playlistType === 'music_block') {
+        continue;
+    }
+
+    $scheduleDays = $programInfo['schedule_days'];
+    $startTime = $programInfo['schedule_start_time'];
+    $durationMinutes = $programInfo['schedule_duration'] ?? 60;
+
+    // Crear evento para cada día programado
+    foreach ($scheduleDays as $dayOfWeek) {
+        // Calcular hora de fin
+        $startDateTime = DateTime::createFromFormat('H:i', $startTime);
+        if (!$startDateTime) {
+            continue;
+        }
+        $endDateTime = clone $startDateTime;
+        $endDateTime->modify("+{$durationMinutes} minutes");
+
+        $eventData = [
+            'title' => $programName,
+            'start_time' => $startTime,
+            'end_time' => $endDateTime->format('H:i'),
+            'start_timestamp' => strtotime("next " . $daysOfWeek[(int)$dayOfWeek] . " " . $startTime),
+            'playlist_type' => $playlistType,
+            'description' => $programInfo['short_description'] ?? '',
+            'long_description' => $programInfo['long_description'] ?? '',
+            'type' => $programInfo['type'] ?? '',
+            'url' => $programInfo['url'] ?? '',
+            'image' => $programInfo['image'] ?? '',
+            'presenters' => $programInfo['presenters'] ?? '',
+            'twitter' => $programInfo['social_twitter'] ?? '',
+            'instagram' => $programInfo['social_instagram'] ?? ''
+        ];
+
+        $eventsByDay[(int)$dayOfWeek][] = $eventData;
+    }
 }
 
 // Ordenar eventos de cada día por hora de inicio

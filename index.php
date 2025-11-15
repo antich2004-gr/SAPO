@@ -281,6 +281,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             if ($existingProgram !== null) {
                 $error = 'Ya existe un programa con ese nombre';
             } else {
+                // Procesar días de emisión
+                $scheduleDays = $_POST['schedule_days'] ?? [];
+                if (!is_array($scheduleDays)) {
+                    $scheduleDays = [];
+                }
+
                 $programInfo = [
                     'playlist_type' => trim($_POST['playlist_type'] ?? 'live'),
                     'short_description' => trim($_POST['short_description'] ?? ''),
@@ -291,6 +297,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     'presenters' => trim($_POST['presenters'] ?? ''),
                     'social_twitter' => trim($_POST['social_twitter'] ?? ''),
                     'social_instagram' => trim($_POST['social_instagram'] ?? ''),
+                    'schedule_days' => $scheduleDays,
+                    'schedule_start_time' => trim($_POST['schedule_start_time'] ?? ''),
+                    'schedule_duration' => (int)($_POST['schedule_duration'] ?? 60),
                     'created_at' => date('Y-m-d H:i:s')
                 ];
 
