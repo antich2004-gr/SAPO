@@ -268,6 +268,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
+    // UPDATE AZURACAST CONFIG (usuario regular desde pestaña Parrilla)
+    if ($action == 'update_azuracast_config_user' && isLoggedIn() && !isAdmin()) {
+        $username = $_SESSION['username'];
+        $stationId = $_POST['station_id'] ?? '';
+        $widgetColor = $_POST['widget_color'] ?? $_POST['widget_color_text'] ?? '#3b82f6';
+
+        if (updateAzuracastConfig($username, $stationId, $widgetColor)) {
+            $message = "Configuración de AzuraCast actualizada correctamente";
+        } else {
+            $error = 'Error al actualizar la configuración';
+        }
+    }
+
     // IMPORT SERVERLIST
     if ($action == 'import_serverlist' && isLoggedIn() && !isAdmin()) {
         if (isset($_FILES['serverlist_file']) && $_FILES['serverlist_file']['error'] == 0) {

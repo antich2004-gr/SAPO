@@ -1,0 +1,217 @@
+<?php
+// views/parrilla.php - Gestión completa de la parrilla de programación
+$username = $_SESSION['username'];
+$azConfig = getAzuracastConfig($username);
+$stationId = $azConfig['station_id'] ?? null;
+$widgetColor = $azConfig['widget_color'] ?? '#3b82f6';
+
+// Determinar subsección activa
+$section = $_GET['section'] ?? 'preview';
+
+// Generar URL del widget
+$widgetUrl = '';
+if ($stationId) {
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'];
+    $baseUrl = $protocol . '://' . $host . dirname($_SERVER['PHP_SELF']);
+    $widgetUrl = rtrim($baseUrl, '/') . '/parrilla_widget.php?station=' . urlencode($username);
+}
+?>
+
+<div class="card">
+    <div class="nav-buttons">
+        <h2>📺 Parrilla de Programación</h2>
+        <div style="text-align: right;">
+            <p style="margin: 0 0 10px 0; color: #4a5568; font-size: 14px;">Conectado como <strong><?php echo htmlEsc($_SESSION['station_name']); ?></strong></p>
+            <a href="?page=dashboard" class="btn btn-secondary">
+                <span class="btn-icon">◀️</span> Volver al Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Navegación por pestañas -->
+    <div style="border-bottom: 2px solid #e0e0e0; margin-bottom: 20px;">
+        <div style="display: flex; gap: 0;">
+            <a href="?page=parrilla&section=preview"
+               class="<?php echo $section === 'preview' ? 'tab-active' : 'tab-inactive'; ?>"
+               style="padding: 12px 24px; text-decoration: none; border-bottom: 3px solid <?php echo $section === 'preview' ? $widgetColor : 'transparent'; ?>; color: <?php echo $section === 'preview' ? $widgetColor : '#6b7280'; ?>; font-weight: <?php echo $section === 'preview' ? '600' : '400'; ?>; transition: all 0.2s;">
+                👁️ Vista Previa
+            </a>
+            <a href="?page=parrilla&section=programs"
+               class="<?php echo $section === 'programs' ? 'tab-active' : 'tab-inactive'; ?>"
+               style="padding: 12px 24px; text-decoration: none; border-bottom: 3px solid <?php echo $section === 'programs' ? $widgetColor : 'transparent'; ?>; color: <?php echo $section === 'programs' ? $widgetColor : '#6b7280'; ?>; font-weight: <?php echo $section === 'programs' ? '600' : '400'; ?>; transition: all 0.2s;">
+                📝 Gestión de Programas
+            </a>
+            <a href="?page=parrilla&section=config"
+               class="<?php echo $section === 'config' ? 'tab-active' : 'tab-inactive'; ?>"
+               style="padding: 12px 24px; text-decoration: none; border-bottom: 3px solid <?php echo $section === 'config' ? $widgetColor : 'transparent'; ?>; color: <?php echo $section === 'config' ? $widgetColor : '#6b7280'; ?>; font-weight: <?php echo $section === 'config' ? '600' : '400'; ?>; transition: all 0.2s;">
+                ⚙️ Configuración
+            </a>
+            <a href="?page=parrilla&section=embed"
+               class="<?php echo $section === 'embed' ? 'tab-active' : 'tab-inactive'; ?>"
+               style="padding: 12px 24px; text-decoration: none; border-bottom: 3px solid <?php echo $section === 'embed' ? $widgetColor : 'transparent'; ?>; color: <?php echo $section === 'embed' ? $widgetColor : '#6b7280'; ?>; font-weight: <?php echo $section === 'embed' ? '600' : '400'; ?>; transition: all 0.2s;">
+                🔗 Código de Embebido
+            </a>
+        </div>
+    </div>
+
+    <!-- Contenido de las secciones -->
+    <?php if ($section === 'preview'): ?>
+        <!-- VISTA PREVIA DEL WIDGET -->
+        <div class="section">
+            <h3>Vista Previa de tu Parrilla</h3>
+
+            <?php if (!$stationId): ?>
+                <div class="alert alert-warning">
+                    ⚠️ Primero debes configurar el <strong>Station ID de AzuraCast</strong> en la pestaña
+                    <a href="?page=parrilla&section=config" style="color: #3b82f6; text-decoration: underline;">Configuración</a>
+                </div>
+            <?php else: ?>
+                <p style="color: #6b7280; margin-bottom: 20px;">
+                    Así es como se ve tu parrilla de programación cuando se embebe en tu sitio web:
+                </p>
+
+                <div style="border: 2px solid #e0e0e0; border-radius: 8px; overflow: hidden; background: #f9fafb;">
+                    <iframe src="<?php echo htmlspecialchars($widgetUrl); ?>"
+                            style="width: 100%; height: 800px; border: none; display: block;"
+                            title="Vista previa de la parrilla">
+                    </iframe>
+                </div>
+
+                <div style="margin-top: 15px; text-align: center;">
+                    <a href="<?php echo htmlspecialchars($widgetUrl); ?>"
+                       target="_blank"
+                       class="btn btn-secondary">
+                        🔗 Abrir en nueva pestaña
+                    </a>
+                </div>
+            <?php endif; ?>
+        </div>
+
+    <?php elseif ($section === 'programs'): ?>
+        <!-- GESTIÓN DE PROGRAMAS -->
+        <?php include 'views/parrilla_programs.php'; ?>
+
+    <?php elseif ($section === 'config'): ?>
+        <!-- CONFIGURACIÓN -->
+        <div class="section">
+            <h3>Configuración de AzuraCast</h3>
+
+            <form method="POST">
+                <input type="hidden" name="action" value="update_azuracast_config_user">
+                <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+
+                <div class="form-group">
+                    <label>Station ID de AzuraCast: <small>(requerido)</small></label>
+                    <input type="number"
+                           name="station_id"
+                           value="<?php echo htmlEsc($stationId ?? ''); ?>"
+                           placeholder="34"
+                           required>
+                    <small style="color: #6b7280;">
+                        Puedes encontrar el Station ID en la URL de tu estación en AzuraCast.<br>
+                        Ejemplo: si tu URL es <code>radio.radiobot.org/station/34</code>, tu Station ID es <strong>34</strong>
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label>Color del widget:</label>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <input type="color"
+                               name="widget_color"
+                               value="<?php echo htmlEsc($widgetColor); ?>"
+                               style="width: 80px; height: 40px; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer;">
+                        <input type="text"
+                               name="widget_color_text"
+                               value="<?php echo htmlEsc($widgetColor); ?>"
+                               pattern="^#[0-9A-Fa-f]{6}$"
+                               placeholder="#3b82f6"
+                               style="width: 120px; font-family: monospace;"
+                               onchange="document.querySelector('input[name=widget_color]').value = this.value">
+                        <small style="color: #6b7280;">Color para destacar el programa actual</small>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success">
+                    <span class="btn-icon">💾</span> Guardar Configuración
+                </button>
+            </form>
+        </div>
+
+        <?php if ($stationId): ?>
+        <div class="section" style="background: #f0f9ff; border: 1px solid #bae6fd;">
+            <h3>🧪 Probar Conexión</h3>
+            <p style="color: #0c4a6e; margin-bottom: 15px;">
+                Verifica que SAPO puede conectarse correctamente a tu estación en AzuraCast.
+            </p>
+            <a href="test_azuracast.php" target="_blank" class="btn btn-primary">
+                🧪 Ejecutar Test de Conexión
+            </a>
+        </div>
+        <?php endif; ?>
+
+    <?php elseif ($section === 'embed'): ?>
+        <!-- CÓDIGO DE EMBEBIDO -->
+        <div class="section">
+            <h3>Código para Embedar en tu Web</h3>
+
+            <?php if (!$stationId): ?>
+                <div class="alert alert-warning">
+                    ⚠️ Primero debes configurar el <strong>Station ID de AzuraCast</strong> en la pestaña
+                    <a href="?page=parrilla&section=config" style="color: #3b82f6; text-decoration: underline;">Configuración</a>
+                </div>
+            <?php else: ?>
+                <p style="color: #6b7280; margin-bottom: 20px;">
+                    Copia este código HTML e insértalo en tu sitio web donde quieras mostrar la parrilla:
+                </p>
+
+                <div style="background: #1f2937; color: #e5e7eb; padding: 20px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 13px; overflow-x: auto; position: relative;">
+                    <button onclick="copyEmbedCode()"
+                            style="position: absolute; top: 10px; right: 10px; background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                        📋 Copiar
+                    </button>
+                    <pre id="embed-code" style="margin: 0; color: #e5e7eb; white-space: pre-wrap; word-wrap: break-word;">&lt;!-- Parrilla de Programación - <?php echo htmlEsc($_SESSION['station_name']); ?> --&gt;
+&lt;iframe src="<?php echo htmlspecialchars($widgetUrl); ?>"
+        width="100%"
+        height="800"
+        frameborder="0"
+        style="border: none; border-radius: 8px;"
+        title="Parrilla de Programación"&gt;
+&lt;/iframe&gt;</pre>
+                </div>
+
+                <script>
+                function copyEmbedCode() {
+                    const code = document.getElementById('embed-code').textContent;
+                    navigator.clipboard.writeText(code).then(function() {
+                        alert('✅ Código copiado al portapapeles');
+                    }, function() {
+                        alert('❌ Error al copiar el código');
+                    });
+                }
+                </script>
+
+                <div style="margin-top: 20px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 15px; border-radius: 8px;">
+                    <h4 style="margin: 0 0 10px 0; color: #166534;">✅ Personalización</h4>
+                    <p style="margin: 0; color: #166534; font-size: 14px;">
+                        Puedes ajustar el <code>height</code> (altura) del iframe según el espacio disponible en tu web.<br>
+                        Recomendado: entre 600 y 1000 píxeles.
+                    </p>
+                </div>
+
+                <div style="margin-top: 15px; background: #fffbeb; border: 1px solid #fde68a; padding: 15px; border-radius: 8px;">
+                    <h4 style="margin: 0 0 10px 0; color: #92400e;">💡 Consejo</h4>
+                    <p style="margin: 0; color: #92400e; font-size: 14px;">
+                        La parrilla se actualiza automáticamente con los cambios que hagas en AzuraCast y en la gestión de programas de SAPO.
+                    </p>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+</div>
+
+<style>
+.tab-active:hover, .tab-inactive:hover {
+    background: #f3f4f6;
+}
+</style>

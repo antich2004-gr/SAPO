@@ -1,25 +1,19 @@
 <?php
-// views/programs.php - Gestión de información de programas
-$username = $_SESSION['username'];
+// views/parrilla_programs.php - Gestión de información de programas (subsección)
 $programsData = getAllProgramsWithStats($username);
 $editingProgram = $_GET['edit'] ?? null;
 ?>
 
-<div class="card">
-    <div class="nav-buttons">
-        <h2>📺 Gestión de Programas</h2>
-        <div>
-            <a href="?page=dashboard" class="btn btn-secondary" style="margin-right: 10px;">
-                <span class="btn-icon">◀️</span> Volver
-            </a>
-            <form method="POST" style="display: inline;">
-                <input type="hidden" name="action" value="sync_programs">
-                <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                <button type="submit" class="btn btn-primary">
-                    <span class="btn-icon">🔄</span> Sincronizar con AzuraCast
-                </button>
-            </form>
-        </div>
+<div class="section">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="margin: 0;">Gestión de Programas</h3>
+        <form method="POST" style="display: inline;">
+            <input type="hidden" name="action" value="sync_programs">
+            <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+            <button type="submit" class="btn btn-primary">
+                <span class="btn-icon">🔄</span> Sincronizar con AzuraCast
+            </button>
+        </form>
     </div>
 
     <?php if ($programsData['last_sync']): ?>
@@ -53,7 +47,7 @@ $editingProgram = $_GET['edit'] ?? null;
             <div class="section" style="background: #f0f9ff; border: 2px solid #3b82f6;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h3 style="margin: 0;">Editar: <?php echo htmlEsc($editingProgram); ?></h3>
-                    <a href="?page=programs" class="btn btn-secondary">❌ Cancelar</a>
+                    <a href="?page=parrilla&section=programs" class="btn btn-secondary">❌ Cancelar</a>
                 </div>
 
                 <form method="POST">
@@ -137,7 +131,7 @@ $editingProgram = $_GET['edit'] ?? null;
                         <button type="submit" class="btn btn-success">
                             <span class="btn-icon">💾</span> Guardar Cambios
                         </button>
-                        <a href="?page=programs" class="btn btn-secondary">Cancelar</a>
+                        <a href="?page=parrilla&section=programs" class="btn btn-secondary">Cancelar</a>
                     </div>
                 </form>
             </div>
@@ -189,7 +183,7 @@ $editingProgram = $_GET['edit'] ?? null;
                         </div>
 
                         <div>
-                            <a href="?page=programs&edit=<?php echo urlencode($program['name']); ?>" class="btn btn-primary">
+                            <a href="?page=parrilla&section=programs&edit=<?php echo urlencode($program['name']); ?>" class="btn btn-primary">
                                 <span class="btn-icon">✏️</span> Editar
                             </a>
                         </div>
