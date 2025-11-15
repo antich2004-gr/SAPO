@@ -11,7 +11,7 @@ $creatingProgram = $_GET['create'] ?? null;
         <h3 style="margin: 0;">Gestión de Programas</h3>
         <div style="display: flex; gap: 10px;">
             <a href="?page=parrilla&section=programs&create=1" class="btn btn-success">
-                <span class="btn-icon">➕</span> Crear Programa
+                <span class="btn-icon">➕</span> Añadir Programa en Directo
             </a>
             <form method="POST" style="display: inline;">
                 <input type="hidden" name="action" value="sync_programs">
@@ -35,49 +35,31 @@ $creatingProgram = $_GET['create'] ?? null;
     <?php endif; ?>
 
     <?php if ($creatingProgram !== null): ?>
-        <!-- Formulario de creación de programa -->
-        <div class="section" style="background: #f0fdf4; border: 2px solid #10b981;">
+        <!-- Formulario de creación de programa en directo -->
+        <div class="section" style="background: #fffbeb; border: 2px solid #f59e0b;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="margin: 0;">➕ Crear Nuevo Programa</h3>
+                <h3 style="margin: 0;">🔴 Añadir Programa en Directo</h3>
                 <a href="?page=parrilla&section=programs" class="btn btn-secondary">❌ Cancelar</a>
+            </div>
+
+            <div style="background: #fef3c7; padding: 12px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #f59e0b;">
+                <p style="margin: 0; color: #92400e; font-size: 14px;">
+                    <strong>ℹ️ Información:</strong> Los programas en directo se destacan con estilo especial (fondo amarillo/dorado) en la parrilla de programación.
+                </p>
             </div>
 
             <form method="POST">
                 <input type="hidden" name="action" value="create_program">
                 <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                <input type="hidden" name="playlist_type" value="live">
 
                 <div class="form-group">
                     <label>Nombre del programa: <small>(requerido)</small></label>
                     <input type="text" name="program_name" required
-                           placeholder="Mi Programa en Directo"
+                           placeholder="La Mañana en Directo"
                            maxlength="200">
                     <small style="color: #6b7280;">
                         Este nombre se mostrará en la parrilla de programación
-                    </small>
-                </div>
-
-                <div class="form-group">
-                    <label>Tipo de lista de reproducción: <small>(importante para la parrilla)</small></label>
-                    <select name="playlist_type" required>
-                        <?php
-                        $playlistTypes = [
-                            'live' => '🔴 Emisión en Directo (destacado especial)',
-                            'program' => '📻 Programa (se muestra en la parrilla)',
-                            'music_block' => '🎵 Bloque Musical (oculto)',
-                            'jingles' => '🔊 Jingles/Cortinillas (oculto)'
-                        ];
-                        foreach ($playlistTypes as $value => $label):
-                        ?>
-                            <option value="<?php echo htmlEsc($value); ?>">
-                                <?php echo htmlEsc($label); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <small style="color: #6b7280;">
-                        • <strong>Emisión en Directo</strong>: Programas en vivo, destacados con estilo especial<br>
-                        • <strong>Programa</strong>: Contenido producido (repeticiones, podcast)<br>
-                        • <strong>Bloque Musical</strong>: Música automatizada (se oculta de la parrilla)<br>
-                        • <strong>Jingles/Cortinillas</strong>: Efectos de audio (se ocultan de la parrilla)
                     </small>
                 </div>
 
@@ -187,7 +169,7 @@ $creatingProgram = $_GET['create'] ?? null;
 
                 <div style="display: flex; gap: 10px;">
                     <button type="submit" class="btn btn-success">
-                        <span class="btn-icon">💾</span> Crear Programa
+                        <span class="btn-icon">💾</span> Añadir Programa en Directo
                     </button>
                     <a href="?page=parrilla&section=programs" class="btn btn-secondary">Cancelar</a>
                 </div>
