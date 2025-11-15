@@ -7,14 +7,11 @@
 function getProgramsFilePath($username) {
     $dataDir = DATA_DIR . '/programs';
     if (!file_exists($dataDir)) {
-        if (!mkdir($dataDir, 0755, true)) {
-            error_log("ERROR getProgramsFilePath: No se pudo crear directorio $dataDir");
-            // Intentar crear el directorio padre primero
-            if (!file_exists(DATA_DIR)) {
-                mkdir(DATA_DIR, 0755, true);
-            }
-            mkdir($dataDir, 0755, true);
+        // Intentar crear el directorio padre primero si no existe
+        if (!file_exists(DATA_DIR)) {
+            mkdir(DATA_DIR, 0755, true);
         }
+        mkdir($dataDir, 0755, true);
     }
     return $dataDir . '/' . $username . '.json';
 }
@@ -58,14 +55,6 @@ function loadProgramsDB($username) {
  */
 function saveProgramsDB($username, $data) {
     $filePath = getProgramsFilePath($username);
-
-    // Verificar que el directorio exista y sea escribible
-    $dir = dirname($filePath);
-    if (!is_writable($dir)) {
-        error_log("ERROR saveProgramsDB: Directorio no escribible: $dir");
-        return false;
-    }
-
     $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 
     if ($json === false) {
@@ -73,13 +62,7 @@ function saveProgramsDB($username, $data) {
         return false;
     }
 
-    $result = file_put_contents($filePath, $json);
-    if ($result === false) {
-        error_log("ERROR saveProgramsDB: No se pudo escribir en $filePath");
-        return false;
-    }
-
-    return true;
+    return file_put_contents($filePath, $json) !== false;
 }
 
 /**

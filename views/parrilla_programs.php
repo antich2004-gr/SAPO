@@ -1,23 +1,8 @@
 <?php
 // views/parrilla_programs.php - Gestión de información de programas (subsección)
 
-// Debug temporal
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-echo "<!-- DEBUG: Inicio parrilla_programs.php -->\n";
-echo "<!-- DEBUG: username = " . htmlspecialchars($username ?? 'NO DEFINIDO') . " -->\n";
-
-try {
-    $programsData = getAllProgramsWithStats($username);
-    echo "<!-- DEBUG: getAllProgramsWithStats OK, total = " . count($programsData['programs'] ?? []) . " -->\n";
-} catch (Exception $e) {
-    echo "<!-- DEBUG ERROR: " . htmlspecialchars($e->getMessage()) . " -->\n";
-    $programsData = ['programs' => [], 'last_sync' => null, 'total' => 0, 'complete' => 0, 'partial' => 0, 'empty' => 0];
-}
-
+$programsData = getAllProgramsWithStats($username);
 $editingProgram = $_GET['edit'] ?? null;
-echo "<!-- DEBUG: editingProgram = " . htmlspecialchars($editingProgram ?? 'null') . " -->\n";
 ?>
 
 <div class="section">
