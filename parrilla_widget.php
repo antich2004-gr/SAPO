@@ -41,6 +41,24 @@ $events = formatEventsForCalendar($schedule, $widgetColor);
 
 // Debug: registrar en error log
 error_log("Parrilla Widget - Station: $station, Events: " . count($events));
+
+/**
+ * Ajustar brillo de un color hexadecimal
+ */
+function adjustBrightness($hex, $steps) {
+    $hex = str_replace('#', '', $hex);
+    $r = hexdec(substr($hex, 0, 2));
+    $g = hexdec(substr($hex, 2, 2));
+    $b = hexdec(substr($hex, 4, 2));
+
+    $r = max(0, min(255, $r + $steps));
+    $g = max(0, min(255, $g + $steps));
+    $b = max(0, min(255, $b + $steps));
+
+    return '#' . str_pad(dechex($r), 2, '0', STR_PAD_LEFT)
+               . str_pad(dechex($g), 2, '0', STR_PAD_LEFT)
+               . str_pad(dechex($b), 2, '0', STR_PAD_LEFT);
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -60,91 +78,198 @@ error_log("Parrilla Widget - Station: $station, Events: " . count($events));
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: #f7fafc;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 20px;
+            min-height: 100vh;
         }
 
         .widget-container {
             max-width: 1400px;
             margin: 0 auto;
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             overflow: hidden;
         }
 
         .widget-header {
-            background: <?php echo htmlspecialchars($widgetColor); ?>;
+            background: linear-gradient(135deg, <?php echo htmlspecialchars($widgetColor); ?> 0%, <?php echo htmlspecialchars(adjustBrightness($widgetColor, -20)); ?> 100%);
             color: white;
-            padding: 20px 30px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            padding: 30px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .widget-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="rgba(255,255,255,0.05)"/></svg>');
+            opacity: 0.1;
+        }
+
+        .widget-header-content {
+            position: relative;
+            z-index: 1;
         }
 
         .widget-header h1 {
-            font-size: 24px;
-            font-weight: 600;
+            font-size: 32px;
+            font-weight: 700;
             margin: 0;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .widget-header h1::before {
+            content: '📻';
+            font-size: 40px;
+            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2));
         }
 
         .widget-header .subtitle {
-            font-size: 14px;
-            opacity: 0.9;
-            margin-top: 5px;
+            font-size: 16px;
+            opacity: 0.95;
+            margin-top: 8px;
+            font-weight: 300;
+            letter-spacing: 0.5px;
         }
 
         .calendar-container {
-            padding: 20px;
+            padding: 30px;
+            background: #fafbfc;
         }
 
         #calendar {
             background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
 
-        /* Personalización de FullCalendar */
+        /* Personalización moderna de FullCalendar */
         .fc {
             font-family: inherit;
         }
 
+        .fc-toolbar {
+            padding: 15px 0;
+            margin-bottom: 20px !important;
+        }
+
         .fc-toolbar-title {
-            font-size: 1.5em !important;
-            font-weight: 600 !important;
+            font-size: 1.75em !important;
+            font-weight: 700 !important;
             color: #1f2937;
+            text-transform: capitalize;
         }
 
         .fc-button {
-            background-color: <?php echo htmlspecialchars($widgetColor); ?> !important;
-            border-color: <?php echo htmlspecialchars($widgetColor); ?> !important;
+            background: linear-gradient(135deg, <?php echo htmlspecialchars($widgetColor); ?> 0%, <?php echo htmlspecialchars(adjustBrightness($widgetColor, -15)); ?> 100%) !important;
+            border: none !important;
             text-transform: capitalize !important;
+            padding: 10px 18px !important;
+            border-radius: 10px !important;
+            font-weight: 600 !important;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15) !important;
+            transition: all 0.3s ease !important;
         }
 
         .fc-button:hover {
-            opacity: 0.9;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2) !important;
+        }
+
+        .fc-button:active {
+            transform: translateY(0) !important;
         }
 
         .fc-button:disabled {
-            opacity: 0.6;
+            opacity: 0.5 !important;
+            transform: none !important;
         }
 
+        .fc-button-primary:not(:disabled).fc-button-active {
+            background: linear-gradient(135deg, <?php echo htmlspecialchars(adjustBrightness($widgetColor, -20)); ?> 0%, <?php echo htmlspecialchars(adjustBrightness($widgetColor, -35)); ?> 100%) !important;
+        }
+
+        /* Días de la semana */
+        .fc-col-header-cell {
+            background: #f8f9fa !important;
+            padding: 15px 5px !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            font-size: 11px !important;
+            letter-spacing: 1px !important;
+            color: #6b7280 !important;
+            border: none !important;
+        }
+
+        /* Celdas de horas */
+        .fc-timegrid-slot {
+            height: 50px !important;
+            border-color: #e5e7eb !important;
+        }
+
+        .fc-timegrid-slot-label {
+            font-size: 11px !important;
+            color: #9ca3af !important;
+            font-weight: 600 !important;
+        }
+
+        /* Eventos modernos */
         .fc-event {
             border: none !important;
-            border-radius: 4px !important;
-            padding: 2px 4px !important;
-            font-size: 12px !important;
+            border-radius: 8px !important;
+            padding: 6px 10px !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+            transition: all 0.2s ease !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .fc-event:hover {
+            transform: scale(1.02) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+            z-index: 999 !important;
         }
 
         .fc-event-title {
-            font-weight: 500;
-        }
-
-        .fc-daygrid-event {
-            margin: 1px 2px !important;
+            font-weight: 600 !important;
+            line-height: 1.4 !important;
         }
 
         .fc-timegrid-event {
-            border-left: 3px solid rgba(255,255,255,0.3) !important;
+            border-left: 4px solid rgba(255,255,255,0.5) !important;
+        }
+
+        /* Línea del NOW */
+        .fc-timegrid-now-indicator-line {
+            border-color: #ef4444 !important;
+            border-width: 2px !important;
+        }
+
+        .fc-timegrid-now-indicator-arrow {
+            border-color: #ef4444 !important;
+        }
+
+        /* Bordes más suaves */
+        .fc-theme-standard td,
+        .fc-theme-standard th {
+            border-color: #e5e7eb !important;
+        }
+
+        .fc-scrollgrid {
+            border-color: #e5e7eb !important;
+            border-radius: 8px !important;
+            overflow: hidden !important;
         }
 
         /* Responsive */
@@ -213,8 +338,8 @@ error_log("Parrilla Widget - Station: $station, Events: " . count($events));
 <body>
     <div class="widget-container">
         <div class="widget-header">
-            <div>
-                <h1>📅 <?php echo htmlspecialchars($stationName); ?></h1>
+            <div class="widget-header-content">
+                <h1><?php echo htmlspecialchars($stationName); ?></h1>
                 <div class="subtitle">Parrilla de Programación Semanal</div>
             </div>
         </div>
