@@ -106,12 +106,17 @@ foreach ($schedule as $event) {
     $startTime = $startDateTime->format('H:i');
     $endTime = $endDateTime->format('H:i');
 
+    // Crear timestamp normalizado (segundos desde medianoche para ordenamiento)
+    $hour = (int)$startDateTime->format('H');
+    $minute = (int)$startDateTime->format('i');
+    $normalizedTimestamp = ($hour * 3600) + ($minute * 60);
+
     // Crear objeto de evento
     $eventData = [
         'title' => $title,
         'start_time' => $startTime,
         'end_time' => $endTime,
-        'start_timestamp' => $startDateTime->getTimestamp(),
+        'start_timestamp' => $normalizedTimestamp,
         'playlist_type' => $playlistType,
         'description' => $programInfo['short_description'] ?? '',
         'long_description' => $programInfo['long_description'] ?? '',
@@ -155,11 +160,15 @@ foreach ($programsData as $programName => $programInfo) {
         $endDateTime = clone $startDateTime;
         $endDateTime->modify("+{$durationMinutes} minutes");
 
+        // Crear timestamp simple basado en hora (para ordenamiento correcto)
+        list($hour, $minute) = explode(':', $startTime);
+        $timestamp = ((int)$hour * 3600) + ((int)$minute * 60);
+
         $eventData = [
             'title' => $programName,
             'start_time' => $startTime,
             'end_time' => $endDateTime->format('H:i'),
-            'start_timestamp' => strtotime("next " . $daysOfWeek[(int)$dayOfWeek] . " " . $startTime),
+            'start_timestamp' => $timestamp,
             'playlist_type' => $playlistType,
             'description' => $programInfo['short_description'] ?? '',
             'long_description' => $programInfo['long_description'] ?? '',
