@@ -209,6 +209,26 @@ foreach ($programsData as $programName => $programInfo) {
     }
 }
 
+// Deduplicar eventos por día (eliminar duplicados con mismo título, día y hora)
+foreach ($eventsByDay as $day => &$dayEvents) {
+    $uniqueEvents = [];
+    $seenKeys = [];
+
+    foreach ($dayEvents as $event) {
+        // Crear clave única basada en título normalizado + hora de inicio
+        $normalizedTitle = trim(mb_strtolower($event['title']));
+        $uniqueKey = $normalizedTitle . '_' . $event['start_time'];
+
+        // Solo añadir si no hemos visto esta combinación antes
+        if (!isset($seenKeys[$uniqueKey])) {
+            $uniqueEvents[] = $event;
+            $seenKeys[$uniqueKey] = true;
+        }
+    }
+
+    $dayEvents = $uniqueEvents;
+}
+
 // Ordenar eventos de cada día por hora de inicio
 foreach ($eventsByDay as &$dayEvents) {
     usort($dayEvents, function($a, $b) {
