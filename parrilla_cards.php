@@ -224,9 +224,28 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
 
         .program-card {
             background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 20px;
+            <?php if ($widgetStyle === 'modern'): ?>
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+                padding: 20px;
+            <?php elseif ($widgetStyle === 'classic'): ?>
+                border: 2px solid #d1d5db;
+                border-radius: 4px;
+                box-shadow: none;
+                padding: 20px;
+            <?php elseif ($widgetStyle === 'compact'): ?>
+                border: 1px solid #e5e7eb;
+                border-radius: 6px;
+                box-shadow: none;
+                padding: 12px 16px;
+            <?php elseif ($widgetStyle === 'minimal'): ?>
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+                border-bottom: 1px solid #f3f4f6;
+                padding: 16px;
+            <?php endif; ?>
             margin-bottom: 20px;
             display: flex;
             gap: 20px;
@@ -235,8 +254,19 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
         }
 
         .program-card:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transform: translateY(-2px);
+            <?php if ($widgetStyle === 'modern'): ?>
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                transform: translateY(-2px);
+            <?php elseif ($widgetStyle === 'classic'): ?>
+                border-color: <?php echo htmlspecialchars($widgetColor); ?>;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            <?php elseif ($widgetStyle === 'compact'): ?>
+                border-color: <?php echo htmlspecialchars($widgetColor); ?>;
+                transform: translateX(4px);
+            <?php elseif ($widgetStyle === 'minimal'): ?>
+                background: #f9fafb;
+                border-bottom-color: <?php echo htmlspecialchars($widgetColor); ?>;
+            <?php endif; ?>
         }
 
         .program-card.live {
@@ -268,10 +298,23 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
         }
 
         .program-image {
-            width: 120px;
-            height: 120px;
+            <?php if ($widgetStyle === 'compact'): ?>
+                width: 80px;
+                height: 80px;
+            <?php else: ?>
+                width: 120px;
+                height: 120px;
+            <?php endif; ?>
             object-fit: cover;
-            border-radius: 8px;
+            <?php if ($widgetStyle === 'modern'): ?>
+                border-radius: 8px;
+            <?php elseif ($widgetStyle === 'classic'): ?>
+                border-radius: 4px;
+            <?php elseif ($widgetStyle === 'compact'): ?>
+                border-radius: 6px;
+            <?php elseif ($widgetStyle === 'minimal'): ?>
+                border-radius: 0;
+            <?php endif; ?>
             flex-shrink: 0;
         }
 
@@ -280,7 +323,11 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
         }
 
         .program-title {
-            font-size: 1.3em;
+            <?php if ($widgetStyle === 'compact'): ?>
+                font-size: 1.1em;
+            <?php else: ?>
+                font-size: 1.3em;
+            <?php endif; ?>
             font-weight: 700;
             color: #1e293b;
             margin-bottom: 8px;
