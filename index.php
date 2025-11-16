@@ -380,6 +380,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             if (saveProgramInfo($username, $programName, $programInfo)) {
                 $message = "Información del programa guardada correctamente";
+                // Redirigir para cerrar el formulario de edición
+                header('Location: ?page=parrilla&section=programs&saved=1');
+                exit;
             } else {
                 $error = 'Error al guardar la información del programa';
             }

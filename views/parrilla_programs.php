@@ -4,9 +4,16 @@
 $programsData = getAllProgramsWithStats($username);
 $editingProgram = $_GET['edit'] ?? null;
 $creatingProgram = $_GET['create'] ?? null;
+$showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
 ?>
 
 <div class="section">
+    <?php if ($showSavedMessage): ?>
+        <div style="background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <strong>✅ Guardado correctamente</strong> - La información del programa se ha actualizado.
+        </div>
+    <?php endif; ?>
+
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h3 style="margin: 0;">Gestión de Programas</h3>
         <div style="display: flex; gap: 10px;">
