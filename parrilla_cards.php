@@ -366,12 +366,29 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
             color: #64748b;
         }
 
+        .rss-episode-link {
+            text-decoration: none;
+            display: block;
+            margin-top: 12px;
+            transition: transform 0.2s;
+        }
+
+        .rss-episode-link:hover {
+            transform: translateX(4px);
+        }
+
         .rss-episode {
             background: #f1f5f9;
             padding: 12px;
             border-radius: 8px;
-            margin-top: 12px;
             border-left: 3px solid <?php echo htmlspecialchars($widgetColor); ?>;
+            transition: all 0.2s;
+        }
+
+        .rss-episode-link:hover .rss-episode {
+            background: #e2e8f0;
+            border-left-width: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
 
         .rss-episode-title {
@@ -381,13 +398,8 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
             font-size: 0.95em;
         }
 
-        .rss-episode-title a {
+        .rss-episode-link:hover .rss-episode-title {
             color: <?php echo htmlspecialchars($widgetColor); ?>;
-            text-decoration: none;
-        }
-
-        .rss-episode-title a:hover {
-            text-decoration: underline;
         }
 
         .rss-episode-date {
@@ -505,24 +517,34 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
                                 <?php endif; ?>
 
                                 <?php if ($latestEpisode): ?>
-                                    <div class="rss-episode">
-                                        <div class="rss-episode-title">
-                                            <strong>Último episodio:</strong>
-                                            <?php if (!empty($latestEpisode['link'])): ?>
-                                                <a href="<?php echo htmlspecialchars($latestEpisode['link']); ?>"
-                                                   target="_blank" rel="noopener">
+                                    <?php if (!empty($latestEpisode['link'])): ?>
+                                        <a href="<?php echo htmlspecialchars($latestEpisode['link']); ?>"
+                                           target="_blank" rel="noopener" class="rss-episode-link">
+                                            <div class="rss-episode">
+                                                <div class="rss-episode-title">
+                                                    <strong>Último episodio:</strong>
                                                     <?php echo htmlspecialchars($latestEpisode['title']); ?>
-                                                </a>
-                                            <?php else: ?>
+                                                </div>
+                                                <?php if (!empty($latestEpisode['formatted_date'])): ?>
+                                                    <div class="rss-episode-date">
+                                                        <?php echo htmlspecialchars($latestEpisode['formatted_date']); ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </a>
+                                    <?php else: ?>
+                                        <div class="rss-episode">
+                                            <div class="rss-episode-title">
+                                                <strong>Último episodio:</strong>
                                                 <?php echo htmlspecialchars($latestEpisode['title']); ?>
+                                            </div>
+                                            <?php if (!empty($latestEpisode['formatted_date'])): ?>
+                                                <div class="rss-episode-date">
+                                                    <?php echo htmlspecialchars($latestEpisode['formatted_date']); ?>
+                                                </div>
                                             <?php endif; ?>
                                         </div>
-                                        <?php if (!empty($latestEpisode['formatted_date'])): ?>
-                                            <div class="rss-episode-date">
-                                                <?php echo htmlspecialchars($latestEpisode['formatted_date']); ?>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             </div>
                         </div>
