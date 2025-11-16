@@ -136,6 +136,7 @@ foreach ($schedule as $event) {
 }
 
 // Añadir programas creados manualmente con horario definido
+// Solo si NO están ya en el schedule de AzuraCast (evitar duplicados)
 foreach ($programsData as $programName => $programInfo) {
     // Solo procesar programas con horario definido
     if (empty($programInfo['schedule_days']) || empty($programInfo['schedule_start_time'])) {
@@ -146,6 +147,26 @@ foreach ($programsData as $programName => $programInfo) {
 
     // Filtrar jingles y bloques musicales
     if ($playlistType === 'jingles' || $playlistType === 'music_block') {
+        continue;
+    }
+
+    // Verificar si este programa ya existe en el schedule de AzuraCast
+    // Normalizar nombre para comparación más robusta (eliminar espacios extra, normalizar mayúsculas)
+    $normalizedProgramName = trim(mb_strtolower($programName));
+    $existsInSchedule = false;
+
+    foreach ($schedule as $azEvent) {
+        $azTitle = $azEvent['name'] ?? $azEvent['playlist'] ?? '';
+        $normalizedAzTitle = trim(mb_strtolower($azTitle));
+
+        if ($normalizedAzTitle === $normalizedProgramName) {
+            $existsInSchedule = true;
+            break;
+        }
+    }
+
+    // Si ya está en AzuraCast, no lo añadimos manualmente
+    if ($existsInSchedule) {
         continue;
     }
 
@@ -666,6 +687,16 @@ function htmlEsc($str) {
             white-space: nowrap;
         }
 
+        .episode-link {
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .episode-link:hover {
+            color: <?php echo htmlEsc($widgetColor); ?>;
+            text-decoration: underline;
+        }
+
         .play-button {
             flex-shrink: 0;
             width: 40px;
@@ -1026,7 +1057,16 @@ function htmlEsc($str) {
                                                 <div class="latest-episode-content">
                                                     <div class="episode-info">
                                                         <span class="episode-date"><?php echo htmlEsc($latestEpisode['formatted_date']); ?></span>
-                                                        <span class="episode-title"><?php echo htmlEsc($latestEpisode['title']); ?></span>
+                                                        <?php if (!empty($latestEpisode['link'])): ?>
+                                                            <a href="<?php echo htmlEsc($latestEpisode['link']); ?>"
+                                                               target="_blank"
+                                                               class="episode-title episode-link"
+                                                               title="Ver episodio">
+                                                                <?php echo htmlEsc($latestEpisode['title']); ?>
+                                                            </a>
+                                                        <?php else: ?>
+                                                            <span class="episode-title"><?php echo htmlEsc($latestEpisode['title']); ?></span>
+                                                        <?php endif; ?>
                                                     </div>
                                                     <?php if (!empty($latestEpisode['audio_url'])): ?>
                                                         <a href="<?php echo htmlEsc($latestEpisode['audio_url']); ?>"
@@ -1089,6 +1129,17 @@ function htmlEsc($str) {
         document.addEventListener('DOMContentLoaded', function() {
             const today = new Date().getDay(); // 0=Domingo, 1=Lunes, etc.
             showDay(today);
+
+            // Scroll al programa en vivo después de un pequeño delay
+            setTimeout(function() {
+                const liveProgram = document.querySelector('.program-card.live');
+                if (liveProgram) {
+                    liveProgram.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                }
+            }, 300);
         });
     </script>
 </body>
