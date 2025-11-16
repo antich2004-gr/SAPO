@@ -488,7 +488,7 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
                                 <div class="program-title">
                                     <?php echo htmlspecialchars($event['title']); ?>
                                     <?php if ($isLive): ?>
-                                        <span class="live-badge">🔴 EN VIVO</span>
+                                        <span class="live-badge">🔴 EN EMISIÓN</span>
                                     <?php endif; ?>
                                 </div>
 
