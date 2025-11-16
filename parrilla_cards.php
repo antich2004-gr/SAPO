@@ -972,6 +972,27 @@ function htmlEsc($str) {
                     <div class="programs-list">
                         <?php foreach ($eventsByDay[$dayNum] as $event): ?>
                             <?php
+                            // Si el programa tiene RSS feed, verificar si el último episodio es reciente
+                            $shouldSkip = false;
+                            $cachedLatestEpisode = null;
+
+                            if (!empty($event['rss_feed'])) {
+                                $cachedLatestEpisode = getLatestEpisodeFromRSS($event['rss_feed']);
+                                if ($cachedLatestEpisode && !empty($cachedLatestEpisode['pub_date'])) {
+                                    $episodeTimestamp = strtotime($cachedLatestEpisode['pub_date']);
+                                    $daysSinceLastEpisode = (time() - $episodeTimestamp) / (60 * 60 * 24);
+
+                                    // Si hace más de 30 días, ocultar el programa
+                                    if ($daysSinceLastEpisode > 30) {
+                                        $shouldSkip = true;
+                                    }
+                                }
+                            }
+
+                            if ($shouldSkip) {
+                                continue;
+                            }
+
                             // Determinar si el programa está en vivo ahora
                             $now = time();
                             $isLive = false;
@@ -1065,10 +1086,9 @@ function htmlEsc($str) {
                                         <?php endif; ?>
 
                                         <?php
-                                        // Mostrar último episodio si hay RSS feed
-                                        if (!empty($event['rss_feed'])):
-                                            $latestEpisode = getLatestEpisodeFromRSS($event['rss_feed']);
-                                            if ($latestEpisode):
+                                        // Mostrar último episodio si hay RSS feed (usar caché del check anterior)
+                                        if (!empty($event['rss_feed']) && $cachedLatestEpisode):
+                                            $latestEpisode = $cachedLatestEpisode;
                                         ?>
                                             <div class="latest-episode">
                                                 <div class="latest-episode-header">
@@ -1105,10 +1125,7 @@ function htmlEsc($str) {
                                                     <?php endif; ?>
                                                 </div>
                                             </div>
-                                        <?php
-                                            endif;
-                                        endif;
-                                        ?>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
