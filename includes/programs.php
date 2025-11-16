@@ -343,7 +343,38 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
     // Extraer datos del episodio
     $title = (string)($item->title ?? '');
     $description = (string)($item->description ?? $item->summary ?? '');
-    $link = (string)($item->link ?? '');
+
+    // Extraer link (compatible con RSS 2.0 y Atom)
+    $link = '';
+    if (isset($item->link)) {
+        // RSS 2.0: <link>http://...</link>
+        if (is_string($item->link) || method_exists($item->link, '__toString')) {
+            $link = (string)$item->link;
+        }
+        // Atom: <link href="http://..." /> o múltiples links
+        else {
+            // Si es un array de links, buscar el link alternate o el primero
+            foreach ($item->link as $linkItem) {
+                if (isset($linkItem['href'])) {
+                    // Preferir link con rel="alternate" o sin rel
+                    if (!isset($linkItem['rel']) || $linkItem['rel'] == 'alternate') {
+                        $link = (string)$linkItem['href'];
+                        break;
+                    }
+                }
+            }
+            // Si no encontramos alternate, usar el primer link con href
+            if (empty($link)) {
+                foreach ($item->link as $linkItem) {
+                    if (isset($linkItem['href'])) {
+                        $link = (string)$linkItem['href'];
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     $pubDate = (string)($item->pubDate ?? $item->published ?? '');
 
     // Buscar URL del audio (enclosure)
