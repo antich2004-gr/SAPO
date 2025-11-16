@@ -253,11 +253,35 @@ function getLatestEpisodeFromRSS($rssUrl) {
         return null;
     }
 
+    // SEGURIDAD: Validar que es una URL válida
+    if (!filter_var($rssUrl, FILTER_VALIDATE_URL)) {
+        error_log("URL RSS inválida: $rssUrl");
+        return null;
+    }
+
+    // SEGURIDAD: Prevenir SSRF - solo permitir HTTP/HTTPS públicos
+    $parsedUrl = parse_url($rssUrl);
+    if (!in_array($parsedUrl['scheme'] ?? '', ['http', 'https'])) {
+        error_log("Esquema no permitido en RSS: $rssUrl");
+        return null;
+    }
+
+    // SEGURIDAD: Bloquear IPs privadas y localhost para prevenir SSRF
+    $host = $parsedUrl['host'] ?? '';
+    $ip = gethostbyname($host);
+
+    // Bloquear rangos privados: 127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+        error_log("IP privada/localhost bloqueada en RSS: $rssUrl ($ip)");
+        return null;
+    }
+
     // Intentar cargar el RSS con timeout
     $context = stream_context_create([
         'http' => [
             'timeout' => 5,
-            'user_agent' => 'Mozilla/5.0 (compatible; SAPO-RSS-Parser/1.0)'
+            'user_agent' => 'Mozilla/5.0 (compatible; SAPO-RSS-Parser/1.0)',
+            'follow_location' => 0  // SEGURIDAD: No seguir redirects automáticamente
         ]
     ]);
 
@@ -269,13 +293,20 @@ function getLatestEpisodeFromRSS($rssUrl) {
     }
 
     // Parsear XML
+    // SEGURIDAD: Deshabilitar entidades externas para prevenir XXE
     libxml_use_internal_errors(true);
-    $xml = simplexml_load_string($rssContent);
+    libxml_disable_entity_loader(true);
+
+    $xml = simplexml_load_string($rssContent, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_DTDLOAD | LIBXML_DTDATTR);
 
     if ($xml === false) {
         error_log("Error al parsear XML del RSS: $rssUrl");
+        libxml_disable_entity_loader(false);
         return null;
     }
+
+    // Re-habilitar para no afectar otros procesos
+    libxml_disable_entity_loader(false);
 
     // Intentar obtener el primer item (último episodio)
     $item = null;

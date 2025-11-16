@@ -11,12 +11,18 @@ require_once 'config.php';
 require_once INCLUDES_DIR . '/database.php';
 require_once INCLUDES_DIR . '/azuracast.php';
 require_once INCLUDES_DIR . '/programs.php';
+require_once INCLUDES_DIR . '/utils.php';
 
 // Obtener parámetro de estación
 $station = $_GET['station'] ?? '';
 
 if (empty($station)) {
     die('Error: Debe especificar una estación (?station=nombre)');
+}
+
+// SEGURIDAD: Validar formato de username para prevenir path traversal
+if (!validateInput($station, 'username')) {
+    die('Error: Nombre de estación inválido');
 }
 
 // Validar que la estación existe
