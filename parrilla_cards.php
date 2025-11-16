@@ -7,11 +7,30 @@ header("X-Frame-Options: SAMEORIGIN");
 header("X-XSS-Protection: 1; mode=block");
 header("Referrer-Policy: strict-origin-when-cross-origin");
 
+// Content Security Policy - Protección contra XSS
+header("Content-Security-Policy: " .
+    "default-src 'self'; " .
+    "script-src 'self' 'unsafe-inline'; " .  // unsafe-inline necesario para <script> embebido
+    "style-src 'self' 'unsafe-inline'; " .   // unsafe-inline necesario para <style> embebido
+    "img-src 'self' data: https:; " .        // Permitir imágenes externas HTTPS
+    "font-src 'self'; " .
+    "connect-src 'self'; " .
+    "frame-ancestors 'self' *; " .           // Permitir embebido en cualquier origen
+    "base-uri 'self'; " .
+    "form-action 'self'"
+);
+
+// HSTS - Forzar HTTPS si está disponible
+if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+    header("Strict-Transport-Security: max-age=31536000; includeSubDomains; preload");
+}
+
 require_once 'config.php';
 require_once INCLUDES_DIR . '/database.php';
 require_once INCLUDES_DIR . '/azuracast.php';
 require_once INCLUDES_DIR . '/programs.php';
 require_once INCLUDES_DIR . '/utils.php';
+require_once INCLUDES_DIR . '/security_logger.php';
 
 // Obtener parámetro de estación
 $station = $_GET['station'] ?? '';
@@ -22,6 +41,7 @@ if (empty($station)) {
 
 // SEGURIDAD: Validar formato de username para prevenir path traversal
 if (!validateInput($station, 'username')) {
+    logPathTraversal($station, ['source' => 'parrilla_cards.php']);
     die('Error: Nombre de estación inválido');
 }
 

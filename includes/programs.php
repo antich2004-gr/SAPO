@@ -243,19 +243,29 @@ function deleteProgram($username, $programName) {
 }
 
 /**
- * Obtener el último episodio de un feed RSS
+ * Obtener el último episodio de un feed RSS (con caché)
  *
  * @param string $rssUrl URL del feed RSS
+ * @param int $cacheTTL Tiempo de vida de la caché en segundos (por defecto 1 hora)
  * @return array|null Datos del último episodio o null si hay error
  */
-function getLatestEpisodeFromRSS($rssUrl) {
+function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
     if (empty($rssUrl)) {
         return null;
+    }
+
+    // Verificar caché primero
+    $cachedData = getRSSFromCache($rssUrl, $cacheTTL);
+    if ($cachedData !== null) {
+        return $cachedData;
     }
 
     // SEGURIDAD: Validar que es una URL válida
     if (!filter_var($rssUrl, FILTER_VALIDATE_URL)) {
         error_log("URL RSS inválida: $rssUrl");
+        if (function_exists('logInvalidInput')) {
+            logInvalidInput('rss_url', $rssUrl, ['validation' => 'FILTER_VALIDATE_URL']);
+        }
         return null;
     }
 
@@ -263,6 +273,9 @@ function getLatestEpisodeFromRSS($rssUrl) {
     $parsedUrl = parse_url($rssUrl);
     if (!in_array($parsedUrl['scheme'] ?? '', ['http', 'https'])) {
         error_log("Esquema no permitido en RSS: $rssUrl");
+        if (function_exists('logSSRFAttempt')) {
+            logSSRFAttempt($rssUrl, 'Esquema no permitido', ['scheme' => $parsedUrl['scheme'] ?? 'none']);
+        }
         return null;
     }
 
@@ -273,6 +286,9 @@ function getLatestEpisodeFromRSS($rssUrl) {
     // Bloquear rangos privados: 127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
     if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
         error_log("IP privada/localhost bloqueada en RSS: $rssUrl ($ip)");
+        if (function_exists('logSSRFAttempt')) {
+            logSSRFAttempt($rssUrl, 'IP privada/localhost', ['host' => $host, 'ip' => $ip]);
+        }
         return null;
     }
 
@@ -352,7 +368,7 @@ function getLatestEpisodeFromRSS($rssUrl) {
         }
     }
 
-    return [
+    $result = [
         'title' => $title,
         'description' => strip_tags($description),
         'link' => $link,
@@ -360,4 +376,106 @@ function getLatestEpisodeFromRSS($rssUrl) {
         'pub_date' => $pubDate,
         'formatted_date' => $formattedDate
     ];
+
+    // Guardar en caché
+    saveRSSToCache($rssUrl, $result);
+
+    return $result;
+}
+
+/**
+ * Obtener RSS de la caché
+ *
+ * @param string $rssUrl URL del feed RSS
+ * @param int $ttl Tiempo de vida en segundos
+ * @return array|null Datos cacheados o null si no existe o expiró
+ */
+function getRSSFromCache($rssUrl, $ttl) {
+    $cacheDir = DATA_DIR . '/rss_cache';
+    if (!file_exists($cacheDir)) {
+        return null;
+    }
+
+    // Crear nombre de archivo único basado en URL
+    $cacheFile = $cacheDir . '/' . md5($rssUrl) . '.json';
+
+    if (!file_exists($cacheFile)) {
+        return null;
+    }
+
+    // Verificar si expiró
+    $fileAge = time() - filemtime($cacheFile);
+    if ($fileAge > $ttl) {
+        @unlink($cacheFile);  // Eliminar caché expirada
+        return null;
+    }
+
+    // Leer caché
+    $data = file_get_contents($cacheFile);
+    $decoded = json_decode($data, true);
+
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        @unlink($cacheFile);  // Eliminar caché corrupta
+        return null;
+    }
+
+    return $decoded;
+}
+
+/**
+ * Guardar RSS en la caché
+ *
+ * @param string $rssUrl URL del feed RSS
+ * @param array $data Datos a cachear
+ * @return bool True si se guardó correctamente
+ */
+function saveRSSToCache($rssUrl, $data) {
+    $cacheDir = DATA_DIR . '/rss_cache';
+
+    // Crear directorio de caché si no existe
+    if (!file_exists($cacheDir)) {
+        if (!file_exists(DATA_DIR)) {
+            mkdir(DATA_DIR, 0755, true);
+        }
+        mkdir($cacheDir, 0755, true);
+    }
+
+    // Crear nombre de archivo único basado en URL
+    $cacheFile = $cacheDir . '/' . md5($rssUrl) . '.json';
+
+    // Guardar JSON
+    $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    if ($json === false) {
+        return false;
+    }
+
+    // Escribir archivo
+    $result = @file_put_contents($cacheFile, $json, LOCK_EX);
+
+    // Limpiar cachés antiguas ocasionalmente (1% de las veces)
+    if (rand(1, 100) === 1) {
+        cleanOldRSSCache($cacheDir);
+    }
+
+    return $result !== false;
+}
+
+/**
+ * Limpiar cachés de RSS antiguas (más de 7 días sin acceso)
+ *
+ * @param string $cacheDir Directorio de caché
+ */
+function cleanOldRSSCache($cacheDir) {
+    $files = glob($cacheDir . '/*.json');
+    if (!$files) {
+        return;
+    }
+
+    $cutoffTime = time() - (7 * 24 * 60 * 60); // 7 días
+
+    foreach ($files as $file) {
+        if (filemtime($file) < $cutoffTime) {
+            @unlink($file);
+        }
+    }
 }
