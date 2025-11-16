@@ -297,6 +297,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     'presenters' => trim($_POST['presenters'] ?? ''),
                     'social_twitter' => trim($_POST['social_twitter'] ?? ''),
                     'social_instagram' => trim($_POST['social_instagram'] ?? ''),
+                    'rss_feed' => trim($_POST['rss_feed'] ?? ''),
                     'schedule_days' => $scheduleDays,
                     'schedule_start_time' => trim($_POST['schedule_start_time'] ?? ''),
                     'schedule_duration' => (int)($_POST['schedule_duration'] ?? 60),
@@ -361,7 +362,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'image' => trim($_POST['image'] ?? ''),
                 'presenters' => trim($_POST['presenters'] ?? ''),
                 'social_twitter' => trim($_POST['social_twitter'] ?? ''),
-                'social_instagram' => trim($_POST['social_instagram'] ?? '')
+                'social_instagram' => trim($_POST['social_instagram'] ?? ''),
+                'rss_feed' => trim($_POST['rss_feed'] ?? '')
             ];
 
             // Solo guardar campos de horario si es programa en directo

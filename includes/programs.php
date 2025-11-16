@@ -241,3 +241,92 @@ function deleteProgram($username, $programName) {
 
     return saveProgramsDB($username, $data);
 }
+
+/**
+ * Obtener el último episodio de un feed RSS
+ *
+ * @param string $rssUrl URL del feed RSS
+ * @return array|null Datos del último episodio o null si hay error
+ */
+function getLatestEpisodeFromRSS($rssUrl) {
+    if (empty($rssUrl)) {
+        return null;
+    }
+
+    // Intentar cargar el RSS con timeout
+    $context = stream_context_create([
+        'http' => [
+            'timeout' => 5,
+            'user_agent' => 'Mozilla/5.0 (compatible; SAPO-RSS-Parser/1.0)'
+        ]
+    ]);
+
+    $rssContent = @file_get_contents($rssUrl, false, $context);
+
+    if ($rssContent === false) {
+        error_log("Error al obtener RSS: $rssUrl");
+        return null;
+    }
+
+    // Parsear XML
+    libxml_use_internal_errors(true);
+    $xml = simplexml_load_string($rssContent);
+
+    if ($xml === false) {
+        error_log("Error al parsear XML del RSS: $rssUrl");
+        return null;
+    }
+
+    // Intentar obtener el primer item (último episodio)
+    $item = null;
+
+    // Formato RSS 2.0
+    if (isset($xml->channel->item[0])) {
+        $item = $xml->channel->item[0];
+    }
+    // Formato Atom
+    elseif (isset($xml->entry[0])) {
+        $item = $xml->entry[0];
+    }
+
+    if (!$item) {
+        return null;
+    }
+
+    // Extraer datos del episodio
+    $title = (string)($item->title ?? '');
+    $description = (string)($item->description ?? $item->summary ?? '');
+    $link = (string)($item->link ?? '');
+    $pubDate = (string)($item->pubDate ?? $item->published ?? '');
+
+    // Buscar URL del audio (enclosure)
+    $audioUrl = '';
+    if (isset($item->enclosure['url'])) {
+        $audioUrl = (string)$item->enclosure['url'];
+    } elseif (isset($item->link)) {
+        foreach ($item->link as $linkItem) {
+            if (isset($linkItem['rel']) && $linkItem['rel'] == 'enclosure') {
+                $audioUrl = (string)$linkItem['href'];
+                break;
+            }
+        }
+    }
+
+    // Formatear fecha
+    $formattedDate = '';
+    if ($pubDate) {
+        $timestamp = strtotime($pubDate);
+        if ($timestamp) {
+            $formattedDate = date('d/m/Y', $timestamp);
+        }
+    }
+
+    return [
+        'title' => $title,
+        'description' => strip_tags($description),
+        'link' => $link,
+        'audio_url' => $audioUrl,
+        'pub_date' => $pubDate,
+        'formatted_date' => $formattedDate
+    ];
+}

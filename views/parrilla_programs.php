@@ -167,6 +167,15 @@ $creatingProgram = $_GET['create'] ?? null;
                            placeholder="alternativa90">
                 </div>
 
+                <div class="form-group">
+                    <label>Feed RSS del podcast: <small>(opcional)</small></label>
+                    <input type="url" name="rss_feed"
+                           placeholder="https://feeds.feedburner.com/mipodcast">
+                    <small style="color: #6b7280;">
+                        Si tienes un podcast RSS, pega aquí la URL del feed. Se mostrará el último episodio publicado en la parrilla.
+                    </small>
+                </div>
+
                 <div style="display: flex; gap: 10px;">
                     <button type="submit" class="btn btn-success">
                         <span class="btn-icon">💾</span> Añadir Programa en Directo
@@ -354,6 +363,16 @@ $creatingProgram = $_GET['create'] ?? null;
                         <input type="text" name="social_instagram"
                                value="<?php echo htmlEsc($programInfo['social_instagram'] ?? ''); ?>"
                                placeholder="alternativa90">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Feed RSS del podcast: <small>(opcional)</small></label>
+                        <input type="url" name="rss_feed"
+                               value="<?php echo htmlEsc($programInfo['rss_feed'] ?? ''); ?>"
+                               placeholder="https://feeds.feedburner.com/mipodcast">
+                        <small style="color: #6b7280;">
+                            Si tienes un podcast RSS, pega aquí la URL del feed. Se mostrará el último episodio publicado en la parrilla.
+                        </small>
                     </div>
 
                     <div style="display: flex; gap: 10px;">

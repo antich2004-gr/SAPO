@@ -127,7 +127,8 @@ foreach ($schedule as $event) {
         'image' => $programInfo['image'] ?? '',
         'presenters' => $programInfo['presenters'] ?? '',
         'twitter' => $programInfo['social_twitter'] ?? '',
-        'instagram' => $programInfo['social_instagram'] ?? ''
+        'instagram' => $programInfo['social_instagram'] ?? '',
+        'rss_feed' => $programInfo['rss_feed'] ?? ''
     ];
 
     // Agregar solo programas (jingles y bloques musicales ya filtrados arriba)
@@ -179,7 +180,8 @@ foreach ($programsData as $programName => $programInfo) {
             'image' => $programInfo['image'] ?? '',
             'presenters' => $programInfo['presenters'] ?? '',
             'twitter' => $programInfo['social_twitter'] ?? '',
-            'instagram' => $programInfo['social_instagram'] ?? ''
+            'instagram' => $programInfo['social_instagram'] ?? '',
+            'rss_feed' => $programInfo['rss_feed'] ?? ''
         ];
 
         $eventsByDay[(int)$dayOfWeek][] = $eventData;
@@ -614,6 +616,77 @@ function htmlEsc($str) {
             50% { opacity: 0.7; }
         }
 
+        /* Estilos para último episodio RSS */
+        .latest-episode {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 2px dashed #e5e7eb;
+        }
+
+        .latest-episode-header {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .latest-episode-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            background: #f9fafb;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .episode-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .episode-date {
+            font-size: 11px;
+            color: #9ca3af;
+            font-weight: 500;
+        }
+
+        .episode-title {
+            font-size: 13px;
+            color: #374151;
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .play-button {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: <?php echo htmlEsc($widgetColor); ?>;
+            color: white;
+            border-radius: 50%;
+            text-decoration: none;
+            font-size: 18px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .play-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
         /* ========================================
            RESPONSIVE DESIGN - TABLETS & MOBILE
            ======================================== */
@@ -796,6 +869,25 @@ function htmlEsc($str) {
             .social-link {
                 font-size: 18px;
             }
+
+            /* RSS Episode en móvil */
+            .episode-title {
+                font-size: 12px;
+            }
+
+            .episode-date {
+                font-size: 10px;
+            }
+
+            .play-button {
+                width: 36px;
+                height: 36px;
+                font-size: 16px;
+            }
+
+            .latest-episode-content {
+                padding: 10px;
+            }
         }
     </style>
 </head>
@@ -920,6 +1012,43 @@ function htmlEsc($str) {
                                                 </a>
                                             </div>
                                         <?php endif; ?>
+
+                                        <?php
+                                        // Mostrar último episodio si hay RSS feed
+                                        if (!empty($event['rss_feed'])):
+                                            $latestEpisode = getLatestEpisodeFromRSS($event['rss_feed']);
+                                            if ($latestEpisode):
+                                        ?>
+                                            <div class="latest-episode">
+                                                <div class="latest-episode-header">
+                                                    📻 Último programa
+                                                </div>
+                                                <div class="latest-episode-content">
+                                                    <div class="episode-info">
+                                                        <span class="episode-date"><?php echo htmlEsc($latestEpisode['formatted_date']); ?></span>
+                                                        <span class="episode-title"><?php echo htmlEsc($latestEpisode['title']); ?></span>
+                                                    </div>
+                                                    <?php if (!empty($latestEpisode['audio_url'])): ?>
+                                                        <a href="<?php echo htmlEsc($latestEpisode['audio_url']); ?>"
+                                                           target="_blank"
+                                                           class="play-button"
+                                                           title="Reproducir audio">
+                                                            ▶️
+                                                        </a>
+                                                    <?php elseif (!empty($latestEpisode['link'])): ?>
+                                                        <a href="<?php echo htmlEsc($latestEpisode['link']); ?>"
+                                                           target="_blank"
+                                                           class="play-button"
+                                                           title="Ver episodio">
+                                                            🔗
+                                                        </a>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        <?php
+                                            endif;
+                                        endif;
+                                        ?>
                                     </div>
                                 </div>
                             </div>
