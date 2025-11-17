@@ -8,9 +8,10 @@ header("X-XSS-Protection: 1; mode=block");
 header("Referrer-Policy: strict-origin-when-cross-origin");
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors 'self' *; base-uri 'self'; form-action 'self'");
 
-if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
-    header("Strict-Transport-Security: max-age=31536000; includeSubDomains; preload");
-}
+// Temporalmente desactivado para permitir HTTP
+// if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+//     header("Strict-Transport-Security: max-age=31536000; includeSubDomains; preload");
+// }
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
