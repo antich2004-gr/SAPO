@@ -112,8 +112,12 @@ function writeCaducidades($username, $caducidades) {
         $content .= $podcastName . ':' . $dias . "\n";
         error_log("DEBUG writeCaducidades - Agregando: $podcastName:$dias");
     }
-    
-    return file_put_contents($path, $content) !== false;
+
+    error_log("DEBUG writeCaducidades - Escribiendo en: $path");
+    error_log("DEBUG writeCaducidades - Contenido: " . substr($content, 0, 200));
+    $result = file_put_contents($path, $content);
+    error_log("DEBUG writeCaducidades - Resultado: " . ($result !== false ? "SUCCESS ($result bytes)" : "FAILED"));
+    return $result !== false;
 }
 
 function setCaducidad($username, $podcastName, $dias) {
