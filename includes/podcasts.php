@@ -377,18 +377,42 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
 
 function deletePodcast($username, $index) {
     $podcasts = readServerList($username);
-    
+
+    // Ordenar alfabéticamente igual que en user.php para que los índices coincidan
+    usort($podcasts, function($a, $b) {
+        return strcasecmp($a['name'], $b['name']);
+    });
+    $podcasts = array_values($podcasts);
+
     if ($index < 0 || $index >= count($podcasts)) {
         return ['success' => false, 'error' => 'Podcast no encontrado'];
     }
-    
+
+    // Obtener URL y nombre del podcast a eliminar
+    $targetUrl = $podcasts[$index]['url'];
     $deletedName = $podcasts[$index]['name'];
-    array_splice($podcasts, $index, 1);
-    
-    if (writeServerList($username, $podcasts)) {
+
+    // Releer la lista original (sin ordenar) para hacer los cambios
+    $podcastsOriginal = readServerList($username);
+
+    // Buscar y eliminar el podcast por URL
+    $found = false;
+    foreach ($podcastsOriginal as $key => $podcast) {
+        if ($podcast['url'] === $targetUrl) {
+            array_splice($podcastsOriginal, $key, 1);
+            $found = true;
+            break;
+        }
+    }
+
+    if (!$found) {
+        return ['success' => false, 'error' => 'Podcast no encontrado en la lista'];
+    }
+
+    if (writeServerList($username, $podcastsOriginal)) {
         // Eliminar entrada de caducidad del podcast
         deleteCaducidad($username, $deletedName);
-        
+
         return ['success' => true, 'message' => 'Podcast eliminado correctamente'];
     } else {
         return ['success' => false, 'error' => 'Error al eliminar el podcast'];
@@ -583,15 +607,39 @@ function getDuracionesOptions() {
 function pausePodcast($username, $index) {
     $podcasts = readServerList($username);
 
+    // Ordenar alfabéticamente igual que en user.php para que los índices coincidan
+    usort($podcasts, function($a, $b) {
+        return strcasecmp($a['name'], $b['name']);
+    });
+    $podcasts = array_values($podcasts);
+
     if (!isset($podcasts[$index])) {
         return ['success' => false, 'message' => 'Podcast no encontrado'];
     }
 
-    // Marcar como pausado
-    $podcasts[$index]['paused'] = true;
+    // Obtener la URL del podcast a pausar (la URL es única y no cambia)
+    $targetUrl = $podcasts[$index]['url'];
+
+    // Releer la lista original (sin ordenar) para hacer los cambios
+    $podcastsOriginal = readServerList($username);
+
+    // Buscar el podcast por URL y marcarlo como pausado
+    $found = false;
+    foreach ($podcastsOriginal as &$podcast) {
+        if ($podcast['url'] === $targetUrl) {
+            $podcast['paused'] = true;
+            $found = true;
+            break;
+        }
+    }
+    unset($podcast); // Romper referencia
+
+    if (!$found) {
+        return ['success' => false, 'message' => 'Podcast no encontrado en la lista'];
+    }
 
     // Guardar
-    if (writeServerList($username, $podcasts)) {
+    if (writeServerList($username, $podcastsOriginal)) {
         return [
             'success' => true,
             'message' => 'Podcast pausado correctamente. No se descargarán nuevos episodios.'
@@ -607,15 +655,39 @@ function pausePodcast($username, $index) {
 function resumePodcast($username, $index) {
     $podcasts = readServerList($username);
 
+    // Ordenar alfabéticamente igual que en user.php para que los índices coincidan
+    usort($podcasts, function($a, $b) {
+        return strcasecmp($a['name'], $b['name']);
+    });
+    $podcasts = array_values($podcasts);
+
     if (!isset($podcasts[$index])) {
         return ['success' => false, 'message' => 'Podcast no encontrado'];
     }
 
-    // Marcar como no pausado
-    $podcasts[$index]['paused'] = false;
+    // Obtener la URL del podcast a reanudar (la URL es única y no cambia)
+    $targetUrl = $podcasts[$index]['url'];
+
+    // Releer la lista original (sin ordenar) para hacer los cambios
+    $podcastsOriginal = readServerList($username);
+
+    // Buscar el podcast por URL y marcarlo como no pausado
+    $found = false;
+    foreach ($podcastsOriginal as &$podcast) {
+        if ($podcast['url'] === $targetUrl) {
+            $podcast['paused'] = false;
+            $found = true;
+            break;
+        }
+    }
+    unset($podcast); // Romper referencia
+
+    if (!$found) {
+        return ['success' => false, 'message' => 'Podcast no encontrado en la lista'];
+    }
 
     // Guardar
-    if (writeServerList($username, $podcasts)) {
+    if (writeServerList($username, $podcastsOriginal)) {
         return [
             'success' => true,
             'message' => 'Podcast reanudado correctamente. Se reanudarán las descargas.'
