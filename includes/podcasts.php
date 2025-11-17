@@ -251,6 +251,9 @@ function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracio
 }
 
 function editPodcast($username, $index, $url, $category, $name, $caducidad = 30, $duracion = '') {
+    // DEBUG: Log de lo que recibe la función
+    error_log("DEBUG editPodcast - Username: $username, Index: $index, URL: $url, Category: $category, Name: $name, Caducidad: $caducidad, Duracion: $duracion");
+
     $podcasts = readServerList($username);
 
     // Ordenar alfabéticamente igual que en user.php para que los índices coincidan
@@ -361,10 +364,13 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
         }
 
         // Actualizar caducidades.txt solo si no es 30 (valor por defecto)
+        error_log("DEBUG editPodcast - Guardando caducidad: sanitizedName='$sanitizedName', caducidad=$caducidad");
         if ($caducidad != 30) {
+            error_log("DEBUG editPodcast - Llamando setCaducidad($username, $sanitizedName, $caducidad)");
             setCaducidad($username, $sanitizedName, $caducidad);
         } else {
             // Si es 30, eliminar entrada (usará el default)
+            error_log("DEBUG editPodcast - Llamando deleteCaducidad($username, $sanitizedName)");
             deleteCaducidad($username, $sanitizedName);
         }
 
