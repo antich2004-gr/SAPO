@@ -116,6 +116,7 @@ function syncProgramsFromAzuracast($username) {
     foreach ($detectedPrograms as $programName) {
         if (!isset($data['programs'][$programName])) {
             $data['programs'][$programName] = [
+                'display_title' => '', // Título personalizado (si está vacío, usa el nombre de la playlist)
                 'playlist_type' => 'program', // program, music_block, jingles
                 'short_description' => '',
                 'long_description' => '',

@@ -72,8 +72,12 @@ foreach ($schedule as $event) {
     $minute = (int)$startDateTime->format('i');
     $normalizedTimestamp = ($hour * 3600) + ($minute * 60);
 
+    // Usar título personalizado si existe, sino el nombre de la playlist
+    $displayTitle = !empty($programInfo['display_title']) ? $programInfo['display_title'] : $title;
+
     $eventsByDay[$dayOfWeek][] = [
-        'title' => $title,
+        'title' => $displayTitle,
+        'original_title' => $title, // Guardar el título original para referencia
         'start_time' => $startDateTime->format('H:i'),
         'end_time' => $endDateTime->format('H:i'),
         'start_timestamp' => $normalizedTimestamp,
