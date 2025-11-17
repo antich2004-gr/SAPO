@@ -24,6 +24,9 @@ header("Expires: " . gmdate('D, d M Y H:i:s', time() + 120) . ' GMT');
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Configurar zona horaria a CET/CEST (Europe/Madrid)
+date_default_timezone_set('Europe/Madrid');
+
 require_once 'config.php';
 require_once INCLUDES_DIR . '/database.php';
 require_once INCLUDES_DIR . '/azuracast.php';
