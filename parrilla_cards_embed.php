@@ -331,7 +331,7 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
             margin-right: 20px;
             font-size: 1.1em;
             font-weight: 600;
-            color: #1e40af;
+            color: #000000;
             align-self: flex-start;
             background: transparent;
         }
