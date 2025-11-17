@@ -310,6 +310,31 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
             background: #fef2f2;
         }
 
+        /* Resaltar programas en directo (live) */
+        .program-card.live-program {
+            border-left: 4px solid #8b5cf6;
+            background: linear-gradient(to right, #f5f3ff, white);
+        }
+
+        .program-card.live-program::before {
+            content: "EN DIRECTO";
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #8b5cf6;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .program-card.live-program:hover {
+            background: linear-gradient(to right, #ede9fe, white);
+            border-left-color: #7c3aed;
+        }
+
         .program-time {
             min-width: 80px;
             text-align: center;
