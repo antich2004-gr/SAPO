@@ -19,21 +19,25 @@ $totalFeeds = 0;
 $successFeeds = 0;
 $failedFeeds = 0;
 
-// Obtener todos los usuarios
-$usersDir = DATA_DIR . '/users';
-if (!file_exists($usersDir)) {
-    echo "No hay usuarios registrados\n";
+// Obtener todos los archivos de programas
+$programsDir = DATA_DIR . '/programs';
+if (!file_exists($programsDir)) {
+    echo "No hay programas registrados\n";
     exit(0);
 }
 
-$userFiles = glob($usersDir . '/*.json');
+$programFiles = glob($programsDir . '/*.json');
 
-foreach ($userFiles as $userFile) {
-    $username = basename($userFile, '.json');
+if (empty($programFiles)) {
+    echo "No se encontraron archivos de programas\n";
+    exit(0);
+}
 
-    // Cargar programas del usuario
-    $programsFile = DATA_DIR . '/programs/' . $username . '.json';
-    if (!file_exists($programsFile)) {
+foreach ($programFiles as $programsFile) {
+    $username = basename($programsFile, '.json');
+
+    // Saltar .gitignore y otros archivos no JSON
+    if ($username === '.gitignore' || !is_file($programsFile)) {
         continue;
     }
 
