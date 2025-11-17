@@ -78,8 +78,9 @@ $users = getAllUsers();
         <?php
         $hasUsers = false;
         foreach ($users as $user):
-            if ($user['is_admin'] ?? false) continue;
+            // Mostrar todos los usuarios, incluido el admin
             $hasUsers = true;
+            $isAdminUser = ($user['is_admin'] ?? false);
         ?>
             <div class="user-item">
                 <div class="user-info">
@@ -121,12 +122,16 @@ $users = getAllUsers();
                     <button type="button" class="btn btn-warning" onclick="showPasswordModal('<?php echo htmlEsc($user['username']); ?>', '<?php echo htmlEsc($user['station_name']); ?>')">
                         <span class="btn-icon">🔑</span> Cambiar Contraseña
                     </button>
+                    <?php if (!$isAdminUser): ?>
                     <form method="POST" style="display: inline;">
                         <input type="hidden" name="action" value="delete_user">
                         <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                         <input type="hidden" name="user_id" value="<?php echo htmlEsc($user['id']); ?>">
                         <button type="submit" class="btn btn-danger" onclick="return confirm('Eliminar este usuario?')"><span class="btn-icon">🗑️</span> Eliminar</button>
                     </form>
+                    <?php else: ?>
+                    <span style="color: #718096; font-size: 14px; padding: 8px;">(Usuario administrador principal)</span>
+                    <?php endif; ?>
                 </div>
             </div>
         <?php endforeach; ?>
