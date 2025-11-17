@@ -88,17 +88,13 @@ function readCaducidades($username) {
 
 function writeCaducidades($username, $caducidades) {
     $path = getCaducidadesPath($username);
-    error_log("DEBUG writeCaducidades - Path: $path");
     if (!$path) {
-        error_log("DEBUG writeCaducidades - Path es false, abortando");
         return false;
     }
 
     $dir = dirname($path);
     if (!is_dir($dir)) {
-        error_log("DEBUG writeCaducidades - Directorio no existe, creando: $dir");
         if (!mkdir($dir, 0755, true)) {
-            error_log("DEBUG writeCaducidades - Error al crear directorio");
             return false;
         }
     }
@@ -107,16 +103,11 @@ function writeCaducidades($username, $caducidades) {
     $content .= "# Formato: nombre_podcast:dias\n";
     $content .= "# Si no se especifica, se usa el valor por defecto (30 dias)\n\n";
 
-    error_log("DEBUG writeCaducidades - Caducidades recibidas: " . print_r($caducidades, true));
     foreach ($caducidades as $podcastName => $dias) {
         $content .= $podcastName . ':' . $dias . "\n";
-        error_log("DEBUG writeCaducidades - Agregando: $podcastName:$dias");
     }
 
-    error_log("DEBUG writeCaducidades - Escribiendo en: $path");
-    error_log("DEBUG writeCaducidades - Contenido: " . substr($content, 0, 200));
     $result = file_put_contents($path, $content);
-    error_log("DEBUG writeCaducidades - Resultado: " . ($result !== false ? "SUCCESS ($result bytes)" : "FAILED"));
     return $result !== false;
 }
 
@@ -261,9 +252,6 @@ function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracio
 }
 
 function editPodcast($username, $index, $url, $category, $name, $caducidad = 30, $duracion = '') {
-    // DEBUG: Log de lo que recibe la función
-    error_log("DEBUG editPodcast - Username: $username, Index: $index, URL: $url, Category: $category, Name: $name, Caducidad: $caducidad, Duracion: $duracion");
-
     $podcasts = readServerList($username);
 
     // Ordenar alfabéticamente igual que en user.php para que los índices coincidan
@@ -374,13 +362,10 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
         }
 
         // Actualizar caducidades.txt solo si no es 30 (valor por defecto)
-        error_log("DEBUG editPodcast - Guardando caducidad: sanitizedName='$sanitizedName', caducidad=$caducidad");
         if ($caducidad != 30) {
-            error_log("DEBUG editPodcast - Llamando setCaducidad($username, $sanitizedName, $caducidad)");
             setCaducidad($username, $sanitizedName, $caducidad);
         } else {
             // Si es 30, eliminar entrada (usará el default)
-            error_log("DEBUG editPodcast - Llamando deleteCaducidad($username, $sanitizedName)");
             deleteCaducidad($username, $sanitizedName);
         }
 
