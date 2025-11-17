@@ -93,6 +93,7 @@ $users = getAllUsers();
                         <small>Ruta: <?php echo htmlEsc($userPath); ?></small>
                     <?php endif; ?>
 
+                    <?php if (!$isAdminUser): ?>
                     <?php
                     $azuracastConfig = getAzuracastConfig($user['username']);
                     ?>
@@ -117,6 +118,7 @@ $users = getAllUsers();
                             </div>
                         </form>
                     </div>
+                    <?php endif; ?>
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <button type="button" class="btn btn-warning" onclick="showPasswordModal('<?php echo htmlEsc($user['username']); ?>', '<?php echo htmlEsc($user['station_name']); ?>')">
