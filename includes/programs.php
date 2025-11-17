@@ -255,9 +255,10 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
         return null;
     }
 
-    // Verificar caché primero
+    // Verificar caché primero (ANTES de validaciones para evitar DNS lookups lentos)
     $cachedData = getRSSFromCache($rssUrl, $cacheTTL);
-    if ($cachedData !== null) {
+    // Si hay caché (incluso null), retornar inmediatamente sin validaciones
+    if ($cachedData !== false) {
         return $cachedData;
     }
 
@@ -451,23 +452,24 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
  * @return array|null Datos cacheados o null si no existe o expiró
  */
 function getRSSFromCache($rssUrl, $ttl) {
+    $t1 = microtime(true);
     $cacheDir = DATA_DIR . '/rss_cache';
     if (!file_exists($cacheDir)) {
-        return null;
+        return false;  // false = sin caché, null = caché con valor null
     }
 
     // Crear nombre de archivo único basado en URL
     $cacheFile = $cacheDir . '/' . md5($rssUrl) . '.json';
 
     if (!file_exists($cacheFile)) {
-        return null;
+        return false;  // false = sin caché
     }
 
     // Verificar si expiró
     $fileAge = time() - filemtime($cacheFile);
     if ($fileAge > $ttl) {
         @unlink($cacheFile);  // Eliminar caché expirada
-        return null;
+        return false;  // false = sin caché
     }
 
     // Leer caché
@@ -476,10 +478,15 @@ function getRSSFromCache($rssUrl, $ttl) {
 
     if (json_last_error() !== JSON_ERROR_NONE) {
         @unlink($cacheFile);  // Eliminar caché corrupta
-        return null;
+        return false;  // false = sin caché
     }
 
-    return $decoded;
+    $t2 = microtime(true);
+    if (($t2 - $t1) > 0.1) {
+        error_log(sprintf("WARNING: getRSSFromCache tardó %.3fs para %s", $t2 - $t1, basename($cacheFile)));
+    }
+
+    return $decoded;  // Puede ser null (RSS fallido cacheado) o array (RSS exitoso)
 }
 
 /**
