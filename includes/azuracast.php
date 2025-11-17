@@ -2,12 +2,19 @@
 // includes/azuracast.php - Funciones para integración con AzuraCast
 
 /**
- * Obtener la programación de una emisora desde AzuraCast
+ * Obtener la programación de una emisora desde AzuraCast (con caché)
  *
  * @param string $username Nombre de usuario de la emisora
+ * @param int $cacheTTL Tiempo de vida de la caché en segundos (por defecto 600 = 10 minutos)
  * @return array|false Array con los eventos de la programación o false si hay error
  */
-function getAzuracastSchedule($username) {
+function getAzuracastSchedule($username, $cacheTTL = 600) {
+    // Verificar si hay caché válida
+    $cachedData = getScheduleFromCache($username, $cacheTTL);
+    if ($cachedData !== null) {
+        return $cachedData;
+    }
+
     // Obtener configuración global
     $config = getConfig();
     $apiUrl = $config['azuracast_api_url'] ?? '';
@@ -61,12 +68,81 @@ function getAzuracastSchedule($username) {
         // Log para debug
         error_log("AzuraCast: Obtenidos " . count($data) . " eventos para station $stationId");
 
+        // Guardar en caché
+        saveScheduleToCache($username, $data);
+
         return $data;
 
     } catch (Exception $e) {
         error_log("AzuraCast: Excepción al obtener programación: " . $e->getMessage());
         return false;
     }
+}
+
+/**
+ * Obtener schedule desde caché si existe y es válida
+ *
+ * @param string $username Nombre de usuario
+ * @param int $ttl Tiempo de vida en segundos
+ * @return array|null Datos del schedule o null si no hay caché válida
+ */
+function getScheduleFromCache($username, $ttl = 600) {
+    $cacheDir = DATA_DIR . '/cache/schedule';
+    if (!file_exists($cacheDir)) {
+        return null;
+    }
+
+    $cacheFile = $cacheDir . '/' . md5($username) . '.json';
+
+    if (!file_exists($cacheFile)) {
+        return null;
+    }
+
+    $cacheAge = time() - filemtime($cacheFile);
+    if ($cacheAge > $ttl) {
+        // Caché expirada
+        @unlink($cacheFile);
+        return null;
+    }
+
+    $cacheContent = @file_get_contents($cacheFile);
+    if ($cacheContent === false) {
+        return null;
+    }
+
+    $data = json_decode($cacheContent, true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        return null;
+    }
+
+    error_log("AzuraCast: Schedule cargado desde caché para $username (edad: {$cacheAge}s)");
+    return $data;
+}
+
+/**
+ * Guardar schedule en caché
+ *
+ * @param string $username Nombre de usuario
+ * @param array $data Datos del schedule
+ * @return bool True si se guardó correctamente
+ */
+function saveScheduleToCache($username, $data) {
+    $cacheDir = DATA_DIR . '/cache/schedule';
+
+    if (!file_exists($cacheDir)) {
+        if (!file_exists(DATA_DIR . '/cache')) {
+            if (!file_exists(DATA_DIR)) {
+                mkdir(DATA_DIR, 0755, true);
+            }
+            mkdir(DATA_DIR . '/cache', 0755, true);
+        }
+        mkdir($cacheDir, 0755, true);
+    }
+
+    $cacheFile = $cacheDir . '/' . md5($username) . '.json';
+    $jsonContent = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+    return @file_put_contents($cacheFile, $jsonContent, LOCK_EX) !== false;
 }
 
 /**
