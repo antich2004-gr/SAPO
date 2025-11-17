@@ -312,18 +312,27 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
     // Parsear XML
     // SEGURIDAD: Deshabilitar entidades externas para prevenir XXE
     libxml_use_internal_errors(true);
-    libxml_disable_entity_loader(true);
+
+    // En PHP 8.0+, libxml_disable_entity_loader está deprecated porque está habilitado por defecto
+    // Solo llamar en versiones antiguas de PHP
+    if (PHP_VERSION_ID < 80000) {
+        libxml_disable_entity_loader(true);
+    }
 
     $xml = simplexml_load_string($rssContent, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_DTDLOAD | LIBXML_DTDATTR);
 
     if ($xml === false) {
         error_log("Error al parsear XML del RSS: $rssUrl");
-        libxml_disable_entity_loader(false);
+        if (PHP_VERSION_ID < 80000) {
+            libxml_disable_entity_loader(false);
+        }
         return null;
     }
 
-    // Re-habilitar para no afectar otros procesos
-    libxml_disable_entity_loader(false);
+    // Re-habilitar para no afectar otros procesos (solo en PHP < 8.0)
+    if (PHP_VERSION_ID < 80000) {
+        libxml_disable_entity_loader(false);
+    }
 
     // Intentar obtener el primer item (último episodio)
     $item = null;

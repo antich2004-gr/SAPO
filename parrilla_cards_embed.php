@@ -1,11 +1,20 @@
 <?php
 // parrilla_cards_embed.php - Versión embebible sin header para incluir en otras webs
 
+// Iniciar output buffering con compresión gzip
+if (!ob_start('ob_gzhandler')) {
+    ob_start();
+}
+
 // Headers de seguridad
 header("X-Content-Type-Options: nosniff");
 header("X-Frame-Options: ALLOW-FROM *");
 header("X-XSS-Protection: 1; mode=block");
 header("Referrer-Policy: strict-origin-when-cross-origin");
+
+// Headers de caché para navegadores (2 minutos)
+header("Cache-Control: public, max-age=120");
+header("Expires: " . gmdate('D, d M Y H:i:s', time() + 120) . ' GMT');
 
 // Temporalmente desactivado para permitir HTTP
 // if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {

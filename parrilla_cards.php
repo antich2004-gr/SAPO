@@ -1,12 +1,21 @@
 <?php
 // parrilla_cards.php - Widget de parrilla estilo fichas por días (optimizado)
 
+// Iniciar output buffering con compresión gzip
+if (!ob_start('ob_gzhandler')) {
+    ob_start();
+}
+
 // Headers de seguridad
 header("X-Content-Type-Options: nosniff");
 header("X-Frame-Options: SAMEORIGIN");
 header("X-XSS-Protection: 1; mode=block");
 header("Referrer-Policy: strict-origin-when-cross-origin");
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors 'self' *; base-uri 'self'; form-action 'self'");
+
+// Headers de caché para navegadores (2 minutos)
+header("Cache-Control: public, max-age=120");
+header("Expires: " . gmdate('D, d M Y H:i:s', time() + 120) . ' GMT');
 
 // Temporalmente desactivado para permitir HTTP
 // if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
