@@ -53,4 +53,33 @@ function displayName($text) {
     return str_replace('_', ' ', $text);
 }
 
+/**
+ * Validación estricta de username para operaciones críticas de seguridad
+ * Usada en: ejecución de comandos, acceso a archivos del sistema, etc.
+ *
+ * @param string $username Username a validar
+ * @return bool True si es válido, false si no
+ */
+function validateUsernameStrict($username) {
+    // Solo alfanuméricos y guión bajo, entre 3 y 20 caracteres
+    // Más restrictivo que validateInput() para operaciones críticas
+    if (!preg_match('/^[a-z0-9_]{3,20}$/i', $username)) {
+        // Logging de seguridad para intentos sospechosos
+        error_log("[SAPO-Security] validateUsernameStrict FAILED: " . var_export($username, true) . " | IP: " . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+        return false;
+    }
+
+    // Bloquear usernames peligrosos (path traversal, comandos)
+    $blacklist = ['..', './', '\\', '/', 'root', 'admin', 'sudo', 'bin', 'etc', 'var', 'tmp'];
+    $usernameLower = strtolower($username);
+    foreach ($blacklist as $blocked) {
+        if (strpos($usernameLower, $blocked) !== false) {
+            error_log("[SAPO-Security] validateUsernameStrict BLOCKED (blacklist): $username | IP: " . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+            return false;
+        }
+    }
+
+    return true;
+}
+
 ?>

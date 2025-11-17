@@ -443,24 +443,46 @@ function executePodget($username) {
     $scriptPath = '/home/radioslibres/cliente_rrll/cliente_rrll.sh';
     $logFile = '/var/log/sapo/podget_' . $username . '.log';
 
+    // SEGURIDAD: Validación estricta del username contra inyección de comandos
+    if (!validateUsernameStrict($username)) {
+        return [
+            'success' => false,
+            'message' => 'Nombre de usuario inválido o no permitido por políticas de seguridad.'
+        ];
+    }
+
     $logDir = dirname($logFile);
     if (!is_dir($logDir)) {
         @mkdir($logDir, 0755, true);
     }
 
     if (!file_exists($scriptPath)) {
+        error_log("[SAPO-Security] executePodget: Script no encontrado: $scriptPath | Usuario: $username");
         return ['success' => false, 'message' => 'El script no se encontro en el servidor'];
     }
 
     if (!is_executable($scriptPath)) {
+        error_log("[SAPO-Security] executePodget: Script sin permisos de ejecución: $scriptPath | Usuario: $username");
         return ['success' => false, 'message' => 'El script no tiene permisos de ejecucion'];
     }
+
+    // SEGURIDAD: Logging de auditoría ANTES de ejecutar
+    $userInfo = isset($_SESSION['user_id']) ? "ID: {$_SESSION['user_id']}, Session: {$_SESSION['username']}" : "No autenticado";
+    $clientIP = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $timestamp = date('Y-m-d H:i:s');
+
+    error_log("[SAPO-Security] EXEC PODGET | Usuario objetivo: $username | Ejecutado por: $userInfo | IP: $clientIP | Timestamp: $timestamp");
 
     // Ejecutar el script como usuario radioslibres usando sudo
     $command = 'sudo -u radioslibres /bin/bash ' . escapeshellarg($scriptPath) . ' --emisora ' . escapeshellarg($username);
     $command .= ' > ' . escapeshellarg($logFile) . ' 2>&1 &';
 
+    // SEGURIDAD: Usar proc_open para mejor control (timeout implícito por background)
+    // Nota: exec() con & es aceptable para procesos background, pero logging es crítico
     exec($command, $output, $returnCode);
+
+    // Logging post-ejecución
+    error_log("[SAPO-Security] EXEC PODGET completado | Usuario: $username | Return code: $returnCode | Comando: " . substr($command, 0, 200));
 
     return [
         'success' => true,
