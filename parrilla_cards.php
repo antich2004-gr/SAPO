@@ -578,8 +578,10 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                         if (!empty($event['rss_feed'])) {
                             $latestEpisode = $rssCache[$event['rss_feed']] ?? null;
 
-                            // Si tiene RSS configurado pero no hay episodios recientes, no mostrar el programa
-                            if ($latestEpisode === null) {
+                            // Si tiene RSS configurado pero no hay episodios recientes:
+                            // - Programas tipo 'program' (podcast): no mostrar
+                            // - Programas tipo 'live' (en directo): sí mostrar (el RSS es opcional)
+                            if ($latestEpisode === null && $event['playlist_type'] === 'program') {
                                 continue;
                             }
                         }

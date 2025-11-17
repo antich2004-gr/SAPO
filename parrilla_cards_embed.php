@@ -519,8 +519,10 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
                     if (!empty($event['rss_feed'])) {
                         $latestEpisode = getLatestEpisodeFromRSS($event['rss_feed'], 21600);
 
-                        // Si tiene RSS configurado pero no hay episodios recientes, no mostrar el programa
-                        if ($latestEpisode === null) {
+                        // Si tiene RSS configurado pero no hay episodios recientes:
+                        // - Programas tipo 'program' (podcast): no mostrar
+                        // - Programas tipo 'live' (en directo): sí mostrar (el RSS es opcional)
+                        if ($latestEpisode === null && $event['playlist_type'] === 'program') {
                             continue;
                         }
                     }
