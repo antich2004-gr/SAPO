@@ -468,6 +468,17 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
                     </div>
                 <?php else: ?>
                     <?php foreach ($eventsByDay[$day] as $event):
+                        // Obtener último episodio RSS si existe
+                        $latestEpisode = null;
+                        if (!empty($event['rss_feed'])) {
+                            $latestEpisode = getLatestEpisodeFromRSS($event['rss_feed']);
+
+                            // Si tiene RSS configurado pero no hay episodios recientes, no mostrar el programa
+                            if ($latestEpisode === null) {
+                                continue;
+                            }
+                        }
+
                         // Detectar si está en vivo
                         $isLive = false;
                         if ($day === $currentDay) {
@@ -476,12 +487,6 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
                             $startSec = ((int)$startH * 3600) + ((int)$startM * 60);
                             $endSec = ((int)$endH * 3600) + ((int)$endM * 60);
                             $isLive = ($currentSeconds >= $startSec && $currentSeconds < $endSec);
-                        }
-
-                        // Obtener último episodio RSS si existe
-                        $latestEpisode = null;
-                        if (!empty($event['rss_feed'])) {
-                            $latestEpisode = getLatestEpisodeFromRSS($event['rss_feed']);
                         }
                     ?>
                         <div class="program-card<?php echo $isLive ? ' live' : ''; ?>"
