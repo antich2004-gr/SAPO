@@ -6,6 +6,18 @@ $caducidades = readCaducidades($_SESSION['username']);
 $duraciones = readDuraciones($_SESSION['username']);
 $duracionesOptions = getDuracionesOptions();
 
+// Auto-detectar categorías de los podcasts existentes si no hay categorías guardadas
+if (empty($userCategories) && !empty($podcasts)) {
+    $categoriesFromPodcasts = array_unique(array_column($podcasts, 'category'));
+    // Filtrar "Sin_categoria" si hay otras categorías
+    $categoriesFromPodcasts = array_filter($categoriesFromPodcasts, function($cat) {
+        return $cat !== 'Sin_categoria';
+    });
+    if (!empty($categoriesFromPodcasts)) {
+        $userCategories = array_values($categoriesFromPodcasts);
+    }
+}
+
 // Ordenar podcasts alfabéticamente por nombre
 usort($podcasts, function($a, $b) {
     return strcasecmp($a['name'], $b['name']);
