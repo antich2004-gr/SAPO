@@ -488,7 +488,29 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
                     <p>No hay programación para este día</p>
                 </div>
             <?php else: ?>
-                <?php foreach ($eventsByDay[$day] as $event):
+                <?php
+                // Pre-calcular qué programa está en vivo (solo el más reciente si hay solapamiento)
+                $liveEventIndex = null;
+                $liveEventStartSec = -1;
+
+                foreach ($eventsByDay[$day] as $index => $event) {
+                    if ($day === $currentDay) {
+                        list($startH, $startM) = explode(':', $event['start_time']);
+                        list($endH, $endM) = explode(':', $event['end_time']);
+                        $startSec = ((int)$startH * 3600) + ((int)$startM * 60);
+                        $endSec = ((int)$endH * 3600) + ((int)$endM * 60);
+
+                        // Si está en vivo y empezó más recientemente que el anterior
+                        if ($currentSeconds >= $startSec && $currentSeconds < $endSec) {
+                            if ($startSec > $liveEventStartSec) {
+                                $liveEventIndex = $index;
+                                $liveEventStartSec = $startSec;
+                            }
+                        }
+                    }
+                }
+                ?>
+                <?php foreach ($eventsByDay[$day] as $index => $event):
                     // Obtener último episodio RSS si existe (caché de 6 horas)
                     $latestEpisode = null;
                     if (!empty($event['rss_feed'])) {
@@ -500,15 +522,8 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
                         }
                     }
 
-                    // Detectar si está en vivo
-                    $isLive = false;
-                    if ($day === $currentDay) {
-                        list($startH, $startM) = explode(':', $event['start_time']);
-                        list($endH, $endM) = explode(':', $event['end_time']);
-                        $startSec = ((int)$startH * 3600) + ((int)$startM * 60);
-                        $endSec = ((int)$endH * 3600) + ((int)$endM * 60);
-                        $isLive = ($currentSeconds >= $startSec && $currentSeconds < $endSec);
-                    }
+                    // Solo este programa está en vivo (el más reciente si hay solapamiento)
+                    $isLive = ($index === $liveEventIndex);
                 ?>
                     <div class="program-card<?php echo $isLive ? ' live' : ''; ?>"
                          id="program-<?php echo $day; ?>-<?php echo str_replace(':', '', $event['start_time']); ?>">
