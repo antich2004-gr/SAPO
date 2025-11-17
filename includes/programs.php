@@ -306,6 +306,8 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
 
     if ($rssContent === false) {
         error_log("Error al obtener RSS: $rssUrl");
+        // Cachear el fallo por 1 hora para no reintentar constantemente
+        saveRSSToCache($rssUrl, null);
         return null;
     }
 
@@ -326,6 +328,8 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
         if (PHP_VERSION_ID < 80000) {
             libxml_disable_entity_loader(false);
         }
+        // Cachear el fallo de parsing
+        saveRSSToCache($rssUrl, null);
         return null;
     }
 
@@ -418,7 +422,8 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
     if ($timestamp) {
         $daysSincePublished = (time() - $timestamp) / (60 * 60 * 24);
         if ($daysSincePublished > 30) {
-            // Episodio demasiado antiguo, no mostrar
+            // Episodio demasiado antiguo, cachear null para no volver a consultar
+            saveRSSToCache($rssUrl, null);
             return null;
         }
     }
