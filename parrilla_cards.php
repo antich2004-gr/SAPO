@@ -127,6 +127,17 @@ foreach ($eventsByDay as $day => &$dayEvents) {
     $dayEvents = $uniqueEvents;
 }
 
+// PRE-CARGAR todos los RSS ANTES de generar HTML (optimización de rendimiento)
+$rssCache = [];
+foreach ($eventsByDay as $dayEvents) {
+    foreach ($dayEvents as $event) {
+        $rssUrl = $event['rss_feed'] ?? '';
+        if (!empty($rssUrl) && !isset($rssCache[$rssUrl])) {
+            $rssCache[$rssUrl] = getLatestEpisodeFromRSS($rssUrl, 21600);
+        }
+    }
+}
+
 // Detectar día y hora actual
 $now = new DateTime();
 $currentDay = (int)$now->format('w');
@@ -531,10 +542,10 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
                     </div>
                 <?php else: ?>
                     <?php foreach ($eventsByDay[$day] as $event):
-                        // Obtener último episodio RSS si existe (caché de 6 horas)
+                        // Obtener último episodio desde la caché pre-cargada (optimización)
                         $latestEpisode = null;
                         if (!empty($event['rss_feed'])) {
-                            $latestEpisode = getLatestEpisodeFromRSS($event['rss_feed'], 21600);
+                            $latestEpisode = $rssCache[$event['rss_feed']] ?? null;
 
                             // Si tiene RSS configurado pero no hay episodios recientes, no mostrar el programa
                             if ($latestEpisode === null) {
