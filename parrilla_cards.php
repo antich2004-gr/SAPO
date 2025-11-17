@@ -31,6 +31,9 @@ require_once INCLUDES_DIR . '/azuracast.php';
 require_once INCLUDES_DIR . '/programs.php';
 require_once INCLUDES_DIR . '/utils.php';
 
+// Medición de rendimiento
+$_START_TIME = microtime(true);
+
 $station = $_GET['station'] ?? '';
 if (empty($station) || !validateInput($station, 'username')) {
     die('Error: Estación inválida');
@@ -676,3 +679,10 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
     </script>
 </body>
 </html>
+<?php
+// Medición de rendimiento final
+if (isset($_START_TIME)) {
+    $duration = microtime(true) - $_START_TIME;
+    error_log(sprintf("PERFORMANCE: parrilla_cards.php ejecutado en %.3fs", $duration));
+}
+?>
