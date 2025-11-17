@@ -172,6 +172,12 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
             border-bottom: 2px solid #e2e8f0;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE/Edge */
+        }
+
+        .tabs::-webkit-scrollbar {
+            display: none; /* Chrome/Safari */
         }
 
         .tab-button {
