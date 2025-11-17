@@ -6,11 +6,15 @@ if (!ob_start('ob_gzhandler')) {
     ob_start();
 }
 
+// Generar nonce para CSP
+$cspNonce = base64_encode(random_bytes(16));
+
 // Headers de seguridad
 header("X-Content-Type-Options: nosniff");
 header("X-Frame-Options: ALLOW-FROM *");
 header("X-XSS-Protection: 1; mode=block");
 header("Referrer-Policy: strict-origin-when-cross-origin");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-$cspNonce'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors *; base-uri 'self'; form-action 'self'");
 
 // Headers de caché para navegadores (2 minutos)
 header("Cache-Control: public, max-age=120");
@@ -20,9 +24,6 @@ header("Expires: " . gmdate('D, d M Y H:i:s', time() + 120) . ' GMT');
 // if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
 //     header("Strict-Transport-Security: max-age=31536000; includeSubDomains; preload");
 // }
-
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 
 // Configurar zona horaria a CET/CEST (Europe/Madrid)
 date_default_timezone_set('Europe/Madrid');
@@ -557,8 +558,7 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
     <div class="tabs">
         <?php foreach ([1,2,3,4,5,6,0] as $day): ?>
             <button class="tab-button<?php echo $day === $currentDay ? ' active' : ''; ?>"
-                    data-day="<?php echo $day; ?>"
-                    onclick="switchTab(<?php echo $day; ?>)">
+                    data-day="<?php echo $day; ?>">
                 <?php echo $daysOfWeek[$day]; ?>
             </button>
         <?php endforeach; ?>
@@ -722,7 +722,7 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
         </div>
     <?php endforeach; ?>
 
-    <script>
+    <script nonce="<?php echo $cspNonce; ?>">
         function switchTab(day) {
             // Ocultar todas las pestañas
             document.querySelectorAll('.tab-content').forEach(tab => {
@@ -736,6 +736,15 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
             document.getElementById('day-' + day).classList.add('active');
             document.querySelector('[data-day="' + day + '"]').classList.add('active');
         }
+
+        // Listeners para los botones de tabs
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    switchTab(parseInt(this.dataset.day));
+                });
+            });
+        });
 
         // Auto-scroll al programa en vivo cuando carga la página
         window.addEventListener('load', function() {
