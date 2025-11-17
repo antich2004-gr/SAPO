@@ -29,6 +29,13 @@ initSession();
     if (isset($_GET['action']) && $_GET['action'] == 'save_feeds_timestamp' && isLoggedIn() && !isAdmin()) {
         header('Content-Type: application/json');
 
+        // SEGURIDAD: Rate limiting para prevenir spam
+        if (!checkRateLimit('save_feeds_timestamp', 10, 60)) {
+            http_response_code(429); // Too Many Requests
+            echo json_encode(['success' => false, 'error' => ERROR_RATE_LIMIT]);
+            exit;
+        }
+
         $username = $_SESSION['username'];
         $userData = getUserDB($username);
         $userData['last_feeds_update'] = time();
@@ -41,7 +48,14 @@ initSession();
     // AJAX: Actualizar feeds progresivamente
     if (isset($_GET['action']) && $_GET['action'] == 'refresh_feeds' && isLoggedIn()) {
         header('Content-Type: application/json');
-        
+
+        // SEGURIDAD: Rate limiting más restrictivo para operaciones costosas
+        if (!checkRateLimit('refresh_feeds', 30, 60)) {
+            http_response_code(429); // Too Many Requests
+            echo json_encode(['success' => false, 'error' => ERROR_RATE_LIMIT]);
+            exit;
+        }
+
         $username = $_SESSION['username'];
         $podcasts = readServerList($username);
         
@@ -609,15 +623,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     // AJAX: Verificar estado del log
     if (isset($_GET['action']) && $_GET['action'] == 'check_podget_status' && isLoggedIn() && !isAdmin()) {
+        // SEGURIDAD: Rate limiting (polling frecuente permitido pero limitado)
+        if (!checkRateLimit('check_podget_status', 60, 60)) {
+            http_response_code(429);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => ERROR_RATE_LIMIT]);
+            exit;
+        }
+
         $username = $_SESSION['username'];
         $logFile = '/var/log/sapo/podget_' . $username . '.log';
-        
+
         $status = [
             'exists' => false,
             'lastUpdate' => null,
             'message' => 'No se encontro archivo de log'
         ];
-        
+
         if (file_exists($logFile)) {
             $lastModified = filemtime($logFile);
             $status['exists'] = true;
@@ -625,7 +647,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $status['timestamp'] = $lastModified;
             $status['message'] = 'Script ejecutado a las ' . $status['lastUpdate'];
         }
-        
+
         header('Content-Type: application/json');
         echo json_encode($status);
         exit;
@@ -720,6 +742,14 @@ if ($action == 'delete_category' && isLoggedIn() && !isAdmin()) {
 
 // GET CATEGORY FILES (AJAX)
 if (isset($_GET['action']) && $_GET['action'] == 'get_category_files' && isLoggedIn() && !isAdmin()) {
+    // SEGURIDAD: Rate limiting (operación costosa - lectura de disco)
+    if (!checkRateLimit('get_category_files', 20, 60)) {
+        http_response_code(429);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => ERROR_RATE_LIMIT]);
+        exit;
+    }
+
     $categoryName = $_GET['category'] ?? '';
 
     if (empty($categoryName)) {
