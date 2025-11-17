@@ -104,6 +104,11 @@ foreach ($schedule as $event) {
     if ($start === null) continue;
 
     $startDateTime = is_numeric($start) ? new DateTime('@' . $start) : new DateTime($start);
+
+    // Establecer zona horaria local (CET/CEST)
+    $timezone = new DateTimeZone('Europe/Madrid');
+    $startDateTime->setTimezone($timezone);
+
     $dayOfWeek = (int)$startDateTime->format('w');
 
     $programInfo = $programsData[$title] ?? null;
@@ -113,6 +118,10 @@ foreach ($schedule as $event) {
 
     $end = $event['end_timestamp'] ?? $event['end'] ?? null;
     $endDateTime = $end ? (is_numeric($end) ? new DateTime('@' . $end) : new DateTime($end)) : null;
+
+    if ($endDateTime) {
+        $endDateTime->setTimezone($timezone);
+    }
 
     if (!$endDateTime || $endDateTime->getTimestamp() <= $startDateTime->getTimestamp()) {
         $endDateTime = clone $startDateTime;

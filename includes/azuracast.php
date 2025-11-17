@@ -226,6 +226,13 @@ function formatEventsForCalendar($events, $color = '#3b82f6', $username = null) 
         $startDateTime = is_numeric($start) ? new DateTime('@' . $start) : new DateTime($start);
         $endDateTime = $end ? (is_numeric($end) ? new DateTime('@' . $end) : new DateTime($end)) : null;
 
+        // Establecer zona horaria local (CET/CEST)
+        $timezone = new DateTimeZone('Europe/Madrid');
+        $startDateTime->setTimezone($timezone);
+        if ($endDateTime) {
+            $endDateTime->setTimezone($timezone);
+        }
+
         // Obtener día de la semana (0=Domingo, 1=Lunes, etc.) como ENTERO
         $dayOfWeek = (int)$startDateTime->format('w');
 
