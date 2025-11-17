@@ -448,18 +448,6 @@
             <strong>💡 Tip:</strong> Configura toda la información de tus programas en SAPO para que la parrilla se vea completa y profesional, incluso si los nombres en AzuraCast son técnicos o codificados.
         </div>
 
-        <h4>⚡ Rendimiento optimizado</h4>
-        <p>La parrilla está optimizada para cargar rápidamente:</p>
-        <ul>
-            <li>🚀 Caché de schedule de AzuraCast (10 minutos)</li>
-            <li>📡 Caché de feeds RSS (6 horas)</li>
-            <li>🗜️ Compresión gzip automática</li>
-            <li>💾 Caché de navegador (2 minutos)</li>
-            <li>⚡ Pre-carga de todos los RSS antes de renderizar</li>
-        </ul>
-
-        <p><strong>Resultado:</strong> Carga en menos de 0.02 segundos después del primer acceso.</p>
-
         <h4>📱 Diseño responsive</h4>
         <p>La parrilla se adapta automáticamente a todos los dispositivos:</p>
         <ul>
@@ -467,27 +455,6 @@
             <li>📱 Tablet: Layout adaptado para pantalla media</li>
             <li>📲 Móvil: Diseño vertical optimizado para táctil</li>
         </ul>
-
-        <h4>🔧 Configuración avanzada</h4>
-
-        <h5>Filtrado de tipos de playlist</h5>
-        <p>La parrilla filtra automáticamente:</p>
-        <ul>
-            <li>❌ <strong>Jingles/Cortinillas:</strong> No se muestran en la parrilla</li>
-            <li>❌ <strong>Bloques musicales:</strong> No se muestran en la parrilla</li>
-            <li>✅ <strong>Programas (podcasts):</strong> Se muestran si tienen RSS reciente</li>
-            <li>✅ <strong>Programas en directo:</strong> Siempre se muestran</li>
-        </ul>
-
-        <h5>Cron de pre-carga de RSS (opcional)</h5>
-        <p>Para mejor rendimiento, configura un cron que pre-cargue los RSS:</p>
-        <pre style="background: #2d3748; color: #e2e8f0; padding: 15px; border-radius: 6px; overflow-x: auto;">0 * * * * docker-compose -f /ruta/docker-compose.yml exec -T web \
-    php /var/azuracast/www/web/sapo/cron_rss_preload.php</pre>
-        <p>Esto ejecuta la pre-carga cada hora, manteniendo el caché siempre actualizado.</p>
-
-        <div style="background: #e6fffa; border-left: 4px solid #38b2ac; padding: 15px; margin: 15px 0;">
-            <strong>💡 Recomendación:</strong> Si tienes muchos programas con RSS, el cron de pre-carga mejorará significativamente la velocidad de carga de la parrilla.
-        </div>
     </div>
 
     <!-- Sección: Estado de feeds -->
