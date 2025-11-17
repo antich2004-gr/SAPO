@@ -6,19 +6,13 @@ $caducidades = readCaducidades($_SESSION['username']);
 $duraciones = readDuraciones($_SESSION['username']);
 $duracionesOptions = getDuracionesOptions();
 
-// Agregar índice original a cada podcast
-$podcastsWithIndex = array();
-foreach ($podcasts as $originalIndex => $podcast) {
-    $podcast['original_index'] = $originalIndex;
-    $podcastsWithIndex[] = $podcast;
-}
-
 // Ordenar podcasts alfabéticamente por nombre
-usort($podcastsWithIndex, function($a, $b) {
+usort($podcasts, function($a, $b) {
     return strcasecmp($a['name'], $b['name']);
 });
 
-$podcasts = $podcastsWithIndex;
+// Re-indexar el array para asegurar índices consecutivos desde 0
+$podcasts = array_values($podcasts);
 
 // Paginación
 $itemsPerPage = 25;
@@ -50,9 +44,10 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
     
     <?php
     // Preparar datos de todos los podcasts en JSON para JavaScript
-    $podcastsOriginal = readServerList($_SESSION['username']);
+    // IMPORTANTE: Reutilizar $podcasts ordenado para mantener consistencia con los índices del HTML
+    // Esto elimina la doble lectura del archivo y asegura que los índices coincidan
     $podcastsData = [];
-    foreach ($podcastsOriginal as $index => $podcast) {
+    foreach ($podcasts as $index => $podcast) {
         $feedInfo = getCachedFeedInfo($podcast['url']);
         $statusInfo = formatFeedStatus($feedInfo['timestamp']);
 
@@ -150,6 +145,8 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         <!-- Vista Normal (Alfabética) -->
                         <div id="normal-view" class="podcast-list">
                             <?php foreach ($podcastsPaginated as $index => $podcast):
+                                // Calcular índice global considerando paginación
+                                $globalIndex = $offset + $index;
                                 $podcastCaducidad = $caducidades[$podcast['name']] ?? 30;
             $podcastDuracion = $duraciones[$podcast['name']] ?? '';
                                 $feedInfo = getCachedFeedInfo($podcast['url']);
@@ -180,26 +177,26 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         </div>
                                     </div>
                                     <div class="podcast-actions">
-                                        <button type="button" class="btn btn-warning" onclick="showEditPodcastModal(<?php echo htmlEsc($podcast['original_index']); ?>)"><span class="btn-icon">✏️</span> Editar</button>
+                                        <button type="button" class="btn btn-warning" onclick="showEditPodcastModal(<?php echo htmlEsc($globalIndex); ?>)"><span class="btn-icon">✏️</span> Editar</button>
                                         <?php if (isset($podcast['paused']) && $podcast['paused']): ?>
                                             <form method="POST" style="display: inline;">
                                                 <input type="hidden" name="action" value="resume_podcast">
                                                 <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                                                <input type="hidden" name="index" value="<?php echo htmlEsc($podcast['original_index']); ?>">
+                                                <input type="hidden" name="index" value="<?php echo htmlEsc($globalIndex); ?>">
                                                 <button type="submit" class="btn btn-success"><span class="btn-icon">▶️</span> Reanudar</button>
                                             </form>
                                         <?php else: ?>
                                             <form method="POST" style="display: inline;">
                                                 <input type="hidden" name="action" value="pause_podcast">
                                                 <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                                                <input type="hidden" name="index" value="<?php echo htmlEsc($podcast['original_index']); ?>">
+                                                <input type="hidden" name="index" value="<?php echo htmlEsc($globalIndex); ?>">
                                                 <button type="submit" class="btn btn-secondary"><span class="btn-icon">⏸️</span> Pausar</button>
                                             </form>
                                         <?php endif; ?>
                                         <form method="POST" style="display: inline;">
                                             <input type="hidden" name="action" value="delete_podcast">
                                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                                            <input type="hidden" name="index" value="<?php echo htmlEsc($podcast['original_index']); ?>">
+                                            <input type="hidden" name="index" value="<?php echo htmlEsc($globalIndex); ?>">
                                             <button type="submit" class="btn btn-danger" onclick="return confirm('Eliminar este podcast?')"><span class="btn-icon">🗑️</span> Eliminar</button>
                                         </form>
                                     </div>
@@ -254,10 +251,12 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
                         <!-- Vista Agrupada por Categorías -->
                         <div id="grouped-view" style="display: none;">
-                            <?php 
+                            <?php
                             // Agrupar podcasts por categoría
                             $podcastsByCategory = [];
-                            foreach ($podcasts as $podcast) {
+                            foreach ($podcasts as $globalIndex => $podcast) {
+                                // Agregar índice global para usar en onclick
+                                $podcast['global_index'] = $globalIndex;
                                 $cat = $podcast['category'];
                                 if (!isset($podcastsByCategory[$cat])) {
                                     $podcastsByCategory[$cat] = [];
@@ -323,28 +322,28 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                     </div>
                                                 </div>
                                                 <div class="podcast-actions">
-                                                    <button type="button" class="btn btn-warning" onclick="showEditPodcastModal(<?php echo htmlEsc($podcast['original_index']); ?>)"><span class="btn-icon">✏️</span> Editar</button>
+                                                    <button type="button" class="btn btn-warning" onclick="showEditPodcastModal(<?php echo htmlEsc($podcast['global_index']); ?>)"><span class="btn-icon">✏️</span> Editar</button>
                                                     <?php if (isset($podcast['paused']) && $podcast['paused']): ?>
                                                         <form method="POST" style="display: inline;">
                                                             <input type="hidden" name="action" value="resume_podcast">
                                                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                                                            <input type="hidden" name="index" value="<?php echo htmlEsc($podcast['original_index']); ?>">
+                                                            <input type="hidden" name="index" value="<?php echo htmlEsc($podcast['global_index']); ?>">
                                                             <button type="submit" class="btn btn-success"><span class="btn-icon">▶️</span> Reanudar</button>
                                                         </form>
                                                     <?php else: ?>
                                                         <form method="POST" style="display: inline;">
                                                             <input type="hidden" name="action" value="pause_podcast">
                                                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                                                            <input type="hidden" name="index" value="<?php echo htmlEsc($podcast['original_index']); ?>">
+                                                            <input type="hidden" name="index" value="<?php echo htmlEsc($podcast['global_index']); ?>">
                                                             <button type="submit" class="btn btn-secondary"><span class="btn-icon">⏸️</span> Pausar</button>
                                                         </form>
                                                     <?php endif; ?>
                                                     <form method="POST" style="display: inline;">
                                                         <input type="hidden" name="action" value="delete_podcast">
                                                         <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                                                        <input type="hidden" name="index" value="<?php echo htmlEsc($podcast['original_index']); ?>">
+                                                        <input type="hidden" name="index" value="<?php echo htmlEsc($podcast['global_index']); ?>">
                                                         <button type="submit" class="btn btn-danger" onclick="return confirm('Eliminar este podcast?')"><span class="btn-icon">🗑️</span> Eliminar</button>
-                                                    </form>
+                                                        </form>
                                                 </div>
                                             </div>
                                         <?php endforeach; ?>
@@ -966,9 +965,11 @@ const podcastsData = <?php echo json_encode($podcastsData); ?>;
 
 // Funciones para el modal de editar podcast
 function showEditPodcastModal(index) {
-    const podcast = podcastsData[index];
+    // Buscar el podcast por índice en podcastsData
+    const podcast = podcastsData.find(p => p.index === index);
     if (!podcast) {
-        alert('Podcast no encontrado');
+        alert('Podcast no encontrado (índice: ' + index + ')');
+        console.error('Podcasts disponibles:', podcastsData);
         return;
     }
 
