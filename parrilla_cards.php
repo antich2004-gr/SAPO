@@ -515,10 +515,10 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
                     </div>
                 <?php else: ?>
                     <?php foreach ($eventsByDay[$day] as $event):
-                        // Obtener último episodio RSS si existe
+                        // Obtener último episodio RSS si existe (caché de 6 horas)
                         $latestEpisode = null;
                         if (!empty($event['rss_feed'])) {
-                            $latestEpisode = getLatestEpisodeFromRSS($event['rss_feed']);
+                            $latestEpisode = getLatestEpisodeFromRSS($event['rss_feed'], 21600);
 
                             // Si tiene RSS configurado pero no hay episodios recientes, no mostrar el programa
                             if ($latestEpisode === null) {
