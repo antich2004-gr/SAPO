@@ -16,7 +16,7 @@
     </div>
 
     <!-- Índice de contenidos -->
-    <div style="background: #f7fafc; border-left: 4px solid #667eea; padding: 20px; margin-bottom: 30px;">
+    <div id="indice" style="background: #f7fafc; border-left: 4px solid #667eea; padding: 20px; margin-bottom: 30px;">
         <h3 style="margin-top: 0;">📑 Contenido</h3>
         <ul style="line-height: 1.8;">
             <li><a href="#introduccion">¿Qué es SAPO?</a></li>
@@ -681,4 +681,85 @@
 .card ul, .card ol {
     line-height: 1.8;
 }
+
+/* Botón flotante para volver al índice */
+#btn-volver-indice {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s;
+    z-index: 1000;
+    display: none;
+}
+
+#btn-volver-indice:hover {
+    background: #5568d3;
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+    transform: translateY(-2px);
+}
+
+#btn-volver-indice.visible {
+    display: block;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    #btn-volver-indice {
+        bottom: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+}
 </style>
+
+<!-- Botón flotante para volver al índice -->
+<a href="#indice" id="btn-volver-indice" title="Volver al índice">
+    ⬆️ Volver al índice
+</a>
+
+<script>
+// Mostrar/ocultar botón según scroll
+window.addEventListener('scroll', function() {
+    const btn = document.getElementById('btn-volver-indice');
+    const indice = document.getElementById('indice');
+
+    if (!btn || !indice) return;
+
+    const indiceBottom = indice.offsetTop + indice.offsetHeight;
+    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+
+    // Mostrar botón solo si hemos pasado el índice
+    if (scrollPosition > indiceBottom) {
+        btn.classList.add('visible');
+    } else {
+        btn.classList.remove('visible');
+    }
+});
+
+// Scroll suave al hacer clic
+document.getElementById('btn-volver-indice')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    document.getElementById('indice')?.scrollIntoView({ behavior: 'smooth' });
+});
+</script>
