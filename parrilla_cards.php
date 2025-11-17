@@ -128,6 +128,7 @@ foreach ($eventsByDay as $day => &$dayEvents) {
 }
 
 // PRE-CARGAR todos los RSS ANTES de generar HTML (optimización de rendimiento)
+$t1 = microtime(true);
 $rssCache = [];
 foreach ($eventsByDay as $dayEvents) {
     foreach ($dayEvents as $event) {
@@ -137,6 +138,8 @@ foreach ($eventsByDay as $dayEvents) {
         }
     }
 }
+$t2 = microtime(true);
+error_log(sprintf("PERFORMANCE: Pre-carga RSS: %.3fs (%d feeds únicos)", $t2 - $t1, count($rssCache)));
 
 // Detectar día y hora actual
 $now = new DateTime();
@@ -150,6 +153,9 @@ $daysOfWeek = [1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 
 // Mapeo de tamaños de fuente
 $fontSizes = ['small' => '14px', 'medium' => '16px', 'large' => '18px'];
 $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
+
+$t3 = microtime(true);
+error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de HTML)", $t3 - $_START_TIME));
 ?>
 <!DOCTYPE html>
 <html lang="es">
