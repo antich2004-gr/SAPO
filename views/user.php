@@ -965,13 +965,21 @@ const podcastsData = <?php echo json_encode($podcastsData); ?>;
 
 // Funciones para el modal de editar podcast
 function showEditPodcastModal(index) {
+    // Convertir a número por si viene como string
+    const numIndex = parseInt(index);
+    console.log('Buscando podcast con índice:', numIndex);
+    console.log('Podcasts disponibles:', podcastsData);
+
     // Buscar el podcast por índice en podcastsData
-    const podcast = podcastsData.find(p => p.index === index);
+    const podcast = podcastsData.find(p => p.index === numIndex);
     if (!podcast) {
-        alert('Podcast no encontrado (índice: ' + index + ')');
-        console.error('Podcasts disponibles:', podcastsData);
+        alert('Podcast no encontrado (índice: ' + numIndex + ')');
+        console.error('Índice buscado:', numIndex);
+        console.error('Índices disponibles:', podcastsData.map(p => p.index));
         return;
     }
+
+    console.log('Podcast encontrado:', podcast);
 
     // Llenar el formulario con los datos del podcast
     document.getElementById('edit_podcast_index').value = podcast.index;
