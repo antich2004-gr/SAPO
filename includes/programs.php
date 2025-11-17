@@ -390,12 +390,22 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
         }
     }
 
-    // Formatear fecha
+    // Formatear fecha y validar antigüedad
     $formattedDate = '';
+    $timestamp = null;
     if ($pubDate) {
         $timestamp = strtotime($pubDate);
         if ($timestamp) {
             $formattedDate = date('d/m/Y', $timestamp);
+        }
+    }
+
+    // No mostrar episodios con más de 30 días
+    if ($timestamp) {
+        $daysSincePublished = (time() - $timestamp) / (60 * 60 * 24);
+        if ($daysSincePublished > 30) {
+            // Episodio demasiado antiguo, no mostrar
+            return null;
         }
     }
 
