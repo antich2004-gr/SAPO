@@ -30,12 +30,15 @@ function getGlobalDB() {
     initDBStructure();
 
     if (!file_exists(GLOBAL_DB_FILE)) {
+        // SEGURIDAD: Generar contraseña aleatoria fuerte para admin
+        $adminPassword = bin2hex(random_bytes(16)); // 32 caracteres hexadecimales
+
         $initialData = [
             'users' => [
                 [
                     'id' => 1,
                     'username' => 'admin',
-                    'password' => password_hash('admin123', PASSWORD_BCRYPT),
+                    'password' => password_hash($adminPassword, PASSWORD_BCRYPT),
                     'station_name' => 'Administrador',
                     'is_admin' => true
                 ]
@@ -49,7 +52,28 @@ function getGlobalDB() {
             'login_attempts' => []
         ];
         file_put_contents(GLOBAL_DB_FILE, json_encode($initialData, JSON_PRETTY_PRINT));
-        chmod(GLOBAL_DB_FILE, 0640);
+        chmod(GLOBAL_DB_FILE, 0600); // Cambiar a 0600 para mayor seguridad
+
+        // Guardar contraseña inicial en archivo temporal
+        $credentialsFile = DATA_DIR . '/ADMIN_CREDENTIALS.txt';
+        $credentialsContent = "===========================================\n";
+        $credentialsContent .= "  SAPO - CREDENCIALES DE ADMINISTRADOR\n";
+        $credentialsContent .= "===========================================\n\n";
+        $credentialsContent .= "Usuario: admin\n";
+        $credentialsContent .= "Contraseña: $adminPassword\n\n";
+        $credentialsContent .= "IMPORTANTE:\n";
+        $credentialsContent .= "1. Cambia esta contraseña inmediatamente\n";
+        $credentialsContent .= "2. Elimina este archivo después de anotar la contraseña\n";
+        $credentialsContent .= "3. No compartas estas credenciales\n\n";
+        $credentialsContent .= "Generado: " . date('Y-m-d H:i:s') . "\n";
+        $credentialsContent .= "===========================================\n";
+
+        file_put_contents($credentialsFile, $credentialsContent);
+        chmod($credentialsFile, 0600);
+
+        // Logging de seguridad
+        error_log("[SAPO-Security] Nueva instalación detectada - Contraseña admin generada aleatoriamente");
+        error_log("[SAPO-Security] Credenciales guardadas en: $credentialsFile");
     }
 
     return json_decode(file_get_contents(GLOBAL_DB_FILE), true);
@@ -190,12 +214,15 @@ function saveFeedCacheDB($data) {
 
 function getDB() {
     if (!file_exists(DB_FILE)) {
+        // SEGURIDAD: Generar contraseña aleatoria fuerte para admin (sistema legacy)
+        $adminPassword = bin2hex(random_bytes(16)); // 32 caracteres hexadecimales
+
         $initialData = [
             'users' => [
                 [
                     'id' => 1,
                     'username' => 'admin',
-                    'password' => password_hash('admin123', PASSWORD_BCRYPT),
+                    'password' => password_hash($adminPassword, PASSWORD_BCRYPT),
                     'station_name' => 'Administrador',
                     'is_admin' => true
                 ]
@@ -212,6 +239,30 @@ function getDB() {
         ];
         file_put_contents(DB_FILE, json_encode($initialData, JSON_PRETTY_PRINT));
         chmod(DB_FILE, 0600);
+
+        // Guardar contraseña en archivo de credenciales (mismo que getGlobalDB)
+        if (!file_exists(DATA_DIR)) {
+            @mkdir(DATA_DIR, 0755, true);
+        }
+        $credentialsFile = DATA_DIR . '/ADMIN_CREDENTIALS.txt';
+        if (!file_exists($credentialsFile)) {
+            $credentialsContent = "===========================================\n";
+            $credentialsContent .= "  SAPO - CREDENCIALES DE ADMINISTRADOR\n";
+            $credentialsContent .= "===========================================\n\n";
+            $credentialsContent .= "Usuario: admin\n";
+            $credentialsContent .= "Contraseña: $adminPassword\n\n";
+            $credentialsContent .= "IMPORTANTE:\n";
+            $credentialsContent .= "1. Cambia esta contraseña inmediatamente\n";
+            $credentialsContent .= "2. Elimina este archivo después de anotar la contraseña\n";
+            $credentialsContent .= "3. No compartas estas credenciales\n\n";
+            $credentialsContent .= "Generado: " . date('Y-m-d H:i:s') . "\n";
+            $credentialsContent .= "===========================================\n";
+
+            file_put_contents($credentialsFile, $credentialsContent);
+            chmod($credentialsFile, 0600);
+
+            error_log("[SAPO-Security] DB legacy inicializada - Credenciales en: $credentialsFile");
+        }
     }
     return json_decode(file_get_contents(DB_FILE), true);
 }

@@ -17,3 +17,10 @@ validate_https_plan.sh
 # Sistema operativo
 .DS_Store
 Thumbs.db
+
+# SEGURIDAD: Archivos con credenciales (NUNCA SUBIR A GIT)
+data/ADMIN_CREDENTIALS.txt
+ADMIN_CREDENTIALS.txt
+db/global.json
+db/users/*.json
+db.json

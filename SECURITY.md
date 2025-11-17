@@ -265,10 +265,26 @@ chmod 640 /ruta/sapo/db/*.json
 chmod 640 /ruta/sapo/db/users/*.json
 ```
 
-#### 3. Cambiar credenciales por defecto
-- ✅ Cambiar contraseña de admin inmediatamente
-- ✅ Usar contraseñas fuertes (mínimo 12 caracteres)
-- ✅ Incluir mayúsculas, minúsculas, números y símbolos
+#### 3. Primera instalación - Credenciales de admin
+
+**IMPORTANTE:** SAPO genera automáticamente una **contraseña aleatoria segura** (32 caracteres) para el usuario administrador en la primera instalación.
+
+**Ubicación de credenciales:**
+```
+data/ADMIN_CREDENTIALS.txt
+```
+
+**Pasos a seguir:**
+1. Accede al archivo y anota la contraseña generada
+2. Inicia sesión con `admin` y la contraseña del archivo
+3. **Cambia la contraseña inmediatamente** desde el panel de administración
+4. **Elimina el archivo** `data/ADMIN_CREDENTIALS.txt` después de anotarla
+
+```bash
+rm data/ADMIN_CREDENTIALS.txt
+```
+
+**NOTA:** El archivo tiene permisos `0600` (solo lectura/escritura por el propietario) y está incluido en `.gitignore` para evitar que se suba accidentalmente a git.
 
 #### 4. Configurar base_path correctamente
 - ✅ Usar rutas absolutas
@@ -353,7 +369,10 @@ Si encuentras una vulnerabilidad de seguridad:
 - ✅ **Eliminación de BOM**: Corrección de UTF-8 BOM en archivos PHP
 - ✅ **Interfaz corregida**: Eliminación de errores ortográficos
 - ✅ **Parser robusto**: Corrección crítica en procesamiento de informes
+- ✅ **Contraseña admin aleatoria**: Generación automática de contraseña segura de 32 caracteres en primera instalación
+- ✅ **Permisos unificados**: Cambio de 0640 a 0600 en archivos de base de datos para máxima seguridad
+- ✅ **.gitignore mejorado**: Archivos sensibles protegidos contra subida accidental a repositorios
 
 ---
 
-**Última actualización**: 2025-11-09 (v1.3)
+**Última actualización**: 2025-11-17 (v1.24)
