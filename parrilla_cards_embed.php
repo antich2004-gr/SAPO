@@ -580,11 +580,6 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
                                                 <strong>Último episodio:</strong>
                                                 <?php echo htmlspecialchars($latestEpisode['title']); ?>
                                             </div>
-                                            <?php if (!empty($latestEpisode['formatted_date'])): ?>
-                                                <div class="rss-episode-date">
-                                                    <?php echo htmlspecialchars($latestEpisode['formatted_date']); ?>
-                                                </div>
-                                            <?php endif; ?>
                                         </div>
                                     </a>
                                 <?php else: ?>
@@ -593,11 +588,6 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
                                             <strong>Último episodio:</strong>
                                             <?php echo htmlspecialchars($latestEpisode['title']); ?>
                                         </div>
-                                        <?php if (!empty($latestEpisode['formatted_date'])): ?>
-                                            <div class="rss-episode-date">
-                                                <?php echo htmlspecialchars($latestEpisode['formatted_date']); ?>
-                                            </div>
-                                        <?php endif; ?>
                                     </div>
                                 <?php endif; ?>
                             <?php endif; ?>
