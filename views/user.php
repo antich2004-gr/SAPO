@@ -981,13 +981,24 @@ function showEditPodcastModal(index) {
 
     console.log('Podcast encontrado:', podcast);
 
-    // Llenar el formulario con los datos del podcast
-    document.getElementById('edit_podcast_index').value = podcast.index;
-    document.getElementById('edit_podcast_url').value = podcast.url;
-    document.getElementById('edit_podcast_name').value = podcast.name;
-    document.getElementById('edit_podcast_category').value = podcast.category;
-    document.getElementById('edit_podcast_caducidad').value = podcast.caducidad;
-    document.getElementById('edit_podcast_duracion').value = podcast.duracion;
+    // Llenar el formulario con los datos del podcast (verificar que existan primero)
+    const indexField = document.getElementById('edit_podcast_index');
+    const urlField = document.getElementById('edit_podcast_url');
+    const nameField = document.getElementById('edit_podcast_name');
+    const categoryField = document.getElementById('edit_podcast_category');
+    const caducidadField = document.getElementById('edit_podcast_caducidad');
+    const duracionField = document.getElementById('edit_podcast_duracion');
+
+    if (indexField) indexField.value = podcast.index;
+    if (urlField) urlField.value = podcast.url;
+    if (nameField) nameField.value = podcast.name;
+    if (categoryField) {
+        categoryField.value = podcast.category;
+    } else {
+        console.warn('Campo de categoría no disponible. El usuario necesita crear categorías primero.');
+    }
+    if (caducidadField) caducidadField.value = podcast.caducidad;
+    if (duracionField) duracionField.value = podcast.duracion;
 
     // Mostrar el modal
     document.getElementById('editPodcastModal').style.display = 'block';
