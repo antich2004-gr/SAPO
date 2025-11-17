@@ -88,23 +88,29 @@ function readCaducidades($username) {
 
 function writeCaducidades($username, $caducidades) {
     $path = getCaducidadesPath($username);
+    error_log("DEBUG writeCaducidades - Path: $path");
     if (!$path) {
+        error_log("DEBUG writeCaducidades - Path es false, abortando");
         return false;
     }
-    
+
     $dir = dirname($path);
     if (!is_dir($dir)) {
+        error_log("DEBUG writeCaducidades - Directorio no existe, creando: $dir");
         if (!mkdir($dir, 0755, true)) {
+            error_log("DEBUG writeCaducidades - Error al crear directorio");
             return false;
         }
     }
-    
+
     $content = "# Caducidades por podcast - Generado por SAPO\n";
     $content .= "# Formato: nombre_podcast:dias\n";
     $content .= "# Si no se especifica, se usa el valor por defecto (30 dias)\n\n";
-    
+
+    error_log("DEBUG writeCaducidades - Caducidades recibidas: " . print_r($caducidades, true));
     foreach ($caducidades as $podcastName => $dias) {
         $content .= $podcastName . ':' . $dias . "\n";
+        error_log("DEBUG writeCaducidades - Agregando: $podcastName:$dias");
     }
     
     return file_put_contents($path, $content) !== false;
