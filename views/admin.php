@@ -86,12 +86,6 @@ $users = getAllUsers();
                 <div class="user-info">
                     <strong><?php echo htmlEsc($user['station_name']); ?></strong>
                     <small>Usuario: <?php echo htmlEsc($user['username']); ?></small>
-                    <?php
-                    $userPath = getServerListPath($user['username']);
-                    if ($userPath):
-                    ?>
-                        <small>Ruta: <?php echo htmlEsc($userPath); ?></small>
-                    <?php endif; ?>
 
                     <?php if (!$isAdminUser): ?>
                     <?php
