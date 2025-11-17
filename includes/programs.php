@@ -347,13 +347,16 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
     // Extraer link (compatible con RSS 2.0 y Atom)
     $link = '';
     if (isset($item->link)) {
-        // RSS 2.0: <link>http://...</link>
-        if (is_string($item->link) || method_exists($item->link, '__toString')) {
+        // Atom: <link href="..." /> - verificar atributo href primero
+        if (isset($item->link['href'])) {
+            $link = (string)$item->link['href'];
+        }
+        // RSS 2.0: <link>http://...</link> - elemento de texto
+        elseif ((string)$item->link !== '') {
             $link = (string)$item->link;
         }
-        // Atom: <link href="http://..." /> o múltiples links
+        // Múltiples links Atom: buscar el adecuado
         else {
-            // Si es un array de links, buscar el link alternate o el primero
             foreach ($item->link as $linkItem) {
                 if (isset($linkItem['href'])) {
                     // Preferir link con rel="alternate" o sin rel
