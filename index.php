@@ -288,6 +288,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 }
 
                 $programInfo = [
+                    'display_title' => trim($_POST['display_title'] ?? ''),
                     'playlist_type' => trim($_POST['playlist_type'] ?? 'live'),
                     'short_description' => trim($_POST['short_description'] ?? ''),
                     'long_description' => trim($_POST['long_description'] ?? ''),
@@ -354,6 +355,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $playlistType = trim($_POST['playlist_type'] ?? 'program');
 
             $programInfo = [
+                'display_title' => trim($_POST['display_title'] ?? ''),
                 'playlist_type' => $playlistType,
                 'short_description' => trim($_POST['short_description'] ?? ''),
                 'long_description' => trim($_POST['long_description'] ?? ''),

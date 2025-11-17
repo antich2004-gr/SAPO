@@ -71,6 +71,16 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                 </div>
 
                 <div class="form-group">
+                    <label>Título personalizado: <small>(opcional - si está vacío se usa el nombre de la playlist)</small></label>
+                    <input type="text" name="display_title"
+                           placeholder="Ej: El Despertador Matinal"
+                           maxlength="100">
+                    <small style="color: #6b7280; display: block; margin-top: 5px;">
+                        💡 Este título aparecerá en las cards. Si lo dejas vacío, se mostrará el nombre de la playlist de AzuraCast.
+                    </small>
+                </div>
+
+                <div class="form-group">
                     <label>Descripción corta: <small>(para cards y previews)</small></label>
                     <input type="text" name="short_description"
                            placeholder="Programa de música alternativa de los 90"
@@ -241,6 +251,17 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                             • <strong>Emisión en Directo</strong>: Programas en vivo, destacados con estilo especial<br>
                             • <strong>Bloque Musical</strong>: Música automatizada (se oculta de la parrilla)<br>
                             • <strong>Jingles/Cortinillas</strong>: Efectos de audio (se ocultan de la parrilla)
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Título personalizado: <small>(opcional - si está vacío se usa el nombre de la playlist)</small></label>
+                        <input type="text" name="display_title"
+                               value="<?php echo htmlEsc($programInfo['display_title'] ?? ''); ?>"
+                               placeholder="Ej: El Despertador Matinal"
+                               maxlength="100">
+                        <small style="color: #6b7280; display: block; margin-top: 5px;">
+                            💡 Este título aparecerá en las cards. Si lo dejas vacío, se mostrará el nombre de la playlist: <strong><?php echo htmlEsc($programName); ?></strong>
                         </small>
                     </div>
 
