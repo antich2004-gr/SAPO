@@ -316,27 +316,34 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
     // SEGURIDAD: Deshabilitar entidades externas para prevenir XXE
     libxml_use_internal_errors(true);
 
-    // En PHP 8.0+, libxml_disable_entity_loader está deprecated porque está habilitado por defecto
-    // Solo llamar en versiones antiguas de PHP
-    if (PHP_VERSION_ID < 80000) {
-        libxml_disable_entity_loader(true);
-    }
+    // LIBXML_NONET: Deshabilita carga de recursos externos (previene XXE)
+    // LIBXML_NOCDATA: Procesa CDATA como texto
+    // IMPORTANTE: NO usar LIBXML_NOENT, LIBXML_DTDLOAD, LIBXML_DTDATTR (vulnerables a XXE)
+    $xml = simplexml_load_string($rssContent, 'SimpleXMLElement', LIBXML_NONET | LIBXML_NOCDATA);
 
-    $xml = simplexml_load_string($rssContent, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_DTDLOAD | LIBXML_DTDATTR);
+    $errors = libxml_get_errors();
+    libxml_clear_errors();
 
     if ($xml === false) {
-        error_log("Error al parsear XML del RSS: $rssUrl");
-        if (PHP_VERSION_ID < 80000) {
-            libxml_disable_entity_loader(false);
+        // Log detallado de errores XXE o XML malformado
+        if (!empty($errors)) {
+            $errorMessages = array_map(function($error) {
+                return trim($error->message);
+            }, $errors);
+            error_log("[SAPO-Security] XML parsing failed for $rssUrl - Errors: " . implode('; ', $errorMessages));
+
+            // Detectar posibles intentos XXE
+            $rssLower = strtolower($rssContent);
+            if (strpos($rssLower, '<!entity') !== false || strpos($rssLower, 'system') !== false) {
+                error_log("[SAPO-Security] POSSIBLE XXE ATTEMPT BLOCKED - Feed contains suspicious entities: $rssUrl");
+            }
+        } else {
+            error_log("[SAPO-Security] Error al parsear XML del RSS: $rssUrl");
         }
+
         // Cachear el fallo de parsing
         saveRSSToCache($rssUrl, null);
         return null;
-    }
-
-    // Re-habilitar para no afectar otros procesos (solo en PHP < 8.0)
-    if (PHP_VERSION_ID < 80000) {
-        libxml_disable_entity_loader(false);
     }
 
     // Intentar obtener el primer item (último episodio)
