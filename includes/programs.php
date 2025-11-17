@@ -375,7 +375,8 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
         }
     }
 
-    $pubDate = (string)($item->pubDate ?? $item->published ?? '');
+    // Extraer fecha de publicación (RSS 2.0: pubDate, Atom: published o updated)
+    $pubDate = (string)($item->pubDate ?? $item->published ?? $item->updated ?? '');
 
     // Buscar URL del audio (enclosure)
     $audioUrl = '';
