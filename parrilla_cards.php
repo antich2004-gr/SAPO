@@ -364,56 +364,25 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
         }
 
         .program-card.live {
-            border: 2px solid #ef4444;
-            background: #fef2f2;
+            background: #f5f5f5;
+            border-left: 3px solid #ef4444;
         }
 
         /* Resaltar programas en directo (live) */
         .program-card.live-program {
-            border-left: 4px solid #8b5cf6;
-            background: linear-gradient(to right, #f5f3ff, white);
-        }
-
-        .program-card.live-program::before {
-            content: "EN DIRECTO";
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #8b5cf6;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 0.75em;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-
-        .program-card.live-program:hover {
-            background: linear-gradient(to right, #ede9fe, white);
-            border-left-color: #7c3aed;
+            background: white;
         }
 
         .program-time {
-            min-width: 80px;
-            text-align: center;
-            padding: 10px;
-            background: <?php echo htmlspecialchars($widgetColor); ?>;
-            color: white;
-            border-radius: 8px;
-            font-weight: 700;
+            min-width: 60px;
+            text-align: left;
+            padding: 0;
+            margin-right: 20px;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #1e40af;
             align-self: flex-start;
-        }
-
-        .program-time .time-start {
-            font-size: 1.4em;
-            display: block;
-        }
-
-        .program-time .time-end {
-            font-size: 0.85em;
-            opacity: 0.9;
-            display: block;
-            margin-top: 5px;
+            background: transparent;
         }
 
         .program-image {
@@ -441,15 +410,44 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
             flex: 1;
         }
 
+        .program-category {
+            font-size: 0.7em;
+            font-weight: 700;
+            color: #dc2626;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
         .program-title {
             <?php if ($widgetStyle === 'compact'): ?>
                 font-size: 1.1em;
             <?php else: ?>
-                font-size: 1.3em;
+                font-size: 1.25em;
             <?php endif; ?>
             font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 8px;
+            color: #0f172a;
+            margin-bottom: 6px;
+            line-height: 1.3;
+        }
+
+        .program-schedule {
+            font-size: 0.9em;
+            color: #64748b;
+            margin-bottom: 10px;
+        }
+
+        .live-badge-right {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #dc2626;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 700;
+            letter-spacing: 0.5px;
         }
 
         .live-badge {
@@ -667,8 +665,7 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                         <div class="program-card<?php echo $isLive ? ' live' : ''; ?><?php echo $isLiveProgram ? ' live-program' : ''; ?>"
                              id="program-<?php echo $day; ?>-<?php echo str_replace(':', '', $event['start_time']); ?>">
                             <div class="program-time">
-                                <span class="time-start"><?php echo htmlspecialchars($event['start_time']); ?></span>
-                                <span class="time-end"><?php echo htmlspecialchars($event['end_time']); ?></span>
+                                <?php echo htmlspecialchars(substr($event['start_time'], 0, 5)); ?>
                             </div>
 
                             <?php if (!empty($event['image'])): ?>
@@ -678,12 +675,23 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                             <?php endif; ?>
 
                             <div class="program-info">
+                                <?php if ($isLiveProgram): ?>
+                                    <div class="program-category">EN DIRECTO</div>
+                                <?php elseif (!empty($event['long_description'])): ?>
+                                    <div class="program-category">PODCAST</div>
+                                <?php endif; ?>
+
                                 <div class="program-title">
                                     <?php echo htmlspecialchars($event['title']); ?>
-                                    <?php if ($isLive): ?>
-                                        <span class="live-badge">🔴 EN EMISIÓN</span>
-                                    <?php endif; ?>
                                 </div>
+
+                                <div class="program-schedule">
+                                    <?php echo htmlspecialchars(substr($event['start_time'], 0, 5)); ?> a <?php echo htmlspecialchars(substr($event['end_time'], 0, 5)); ?>
+                                </div>
+
+                                <?php if ($isLive): ?>
+                                    <div class="live-badge-right">🔴 AHORA EN DIRECTO</div>
+                                <?php endif; ?>
 
                                 <?php if (!empty($event['description'])): ?>
                                     <div class="program-description">
