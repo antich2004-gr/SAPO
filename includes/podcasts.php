@@ -253,6 +253,12 @@ function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracio
 function editPodcast($username, $index, $url, $category, $name, $caducidad = 30, $duracion = '') {
     $podcasts = readServerList($username);
 
+    // Ordenar alfabéticamente igual que en user.php para que los índices coincidan
+    usort($podcasts, function($a, $b) {
+        return strcasecmp($a['name'], $b['name']);
+    });
+    $podcasts = array_values($podcasts);
+
     if ($index < 0 || $index >= count($podcasts)) {
         return ['success' => false, 'error' => 'Podcast no encontrado'];
     }
@@ -260,10 +266,15 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
     // Guardar estado original para poder revertir si es necesario
     $oldCategory = $podcasts[$index]['category'];
     $oldName = $podcasts[$index]['name'];
-    $oldPodcasts = $podcasts; // Backup completo
+    $oldUrl = $podcasts[$index]['url'];
 
-    foreach ($podcasts as $i => $podcast) {
-        if ($i != $index && $podcast['url'] == $url) {
+    // Releer la lista original (sin ordenar) para hacer los cambios
+    $podcastsOriginal = readServerList($username);
+    $oldPodcasts = $podcastsOriginal; // Backup completo
+
+    // Verificar que la URL no exista en otro podcast
+    foreach ($podcastsOriginal as $i => $podcast) {
+        if ($podcast['url'] == $url && $podcast['url'] != $oldUrl) {
             return ['success' => false, 'error' => 'Esta URL ya existe en otro podcast'];
         }
     }
@@ -271,13 +282,31 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
     $sanitizedCategory = sanitizePodcastName($category);
     $sanitizedName = sanitizePodcastName($name);
 
-    $podcasts[$index] = [
-        'url' => $url,
-        'category' => $sanitizedCategory,
-        'name' => $sanitizedName
-    ];
+    // Buscar el podcast por URL original y actualizarlo
+    $found = false;
+    $realIndex = -1;
+    foreach ($podcastsOriginal as $i => $podcast) {
+        if ($podcast['url'] === $oldUrl) {
+            $podcastsOriginal[$i] = [
+                'url' => $url,
+                'category' => $sanitizedCategory,
+                'name' => $sanitizedName
+            ];
+            // Preservar el estado de pausa si existía
+            if (isset($podcast['paused'])) {
+                $podcastsOriginal[$i]['paused'] = $podcast['paused'];
+            }
+            $found = true;
+            $realIndex = $i;
+            break;
+        }
+    }
 
-    if (writeServerList($username, $podcasts)) {
+    if (!$found) {
+        return ['success' => false, 'error' => 'Podcast no encontrado en la lista'];
+    }
+
+    if (writeServerList($username, $podcastsOriginal)) {
         // NUEVO: Si cambió la categoría, mover archivos físicos
         $moveResult = ['success' => true, 'moved' => 0];
         $categoryChanged = false;
