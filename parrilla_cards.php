@@ -62,6 +62,46 @@ $programsData = $programsDB['programs'] ?? [];
 // Organizar eventos por día de la semana
 $eventsByDay = [1 => [], 2 => [], 3 => [], 4 => [], 5 => [], 6 => [], 0 => []];
 
+// PRIMERO: Añadir programas en directo (live) manuales de SAPO
+foreach ($programsData as $programName => $programInfo) {
+    if (($programInfo['playlist_type'] ?? '') === 'live') {
+        $scheduleDays = $programInfo['schedule_days'] ?? [];
+        $startTime = $programInfo['schedule_start_time'] ?? '';
+        $duration = (int)($programInfo['schedule_duration'] ?? 60);
+
+        // Solo añadir si tiene horario configurado
+        if (!empty($scheduleDays) && !empty($startTime)) {
+            foreach ($scheduleDays as $day) {
+                // Calcular hora de fin
+                $startDateTime = DateTime::createFromFormat('H:i', $startTime);
+                $endDateTime = clone $startDateTime;
+                $endDateTime->modify("+{$duration} minutes");
+
+                $hour = (int)$startDateTime->format('H');
+                $minute = (int)$startDateTime->format('i');
+                $normalizedTimestamp = ($hour * 3600) + ($minute * 60);
+
+                $eventsByDay[$day][] = [
+                    'title' => $programInfo['display_title'] ?: $programName,
+                    'original_title' => $programName,
+                    'start_time' => $startDateTime->format('H:i'),
+                    'end_time' => $endDateTime->format('H:i'),
+                    'start_timestamp' => $normalizedTimestamp,
+                    'description' => $programInfo['short_description'] ?? '',
+                    'long_description' => $programInfo['long_description'] ?? '',
+                    'image' => $programInfo['image'] ?? '',
+                    'presenters' => $programInfo['presenters'] ?? '',
+                    'rss_feed' => $programInfo['rss_feed'] ?? '',
+                    'social_twitter' => $programInfo['social_twitter'] ?? '',
+                    'social_instagram' => $programInfo['social_instagram'] ?? '',
+                    'playlist_type' => 'live'
+                ];
+            }
+        }
+    }
+}
+
+// SEGUNDO: Añadir eventos de AzuraCast
 foreach ($schedule as $event) {
     $title = $event['name'] ?? $event['playlist'] ?? 'Sin nombre';
     $start = $event['start_timestamp'] ?? $event['start'] ?? null;
