@@ -107,7 +107,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     
     // Rate limiting
-    if ($action !== '' && $action !== 'login' && $action !== 'logout') {
+    // Excluir acciones de solo lectura que no consumen recursos significativos
+    $excludedFromRateLimit = ['login', 'logout', 'export_serverlist'];
+    if ($action !== '' && !in_array($action, $excludedFromRateLimit)) {
         if (!checkRateLimit($action, 20, 60)) {
             $error = ERROR_RATE_LIMIT;
             $action = '';
