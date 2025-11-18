@@ -108,10 +108,6 @@ function writeCaducidades($username, $caducidades) {
     }
 
     $result = file_put_contents($path, $content);
-
-    // DEBUG: Log para verificar escritura
-    error_log("[SAPO] writeCaducidades() - Path: $path, Result: " . ($result !== false ? 'OK' : 'FAIL') . ", Podcasts: " . count($caducidades));
-
     return $result !== false;
 }
 
@@ -140,9 +136,6 @@ function syncAllCaducidades($username, $oldDefaultCaducidad = null) {
     $caducidades = readCaducidades($username);
     $defaultCaducidad = getDefaultCaducidad($username);
 
-    // DEBUG: Log inicio
-    error_log("[SAPO] syncAllCaducidades() INICIO - User: $username, OldDefault: " . ($oldDefaultCaducidad ?? 'null') . ", NewDefault: $defaultCaducidad, Podcasts: " . count($podcasts));
-
     // Sincronizar caducidades según si son personalizadas o no
     // IMPORTANTE: Solo se respetan los podcasts EXPLÍCITAMENTE marcados como personalizados
     // (marcados cuando el usuario edita manualmente un podcast con valor != default)
@@ -157,15 +150,10 @@ function syncAllCaducidades($username, $oldDefaultCaducidad = null) {
                 // Usar valor por defecto y desmarcar
                 $caducidades[$podcastName] = $defaultCaducidad;
                 unmarkCaducidadAsCustom($username, $podcastName);
-                error_log("[SAPO] Podcast $podcastName marcado como personalizado pero sin valor, desmarcando");
-            } else {
-                error_log("[SAPO] Podcast $podcastName mantiene valor personalizado: " . $caducidades[$podcastName]);
             }
         } else {
             // No es personalizado: siempre usar el valor por defecto
-            $oldValue = $caducidades[$podcastName] ?? 'none';
             $caducidades[$podcastName] = $defaultCaducidad;
-            error_log("[SAPO] Podcast $podcastName actualizado: $oldValue -> $defaultCaducidad");
         }
     }
 
@@ -913,16 +901,6 @@ function cleanupCustomCaducidades($username) {
         $userData['custom_caducidades'] = array_values($userData['custom_caducidades']);
         saveUserDB($username, $userData);
     }
-}
-
-/**
- * TEMPORAL: Resetear todas las marcas de personalización
- * Usar solo una vez para limpiar marcas incorrectas
- */
-function resetAllCustomCaducidades($username) {
-    $userData = getUserDB($username);
-    $userData['custom_caducidades'] = [];
-    return saveUserDB($username, $userData);
 }
 
 ?>
