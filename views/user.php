@@ -135,15 +135,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             🔄 Actualizar estado de feeds
                         </button>
 
-                        <form method="POST" style="display: inline; margin: 0;">
-                            <input type="hidden" name="action" value="sync_azuracast">
-                            <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                            <button type="submit" class="btn btn-primary" style="margin: 0;"
-                                    onclick="return confirm('¿Ejecutar sincronización de medios en AzuraCast?\n\nEsto forzará a AzuraCast a detectar los cambios en las carpetas y archivos.');">
-                                🔄 Sincronizar AzuraCast
-                            </button>
-                        </form>
-
                         <form method="POST" style="display: flex; gap: 10px; align-items: center; margin: 0;">
                             <input type="hidden" name="action" value="set_default_caducidad">
                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">

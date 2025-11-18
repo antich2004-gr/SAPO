@@ -752,16 +752,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $message = "Se actualizaron $updated feeds correctamente";
     }
 
-    // SYNC AZURACAST MEDIA
-    if ($action == 'sync_azuracast' && isLoggedIn() && !isAdmin()) {
-        $result = syncAzuracastMedia($_SESSION['username']);
-        if ($result['success']) {
-            $message = $result['message'];
-        } else {
-            $error = $result['message'];
-        }
-    }
-
 }
 
 // ========== ACCIONES POST PARA GESTOR DE CATEGORÍAS (con protección CSRF) ==========
