@@ -58,7 +58,13 @@ initSession();
 
         $username = $_SESSION['username'];
         $podcasts = readServerList($username);
-        
+
+        // Ordenar alfabéticamente igual que en user.php para consistencia
+        usort($podcasts, function($a, $b) {
+            return strcasecmp($a['name'], $b['name']);
+        });
+        $podcasts = array_values($podcasts);
+
         // Si se especifica un índice, actualizar solo ese podcast
         if (isset($_GET['index']) && is_numeric($_GET['index'])) {
             $index = intval($_GET['index']);
