@@ -429,10 +429,9 @@ function syncAzuracastMedia($username) {
     try {
         $context = stream_context_create([
             'http' => [
-                'method' => 'POST',
+                'method' => 'GET',
                 'header' => [
                     'X-API-Key: ' . $apiKey,
-                    'Content-Type: application/json',
                     'User-Agent: SAPO/1.0'
                 ],
                 'timeout' => 30,
