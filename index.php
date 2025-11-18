@@ -171,14 +171,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $basePath = trim($_POST['base_path'] ?? '');
         $subsFolder = trim($_POST['subscriptions_folder'] ?? 'Suscripciones');
         $azuracastApiUrl = trim($_POST['azuracast_api_url'] ?? '');
-        $azuracastApiKey = trim($_POST['azuracast_api_key'] ?? '');
 
         if (empty($basePath)) {
             $error = 'La ruta base es obligatoria';
         } elseif (!is_dir($basePath)) {
             $error = 'La ruta base no existe o no es accesible';
         } else {
-            if (saveConfig($basePath, $subsFolder, $azuracastApiUrl, $azuracastApiKey)) {
+            if (saveConfig($basePath, $subsFolder, $azuracastApiUrl)) {
                 $message = 'Configuracion guardada correctamente';
             } else {
                 $error = 'Error al guardar la configuracion';

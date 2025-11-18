@@ -150,71 +150,11 @@ require_once INCLUDES_DIR . '/azuracast.php';
         ?>
     </div>
 
-    <!-- Test 5: Sincronización de Medios -->
-    <div class="test-card">
-        <h3>5. Test de Sincronización de Medios</h3>
-        <?php
-        $config = getConfig();
-        $apiKey = $config['azuracast_api_key'] ?? '';
-
-        if (empty($apiKey)) {
-            echo '<p class="error">❌ API Key no configurada. Configúrala en el panel de administración.</p>';
-        } else {
-            echo '<p class="success">✅ API Key configurada (longitud: ' . strlen($apiKey) . ' caracteres)</p>';
-
-            // Si hay un parámetro para ejecutar el test
-            if (isset($_GET['test_sync']) && isset($_GET['username'])) {
-                $username = $_GET['username'];
-                echo '<h4>Ejecutando sincronización para: ' . htmlspecialchars($username) . '</h4>';
-                echo '<p style="color: #3b82f6;">🔄 Enviando petición a AzuraCast...</p>';
-
-                $result = syncAzuracastMedia($username);
-
-                if ($result['success']) {
-                    echo '<p class="success">✅ ' . htmlspecialchars($result['message']) . '</p>';
-                } else {
-                    echo '<p class="error">❌ ' . htmlspecialchars($result['message']) . '</p>';
-                }
-            } else {
-                // Mostrar botones de test para cada usuario
-                $db = getGlobalDB();
-                $users = $db['users'] ?? [];
-                $hasUsers = false;
-
-                echo '<p style="color: #6b7280; margin-bottom: 15px;">Haz clic en el botón para probar la sincronización:</p>';
-
-                foreach ($users as $user) {
-                    if ($user['is_admin'] ?? false) continue;
-
-                    $username = $user['username'];
-                    $stationName = $user['station_name'];
-                    $azConfig = getAzuracastConfig($username);
-                    $stationId = $azConfig['station_id'] ?? null;
-
-                    if (!$stationId) continue;
-
-                    $hasUsers = true;
-                    echo '<div style="margin-bottom: 10px; padding: 10px; background: #f3f4f6; border-radius: 4px;">';
-                    echo '<strong>' . htmlspecialchars($stationName) . '</strong> (Station ID: ' . htmlspecialchars($stationId) . ')';
-                    echo ' <a href="?test_sync=1&username=' . urlencode($username) . '" style="margin-left: 10px; padding: 5px 15px; background: #3b82f6; color: white; text-decoration: none; border-radius: 4px; font-size: 14px;">🧪 Probar Sincronización</a>';
-                    echo '</div>';
-                }
-
-                if (!$hasUsers) {
-                    echo '<p style="color: #6b7280;">⚠️ No hay usuarios con Station ID para probar</p>';
-                }
-            }
-        }
-        ?>
-    </div>
-
     <div class="test-card">
         <h3>📝 Instrucciones</h3>
         <ol>
             <li>Si todos los tests pasan ✅, la configuración es correcta</li>
             <li>Configura el Station ID para cada emisora en el panel de administración</li>
-            <li>Configura la API Key de AzuraCast en el panel de administración (debe ser de administrador)</li>
-            <li>Usa el Test 5 para verificar que la sincronización funciona correctamente</li>
             <li>Una vez confirmado que funciona, <strong>elimina este archivo (test_azuracast.php)</strong> por seguridad</li>
         </ol>
     </div>

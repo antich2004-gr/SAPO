@@ -46,26 +46,18 @@ $users = getAllUsers();
                 <label>URL API de AzuraCast: <small>(para parrilla de programación)</small></label>
                 <input type="text" name="azuracast_api_url" value="<?php echo htmlEsc($config['azuracast_api_url'] ?? 'https://radio.radiobot.org/api'); ?>" placeholder="https://radio.radiobot.org/api" maxlength="255">
             </div>
-            <div class="form-group">
-                <label>API Key de AzuraCast: <small>(para sincronización de medios)</small></label>
-                <input type="password" name="azuracast_api_key" value="<?php echo htmlEsc($config['azuracast_api_key'] ?? ''); ?>" placeholder="API Key de administrador" maxlength="255">
-                <small style="color: #718096;">La API key debe ser de administrador para ejecutar tareas de sincronización</small>
-            </div>
             <button type="submit" class="btn btn-warning"><span class="btn-icon">💾</span> Guardar Configuracion</button>
         </form>
     </div>
 
     <div class="section" style="background: #f0f9ff; border: 1px solid #bae6fd;">
-        <h3>🧪 Probar Conexión y Sincronización con AzuraCast</h3>
+        <h3>🧪 Probar Conexión con AzuraCast</h3>
         <p style="color: #0c4a6e; margin-bottom: 15px;">
-            Verifica que SAPO puede conectarse correctamente a la API de AzuraCast configurada y que la sincronización de medios funciona.
+            Verifica que SAPO puede conectarse correctamente a la API de AzuraCast configurada.
         </p>
         <a href="test_azuracast.php" target="_blank" class="btn btn-primary">
-            🧪 Ejecutar Tests de Conexión y Sincronización
+            🧪 Ejecutar Tests de Conexión
         </a>
-        <p style="color: #64748b; font-size: 13px; margin-top: 10px;">
-            <strong>Nota:</strong> El Test 5 permite verificar que la API Key funciona correctamente y que se puede sincronizar con AzuraCast.
-        </p>
     </div>
 
     <div class="section">
