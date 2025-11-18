@@ -510,10 +510,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($defaultCaducidad < 1 || $defaultCaducidad > 365) {
             $error = 'La caducidad debe estar entre 1 y 365 días';
         } else {
+            // Guardar el valor ANTERIOR antes de cambiarlo (para detectar personalizaciones)
+            $oldDefaultCaducidad = getDefaultCaducidad($_SESSION['username']);
+
             if (setDefaultCaducidad($_SESSION['username'], $defaultCaducidad)) {
-                // Sincronizar caducidades.txt para asegurar que todos los podcasts tienen caducidad
-                syncAllCaducidades($_SESSION['username']);
-                $message = 'Caducidad por defecto actualizada a ' . $defaultCaducidad . ' días';
+                // Sincronizar caducidades.txt pasando el valor ANTERIOR como referencia
+                $syncResult = syncAllCaducidades($_SESSION['username'], $oldDefaultCaducidad);
+
+                // Guardar mensaje en sesión para mostrarlo después del redirect
+                $_SESSION['message'] = 'Caducidad por defecto actualizada a ' . $defaultCaducidad . ' días' .
+                                       ($syncResult ? ' y sincronizada con todos los podcasts' : '');
+
+                // Redirect para que se recargue la página con los valores actualizados
+                header('Location: ' . basename($_SERVER['PHP_SELF']));
+                exit;
             } else {
                 $error = 'Error al actualizar la caducidad por defecto';
             }
