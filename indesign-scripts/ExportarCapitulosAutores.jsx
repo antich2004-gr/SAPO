@@ -349,25 +349,54 @@ function extraerNombreAutor(caja, estiloNombre) {
 }
 
 function obtenerPaginasDeCaja(caja) {
+    var paginasObj = {};
     var paginas = [];
 
     try {
-        var parent = caja.parent;
-        var maxDepth = 10;
-        var depth = 0;
+        var cajaActual = caja;
+        var maxFrames = 50;
+        var frameCount = 0;
 
-        while (parent && depth < maxDepth) {
+        while (cajaActual && frameCount < maxFrames) {
             try {
-                if (parent.constructor.name === "Page") {
-                    paginas.push(parent.name);
-                    return paginas;
+                var parent = cajaActual.parent;
+                var maxDepth = 10;
+                var depth = 0;
+
+                while (parent && depth < maxDepth) {
+                    try {
+                        if (parent.constructor.name === "Page") {
+                            var nombrePagina = parent.name;
+                            paginasObj[nombrePagina] = true;
+                            break;
+                        }
+                        parent = parent.parent;
+                        depth++;
+                    } catch (e) {
+                        break;
+                    }
                 }
-                parent = parent.parent;
-                depth++;
+
+                if (cajaActual.nextTextFrame) {
+                    cajaActual = cajaActual.nextTextFrame;
+                } else {
+                    break;
+                }
+                frameCount++;
             } catch (e) {
                 break;
             }
         }
+
+        for (var p in paginasObj) {
+            if (paginasObj.hasOwnProperty(p)) {
+                paginas.push(p);
+            }
+        }
+
+        paginas.sort(function(a, b) {
+            return parseInt(a) - parseInt(b);
+        });
 
         if (paginas.length === 0) {
             paginas.push("1");
@@ -464,6 +493,9 @@ function exportarCapitulos(doc, capitulos, config) {
 
     pdfPrefs.viewPDF = false;
 
+    var userInteractionOriginal = app.scriptPreferences.userInteractionLevel;
+    app.scriptPreferences.userInteractionLevel = UserInteractionLevels.NEVER_INTERACT;
+
     var progreso = new Window("palette", "Exportando capitulos...");
     progreso.add("statictext", undefined, "Procesando capitulos por autor...");
     var barraProgreso = progreso.add("progressbar", undefined, 0, capitulos.length);
@@ -504,6 +536,7 @@ function exportarCapitulos(doc, capitulos, config) {
     progreso.close();
 
     pdfPrefs.viewPDF = viewOriginal;
+    app.scriptPreferences.userInteractionLevel = userInteractionOriginal;
 
     var resultado = "===================================\n";
     resultado += "  EXPORTACION COMPLETADA\n";
