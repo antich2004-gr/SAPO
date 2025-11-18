@@ -615,7 +615,7 @@
 
         <div style="margin-bottom: 20px;">
             <h4>¿Qué pasa con los episodios ya descargados cuando pauso un podcast?</h4>
-            <p>Los episodios ya descargados permanecen en el servidor. Solo se detienen las descargas de nuevos episodios. La limpieza por caducidad sigue aplicándose normalmente.</p>
+            <p>Los episodios ya descargados permanecen en la carpeta de Radiobot. Solo se detienen las descargas de nuevos episodios. La limpieza por caducidad sigue aplicándose normalmente.</p>
         </div>
 
         <div style="margin-bottom: 20px;">
