@@ -414,7 +414,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // UPDATE AZURACAST CONFIG (usuario regular desde pestaña Parrilla)
     if ($action == 'update_azuracast_config_user' && isLoggedIn() && !isAdmin()) {
         $username = $_SESSION['username'];
-        $stationId = $_POST['station_id'] ?? '';
+
+        // Obtener el Station ID actual (solo el admin puede cambiarlo)
+        $currentConfig = getAzuracastConfig($username);
+        $stationId = $currentConfig['station_id'] ?? '';
+
+        // Los usuarios solo pueden actualizar personalización y stream URL
         $widgetColor = $_POST['widget_color'] ?? $_POST['widget_color_text'] ?? '#3b82f6';
         $widgetStyle = $_POST['widget_style'] ?? 'modern';
         $widgetFontSize = $_POST['widget_font_size'] ?? 'medium';

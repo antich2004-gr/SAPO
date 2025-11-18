@@ -101,22 +101,24 @@ if ($hasStationId) {
         <div class="section">
             <h3>Configuración de AzuraCast</h3>
 
+            <?php if (!empty($stationId)): ?>
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <strong style="color: #166534;">Station ID configurado:</strong>
+                    <span style="color: #166534; font-size: 18px; font-weight: 600; margin-left: 10px;"><?php echo htmlEsc($stationId); ?></span>
+                    <p style="margin: 8px 0 0 0; color: #166534; font-size: 13px;">
+                        Si necesitas cambiar el Station ID, contacta con el administrador.
+                    </p>
+                </div>
+            <?php else: ?>
+                <div class="alert alert-warning">
+                    ⚠️ El administrador aún no ha configurado tu <strong>Station ID de AzuraCast</strong>.<br>
+                    Contacta con el administrador para que lo configure desde el panel de administración.
+                </div>
+            <?php endif; ?>
+
             <form method="POST">
                 <input type="hidden" name="action" value="update_azuracast_config_user">
                 <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-
-                <div class="form-group">
-                    <label>Station ID de AzuraCast: <small>(requerido)</small></label>
-                    <input type="number"
-                           name="station_id"
-                           value="<?php echo htmlEsc($stationId ?? ''); ?>"
-                           placeholder="34"
-                           required>
-                    <small style="color: #6b7280;">
-                        Puedes encontrar el Station ID en la URL de tu estación en AzuraCast.<br>
-                        Ejemplo: si tu URL es <code>radio.radiobot.org/station/34</code>, tu Station ID es <strong>34</strong>
-                    </small>
-                </div>
 
                 <div class="form-group">
                     <label>URL de la Página Pública del Stream:</label>
