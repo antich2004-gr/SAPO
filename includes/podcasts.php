@@ -703,6 +703,29 @@ function getDuracionesOptions() {
 }
 
 /**
+ * Convertir código de duración a minutos
+ */
+function duracionToMinutes($duracion) {
+    if (empty($duracion)) {
+        return 0;
+    }
+
+    $minutes = 0;
+
+    // Extraer horas (ej: "2H" -> 2, "1H30" -> 1)
+    if (preg_match('/(\d+)H/', $duracion, $matches)) {
+        $minutes += intval($matches[1]) * 60;
+    }
+
+    // Extraer minutos (ej: "30M" -> 30, "1H30" -> 30)
+    if (preg_match('/(\d+)M/', $duracion, $matches)) {
+        $minutes += intval($matches[1]);
+    }
+
+    return $minutes;
+}
+
+/**
  * Pausar un podcast (comentar línea en serverlist.txt)
  */
 function pausePodcast($username, $index) {

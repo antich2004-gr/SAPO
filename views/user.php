@@ -81,13 +81,16 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
         $feedInfo = getCachedFeedInfo($podcast['url']);
         $statusInfo = formatFeedStatus($feedInfo['timestamp']);
 
+        $duracionCode = $duraciones[$podcast['name']] ?? '';
+        $duracionMinutes = !empty($duracionCode) ? duracionToMinutes($duracionCode) : 0;
+
         $podcastsData[] = [
             'index' => $index,
             'url' => $podcast['url'],
             'name' => displayName($podcast['name']),
             'category' => $podcast['category'],
             'caducidad' => $caducidades[$podcast['name']] ?? $defaultCaducidad,
-            'duracion' => $duraciones[$podcast['name']] ?? '',
+            'duracion' => $duracionMinutes,
             'paused' => isset($podcast['paused']) ? $podcast['paused'] : false,
             'feedInfo' => [
                 'timestamp' => $feedInfo['timestamp'],
@@ -200,7 +203,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                 <span class="badge-paused">⏸️ PAUSADO</span>
                                             <?php endif; ?>
                                         </strong>
-                                        <small>Categoría: <?php echo htmlEsc(displayName($podcast['category'])); ?> | Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días<?php if (!empty($podcastDuracion)): ?> | Duración máxima: <?php echo htmlEsc($podcastDuracion + 5); ?> min<?php endif; ?></small>
+                                        <small>Categoría: <?php echo htmlEsc(displayName($podcast['category'])); ?> | Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días<?php if (!empty($podcastDuracion)): ?> | Duración máxima: <?php echo htmlEsc(duracionToMinutes($podcastDuracion) + 5); ?> min<?php endif; ?></small>
                                         <small><?php echo htmlEsc($podcast['url']); ?></small>
 
                                         <div class="last-episode <?php echo $statusInfo['class']; ?>">
@@ -345,7 +348,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                             <span class="badge-paused">⏸️ PAUSADO</span>
                                                         <?php endif; ?>
                                                     </strong>
-                                                    <small>Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días<?php if (!empty($podcastDuracion)): ?> | Duración máxima: <?php echo htmlEsc($podcastDuracion + 5); ?> min<?php endif; ?></small>
+                                                    <small>Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días<?php if (!empty($podcastDuracion)): ?> | Duración máxima: <?php echo htmlEsc(duracionToMinutes($podcastDuracion) + 5); ?> min<?php endif; ?></small>
                                                     <small><?php echo htmlEsc($podcast['url']); ?></small>
 
                                                     <div class="last-episode <?php echo $statusInfo['class']; ?>">
