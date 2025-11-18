@@ -110,10 +110,10 @@ if ($hasStationId) {
                     <input type="url"
                            name="stream_url"
                            value="<?php echo htmlEsc($azConfig['stream_url'] ?? ''); ?>"
-                           placeholder="https://radio.radiobot.org/public/galapagar">
+                           placeholder="https://radio.radiobot.org/public/<?php echo htmlEsc($username); ?>">
                     <small style="color: #6b7280;">
                         URL de la página pública de tu emisora en AzuraCast. El badge "🔴 AHORA EN DIRECTO" enlazará a esta página.<br>
-                        Ejemplo: <code>https://radio.radiobot.org/public/tu_emisora</code>
+                        Ejemplo: <code>https://radio.radiobot.org/public/<?php echo htmlEsc($username); ?></code>
                     </small>
                 </div>
 
