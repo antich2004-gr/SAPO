@@ -419,12 +419,12 @@ function syncAzuracastMedia($username) {
     }
 
     // Construir URL de la API para ejecutar la tarea de sincronización
-    // Endpoint: POST /api/admin/station/{station_id}/media-queue
-    // Este endpoint administrativo ejecuta el procesamiento de medios (CheckMediaTask)
-    $syncUrl = rtrim($apiUrl, '/') . '/admin/station/' . $stationId . '/media-queue';
+    // Endpoint: POST /api/admin/debug/sync/CheckMediaTask
+    // Este endpoint ejecuta manualmente la tarea CheckMediaTask que escanea archivos multimedia
+    $syncUrl = rtrim($apiUrl, '/') . '/admin/debug/sync/CheckMediaTask';
 
     error_log("AzuraCast Sync: URL de sincronización: $syncUrl");
-    error_log("AzuraCast Sync: Station ID: $stationId");
+    error_log("AzuraCast Sync: Ejecutando CheckMediaTask para todas las estaciones");
 
     try {
         $context = stream_context_create([
