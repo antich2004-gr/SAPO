@@ -133,7 +133,22 @@ function syncAllCaducidades($username) {
     $caducidades = readCaducidades($username);
     $defaultCaducidad = getDefaultCaducidad($username);
 
-    // Para cada podcast, asegurar que tenga caducidad
+    // FASE 1: Detectar y marcar podcasts con valores personalizados existentes
+    // Esto es importante para migrar podcasts que ya existían antes del sistema
+    foreach ($podcasts as $podcast) {
+        $podcastName = $podcast['name'];
+
+        // Si el podcast tiene caducidad definida Y es diferente al default Y no está marcado
+        if (isset($caducidades[$podcastName]) &&
+            $caducidades[$podcastName] != $defaultCaducidad &&
+            !hasCaducidadCustom($username, $podcastName)) {
+
+            // Marcar como personalizado para preservar su valor
+            markCaducidadAsCustom($username, $podcastName);
+        }
+    }
+
+    // FASE 2: Sincronizar caducidades según si son personalizadas o no
     foreach ($podcasts as $podcast) {
         $podcastName = $podcast['name'];
 
