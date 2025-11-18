@@ -192,10 +192,16 @@ function writeServerList($username, $podcasts) {
     $content .= "\n";
 
     foreach ($podcasts as $podcast) {
-        $sanitizedCategory = sanitizePodcastName($podcast['category']);
         $sanitizedName = sanitizePodcastName($podcast['name']);
 
-        $line = $podcast['url'] . ' ' . $sanitizedCategory . ' ' . $sanitizedName;
+        // Si la categoría está vacía, usar formato de 2 campos (URL nombre)
+        // Si la categoría tiene valor, usar formato de 3 campos (URL categoria nombre)
+        if (empty($podcast['category'])) {
+            $line = $podcast['url'] . ' ' . $sanitizedName;
+        } else {
+            $sanitizedCategory = sanitizePodcastName($podcast['category']);
+            $line = $podcast['url'] . ' ' . $sanitizedCategory . ' ' . $sanitizedName;
+        }
 
         // Si el podcast está pausado, comentar la línea
         if (isset($podcast['paused']) && $podcast['paused'] === true) {
@@ -216,8 +222,9 @@ function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracio
             return ['success' => false, 'error' => 'El podcast ya existe'];
         }
     }
-    
-    $sanitizedCategory = sanitizePodcastName($category);
+
+    // Solo sanitizar la categoría si no está vacía
+    $sanitizedCategory = empty($category) ? '' : sanitizePodcastName($category);
     $sanitizedName = sanitizePodcastName($name);
     
     $podcasts[] = [
@@ -280,7 +287,8 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
         }
     }
 
-    $sanitizedCategory = sanitizePodcastName($category);
+    // Solo sanitizar la categoría si no está vacía
+    $sanitizedCategory = empty($category) ? '' : sanitizePodcastName($category);
     $sanitizedName = sanitizePodcastName($name);
 
     // Buscar el podcast por URL original y actualizarlo

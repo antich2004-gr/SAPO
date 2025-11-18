@@ -518,8 +518,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         $finalCategory = !empty($customCategory) ? $customCategory : $category;
-        
-        if (empty($url) || empty($finalCategory) || empty($name)) {
+
+        if (empty($url) || empty($name)) {
             $error = 'Todos los campos son obligatorios';
         } elseif (!validateInput($url, 'url')) {
             $error = 'URL de RSS invalida';
@@ -550,12 +550,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $caducidad = 30; // Valor por defecto si está fuera de rango
         }
 
-        
+
         $finalCategory = !empty($customCategory) ? $customCategory : $category;
-        
+
         if ($index < 0) {
             $error = 'Podcast no valido';
-        } elseif (empty($url) || empty($finalCategory) || empty($name)) {
+        } elseif (empty($url) || empty($name)) {
             $error = 'Todos los campos son obligatorios';
         } elseif (!validateInput($url, 'url')) {
             $error = 'URL de RSS invalida';
