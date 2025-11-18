@@ -463,6 +463,13 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
             }
         }
 
+        // Agregar información del renombrado
+        if ($oldName !== $sanitizedName) {
+            $result['podcast_renamed'] = true;
+            $result['old_name'] = $oldName;
+            $result['new_name'] = $sanitizedName;
+        }
+
         return $result;
     } else {
         return ['success' => false, 'error' => 'Error al actualizar el podcast'];

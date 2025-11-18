@@ -611,6 +611,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $_SESSION['show_radiobot_reminder'] = true;
                     $_SESSION['radiobot_action'] = 'move_podcast';
                 }
+                // Si se renombró el podcast, también mostrar recordatorio
+                if (!empty($result['podcast_renamed'])) {
+                    $_SESSION['show_radiobot_reminder'] = true;
+                    $_SESSION['radiobot_action'] = 'rename_podcast';
+                    $_SESSION['radiobot_old_name'] = $result['old_name'];
+                    $_SESSION['radiobot_new_name'] = $result['new_name'];
+                }
                 header('Location: ' . basename($_SERVER['PHP_SELF']));
                 exit;
             } else {
