@@ -817,16 +817,22 @@ function loadReport(days, button) {
 
 /**
  * Auto-ocultar mensajes de alerta después de 5 segundos
+ * (excepto el recordatorio de Radiobot que requiere cierre manual)
  */
 document.addEventListener('DOMContentLoaded', function() {
     const alerts = document.querySelectorAll('.alert-success, .alert-error, .alert-warning, .alert-info');
-    
+
     alerts.forEach(alert => {
+        // No auto-ocultar el recordatorio de Radiobot (requiere cierre manual)
+        if (alert.classList.contains('alert-radiobot-reminder')) {
+            return;
+        }
+
         // Auto-ocultar después de 5 segundos
         setTimeout(() => {
             alert.style.transition = 'opacity 0.5s ease';
             alert.style.opacity = '0';
-            
+
             // Eliminar del DOM después de la transición
             setTimeout(() => {
                 alert.remove();
@@ -834,6 +840,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
 });
+
+/**
+ * Cerrar recordatorio de Radiobot manualmente
+ */
+function closeRadiobotReminder(button) {
+    const alert = button.closest('.alert-radiobot-reminder');
+    if (alert) {
+        alert.style.transition = 'opacity 0.5s ease';
+        alert.style.opacity = '0';
+
+        setTimeout(() => {
+            alert.remove();
+        }, 500);
+    }
+}
 
 /**
  * Modal de progreso de actualización de feeds
