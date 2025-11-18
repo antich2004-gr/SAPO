@@ -120,7 +120,7 @@ function mostrarDialogoConfiguracion() {
 
     var preajusteDropdown = grupoPDF.add("dropdownlist", undefined, preajustes);
     for (var i = 0; i < preajustes.length; i++) {
-        if (preajustes[i].indexOf("Press") !== -1 || preajustes[i].indexOf("Calidad de impresion") !== -1) {
+        if (preajustes[i].indexOf("Smallest") !== -1 || preajustes[i].indexOf("Screen") !== -1 || preajustes[i].indexOf("Pantalla") !== -1) {
             preajusteDropdown.selection = i;
             break;
         }
@@ -128,6 +128,12 @@ function mostrarDialogoConfiguracion() {
     if (!preajusteDropdown.selection) {
         preajusteDropdown.selection = 0;
     }
+
+    var cbImposicion = grupoPDF.add("checkbox", undefined, "Imposicion 2-up (2 paginas por hoja)");
+    cbImposicion.value = false;
+
+    var cbAjustar = grupoPDF.add("checkbox", undefined, "Ajustar contenido a pagina");
+    cbAjustar.value = true;
 
     var grupoCarpeta = dialog.add("panel", undefined, "Carpeta de destino");
     grupoCarpeta.orientation = "row";
@@ -169,6 +175,8 @@ function mostrarDialogoConfiguracion() {
             nombreLibro: limpiarNombreArchivo(nombreLibroInput.text),
             numeroInicial: numeroInicial,
             preajuste: preajusteDropdown.selection.text,
+            imposicion2up: cbImposicion.value,
+            ajustarPagina: cbAjustar.value,
             carpeta: new Folder(carpetaInput.text)
         };
     }
@@ -459,6 +467,20 @@ function exportarCapitulos(doc, capitulos, config) {
         preajuste = app.pdfExportPresets[0];
     }
 
+    var pdfPrefs = app.pdfExportPreferences;
+    var imposicionOriginal = pdfPrefs.pdfMagnification;
+    var viewOriginal = pdfPrefs.viewPDF;
+
+    if (config.imposicion2up) {
+        pdfPrefs.pageRange = "";
+    }
+
+    if (config.ajustarPagina) {
+        pdfPrefs.pdfMagnification = PDFMagnification.FIT_PAGE;
+    }
+
+    pdfPrefs.viewPDF = false;
+
     var progreso = new Window("palette", "Exportando capitulos...");
     progreso.add("statictext", undefined, "Procesando capitulos por autor...");
     var barraProgreso = progreso.add("progressbar", undefined, 0, capitulos.length);
@@ -497,6 +519,9 @@ function exportarCapitulos(doc, capitulos, config) {
     }
 
     progreso.close();
+
+    pdfPrefs.pdfMagnification = imposicionOriginal;
+    pdfPrefs.viewPDF = viewOriginal;
 
     var resultado = "===================================\n";
     resultado += "  EXPORTACION COMPLETADA\n";
