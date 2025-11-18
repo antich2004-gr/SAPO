@@ -155,7 +155,7 @@ function saveScheduleToCache($username, $data) {
  * @param string $logoUrl URL del logo
  * @return bool True si se guardó correctamente
  */
-function updateAzuracastConfig($username, $stationId, $widgetColor = '#3b82f6', $showLogo = false, $logoUrl = '', $widgetStyle = 'modern', $widgetFontSize = 'medium') {
+function updateAzuracastConfig($username, $stationId, $widgetColor = '#3b82f6', $showLogo = false, $logoUrl = '', $widgetStyle = 'modern', $widgetFontSize = 'medium', $streamUrl = '') {
     $userData = getUserDB($username);
 
     $userData['azuracast'] = [
@@ -164,7 +164,8 @@ function updateAzuracastConfig($username, $stationId, $widgetColor = '#3b82f6', 
         'show_logo' => (bool)$showLogo,
         'logo_url' => $logoUrl,
         'widget_style' => $widgetStyle,
-        'widget_font_size' => $widgetFontSize
+        'widget_font_size' => $widgetFontSize,
+        'stream_url' => $streamUrl
     ];
 
     return saveUserDB($username, $userData);
@@ -184,7 +185,8 @@ function getAzuracastConfig($username) {
         'show_logo' => false,
         'logo_url' => '',
         'widget_style' => 'modern',
-        'widget_font_size' => 'medium'
+        'widget_font_size' => 'medium',
+        'stream_url' => ''
     ];
 }
 

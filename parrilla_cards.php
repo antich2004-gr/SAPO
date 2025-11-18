@@ -52,6 +52,7 @@ $stationName = $user['station_name'] ?? $station;
 $widgetColor = $azConfig['widget_color'] ?? '#10b981';
 $widgetStyle = $azConfig['widget_style'] ?? 'modern';
 $widgetFontSize = $azConfig['widget_font_size'] ?? 'medium';
+$streamUrl = $azConfig['stream_url'] ?? '';
 
 $schedule = getAzuracastSchedule($station);
 if ($schedule === false) $schedule = [];
@@ -448,6 +449,13 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
             font-size: 0.75em;
             font-weight: 700;
             letter-spacing: 0.5px;
+            transition: all 0.3s;
+        }
+
+        a.live-badge-right:hover {
+            background: #b91c1c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
         }
 
         .live-badge {
@@ -689,7 +697,18 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                                 </div>
 
                                 <?php if ($isLive): ?>
-                                    <div class="live-badge-right">🔴 AHORA EN DIRECTO</div>
+                                    <?php if (!empty($streamUrl)): ?>
+                                        <a href="<?php echo htmlspecialchars($streamUrl); ?>"
+                                           target="_blank"
+                                           rel="noopener"
+                                           class="live-badge-right"
+                                           style="text-decoration: none; cursor: pointer;"
+                                           title="Escuchar en directo">
+                                            🔴 AHORA EN DIRECTO
+                                        </a>
+                                    <?php else: ?>
+                                        <div class="live-badge-right">🔴 AHORA EN DIRECTO</div>
+                                    <?php endif; ?>
                                 <?php endif; ?>
 
                                 <?php if (!empty($event['description'])): ?>
