@@ -46,6 +46,11 @@ $users = getAllUsers();
                 <label>URL API de AzuraCast: <small>(para parrilla de programación)</small></label>
                 <input type="text" name="azuracast_api_url" value="<?php echo htmlEsc($config['azuracast_api_url'] ?? 'https://radio.radiobot.org/api'); ?>" placeholder="https://radio.radiobot.org/api" maxlength="255">
             </div>
+            <div class="form-group">
+                <label>API Key de AzuraCast: <small>(para sincronización de medios)</small></label>
+                <input type="password" name="azuracast_api_key" value="<?php echo htmlEsc($config['azuracast_api_key'] ?? ''); ?>" placeholder="API Key de administrador" maxlength="255">
+                <small style="color: #718096;">La API key debe ser de administrador para ejecutar tareas de sincronización</small>
+            </div>
             <button type="submit" class="btn btn-warning"><span class="btn-icon">💾</span> Guardar Configuracion</button>
         </form>
     </div>

@@ -375,3 +375,102 @@ function testAzuracastConnection() {
         'message' => 'Conexión exitosa'
     ];
 }
+
+/**
+ * Ejecutar sincronización de medios en AzuraCast (CheckMediaTask)
+ *
+ * @param string $username Nombre de usuario (para obtener station_id)
+ * @return array Array con 'success' (bool) y 'message' (string)
+ */
+function syncAzuracastMedia($username) {
+    // Obtener configuración global
+    $config = getConfig();
+    $apiUrl = $config['azuracast_api_url'] ?? '';
+    $apiKey = $config['azuracast_api_key'] ?? '';
+
+    if (empty($apiUrl)) {
+        return [
+            'success' => false,
+            'message' => 'URL de API no configurada'
+        ];
+    }
+
+    if (empty($apiKey)) {
+        return [
+            'success' => false,
+            'message' => 'API Key no configurada. Configúrala en el panel de administración.'
+        ];
+    }
+
+    // Obtener station_id del usuario
+    $userData = getUserDB($username);
+    $stationId = $userData['azuracast']['station_id'] ?? null;
+
+    if (empty($stationId)) {
+        return [
+            'success' => false,
+            'message' => 'Station ID no configurado para este usuario'
+        ];
+    }
+
+    // Construir URL de la API para ejecutar la tarea de sincronización
+    // Endpoint: POST /api/station/{station_id}/backend/reload
+    $syncUrl = rtrim($apiUrl, '/') . '/station/' . $stationId . '/backend/reload';
+
+    try {
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'POST',
+                'header' => [
+                    'X-API-Key: ' . $apiKey,
+                    'Content-Type: application/json',
+                    'User-Agent: SAPO/1.0'
+                ],
+                'timeout' => 30,
+                'ignore_errors' => true
+            ]
+        ]);
+
+        $response = @file_get_contents($syncUrl, false, $context);
+
+        // Obtener código de respuesta HTTP
+        $httpCode = 0;
+        if (isset($http_response_header) && count($http_response_header) > 0) {
+            preg_match('/\d{3}/', $http_response_header[0], $matches);
+            $httpCode = isset($matches[0]) ? (int)$matches[0] : 0;
+        }
+
+        if ($httpCode >= 200 && $httpCode < 300) {
+            error_log("AzuraCast: Sincronización de medios ejecutada exitosamente para station $stationId");
+            return [
+                'success' => true,
+                'message' => 'Sincronización de medios iniciada correctamente en AzuraCast'
+            ];
+        } else {
+            error_log("AzuraCast: Error al sincronizar medios. HTTP $httpCode. Response: $response");
+
+            // Parsear mensaje de error si está disponible
+            $errorMsg = 'Error al ejecutar sincronización';
+            if (!empty($response)) {
+                $data = @json_decode($response, true);
+                if (isset($data['message'])) {
+                    $errorMsg = $data['message'];
+                } elseif (isset($data['error'])) {
+                    $errorMsg = $data['error'];
+                }
+            }
+
+            return [
+                'success' => false,
+                'message' => $errorMsg . ' (HTTP ' . $httpCode . ')'
+            ];
+        }
+
+    } catch (Exception $e) {
+        error_log("AzuraCast: Excepción al sincronizar medios: " . $e->getMessage());
+        return [
+            'success' => false,
+            'message' => 'Error de conexión: ' . $e->getMessage()
+        ];
+    }
+}
