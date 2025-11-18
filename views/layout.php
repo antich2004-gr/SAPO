@@ -56,7 +56,8 @@
         echo '<div class="alert alert-warning alert-radiobot-reminder" style="border-left: 4px solid #ffc107; position: relative; padding-right: 40px;">';
         echo '<button onclick="closeRadiobotReminder(this)" style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 20px; cursor: pointer; color: #856404; padding: 0; width: 24px; height: 24px; line-height: 1;" title="Cerrar">&times;</button>';
         echo '<strong>⚠️ RECORDATORIO IMPORTANTE:</strong><br>';
-        echo 'No olvides actualizar las playlists en Radiobot para que apunten a las nuevas rutas.';
+        echo 'No olvides actualizar las playlists en Radiobot para que apunten a las nuevas rutas.<br>';
+        echo '<small style="color: #856404;">Los archivos estarán visibles en Radiobot en 5-10 minutos.</small>';
         echo '</div>';
 
         unset($_SESSION['show_radiobot_reminder']);
