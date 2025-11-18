@@ -105,9 +105,6 @@ if ($hasStationId) {
                 <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                     <strong style="color: #166534;">Station ID configurado:</strong>
                     <span style="color: #166534; font-size: 18px; font-weight: 600; margin-left: 10px;"><?php echo htmlEsc($stationId); ?></span>
-                    <p style="margin: 8px 0 0 0; color: #166534; font-size: 13px;">
-                        Si necesitas cambiar el Station ID, contacta con el administrador.
-                    </p>
                 </div>
             <?php else: ?>
                 <div class="alert alert-warning">
