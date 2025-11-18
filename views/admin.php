@@ -49,7 +49,17 @@ $users = getAllUsers();
             <button type="submit" class="btn btn-warning"><span class="btn-icon">💾</span> Guardar Configuracion</button>
         </form>
     </div>
-    
+
+    <div class="section" style="background: #f0f9ff; border: 1px solid #bae6fd;">
+        <h3>🧪 Probar Conexión a AzuraCast</h3>
+        <p style="color: #0c4a6e; margin-bottom: 15px;">
+            Verifica que SAPO puede conectarse correctamente a la API de AzuraCast configurada.
+        </p>
+        <a href="test_azuracast.php" target="_blank" class="btn btn-primary">
+            🧪 Ejecutar Test de Conexión
+        </a>
+    </div>
+
     <div class="section">
         <h3>Crear Nuevo Usuario</h3>
         <form method="POST">
