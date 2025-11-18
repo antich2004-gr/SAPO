@@ -91,6 +91,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
             'category' => $podcast['category'],
             'caducidad' => $caducidades[$podcast['name']] ?? $defaultCaducidad,
             'duracion' => $duracionMinutes,
+            'duracionCode' => $duracionCode,
             'paused' => isset($podcast['paused']) ? $podcast['paused'] : false,
             'feedInfo' => [
                 'timestamp' => $feedInfo['timestamp'],
@@ -1041,7 +1042,7 @@ function showEditPodcastModal(index) {
         console.warn('Campo de categoría no disponible. El usuario necesita crear categorías primero.');
     }
     if (caducidadField) caducidadField.value = podcast.caducidad;
-    if (duracionField) duracionField.value = podcast.duracion;
+    if (duracionField) duracionField.value = podcast.duracionCode;
 
     // Mostrar el modal
     document.getElementById('editPodcastModal').style.display = 'block';
