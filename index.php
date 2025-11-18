@@ -517,6 +517,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $error = 'La caducidad debe estar entre 1 y 365 días';
         } else {
             if (setDefaultCaducidad($_SESSION['username'], $defaultCaducidad)) {
+                // Sincronizar caducidades.txt para asegurar que todos los podcasts tienen caducidad
+                syncAllCaducidades($_SESSION['username']);
                 $message = 'Caducidad por defecto actualizada a ' . $defaultCaducidad . ' días';
             } else {
                 $error = 'Error al actualizar la caducidad por defecto';
