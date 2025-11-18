@@ -1,13 +1,6 @@
-/*
- * Script: Exportar Capítulos por Autor a PDF
- * Descripción: Exporta cada capítulo como PDF con nombre basado en autor y libro
- * Formato: [prefijo]_[NombreAutor]_[NombreLibro].pdf
- *
- * REQUISITOS:
- * - Cada capítulo debe tener una caja de texto independiente
- * - El nombre del autor debe estar en el estilo de párrafo "autor" dentro de cada caja
- * - Las cajas de texto de capítulos deben tener un nombre que las identifique (ej: "Capitulo1", "Cap_01", etc.)
- */
+// Script: Exportar Capitulos por Autor a PDF
+// Descripcion: Exporta cada capitulo como PDF con nombre basado en autor y libro
+// Formato: [prefijo][numero]_[NombreAutor]_[NombreLibro].pdf
 
 #target indesign
 
@@ -19,68 +12,51 @@ function main() {
 
     var doc = app.activeDocument;
 
-    // Paso 1: Mostrar diálogo de configuración principal
     var config = mostrarDialogoConfiguracion();
-    if (!config) return; // Usuario canceló
+    if (!config) return;
 
-    // Paso 2: Buscar todas las cajas de texto
     var cajasCapitulo = buscarCajasCapitulo(doc, config);
 
     if (cajasCapitulo.length === 0) {
         if (config.modoAutomatico) {
-            alert("No se encontraron cajas de texto con el estilo '" + config.estiloAutor + "'.\n\n" +
-                  "Asegúrate de:\n" +
-                  "1. Tener cajas de texto en el documento\n" +
-                  "2. Aplicar el estilo '" + config.estiloAutor + "' al nombre del autor en cada capítulo\n" +
-                  "3. O usa el modo 'Manual' si tus cajas tienen nombres específicos");
+            alert("No se encontraron cajas de texto con el estilo '" + config.estiloAutor + "'.\n\nAsegurate de:\n1. Tener cajas de texto en el documento\n2. Aplicar el estilo '" + config.estiloAutor + "' al nombre del autor en cada capitulo\n3. O usa el modo 'Manual' si tus cajas tienen nombres especificos");
         } else {
-            alert("No se encontraron cajas de texto con el prefijo '" + config.prefijoCaja + "'.\n\n" +
-                  "Asegúrate de:\n" +
-                  "1. Nombrar las cajas de texto de cada capítulo\n" +
-                  "2. Usar un prefijo común (ej: Capitulo1, Capitulo2, etc.)\n" +
-                  "3. Verificar el prefijo en el panel de Capas\n" +
-                  "4. O usa el modo 'Automático' para detectar todas las cajas");
+            alert("No se encontraron cajas de texto con el prefijo '" + config.prefijoCaja + "'.\n\nAsegurate de:\n1. Nombrar las cajas de texto de cada capitulo\n2. Usar un prefijo comun (ej: Capitulo1, Capitulo2, etc.)\n3. Verificar el prefijo en el panel de Capas\n4. O usa el modo 'Automatico' para detectar todas las cajas");
         }
         return;
     }
 
-    // Paso 3: Extraer información de autor de cada caja
     var capitulos = procesarCapitulos(cajasCapitulo, config);
 
-    // Paso 4: Mostrar previsualización y confirmar
     if (!mostrarPrevisualizacion(capitulos, config)) {
-        return; // Usuario canceló
+        return;
     }
 
-    // Paso 5: Exportar PDFs
     exportarCapitulos(doc, capitulos, config);
 }
 
-// Diálogo de configuración principal
 function mostrarDialogoConfiguracion() {
-    var dialog = new Window("dialog", "Exportar Capítulos por Autor");
+    var dialog = new Window("dialog", "Exportar Capitulos por Autor");
     dialog.orientation = "column";
     dialog.alignChildren = ["fill", "top"];
     dialog.spacing = 15;
 
-    // Título
-    var titulo = dialog.add("statictext", undefined, "Configuración de exportación de capítulos");
+    var titulo = dialog.add("statictext", undefined, "Configuracion de exportacion de capitulos");
     titulo.graphics.font = ScriptUI.newFont(titulo.graphics.font.name, "BOLD", 12);
 
-    // Grupo: Identificación de cajas
-    var grupoCajas = dialog.add("panel", undefined, "Identificación de capítulos");
+    var grupoCajas = dialog.add("panel", undefined, "Identificacion de capitulos");
     grupoCajas.orientation = "column";
     grupoCajas.alignChildren = "left";
     grupoCajas.spacing = 10;
 
-    grupoCajas.add("statictext", undefined, "Método de detección de capítulos:");
+    grupoCajas.add("statictext", undefined, "Metodo de deteccion de capitulos:");
 
     var grupoMetodo = grupoCajas.add("group");
     grupoMetodo.orientation = "column";
     grupoMetodo.alignChildren = "left";
 
-    var rbAutomatico = grupoMetodo.add("radiobutton", undefined, "Automático: Detectar todas las cajas de texto con estilo 'autor'");
-    var rbPrefijo = grupoMetodo.add("radiobutton", undefined, "Manual: Solo cajas con un prefijo específico");
+    var rbAutomatico = grupoMetodo.add("radiobutton", undefined, "Automatico: Detectar todas las cajas de texto con estilo 'autor'");
+    var rbPrefijo = grupoMetodo.add("radiobutton", undefined, "Manual: Solo cajas con un prefijo especifico");
     rbAutomatico.value = true;
 
     var grupoPrefijo = grupoCajas.add("group");
@@ -98,22 +74,19 @@ function mostrarDialogoConfiguracion() {
         grupoPrefijo.enabled = false;
     };
 
-    grupoCajas.add("statictext", undefined, "Estilo de párrafo que contiene el autor:");
+    grupoCajas.add("statictext", undefined, "Estilo de parrafo que contiene el autor:");
 
-    // Obtener todos los estilos de párrafo del documento
     var doc = app.activeDocument;
     var estilosParrafo = [];
     var paragraphStyles = doc.paragraphStyles;
 
     for (var i = 0; i < paragraphStyles.length; i++) {
         var nombreEstilo = paragraphStyles[i].name;
-        // Excluir el estilo [No paragraph style] o [Basic Paragraph]
         if (nombreEstilo.indexOf("[") !== 0) {
             estilosParrafo.push(nombreEstilo);
         }
     }
 
-    // Si no hay estilos, agregar uno por defecto
     if (estilosParrafo.length === 0) {
         estilosParrafo.push("autor");
     }
@@ -121,7 +94,6 @@ function mostrarDialogoConfiguracion() {
     var estiloAutorDropdown = grupoCajas.add("dropdownlist", undefined, estilosParrafo);
     estiloAutorDropdown.preferredSize = [250, 25];
 
-    // Seleccionar "autor" por defecto si existe
     var indiceAutor = -1;
     for (var i = 0; i < estilosParrafo.length; i++) {
         if (estilosParrafo[i].toLowerCase() === "autor" || estilosParrafo[i].toLowerCase().indexOf("autor") !== -1) {
@@ -135,7 +107,6 @@ function mostrarDialogoConfiguracion() {
         estiloAutorDropdown.selection = 0;
     }
 
-    // Grupo: Nomenclatura de archivos
     var grupoNombre = dialog.add("panel", undefined, "Nomenclatura de archivos PDF");
     grupoNombre.orientation = "column";
     grupoNombre.alignChildren = "left";
@@ -151,10 +122,10 @@ function mostrarDialogoConfiguracion() {
 
     var grupoNumeracion = grupoNombre.add("group");
     grupoNumeracion.orientation = "row";
-    grupoNumeracion.add("statictext", undefined, "Número inicial de numeración:");
+    grupoNumeracion.add("statictext", undefined, "Numero inicial de numeracion:");
     var numeroInicialInput = grupoNumeracion.add("edittext", undefined, "1");
     numeroInicialInput.characters = 5;
-    numeroInicialInput.helpTip = "Número con el que empezará la numeración de capítulos";
+    numeroInicialInput.helpTip = "Numero con el que empezara la numeracion de capitulos";
 
     var formatoEjemplo = grupoNombre.add("statictext", undefined, "Formato: [prefijo][numero]_[NombreAutor]_[NombreLibro].pdf");
     formatoEjemplo.graphics.foregroundColor = formatoEjemplo.graphics.newPen(formatoEjemplo.graphics.PenType.SOLID_COLOR, [0.5, 0.5, 0.5], 1);
@@ -162,7 +133,6 @@ function mostrarDialogoConfiguracion() {
     var formatoEjemplo2 = grupoNombre.add("statictext", undefined, "Ejemplo: prueba1_01_Juan_Garcia_Mi_Libro.pdf");
     formatoEjemplo2.graphics.foregroundColor = formatoEjemplo2.graphics.newPen(formatoEjemplo2.graphics.PenType.SOLID_COLOR, [0.5, 0.5, 0.5], 1);
 
-    // Grupo: Opciones de PDF
     var grupoPDF = dialog.add("panel", undefined, "Opciones de PDF");
     grupoPDF.orientation = "column";
     grupoPDF.alignChildren = "left";
@@ -170,7 +140,6 @@ function mostrarDialogoConfiguracion() {
 
     grupoPDF.add("statictext", undefined, "Preajuste de PDF:");
 
-    // Obtener preajustes disponibles
     var preajustes = [];
     var preajustesObj = app.pdfExportPresets;
     for (var i = 0; i < preajustesObj.length; i++) {
@@ -178,9 +147,8 @@ function mostrarDialogoConfiguracion() {
     }
 
     var preajusteDropdown = grupoPDF.add("dropdownlist", undefined, preajustes);
-    // Seleccionar "Press Quality" por defecto si existe
     for (var i = 0; i < preajustes.length; i++) {
-        if (preajustes[i].indexOf("Press") !== -1 || preajustes[i].indexOf("Calidad de impresión") !== -1) {
+        if (preajustes[i].indexOf("Press") !== -1 || preajustes[i].indexOf("Calidad de impresion") !== -1) {
             preajusteDropdown.selection = i;
             break;
         }
@@ -189,7 +157,6 @@ function mostrarDialogoConfiguracion() {
         preajusteDropdown.selection = 0;
     }
 
-    // Grupo: Carpeta de destino
     var grupoCarpeta = dialog.add("panel", undefined, "Carpeta de destino");
     grupoCarpeta.orientation = "row";
     grupoCarpeta.alignChildren = ["fill", "center"];
@@ -205,14 +172,12 @@ function mostrarDialogoConfiguracion() {
         }
     };
 
-    // Botones
     var grupoBotones = dialog.add("group");
     grupoBotones.alignment = "center";
     grupoBotones.add("button", undefined, "Cancelar", {name: "cancel"});
     grupoBotones.add("button", undefined, "Continuar", {name: "ok"});
 
     if (dialog.show() === 1) {
-        // Validaciones
         if (nombreLibroInput.text === "") {
             alert("Por favor, ingresa el nombre del libro.");
             return null;
@@ -220,7 +185,7 @@ function mostrarDialogoConfiguracion() {
 
         var numeroInicial = parseInt(numeroInicialInput.text);
         if (isNaN(numeroInicial) || numeroInicial < 0) {
-            alert("Por favor, ingresa un número inicial válido (mayor o igual a 0).");
+            alert("Por favor, ingresa un numero inicial valido (mayor o igual a 0).");
             return null;
         }
 
@@ -239,13 +204,11 @@ function mostrarDialogoConfiguracion() {
     return null;
 }
 
-// Buscar cajas de texto que coincidan con el prefijo o automáticamente
 function buscarCajasCapitulo(doc, config) {
     var cajas = [];
     var allTextFrames = doc.textFrames;
 
     if (config.modoAutomatico) {
-        // Modo automático: buscar cajas que contengan el estilo "autor"
         var estiloNombre = config.estiloAutor;
         var estilo = null;
 
@@ -255,21 +218,17 @@ function buscarCajasCapitulo(doc, config) {
                 estilo = null;
             }
         } catch (e) {
-            // El estilo no existe
         }
 
         if (!estilo) {
-            alert("ADVERTENCIA: No se encontró el estilo de párrafo '" + estiloNombre + "'.\n" +
-                  "Se detectarán todas las cajas de texto principales del documento.");
+            alert("ADVERTENCIA: No se encontro el estilo de parrafo '" + estiloNombre + "'.\nSe detectaran todas las cajas de texto principales del documento.");
         }
 
-        // Buscar cajas de texto que contengan el estilo o que sean cajas principales
         var cajasYaProcesadas = [];
 
         for (var i = 0; i < allTextFrames.length; i++) {
             var frame = allTextFrames[i];
 
-            // Evitar cajas ya procesadas (que son parte de una cadena ya encontrada)
             var yaIncluida = false;
             for (var j = 0; j < cajasYaProcesadas.length; j++) {
                 if (frame.id === cajasYaProcesadas[j].id) {
@@ -279,17 +238,15 @@ function buscarCajasCapitulo(doc, config) {
             }
             if (yaIncluida) continue;
 
-            // Verificar si es una caja principal (primera en la cadena)
             var esPrincipal = !frame.previousTextFrame;
 
             if (esPrincipal) {
-                // Si tiene el estilo "autor" o si no hay estilo definido, incluirla
                 var tieneEstiloAutor = false;
 
                 if (estilo) {
                     try {
                         var parrafos = frame.parentStory.paragraphs;
-                        for (var k = 0; k < Math.min(parrafos.length, 50); k++) { // Revisar primeros 50 párrafos
+                        for (var k = 0; k < Math.min(parrafos.length, 50); k++) {
                             try {
                                 if (parrafos[k].appliedParagraphStyle.name === estiloNombre) {
                                     tieneEstiloAutor = true;
@@ -300,11 +257,9 @@ function buscarCajasCapitulo(doc, config) {
                     } catch (e) {}
                 }
 
-                // Si tiene el estilo o no hay estilo definido, incluir la caja
                 if (tieneEstiloAutor || !estilo) {
                     cajas.push(frame);
 
-                    // Marcar toda la cadena como procesada
                     var cajaActual = frame;
                     cajasYaProcesadas.push(cajaActual);
                     while (cajaActual.nextTextFrame) {
@@ -315,7 +270,6 @@ function buscarCajasCapitulo(doc, config) {
             }
         }
 
-        // Ordenar por posición en la página
         cajas.sort(function(a, b) {
             try {
                 var pageA = obtenerNumeroPaginaPrincipal(a);
@@ -327,7 +281,6 @@ function buscarCajasCapitulo(doc, config) {
         });
 
     } else {
-        // Modo manual: buscar por prefijo
         var prefijo = config.prefijoCaja;
         for (var i = 0; i < allTextFrames.length; i++) {
             var frame = allTextFrames[i];
@@ -336,7 +289,6 @@ function buscarCajasCapitulo(doc, config) {
             }
         }
 
-        // Ordenar por nombre
         cajas.sort(function(a, b) {
             return a.name.localeCompare(b.name);
         });
@@ -345,7 +297,6 @@ function buscarCajasCapitulo(doc, config) {
     return cajas;
 }
 
-// Obtener número de página principal de una caja
 function obtenerNumeroPaginaPrincipal(caja) {
     try {
         var parent = caja.parent;
@@ -362,7 +313,6 @@ function obtenerNumeroPaginaPrincipal(caja) {
     return 0;
 }
 
-// Procesar cada capítulo y extraer información
 function procesarCapitulos(cajas, config) {
     var capitulos = [];
 
@@ -386,10 +336,8 @@ function procesarCapitulos(cajas, config) {
     return capitulos;
 }
 
-// Extraer nombre del autor del estilo de párrafo
 function extraerNombreAutor(caja, estiloNombre) {
     try {
-        // Buscar el estilo de párrafo
         var doc = app.activeDocument;
         var estilo = null;
 
@@ -399,14 +347,12 @@ function extraerNombreAutor(caja, estiloNombre) {
                 estilo = null;
             }
         } catch (e) {
-            // El estilo no existe
         }
 
         if (!estilo) {
             return "AutorDesconocido_" + caja.name;
         }
 
-        // Buscar texto con ese estilo en la caja
         var textos = caja.parentStory.paragraphs;
 
         for (var i = 0; i < textos.length; i++) {
@@ -415,21 +361,17 @@ function extraerNombreAutor(caja, estiloNombre) {
             try {
                 if (parrafo.appliedParagraphStyle.name === estiloNombre) {
                     var contenido = parrafo.contents;
-                    // Limpiar espacios y saltos de línea
-                    contenido = contenido.replace(/^\s+|\s+$/g, ''); // trim
-                    contenido = contenido.replace(/\r\n|\n|\r/g, ' '); // reemplazar saltos de línea
-                    contenido = contenido.replace(/\s+/g, ' '); // normalizar espacios
+                    contenido = contenido.replace(/^\s+|\s+$/g, '');
+                    contenido = contenido.replace(/\r\n|\n|\r/g, ' ');
+                    contenido = contenido.replace(/\s+/g, ' ');
 
-                    // Eliminar "Por " del inicio si existe
                     if (contenido.indexOf("Por ") === 0) {
-                        contenido = contenido.substring(4); // Eliminar "Por " (4 caracteres)
+                        contenido = contenido.substring(4);
                     }
-                    // También manejar "por " en minúsculas
                     if (contenido.indexOf("por ") === 0) {
                         contenido = contenido.substring(4);
                     }
 
-                    // Limpiar espacios nuevamente después de eliminar el prefijo
                     contenido = contenido.replace(/^\s+|\s+$/g, '');
 
                     if (contenido.length > 0) {
@@ -437,11 +379,9 @@ function extraerNombreAutor(caja, estiloNombre) {
                     }
                 }
             } catch (e) {
-                // Continuar con el siguiente párrafo
             }
         }
 
-        // Si no se encontró, intentar buscar en todo el texto
         var todosLosParrafos = caja.parentStory.paragraphs.everyItem().getElements();
         for (var i = 0; i < todosLosParrafos.length; i++) {
             try {
@@ -451,7 +391,6 @@ function extraerNombreAutor(caja, estiloNombre) {
                     contenido = contenido.replace(/\r\n|\n|\r/g, ' ');
                     contenido = contenido.replace(/\s+/g, ' ');
 
-                    // Eliminar "Por " del inicio si existe
                     if (contenido.indexOf("Por ") === 0) {
                         contenido = contenido.substring(4);
                     }
@@ -466,7 +405,6 @@ function extraerNombreAutor(caja, estiloNombre) {
                     }
                 }
             } catch (e) {
-                // Continuar
             }
         }
 
@@ -477,7 +415,6 @@ function extraerNombreAutor(caja, estiloNombre) {
     }
 }
 
-// Obtener páginas de una caja de texto
 function obtenerPaginasDeCaja(caja) {
     var paginas = [];
     var paginasNumeros = [];
@@ -509,7 +446,6 @@ function obtenerPaginasDeCaja(caja) {
             }
         }
 
-        // Si hay cajas enlazadas, incluir sus páginas
         var cajaActual = caja;
         var maxIteraciones = 100;
         var iteraciones = 0;
@@ -540,14 +476,12 @@ function obtenerPaginasDeCaja(caja) {
             }
         }
 
-        // Ordenar y convertir a strings
         paginasNumeros.sort(function(a, b) { return a - b; });
         for (var i = 0; i < paginasNumeros.length; i++) {
             paginas.push(paginasNumeros[i].toString());
         }
 
     } catch (e) {
-        // Intentar obtener al menos la página actual
         try {
             var parent = caja.parent;
             while (parent && parent.constructor.name !== "Page") {
@@ -557,29 +491,24 @@ function obtenerPaginasDeCaja(caja) {
                 paginas.push(parent.name);
             }
         } catch (e2) {
-            paginas.push("1"); // Fallback
+            paginas.push("1");
         }
     }
 
     return paginas;
 }
 
-// Generar nombre de archivo limpio con numeración
 function generarNombreArchivo(prefijo, numeroCapitulo, nombreAutor, nombreLibro, totalCapitulos) {
     var nombreAutorLimpio = limpiarNombreArchivo(nombreAutor);
     var nombreLibroLimpio = limpiarNombreArchivo(nombreLibro);
     var prefijoLimpio = limpiarNombreArchivo(prefijo);
 
-    // Determinar cuántos dígitos necesitamos (mínimo 2)
     var digitos = Math.max(2, totalCapitulos.toString().length);
-
-    // Formatear número con ceros a la izquierda
     var numeroFormateado = padLeft(numeroCapitulo.toString(), digitos, "0");
 
     return prefijoLimpio + numeroFormateado + "_" + nombreAutorLimpio + "_" + nombreLibroLimpio + ".pdf";
 }
 
-// Función auxiliar para agregar ceros a la izquierda
 function padLeft(str, longitud, caracter) {
     while (str.length < longitud) {
         str = caracter + str;
@@ -587,15 +516,12 @@ function padLeft(str, longitud, caracter) {
     return str;
 }
 
-// Limpiar nombre de archivo (eliminar caracteres no válidos)
 function limpiarNombreArchivo(texto) {
-    // Eliminar o reemplazar caracteres no válidos en nombres de archivo
-    var limpio = texto.replace(/[<>:"|?*\/\\]/g, ''); // Eliminar caracteres prohibidos
-    limpio = limpio.replace(/\s+/g, '_'); // Reemplazar espacios por guiones bajos
-    limpio = limpio.replace(/_{2,}/g, '_'); // Reemplazar múltiples guiones bajos por uno solo
-    limpio = limpio.replace(/^_|_$/g, ''); // Eliminar guiones bajos al inicio/final
+    var limpio = texto.replace(/[<>:"|?*\/\\]/g, '');
+    limpio = limpio.replace(/\s+/g, '_');
+    limpio = limpio.replace(/_{2,}/g, '_');
+    limpio = limpio.replace(/^_|_$/g, '');
 
-    // Limitar longitud
     if (limpio.length > 50) {
         limpio = limpio.substring(0, 50);
     }
@@ -603,13 +529,12 @@ function limpiarNombreArchivo(texto) {
     return limpio;
 }
 
-// Mostrar previsualización antes de exportar
 function mostrarPrevisualizacion(capitulos, config) {
-    var dialog = new Window("dialog", "Previsualización de exportación");
+    var dialog = new Window("dialog", "Previsualizacion de exportacion");
     dialog.orientation = "column";
     dialog.alignChildren = ["fill", "top"];
 
-    dialog.add("statictext", undefined, "Se exportarán " + capitulos.length + " capítulos:");
+    dialog.add("statictext", undefined, "Se exportaran " + capitulos.length + " capitulos:");
 
     var lista = dialog.add("edittext", undefined, "", {multiline: true, readonly: true});
     lista.minimumSize = [600, 300];
@@ -618,9 +543,9 @@ function mostrarPrevisualizacion(capitulos, config) {
     for (var i = 0; i < capitulos.length; i++) {
         var cap = capitulos[i];
         texto += (i + 1) + ". " + cap.nombreCaja + "\n";
-        texto += "   Número: " + cap.numeroCapitulo + "\n";
+        texto += "   Numero: " + cap.numeroCapitulo + "\n";
         texto += "   Autor: " + cap.nombreAutor + "\n";
-        texto += "   Páginas: " + cap.paginas.join(", ") + "\n";
+        texto += "   Paginas: " + cap.paginas.join(", ") + "\n";
         texto += "   Archivo: " + cap.nombreArchivo + "\n\n";
     }
 
@@ -637,29 +562,24 @@ function mostrarPrevisualizacion(capitulos, config) {
     return dialog.show() === 1;
 }
 
-// Exportar capítulos a PDF
 function exportarCapitulos(doc, capitulos, config) {
-    // Crear carpeta si no existe
     if (!config.carpeta.exists) {
         config.carpeta.create();
     }
 
-    // Obtener preajuste
     var preajuste;
     try {
         preajuste = app.pdfExportPresets.itemByName(config.preajuste);
     } catch (e) {
-        alert("Error: No se pudo cargar el preajuste de PDF.\nSe usará el preajuste por defecto.");
+        alert("Error: No se pudo cargar el preajuste de PDF.\nSe usara el preajuste por defecto.");
         preajuste = app.pdfExportPresets[0];
     }
 
-    // Guardar configuración original
     var pdfExportPrefs = doc.pdfExportPreferences;
     var rangoOriginal = pdfExportPrefs.pageRange;
 
-    // Barra de progreso
-    var progreso = new Window("palette", "Exportando capítulos...");
-    progreso.add("statictext", undefined, "Procesando capítulos por autor...");
+    var progreso = new Window("palette", "Exportando capitulos...");
+    progreso.add("statictext", undefined, "Procesando capitulos por autor...");
     var barraProgreso = progreso.add("progressbar", undefined, 0, capitulos.length);
     barraProgreso.preferredSize = [400, 20];
     var textoProgreso = progreso.add("statictext", undefined, "0 de " + capitulos.length);
@@ -669,7 +589,6 @@ function exportarCapitulos(doc, capitulos, config) {
     var exportados = 0;
     var errores = [];
 
-    // Exportar cada capítulo
     for (var i = 0; i < capitulos.length; i++) {
         var cap = capitulos[i];
 
@@ -679,17 +598,15 @@ function exportarCapitulos(doc, capitulos, config) {
 
         try {
             if (cap.paginas.length === 0) {
-                errores.push(cap.nombreCaja + ": No se detectaron páginas");
+                errores.push(cap.nombreCaja + ": No se detectaron paginas");
                 continue;
             }
 
             var archivo = new File(config.carpeta + "/" + cap.nombreArchivo);
 
-            // Configurar rango de páginas
             var rango = cap.paginas.join(",");
             pdfExportPrefs.pageRange = rango;
 
-            // Exportar
             doc.exportFile(ExportFormat.PDF_TYPE, archivo, false, preajuste);
 
             exportados++;
@@ -699,40 +616,35 @@ function exportarCapitulos(doc, capitulos, config) {
         }
     }
 
-    // Restaurar configuración
     pdfExportPrefs.pageRange = rangoOriginal;
 
-    // Cerrar progreso
     progreso.close();
 
-    // Mostrar resultado
-    var resultado = "═══════════════════════════════════\n";
-    resultado += "  EXPORTACIÓN COMPLETADA\n";
-    resultado += "═══════════════════════════════════\n\n";
-    resultado += "Capítulos exportados: " + exportados + " de " + capitulos.length + "\n";
-    resultado += "Ubicación: " + config.carpeta.fsName + "\n";
+    var resultado = "===================================\n";
+    resultado += "  EXPORTACION COMPLETADA\n";
+    resultado += "===================================\n\n";
+    resultado += "Capitulos exportados: " + exportados + " de " + capitulos.length + "\n";
+    resultado += "Ubicacion: " + config.carpeta.fsName + "\n";
 
     if (errores.length > 0) {
-        resultado += "\n⚠️  ERRORES (" + errores.length + "):\n";
-        resultado += "───────────────────────────────────\n";
+        resultado += "\nERRORES (" + errores.length + "):\n";
+        resultado += "-----------------------------------\n";
         for (var i = 0; i < errores.length; i++) {
             resultado += (i + 1) + ". " + errores[i] + "\n";
         }
     } else {
-        resultado += "\n✓ Todos los capítulos se exportaron correctamente";
+        resultado += "\nTodos los capitulos se exportaron correctamente";
     }
 
     alert(resultado);
 
-    // Abrir carpeta
-    if (confirm("¿Deseas abrir la carpeta con los PDFs?")) {
+    if (confirm("Deseas abrir la carpeta con los PDFs?")) {
         config.carpeta.execute();
     }
 }
 
-// Ejecutar script
 try {
     main();
 } catch (e) {
-    alert("ERROR CRÍTICO:\n\n" + e.message + "\n\nLínea: " + e.line + "\n\nContacta al administrador del script.");
+    alert("ERROR CRITICO:\n\n" + e.message + "\n\nLinea: " + e.line + "\n\nContacta al administrador del script.");
 }
