@@ -524,13 +524,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $category = trim($_POST['category'] ?? '');
         $customCategory = trim($_POST['custom_category'] ?? '');
         $name = trim($_POST['name'] ?? '');
-        
-        $caducidad = intval($_POST['caducidad'] ?? 30);
+
+        $defaultCaducidad = getDefaultCaducidad($_SESSION['username']);
+        $caducidad = intval($_POST['caducidad'] ?? $defaultCaducidad);
         $duracion = trim($_POST['duracion'] ?? '');
 
         // Validar caducidad
         if ($caducidad < 1 || $caducidad > 365) {
-            $caducidad = 30; // Valor por defecto si está fuera de rango
+            $caducidad = $defaultCaducidad; // Valor por defecto del usuario si está fuera de rango
         }
 
         $finalCategory = !empty($customCategory) ? $customCategory : $category;
@@ -558,12 +559,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $category = trim($_POST['category'] ?? '');
         $customCategory = trim($_POST['custom_category'] ?? '');
         $name = trim($_POST['name'] ?? '');
-        $caducidad = intval($_POST['caducidad'] ?? 30);
+
+        $defaultCaducidad = getDefaultCaducidad($_SESSION['username']);
+        $caducidad = intval($_POST['caducidad'] ?? $defaultCaducidad);
         $duracion = trim($_POST['duracion'] ?? '');
 
         // Validar caducidad
         if ($caducidad < 1 || $caducidad > 365) {
-            $caducidad = 30; // Valor por defecto si está fuera de rango
+            $caducidad = $defaultCaducidad; // Valor por defecto del usuario si está fuera de rango
         }
 
 
