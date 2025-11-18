@@ -127,20 +127,28 @@ function deleteCaducidad($username, $podcastName) {
  * Sincronizar caducidades.txt con todos los podcasts
  * Asegura que todos los podcasts tienen una caducidad definida
  * Actualiza los podcasts NO personalizados con el valor por defecto
+ *
+ * @param string $username Usuario
+ * @param int|null $oldDefaultCaducidad Valor por defecto ANTERIOR (para detectar personalizaciones)
  */
-function syncAllCaducidades($username) {
+function syncAllCaducidades($username, $oldDefaultCaducidad = null) {
     $podcasts = readServerList($username);
     $caducidades = readCaducidades($username);
     $defaultCaducidad = getDefaultCaducidad($username);
 
+    // Si no se especifica el valor anterior, usar el actual (para otras llamadas)
+    if ($oldDefaultCaducidad === null) {
+        $oldDefaultCaducidad = $defaultCaducidad;
+    }
+
     // FASE 1: Detectar y marcar podcasts con valores personalizados existentes
-    // Esto es importante para migrar podcasts que ya existían antes del sistema
+    // Comparar contra el valor por defecto ANTERIOR para detectar personalizaciones reales
     foreach ($podcasts as $podcast) {
         $podcastName = $podcast['name'];
 
-        // Si el podcast tiene caducidad definida Y es diferente al default Y no está marcado
+        // Si el podcast tiene caducidad definida Y es diferente al VIEJO default Y no está marcado
         if (isset($caducidades[$podcastName]) &&
-            $caducidades[$podcastName] != $defaultCaducidad &&
+            $caducidades[$podcastName] != $oldDefaultCaducidad &&
             !hasCaducidadCustom($username, $podcastName)) {
 
             // Marcar como personalizado para preservar su valor
