@@ -369,7 +369,7 @@ function filterByCategory() {
                     <div class="podcast-item podcast-item-${statusClass} ${pausedClass}" data-category="${escapeHtml(podcast.category)}">
                         <div class="podcast-info">
                             <strong>${escapeHtml(podcast.name)} ${pausedBadge}</strong>
-                            <small>Categoría: ${escapeHtml(podcast.category)} | Caducidad: ${podcast.caducidad} días</small>
+                            <small>Categoría: ${escapeHtml(podcast.category)} | Caducidad: ${podcast.caducidad} días${podcast.duracion ? ` | Duración: ${podcast.duracion} min` : ''}</small>
                             <small>${escapeHtml(podcast.url)}</small>
                             <div class="last-episode ${statusClass}">
                                 ${lastEpisodeHtml}
@@ -439,7 +439,7 @@ function filterByCategory() {
                                 <div class="podcast-item podcast-item-${statusClass} ${pausedClass}" data-category="${escapeHtml(podcast.category)}">
                                     <div class="podcast-info">
                                         <strong>${escapeHtml(podcast.name)} ${pausedBadge}</strong>
-                                        <small>Categoría: ${escapeHtml(podcast.category)} | Caducidad: ${podcast.caducidad} días</small>
+                                        <small>Categoría: ${escapeHtml(podcast.category)} | Caducidad: ${podcast.caducidad} días${podcast.duracion ? ` | Duración: ${podcast.duracion} min` : ''}</small>
                                         <small>${escapeHtml(podcast.url)}</small>
                                         <div class="last-episode ${statusClass}">
                                             ${lastEpisodeHtml}
@@ -677,7 +677,7 @@ function searchPodcasts() {
                     <div class="podcast-item podcast-item-${statusClass} ${pausedClass}" data-category="${escapeHtml(podcast.category)}">
                         <div class="podcast-info">
                             <strong>${escapeHtml(podcast.name)} ${pausedBadge}</strong>
-                            <small>Categoría: ${escapeHtml(podcast.category)} | Caducidad: ${podcast.caducidad} días</small>
+                            <small>Categoría: ${escapeHtml(podcast.category)} | Caducidad: ${podcast.caducidad} días${podcast.duracion ? ` | Duración: ${podcast.duracion} min` : ''}</small>
                             <small>${escapeHtml(podcast.url)}</small>
                             <div class="last-episode ${statusClass}">
                                 ${lastEpisodeHtml}
