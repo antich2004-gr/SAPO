@@ -388,7 +388,10 @@ function syncAzuracastMedia($username) {
     $apiUrl = $config['azuracast_api_url'] ?? '';
     $apiKey = $config['azuracast_api_key'] ?? '';
 
+    error_log("AzuraCast Sync: Iniciando sincronización para usuario: $username");
+
     if (empty($apiUrl)) {
+        error_log("AzuraCast Sync: Error - URL de API no configurada");
         return [
             'success' => false,
             'message' => 'URL de API no configurada'
@@ -396,6 +399,7 @@ function syncAzuracastMedia($username) {
     }
 
     if (empty($apiKey)) {
+        error_log("AzuraCast Sync: Error - API Key no configurada");
         return [
             'success' => false,
             'message' => 'API Key no configurada. Configúrala en el panel de administración.'
@@ -407,6 +411,7 @@ function syncAzuracastMedia($username) {
     $stationId = $userData['azuracast']['station_id'] ?? null;
 
     if (empty($stationId)) {
+        error_log("AzuraCast Sync: Error - Station ID no configurado para usuario: $username");
         return [
             'success' => false,
             'message' => 'Station ID no configurado para este usuario'
@@ -416,6 +421,9 @@ function syncAzuracastMedia($username) {
     // Construir URL de la API para ejecutar la tarea de sincronización
     // Endpoint: POST /api/station/{station_id}/backend/reload
     $syncUrl = rtrim($apiUrl, '/') . '/station/' . $stationId . '/backend/reload';
+
+    error_log("AzuraCast Sync: URL de sincronización: $syncUrl");
+    error_log("AzuraCast Sync: Station ID: $stationId");
 
     try {
         $context = stream_context_create([
@@ -441,13 +449,15 @@ function syncAzuracastMedia($username) {
         }
 
         if ($httpCode >= 200 && $httpCode < 300) {
-            error_log("AzuraCast: Sincronización de medios ejecutada exitosamente para station $stationId");
+            error_log("AzuraCast Sync: ✅ Sincronización ejecutada exitosamente para station $stationId (HTTP $httpCode)");
+            error_log("AzuraCast Sync: Response: " . substr($response, 0, 500)); // Primeros 500 caracteres
             return [
                 'success' => true,
                 'message' => 'Sincronización de medios iniciada correctamente en AzuraCast'
             ];
         } else {
-            error_log("AzuraCast: Error al sincronizar medios. HTTP $httpCode. Response: $response");
+            error_log("AzuraCast Sync: ❌ Error al sincronizar medios. HTTP $httpCode");
+            error_log("AzuraCast Sync: Response completo: $response");
 
             // Parsear mensaje de error si está disponible
             $errorMsg = 'Error al ejecutar sincronización';
@@ -459,6 +469,8 @@ function syncAzuracastMedia($username) {
                     $errorMsg = $data['error'];
                 }
             }
+
+            error_log("AzuraCast Sync: Mensaje de error: $errorMsg");
 
             return [
                 'success' => false,

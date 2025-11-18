@@ -56,13 +56,16 @@ $users = getAllUsers();
     </div>
 
     <div class="section" style="background: #f0f9ff; border: 1px solid #bae6fd;">
-        <h3>🧪 Probar Conexión a AzuraCast</h3>
+        <h3>🧪 Probar Conexión y Sincronización con AzuraCast</h3>
         <p style="color: #0c4a6e; margin-bottom: 15px;">
-            Verifica que SAPO puede conectarse correctamente a la API de AzuraCast configurada.
+            Verifica que SAPO puede conectarse correctamente a la API de AzuraCast configurada y que la sincronización de medios funciona.
         </p>
         <a href="test_azuracast.php" target="_blank" class="btn btn-primary">
-            🧪 Ejecutar Test de Conexión
+            🧪 Ejecutar Tests de Conexión y Sincronización
         </a>
+        <p style="color: #64748b; font-size: 13px; margin-top: 10px;">
+            <strong>Nota:</strong> El Test 5 permite verificar que la API Key funciona correctamente y que se puede sincronizar con AzuraCast.
+        </p>
     </div>
 
     <div class="section">
