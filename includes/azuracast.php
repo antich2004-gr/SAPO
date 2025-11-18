@@ -587,6 +587,67 @@ function getAzuracastPlaylists($username) {
 }
 
 /**
+ * Obtiene los archivos de una playlist específica
+ *
+ * @param string $username Usuario
+ * @param int $playlistId ID de la playlist
+ * @return array Resultado con archivos de la playlist
+ */
+function getPlaylistFiles($username, $playlistId) {
+    $config = getConfig();
+    $apiUrl = $config['azuracast_api_url'] ?? '';
+    $apiKey = $config['azuracast_api_key'] ?? '';
+
+    if (empty($apiUrl) || empty($apiKey)) {
+        return ['success' => false, 'files' => []];
+    }
+
+    $userData = getUserDB($username);
+    $stationId = $userData['azuracast']['station_id'] ?? null;
+
+    if (empty($stationId)) {
+        return ['success' => false, 'files' => []];
+    }
+
+    // Endpoint para obtener archivos de la playlist
+    $filesUrl = rtrim($apiUrl, '/') . '/station/' . $stationId . '/playlist/' . $playlistId;
+
+    try {
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'header' => [
+                    'X-API-Key: ' . $apiKey,
+                    'Accept: application/json'
+                ],
+                'timeout' => 30,
+                'ignore_errors' => true
+            ]
+        ]);
+
+        $response = @file_get_contents($filesUrl, false, $context);
+
+        $httpCode = 0;
+        if (isset($http_response_header) && count($http_response_header) > 0) {
+            preg_match('/\d{3}/', $http_response_header[0], $matches);
+            $httpCode = isset($matches[0]) ? (int)$matches[0] : 0;
+        }
+
+        if ($httpCode >= 200 && $httpCode < 300) {
+            $data = json_decode($response, true);
+            return [
+                'success' => true,
+                'files' => $data['media'] ?? []
+            ];
+        }
+    } catch (Exception $e) {
+        error_log("AzuraCast: Error obteniendo archivos de playlist: " . $e->getMessage());
+    }
+
+    return ['success' => false, 'files' => []];
+}
+
+/**
  * Encuentra la playlist de AzuraCast vinculada a una carpeta de podcast
  *
  * @param string $username
@@ -606,29 +667,47 @@ function findLinkedPlaylist($username, $podcastPath) {
     // Convertir ruta absoluta a relativa
     $relativePath = str_replace($basePath, '', $podcastPath);
     $relativePath = trim($relativePath, '/\\');
+    // Normalizar separadores a /
+    $relativePath = str_replace('\\', '/', $relativePath);
 
     error_log("AzuraCast: Buscando playlist para carpeta: $relativePath");
-    error_log("AzuraCast: basePath usado: $basePath");
-    error_log("AzuraCast: podcastPath completo: $podcastPath");
 
     foreach ($result['playlists'] as $playlist) {
-        error_log("AzuraCast: Revisando playlist: " . ($playlist['name'] ?? 'sin nombre'));
-        error_log("AzuraCast: Estructura completa de playlist: " . json_encode($playlist));
+        // Saltar playlists vacías
+        if (empty($playlist['num_songs'])) {
+            error_log("AzuraCast: Saltando playlist vacía: " . $playlist['name']);
+            continue;
+        }
 
-        // Verificar si la playlist tiene la carpeta asignada
-        // Según la API, las playlists pueden tener info sobre carpetas en diferentes campos
+        error_log("AzuraCast: Revisando playlist: " . $playlist['name'] . " (ID: " . $playlist['id'] . ")");
 
-        // Opción 1: Campo "folder" directo (para folder-based playlists)
-        if (isset($playlist['folder']) && !empty($playlist['folder'])) {
-            $playlistFolder = trim($playlist['folder'], '/\\');
-            error_log("AzuraCast: Comparando '$playlistFolder' con '$relativePath'");
+        // Obtener los archivos de esta playlist
+        $filesResult = getPlaylistFiles($username, $playlist['id']);
 
-            if ($playlistFolder === $relativePath) {
-                error_log("AzuraCast: Playlist encontrada: " . $playlist['name']);
+        if (!$filesResult['success'] || empty($filesResult['files'])) {
+            error_log("AzuraCast: No se pudieron obtener archivos de playlist " . $playlist['name']);
+            continue;
+        }
+
+        error_log("AzuraCast: Playlist " . $playlist['name'] . " tiene " . count($filesResult['files']) . " archivos");
+
+        // Revisar si algún archivo de la playlist está en la carpeta del podcast
+        foreach ($filesResult['files'] as $file) {
+            $filePath = $file['path'] ?? '';
+            if (empty($filePath)) {
+                continue;
+            }
+
+            // Normalizar separadores
+            $filePath = str_replace('\\', '/', $filePath);
+
+            error_log("AzuraCast: Revisando archivo: $filePath");
+
+            // Verificar si el archivo está dentro de la carpeta del podcast
+            if (strpos($filePath, $relativePath) === 0) {
+                error_log("AzuraCast: ¡Playlist encontrada! " . $playlist['name'] . " (coincide archivo: $filePath)");
                 return $playlist;
             }
-        } else {
-            error_log("AzuraCast: Playlist no tiene campo 'folder' definido o está vacío");
         }
     }
 
