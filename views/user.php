@@ -5,6 +5,7 @@ $podcasts = readServerList($_SESSION['username']);
 $caducidades = readCaducidades($_SESSION['username']);
 $duraciones = readDuraciones($_SESSION['username']);
 $duracionesOptions = getDuracionesOptions();
+$defaultCaducidad = getDefaultCaducidad($_SESSION['username']);
 
 // Auto-detectar categorías de los podcasts existentes si no hay categorías guardadas
 if (empty($userCategories) && !empty($podcasts)) {
@@ -117,6 +118,16 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         <button type="button" class="btn btn-warning" onclick="refreshFeedsWithProgress()" style="margin-left: 0;">
                             🔄 Actualizar estado de feeds
                         </button>
+
+                        <form method="POST" style="display: flex; gap: 10px; align-items: center; margin: 0;">
+                            <input type="hidden" name="action" value="set_default_caducidad">
+                            <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                            <label style="margin: 0; white-space: nowrap; font-size: 14px;">Caducidad por defecto:</label>
+                            <input type="number" name="default_caducidad" value="<?php echo htmlEsc($defaultCaducidad); ?>"
+                                   min="1" max="365" required style="width: 70px; padding: 8px;">
+                            <span style="font-size: 14px;">días</span>
+                            <button type="submit" class="btn btn-primary" style="padding: 8px 16px;">💾 Guardar</button>
+                        </form>
 
                         <?php if (!empty($userCategories)): ?>
                             <div style="display: flex; gap: 10px; align-items: center; flex: 1;">
@@ -557,8 +568,8 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
                 <div class="form-group">
                     <label>Días de caducidad:</label>
-                    <input type="number" name="caducidad" id="podcast_caducidad" value="30" min="1" max="365" required>
-                    <small style="color: #718096;">Los archivos se eliminarán después de X días sin descargas nuevas (por defecto: 30 días)</small>
+                    <input type="number" name="caducidad" id="podcast_caducidad" value="<?php echo htmlEsc($defaultCaducidad); ?>" min="1" max="365" required>
+                    <small style="color: #718096;">Los archivos se eliminarán después de X días sin descargas nuevas (por defecto: <?php echo htmlEsc($defaultCaducidad); ?> días)</small>
                 </div>
                 <div class="form-group">
                     <label>Duración máxima de episodios:</label>

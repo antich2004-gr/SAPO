@@ -735,4 +735,73 @@ function resumePodcast($username, $index) {
     }
 }
 
+/**
+ * Obtener ruta del archivo default_caducidad.txt
+ */
+function getDefaultCaducidadPath($username) {
+    $config = getConfig();
+    $basePath = $config['base_path'] ?? '';
+    $subscriptionsFolder = $config['subscriptions_folder'] ?? 'Podcasts';
+
+    if (empty($basePath)) {
+        return false;
+    }
+
+    $userSlug = slugify($username);
+    return $basePath . DIRECTORY_SEPARATOR . $userSlug . DIRECTORY_SEPARATOR .
+           'media' . DIRECTORY_SEPARATOR . $subscriptionsFolder . DIRECTORY_SEPARATOR .
+           'default_caducidad.txt';
+}
+
+/**
+ * Obtener caducidad por defecto para un usuario
+ * Retorna el valor guardado o 30 días por defecto
+ */
+function getDefaultCaducidad($username) {
+    $path = getDefaultCaducidadPath($username);
+    if (!$path || !file_exists($path)) {
+        return 30; // Valor por defecto
+    }
+
+    $content = file_get_contents($path);
+    $dias = intval(trim($content));
+
+    // Validar rango
+    if ($dias < 1 || $dias > 365) {
+        return 30;
+    }
+
+    return $dias;
+}
+
+/**
+ * Establecer caducidad por defecto para un usuario
+ */
+function setDefaultCaducidad($username, $dias) {
+    $path = getDefaultCaducidadPath($username);
+    if (!$path) {
+        return false;
+    }
+
+    $dir = dirname($path);
+    if (!is_dir($dir)) {
+        if (!mkdir($dir, 0755, true)) {
+            return false;
+        }
+    }
+
+    // Validar rango
+    $dias = intval($dias);
+    if ($dias < 1 || $dias > 365) {
+        $dias = 30;
+    }
+
+    $content = "# Caducidad por defecto - Generado por SAPO\n";
+    $content .= "# Este valor se usará al agregar nuevos podcasts\n";
+    $content .= $dias;
+
+    $result = file_put_contents($path, $content);
+    return $result !== false;
+}
+
 ?>

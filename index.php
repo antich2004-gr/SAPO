@@ -507,7 +507,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         }
     }
-    
+
+    // SET DEFAULT CADUCIDAD
+    if ($action == 'set_default_caducidad' && isLoggedIn() && !isAdmin()) {
+        $defaultCaducidad = intval($_POST['default_caducidad'] ?? 30);
+
+        // Validar rango
+        if ($defaultCaducidad < 1 || $defaultCaducidad > 365) {
+            $error = 'La caducidad debe estar entre 1 y 365 días';
+        } else {
+            if (setDefaultCaducidad($_SESSION['username'], $defaultCaducidad)) {
+                $message = 'Caducidad por defecto actualizada a ' . $defaultCaducidad . ' días';
+            } else {
+                $error = 'Error al actualizar la caducidad por defecto';
+            }
+        }
+    }
+
     // ADD PODCAST
     if ($action == 'add_podcast' && isLoggedIn() && !isAdmin()) {
         $url = trim($_POST['url'] ?? '');
