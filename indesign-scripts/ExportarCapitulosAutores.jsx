@@ -341,82 +341,30 @@ function extraerNombreAutor(caja, estiloNombre) {
 
 function obtenerPaginasDeCaja(caja) {
     var paginas = [];
-    var paginasNumeros = [];
 
     try {
         var parent = caja.parent;
-        while (parent && parent.constructor.name !== "Page" && parent.constructor.name !== "Spread") {
-            parent = parent.parent;
-        }
+        var maxDepth = 10;
+        var depth = 0;
 
-        if (parent) {
-            if (parent.constructor.name === "Page") {
-                var numPagina = parseInt(parent.name);
-                if (!isNaN(numPagina)) {
-                    paginasNumeros.push(numPagina);
-                } else {
+        while (parent && depth < maxDepth) {
+            try {
+                if (parent.constructor.name === "Page") {
                     paginas.push(parent.name);
                     return paginas;
                 }
-            } else if (parent.constructor.name === "Spread") {
-                for (var i = 0; i < parent.pages.length; i++) {
-                    var numPagina = parseInt(parent.pages[i].name);
-                    if (!isNaN(numPagina)) {
-                        paginasNumeros.push(numPagina);
-                    } else {
-                        paginas.push(parent.pages[i].name);
-                    }
-                }
-            }
-        }
-
-        var cajaActual = caja;
-        var maxIteraciones = 100;
-        var iteraciones = 0;
-
-        while (cajaActual.nextTextFrame && iteraciones < maxIteraciones) {
-            cajaActual = cajaActual.nextTextFrame;
-            iteraciones++;
-
-            parent = cajaActual.parent;
-            while (parent && parent.constructor.name !== "Page" && parent.constructor.name !== "Spread") {
                 parent = parent.parent;
-            }
-
-            if (parent) {
-                if (parent.constructor.name === "Page") {
-                    var numPagina = parseInt(parent.name);
-                    if (!isNaN(numPagina) && paginasNumeros.indexOf(numPagina) === -1) {
-                        paginasNumeros.push(numPagina);
-                    }
-                } else if (parent.constructor.name === "Spread") {
-                    for (var i = 0; i < parent.pages.length; i++) {
-                        var numPagina = parseInt(parent.pages[i].name);
-                        if (!isNaN(numPagina) && paginasNumeros.indexOf(numPagina) === -1) {
-                            paginasNumeros.push(numPagina);
-                        }
-                    }
-                }
+                depth++;
+            } catch (e) {
+                break;
             }
         }
 
-        paginasNumeros.sort(function(a, b) { return a - b; });
-        for (var i = 0; i < paginasNumeros.length; i++) {
-            paginas.push(paginasNumeros[i].toString());
-        }
-
-    } catch (e) {
-        try {
-            var parent = caja.parent;
-            while (parent && parent.constructor.name !== "Page") {
-                parent = parent.parent;
-            }
-            if (parent && parent.constructor.name === "Page") {
-                paginas.push(parent.name);
-            }
-        } catch (e2) {
+        if (paginas.length === 0) {
             paginas.push("1");
         }
+    } catch (e) {
+        paginas.push("1");
     }
 
     return paginas;
