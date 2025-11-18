@@ -126,6 +126,7 @@ function deleteCaducidad($username, $podcastName) {
 /**
  * Sincronizar caducidades.txt con todos los podcasts
  * Asegura que todos los podcasts tienen una caducidad definida
+ * Actualiza los podcasts NO personalizados con el valor por defecto
  */
 function syncAllCaducidades($username) {
     $podcasts = readServerList($username);
@@ -136,8 +137,17 @@ function syncAllCaducidades($username) {
     foreach ($podcasts as $podcast) {
         $podcastName = $podcast['name'];
 
-        // Si no tiene caducidad definida, usar el valor por defecto
-        if (!isset($caducidades[$podcastName])) {
+        // Si el podcast tiene caducidad personalizada, NO tocar su valor
+        if (hasCaducidadCustom($username, $podcastName)) {
+            // Mantener el valor actual (si existe)
+            if (!isset($caducidades[$podcastName])) {
+                // Caso extraño: está marcado como personalizado pero no tiene valor
+                // Usar valor por defecto y desmarcar
+                $caducidades[$podcastName] = $defaultCaducidad;
+                unmarkCaducidadAsCustom($username, $podcastName);
+            }
+        } else {
+            // No es personalizado: siempre usar el valor por defecto
             $caducidades[$podcastName] = $defaultCaducidad;
         }
     }
@@ -149,6 +159,9 @@ function syncAllCaducidades($username) {
             unset($caducidades[$podcastName]);
         }
     }
+
+    // Limpiar también la lista de personalizados
+    cleanupCustomCaducidades($username);
 
     return writeCaducidades($username, $caducidades);
 }
@@ -266,6 +279,12 @@ function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracio
     if (writeServerList($username, $podcasts)) {
         // Actualizar caducidades.txt SIEMPRE (todos los podcasts deben tener caducidad definida)
         setCaducidad($username, $sanitizedName, $caducidad);
+
+        // Marcar como personalizada si es diferente al valor por defecto
+        $defaultCaducidad = getDefaultCaducidad($username);
+        if ($caducidad != $defaultCaducidad) {
+            markCaducidadAsCustom($username, $sanitizedName);
+        }
 
         // Guardar duracion si no es vacia
         if (!empty($duracion)) {
@@ -394,10 +413,20 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
         // Si cambió el nombre del podcast, eliminar la entrada antigua
         if ($oldName !== $sanitizedName) {
             deleteCaducidad($username, $oldName);
+            // También limpiar marca de personalización del nombre antiguo
+            unmarkCaducidadAsCustom($username, $oldName);
         }
 
         // Actualizar caducidades.txt SIEMPRE (todos los podcasts deben tener caducidad definida)
         setCaducidad($username, $sanitizedName, $caducidad);
+
+        // Marcar/desmarcar como personalizada según si es diferente al valor por defecto
+        $defaultCaducidad = getDefaultCaducidad($username);
+        if ($caducidad != $defaultCaducidad) {
+            markCaducidadAsCustom($username, $sanitizedName);
+        } else {
+            unmarkCaducidadAsCustom($username, $sanitizedName);
+        }
 
         // Actualizar duraciones.txt
         $duraciones = readDuraciones($username);
@@ -794,6 +823,79 @@ function setDefaultCaducidad($username, $dias) {
     $userData['default_caducidad'] = $dias;
 
     return saveUserDB($username, $userData);
+}
+
+/**
+ * Marcar un podcast como que tiene caducidad personalizada
+ */
+function markCaducidadAsCustom($username, $podcastName) {
+    $userData = getUserDB($username);
+
+    if (!isset($userData['custom_caducidades'])) {
+        $userData['custom_caducidades'] = [];
+    }
+
+    if (!in_array($podcastName, $userData['custom_caducidades'])) {
+        $userData['custom_caducidades'][] = $podcastName;
+        saveUserDB($username, $userData);
+    }
+}
+
+/**
+ * Desmarcar un podcast como personalizado (vuelve a usar el valor por defecto)
+ */
+function unmarkCaducidadAsCustom($username, $podcastName) {
+    $userData = getUserDB($username);
+
+    if (!isset($userData['custom_caducidades'])) {
+        return;
+    }
+
+    $key = array_search($podcastName, $userData['custom_caducidades']);
+    if ($key !== false) {
+        unset($userData['custom_caducidades'][$key]);
+        $userData['custom_caducidades'] = array_values($userData['custom_caducidades']); // Reindexar
+        saveUserDB($username, $userData);
+    }
+}
+
+/**
+ * Verificar si un podcast tiene caducidad personalizada
+ */
+function hasCaducidadCustom($username, $podcastName) {
+    $userData = getUserDB($username);
+
+    if (!isset($userData['custom_caducidades'])) {
+        return false;
+    }
+
+    return in_array($podcastName, $userData['custom_caducidades']);
+}
+
+/**
+ * Limpiar caducidades personalizadas de podcasts que ya no existen
+ */
+function cleanupCustomCaducidades($username) {
+    $userData = getUserDB($username);
+    $podcasts = readServerList($username);
+    $podcastNames = array_column($podcasts, 'name');
+
+    if (!isset($userData['custom_caducidades'])) {
+        return;
+    }
+
+    $cleaned = false;
+    foreach ($userData['custom_caducidades'] as $key => $podcastName) {
+        if (!in_array($podcastName, $podcastNames)) {
+            unset($userData['custom_caducidades'][$key]);
+            $cleaned = true;
+        }
+    }
+
+    if ($cleaned) {
+        $userData['custom_caducidades'] = array_values($userData['custom_caducidades']);
+        saveUserDB($username, $userData);
+    }
 }
 
 ?>
