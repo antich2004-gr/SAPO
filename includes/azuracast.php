@@ -419,32 +419,25 @@ function syncAzuracastMedia($username) {
     }
 
     // Construir URL de la API para ejecutar la tarea de sincronización
-    // Endpoint: POST /api/station/{id}/files/batch
-    // Este endpoint reprocesa los archivos multimedia de una estación específica
-    $syncUrl = rtrim($apiUrl, '/') . '/station/' . $stationId . '/files/batch';
+    // Endpoint: PUT /api/admin/debug/sync/CheckMediaTask
+    // Este endpoint ejecuta manualmente la tarea CheckMediaTask que escanea archivos multimedia
+    // de todas las estaciones (más rápido que el endpoint específico por estación)
+    $syncUrl = rtrim($apiUrl, '/') . '/admin/debug/sync/CheckMediaTask';
 
     error_log("AzuraCast Sync: URL de sincronización: $syncUrl");
-    error_log("AzuraCast Sync: Ejecutando batch reprocess para station_id: $stationId");
-
-    // Payload para forzar reprocesamiento de todos los archivos
-    $payload = json_encode([
-        'do' => 'reprocess',
-        'current_directory' => '',  // Raíz de la estación (todos los archivos)
-        'files' => [],              // Vacío = todos los archivos
-        'dirs' => []                // Vacío = todos los directorios
-    ]);
+    error_log("AzuraCast Sync: Ejecutando CheckMediaTask global (todas las estaciones)");
 
     try {
         $context = stream_context_create([
             'http' => [
-                'method' => 'POST',
+                'method' => 'PUT',
                 'header' => [
                     'X-API-Key: ' . $apiKey,
                     'Content-Type: application/json',
                     'User-Agent: SAPO/1.0'
                 ],
-                'content' => $payload,
-                'timeout' => 120,  // 2 minutos para reprocesamiento de archivos
+                'content' => '',
+                'timeout' => 30,
                 'ignore_errors' => true
             ]
         ]);
