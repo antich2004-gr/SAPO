@@ -179,7 +179,7 @@ function mostrarDialogoConfiguracion() {
 function buscarCajasCapitulo(doc, config) {
     var cajas = [];
     var allTextFrames = doc.textFrames;
-    var maxCajasTotal = 200;
+    var maxCajasTotal = 1000;
 
     if (config.modoAutomatico) {
         var estiloNombre = config.estiloAutor;
@@ -206,7 +206,7 @@ function buscarCajasCapitulo(doc, config) {
 
                 try {
                     var parrafos = frame.parentStory.paragraphs;
-                    var maxCheck = Math.min(parrafos.length, 10);
+                    var maxCheck = Math.min(parrafos.length, 30);
                     for (var k = 0; k < maxCheck; k++) {
                         try {
                             if (parrafos[k].appliedParagraphStyle.name === estiloNombre) {
@@ -231,7 +231,7 @@ function buscarCajasCapitulo(doc, config) {
                 }
             }
 
-            if (cajas.length > 100) {
+            if (cajas.length >= 200) {
                 break;
             }
         }
@@ -387,7 +387,7 @@ function generarNombreArchivo(prefijo, numeroCapitulo, nombreAutor, nombreLibro,
     var digitos = Math.max(2, totalCapitulos.toString().length);
     var numeroFormateado = padLeft(numeroCapitulo.toString(), digitos, "0");
 
-    return prefijoLimpio + numeroFormateado + "_" + nombreAutorLimpio + "_" + nombreLibroLimpio + ".pdf";
+    return prefijoLimpio + "_" + numeroFormateado + "_" + nombreAutorLimpio + "_" + nombreLibroLimpio + ".pdf";
 }
 
 function padLeft(str, longitud, caracter) {
