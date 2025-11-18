@@ -79,18 +79,19 @@ function mostrarDialogoConfiguracion() {
     var doc = app.activeDocument;
     var estilosParrafo = [];
 
-    function obtenerTodosLosEstilos(estilos, prefijo) {
-        for (var i = 0; i < estilos.length; i++) {
-            var estilo = estilos[i];
-            var nombreCompleto = prefijo ? prefijo + " > " + estilo.name : estilo.name;
-
-            if (estilo.name.indexOf("[") !== 0) {
-                estilosParrafo.push(nombreCompleto);
-            }
+    try {
+        var allStyles = doc.allParagraphStyles;
+        for (var i = 0; i < allStyles.length; i++) {
+            try {
+                var nombreEstilo = allStyles[i].name;
+                if (nombreEstilo && nombreEstilo.indexOf("[") !== 0) {
+                    estilosParrafo.push(nombreEstilo);
+                }
+            } catch (e) {}
         }
+    } catch (e) {
+        estilosParrafo.push("autor");
     }
-
-    obtenerTodosLosEstilos(doc.allParagraphStyles, "");
 
     if (estilosParrafo.length === 0) {
         estilosParrafo.push("autor");
@@ -215,30 +216,6 @@ function buscarCajasCapitulo(doc, config) {
 
     if (config.modoAutomatico) {
         var estiloNombre = config.estiloAutor;
-        var nombreEstiloBuscar = estiloNombre;
-
-        if (estiloNombre.indexOf(" > ") !== -1) {
-            var partes = estiloNombre.split(" > ");
-            nombreEstiloBuscar = partes[partes.length - 1];
-        }
-
-        var estilo = null;
-
-        try {
-            var todosLosEstilos = doc.allParagraphStyles;
-            for (var idx = 0; idx < todosLosEstilos.length; idx++) {
-                if (todosLosEstilos[idx].name === nombreEstiloBuscar) {
-                    estilo = todosLosEstilos[idx];
-                    break;
-                }
-            }
-        } catch (e) {
-        }
-
-        if (!estilo) {
-            alert("ADVERTENCIA: No se encontro el estilo de parrafo '" + nombreEstiloBuscar + "'.\nSe detectaran todas las cajas de texto principales del documento.");
-        }
-
         var cajasYaProcesadas = [];
 
         for (var i = 0; i < allTextFrames.length; i++) {
@@ -258,28 +235,30 @@ function buscarCajasCapitulo(doc, config) {
             if (esPrincipal) {
                 var tieneEstiloAutor = false;
 
-                if (estilo) {
-                    try {
-                        var parrafos = frame.parentStory.paragraphs;
-                        for (var k = 0; k < Math.min(parrafos.length, 50); k++) {
-                            try {
-                                if (parrafos[k].appliedParagraphStyle.name === nombreEstiloBuscar) {
-                                    tieneEstiloAutor = true;
-                                    break;
-                                }
-                            } catch (e) {}
-                        }
-                    } catch (e) {}
-                }
+                try {
+                    var parrafos = frame.parentStory.paragraphs;
+                    var maxCheck = Math.min(parrafos.length, 30);
+                    for (var k = 0; k < maxCheck; k++) {
+                        try {
+                            if (parrafos[k].appliedParagraphStyle.name === estiloNombre) {
+                                tieneEstiloAutor = true;
+                                break;
+                            }
+                        } catch (e) {}
+                    }
+                } catch (e) {}
 
-                if (tieneEstiloAutor || !estilo) {
+                if (tieneEstiloAutor) {
                     cajas.push(frame);
 
                     var cajaActual = frame;
                     cajasYaProcesadas.push(cajaActual);
-                    while (cajaActual.nextTextFrame) {
+                    var iterMax = 50;
+                    var iter = 0;
+                    while (cajaActual.nextTextFrame && iter < iterMax) {
                         cajaActual = cajaActual.nextTextFrame;
                         cajasYaProcesadas.push(cajaActual);
+                        iter++;
                     }
                 }
             }
@@ -353,37 +332,13 @@ function procesarCapitulos(cajas, config) {
 
 function extraerNombreAutor(caja, estiloNombre) {
     try {
-        var doc = app.activeDocument;
-        var estilo = null;
-
-        var nombreEstiloBuscar = estiloNombre;
-        if (estiloNombre.indexOf(" > ") !== -1) {
-            var partes = estiloNombre.split(" > ");
-            nombreEstiloBuscar = partes[partes.length - 1];
-        }
-
-        try {
-            var todosLosEstilos = doc.allParagraphStyles;
-            for (var idx = 0; idx < todosLosEstilos.length; idx++) {
-                if (todosLosEstilos[idx].name === nombreEstiloBuscar) {
-                    estilo = todosLosEstilos[idx];
-                    break;
-                }
-            }
-        } catch (e) {
-        }
-
-        if (!estilo) {
-            return "AutorDesconocido_" + caja.name;
-        }
-
         var textos = caja.parentStory.paragraphs;
+        var maxParrafos = Math.min(textos.length, 100);
 
-        for (var i = 0; i < textos.length; i++) {
-            var parrafo = textos[i];
-
+        for (var i = 0; i < maxParrafos; i++) {
             try {
-                if (parrafo.appliedParagraphStyle.name === nombreEstiloBuscar) {
+                var parrafo = textos[i];
+                if (parrafo.appliedParagraphStyle.name === estiloNombre) {
                     var contenido = parrafo.contents;
                     contenido = contenido.replace(/^\s+|\s+$/g, '');
                     contenido = contenido.replace(/\r\n|\n|\r/g, ' ');
@@ -402,40 +357,13 @@ function extraerNombreAutor(caja, estiloNombre) {
                         return contenido;
                     }
                 }
-            } catch (e) {
-            }
+            } catch (e) {}
         }
 
-        var todosLosParrafos = caja.parentStory.paragraphs.everyItem().getElements();
-        for (var i = 0; i < todosLosParrafos.length; i++) {
-            try {
-                if (todosLosParrafos[i].appliedParagraphStyle.name === nombreEstiloBuscar) {
-                    var contenido = todosLosParrafos[i].contents;
-                    contenido = contenido.replace(/^\s+|\s+$/g, '');
-                    contenido = contenido.replace(/\r\n|\n|\r/g, ' ');
-                    contenido = contenido.replace(/\s+/g, ' ');
-
-                    if (contenido.indexOf("Por ") === 0) {
-                        contenido = contenido.substring(4);
-                    }
-                    if (contenido.indexOf("por ") === 0) {
-                        contenido = contenido.substring(4);
-                    }
-
-                    contenido = contenido.replace(/^\s+|\s+$/g, '');
-
-                    if (contenido.length > 0) {
-                        return contenido;
-                    }
-                }
-            } catch (e) {
-            }
-        }
-
-        return "AutorDesconocido_" + caja.name;
+        return "AutorDesconocido";
 
     } catch (e) {
-        return "AutorDesconocido_" + caja.name;
+        return "AutorDesconocido";
     }
 }
 
