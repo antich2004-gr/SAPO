@@ -266,13 +266,22 @@ function buscarCajasCapitulo(doc, config) {
 function obtenerNumeroPaginaPrincipal(caja) {
     try {
         var parent = caja.parent;
-        while (parent && parent.constructor.name !== "Page") {
-            parent = parent.parent;
-        }
-        if (parent && parent.constructor.name === "Page") {
-            var numPagina = parseInt(parent.name);
-            if (!isNaN(numPagina)) {
-                return numPagina;
+        var maxDepth = 10;
+        var depth = 0;
+
+        while (parent && depth < maxDepth) {
+            try {
+                if (parent.constructor.name === "Page") {
+                    var numPagina = parseInt(parent.name);
+                    if (!isNaN(numPagina)) {
+                        return numPagina;
+                    }
+                    return 0;
+                }
+                parent = parent.parent;
+                depth++;
+            } catch (e) {
+                break;
             }
         }
     } catch (e) {}
