@@ -78,25 +78,30 @@ function mostrarDialogoConfiguracion() {
 
     var doc = app.activeDocument;
     var estilosParrafo = [];
-    var paragraphStyles = doc.paragraphStyles;
 
-    for (var i = 0; i < paragraphStyles.length; i++) {
-        var nombreEstilo = paragraphStyles[i].name;
-        if (nombreEstilo.indexOf("[") !== 0) {
-            estilosParrafo.push(nombreEstilo);
+    function obtenerTodosLosEstilos(estilos, prefijo) {
+        for (var i = 0; i < estilos.length; i++) {
+            var estilo = estilos[i];
+            var nombreCompleto = prefijo ? prefijo + " > " + estilo.name : estilo.name;
+
+            if (estilo.name.indexOf("[") !== 0) {
+                estilosParrafo.push(nombreCompleto);
+            }
         }
     }
+
+    obtenerTodosLosEstilos(doc.allParagraphStyles, "");
 
     if (estilosParrafo.length === 0) {
         estilosParrafo.push("autor");
     }
 
     var estiloAutorDropdown = grupoCajas.add("dropdownlist", undefined, estilosParrafo);
-    estiloAutorDropdown.preferredSize = [250, 25];
+    estiloAutorDropdown.preferredSize = [300, 25];
 
     var indiceAutor = -1;
     for (var i = 0; i < estilosParrafo.length; i++) {
-        if (estilosParrafo[i].toLowerCase() === "autor" || estilosParrafo[i].toLowerCase().indexOf("autor") !== -1) {
+        if (estilosParrafo[i].toLowerCase().indexOf("autor") !== -1) {
             indiceAutor = i;
             break;
         }
@@ -210,18 +215,28 @@ function buscarCajasCapitulo(doc, config) {
 
     if (config.modoAutomatico) {
         var estiloNombre = config.estiloAutor;
+        var nombreEstiloBuscar = estiloNombre;
+
+        if (estiloNombre.indexOf(" > ") !== -1) {
+            var partes = estiloNombre.split(" > ");
+            nombreEstiloBuscar = partes[partes.length - 1];
+        }
+
         var estilo = null;
 
         try {
-            estilo = doc.paragraphStyles.itemByName(estiloNombre);
-            if (!estilo.isValid) {
-                estilo = null;
+            var todosLosEstilos = doc.allParagraphStyles;
+            for (var idx = 0; idx < todosLosEstilos.length; idx++) {
+                if (todosLosEstilos[idx].name === nombreEstiloBuscar) {
+                    estilo = todosLosEstilos[idx];
+                    break;
+                }
             }
         } catch (e) {
         }
 
         if (!estilo) {
-            alert("ADVERTENCIA: No se encontro el estilo de parrafo '" + estiloNombre + "'.\nSe detectaran todas las cajas de texto principales del documento.");
+            alert("ADVERTENCIA: No se encontro el estilo de parrafo '" + nombreEstiloBuscar + "'.\nSe detectaran todas las cajas de texto principales del documento.");
         }
 
         var cajasYaProcesadas = [];
@@ -248,7 +263,7 @@ function buscarCajasCapitulo(doc, config) {
                         var parrafos = frame.parentStory.paragraphs;
                         for (var k = 0; k < Math.min(parrafos.length, 50); k++) {
                             try {
-                                if (parrafos[k].appliedParagraphStyle.name === estiloNombre) {
+                                if (parrafos[k].appliedParagraphStyle.name === nombreEstiloBuscar) {
                                     tieneEstiloAutor = true;
                                     break;
                                 }
@@ -341,10 +356,19 @@ function extraerNombreAutor(caja, estiloNombre) {
         var doc = app.activeDocument;
         var estilo = null;
 
+        var nombreEstiloBuscar = estiloNombre;
+        if (estiloNombre.indexOf(" > ") !== -1) {
+            var partes = estiloNombre.split(" > ");
+            nombreEstiloBuscar = partes[partes.length - 1];
+        }
+
         try {
-            estilo = doc.paragraphStyles.itemByName(estiloNombre);
-            if (!estilo.isValid) {
-                estilo = null;
+            var todosLosEstilos = doc.allParagraphStyles;
+            for (var idx = 0; idx < todosLosEstilos.length; idx++) {
+                if (todosLosEstilos[idx].name === nombreEstiloBuscar) {
+                    estilo = todosLosEstilos[idx];
+                    break;
+                }
             }
         } catch (e) {
         }
@@ -359,7 +383,7 @@ function extraerNombreAutor(caja, estiloNombre) {
             var parrafo = textos[i];
 
             try {
-                if (parrafo.appliedParagraphStyle.name === estiloNombre) {
+                if (parrafo.appliedParagraphStyle.name === nombreEstiloBuscar) {
                     var contenido = parrafo.contents;
                     contenido = contenido.replace(/^\s+|\s+$/g, '');
                     contenido = contenido.replace(/\r\n|\n|\r/g, ' ');
@@ -385,7 +409,7 @@ function extraerNombreAutor(caja, estiloNombre) {
         var todosLosParrafos = caja.parentStory.paragraphs.everyItem().getElements();
         for (var i = 0; i < todosLosParrafos.length; i++) {
             try {
-                if (todosLosParrafos[i].appliedParagraphStyle.name === estiloNombre) {
+                if (todosLosParrafos[i].appliedParagraphStyle.name === nombreEstiloBuscar) {
                     var contenido = todosLosParrafos[i].contents;
                     contenido = contenido.replace(/^\s+|\s+$/g, '');
                     contenido = contenido.replace(/\r\n|\n|\r/g, ' ');
