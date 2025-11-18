@@ -325,17 +325,18 @@
             <li>📻 Programas automatizados desde AzuraCast</li>
             <li>🎙️ Programas en directo manuales</li>
             <li>🎧 Últimos episodios de podcasts con RSS</li>
-            <li>🔴 Indicador de programa en emisión actual</li>
+            <li>🔴 Indicador de programa en emisión actual (con enlace al stream)</li>
             <li>📱 Iconos de redes sociales (Twitter/Instagram)</li>
         </ul>
 
         <h4>⚙️ Configuración de la parrilla</h4>
         <p>Para configurar la visualización de tu parrilla:</p>
         <ol>
-            <li>Accede a la sección <strong>"Configuración de AzuraCast"</strong> en el panel</li>
+            <li>Accede a la sección <strong>"Parrilla → Configuración"</strong> en el panel</li>
             <li>Configura los siguientes parámetros:
                 <ul>
-                    <li><strong>Station ID:</strong> ID de tu estación en AzuraCast</li>
+                    <li><strong>Station ID:</strong> ID de tu estación en AzuraCast (requerido)</li>
+                    <li><strong>URL de la Página Pública del Stream:</strong> URL de tu emisora en AzuraCast para escucha en directo (opcional)</li>
                     <li><strong>Color del widget:</strong> Color principal de la parrilla (hexadecimal)</li>
                     <li><strong>Estilo visual:</strong> Modern, Classic, Compact o Minimal</li>
                     <li><strong>Tamaño de fuente:</strong> Small, Medium o Large</li>
@@ -343,6 +344,10 @@
             </li>
             <li>Guarda los cambios</li>
         </ol>
+
+        <div style="background: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 15px 0;">
+            <strong>🎯 URL del Stream:</strong> Si configuras la URL de tu página pública del stream (ej: <code>https://radio.radiobot.org/public/tu_emisora</code>), el badge "🔴 AHORA EN DIRECTO" se convertirá en un enlace clickeable que llevará a tus oyentes directamente a escuchar la emisora.
+        </div>
 
         <h4>🎨 Estilos visuales disponibles</h4>
         <div style="display: grid; grid-template-columns: auto 1fr; gap: 15px; margin: 20px 0;">
@@ -430,9 +435,14 @@
         <ul>
             <li>🕐 Compara la hora actual con los horarios configurados</li>
             <li>🎯 Muestra badge rojo "🔴 AHORA EN DIRECTO" en el programa activo</li>
+            <li>🔗 Si tienes configurada la URL del stream, el badge es clickeable y lleva a la página de escucha</li>
             <li>📜 Auto-scroll al programa en vivo al cargar la página</li>
             <li>⚡ Si hay solapamiento, muestra solo el programa que empezó más recientemente</li>
         </ul>
+
+        <div style="background: #ffe6e6; border-left: 4px solid #dc2626; padding: 15px; margin: 15px 0;">
+            <strong>🎧 Enlace al Stream:</strong> Para que el badge "🔴 AHORA EN DIRECTO" sea clickeable, configura la <strong>URL de la Página Pública del Stream</strong> en <em>Parrilla → Configuración</em>. Ejemplo: <code>https://radio.radiobot.org/public/tu_emisora</code>
+        </div>
 
         <h4>🎨 Personalización de programas</h4>
         <p>Cada programa puede tener información personalizada que se muestra en la parrilla:</p>
