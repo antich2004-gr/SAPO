@@ -311,7 +311,9 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             $categoryNames = array_keys($podcastsByCategory);
                             $totalCategories = count($categoryNames);
                             $totalCategoryPages = ceil($totalCategories / $categoriesPerPage);
-                            $currentCategoryPage = min($currentPage, max(1, $totalCategoryPages));
+                            // Calcular página actual para categorías independientemente de la paginación de podcasts
+                            $currentCategoryPage = isset($_GET['p']) && is_numeric($_GET['p']) ? max(1, intval($_GET['p'])) : 1;
+                            $currentCategoryPage = min($currentCategoryPage, max(1, $totalCategoryPages));
                             $categoryOffset = ($currentCategoryPage - 1) * $categoriesPerPage;
                             $categoryNamesToShow = array_slice($categoryNames, $categoryOffset, $categoriesPerPage);
 
