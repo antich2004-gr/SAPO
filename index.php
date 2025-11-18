@@ -50,7 +50,7 @@ initSession();
         header('Content-Type: application/json');
 
         // SEGURIDAD: Rate limiting para operaciones costosas (permite hasta 100 podcasts)
-        if (!checkRateLimit('refresh_feeds', 150, 60)) {
+        if (!checkRateLimit('refresh_feeds', 100, 60)) {
             http_response_code(429); // Too Many Requests
             echo json_encode(['success' => false, 'error' => ERROR_RATE_LIMIT]);
             exit;
