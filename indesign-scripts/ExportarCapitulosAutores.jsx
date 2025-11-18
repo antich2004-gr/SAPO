@@ -459,9 +459,6 @@ function exportarCapitulos(doc, capitulos, config) {
         preajuste = app.pdfExportPresets[0];
     }
 
-    var pdfExportPrefs = doc.pdfExportPreferences;
-    var rangoOriginal = pdfExportPrefs.pageRange;
-
     var progreso = new Window("palette", "Exportando capitulos...");
     progreso.add("statictext", undefined, "Procesando capitulos por autor...");
     var barraProgreso = progreso.add("progressbar", undefined, 0, capitulos.length);
@@ -487,10 +484,9 @@ function exportarCapitulos(doc, capitulos, config) {
             }
 
             var archivo = new File(config.carpeta + "/" + cap.nombreArchivo);
-
             var rango = cap.paginas.join(",");
-            pdfExportPrefs.pageRange = rango;
 
+            app.pdfExportPreferences.pageRange = rango;
             doc.exportFile(ExportFormat.PDF_TYPE, archivo, false, preajuste);
 
             exportados++;
@@ -499,8 +495,6 @@ function exportarCapitulos(doc, capitulos, config) {
             errores.push(cap.nombreCaja + " (" + cap.nombreAutor + "): " + e.message);
         }
     }
-
-    pdfExportPrefs.pageRange = rangoOriginal;
 
     progreso.close();
 
