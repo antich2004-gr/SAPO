@@ -474,12 +474,15 @@ function exportarCapitulos(doc, capitulos, config) {
     var viewOriginal = pdfPrefs.viewPDF;
     var pageLayoutOriginal = pdfPrefs.pageLayout;
 
-    if (config.maquetacion === 0) {
-        pdfPrefs.pageLayout = PageLayout.SINGLE_PAGE;
-    } else if (config.maquetacion === 1) {
-        pdfPrefs.pageLayout = PageLayout.TWO_UP_COVER_PAGE;
-    } else if (config.maquetacion === 2) {
-        pdfPrefs.pageLayout = PageLayout.TWO_UP_CONTINUOUS;
+    try {
+        if (config.maquetacion === 0) {
+            pdfPrefs.pageLayout = 1398362975;
+        } else if (config.maquetacion === 1) {
+            pdfPrefs.pageLayout = 1398363251;
+        } else if (config.maquetacion === 2) {
+            pdfPrefs.pageLayout = 1398363235;
+        }
+    } catch (e) {
     }
 
     if (config.ajustarPagina) {
