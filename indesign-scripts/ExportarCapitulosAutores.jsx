@@ -129,8 +129,10 @@ function mostrarDialogoConfiguracion() {
         preajusteDropdown.selection = 0;
     }
 
-    var cbImposicion = grupoPDF.add("checkbox", undefined, "Imposicion 2-up (2 paginas por hoja)");
-    cbImposicion.value = false;
+    grupoPDF.add("statictext", undefined, "Maquetacion del visor PDF:");
+    var maquetacionOpciones = ["Pagina simple", "Dos en una portada", "Dos en una sucesivas"];
+    var maquetacionDropdown = grupoPDF.add("dropdownlist", undefined, maquetacionOpciones);
+    maquetacionDropdown.selection = 1;
 
     var cbAjustar = grupoPDF.add("checkbox", undefined, "Ajustar contenido a pagina");
     cbAjustar.value = true;
@@ -175,7 +177,7 @@ function mostrarDialogoConfiguracion() {
             nombreLibro: limpiarNombreArchivo(nombreLibroInput.text),
             numeroInicial: numeroInicial,
             preajuste: preajusteDropdown.selection.text,
-            imposicion2up: cbImposicion.value,
+            maquetacion: maquetacionDropdown.selection.index,
             ajustarPagina: cbAjustar.value,
             carpeta: new Folder(carpetaInput.text)
         };
@@ -468,11 +470,16 @@ function exportarCapitulos(doc, capitulos, config) {
     }
 
     var pdfPrefs = app.pdfExportPreferences;
-    var imposicionOriginal = pdfPrefs.pdfMagnification;
+    var magnificationOriginal = pdfPrefs.pdfMagnification;
     var viewOriginal = pdfPrefs.viewPDF;
+    var pageLayoutOriginal = pdfPrefs.pageLayout;
 
-    if (config.imposicion2up) {
-        pdfPrefs.pageRange = "";
+    if (config.maquetacion === 0) {
+        pdfPrefs.pageLayout = PageLayout.SINGLE_PAGE;
+    } else if (config.maquetacion === 1) {
+        pdfPrefs.pageLayout = PageLayout.TWO_UP_COVER_PAGE;
+    } else if (config.maquetacion === 2) {
+        pdfPrefs.pageLayout = PageLayout.TWO_UP_CONTINUOUS;
     }
 
     if (config.ajustarPagina) {
@@ -520,8 +527,9 @@ function exportarCapitulos(doc, capitulos, config) {
 
     progreso.close();
 
-    pdfPrefs.pdfMagnification = imposicionOriginal;
+    pdfPrefs.pdfMagnification = magnificationOriginal;
     pdfPrefs.viewPDF = viewOriginal;
+    pdfPrefs.pageLayout = pageLayoutOriginal;
 
     var resultado = "===================================\n";
     resultado += "  EXPORTACION COMPLETADA\n";
