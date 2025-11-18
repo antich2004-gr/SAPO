@@ -101,18 +101,6 @@ if ($hasStationId) {
         <div class="section">
             <h3>Configuración de AzuraCast</h3>
 
-            <?php if (!empty($stationId)): ?>
-                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <strong style="color: #166534;">Station ID configurado:</strong>
-                    <span style="color: #166534; font-size: 18px; font-weight: 600; margin-left: 10px;"><?php echo htmlEsc($stationId); ?></span>
-                </div>
-            <?php else: ?>
-                <div class="alert alert-warning">
-                    ⚠️ El administrador aún no ha configurado tu <strong>Station ID de AzuraCast</strong>.<br>
-                    Contacta con el administrador para que lo configure desde el panel de administración.
-                </div>
-            <?php endif; ?>
-
             <form method="POST">
                 <input type="hidden" name="action" value="update_azuracast_config_user">
                 <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
