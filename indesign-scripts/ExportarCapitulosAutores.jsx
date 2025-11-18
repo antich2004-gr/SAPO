@@ -353,39 +353,21 @@ function obtenerPaginasDeCaja(caja) {
     var paginas = [];
 
     try {
-        var cajaActual = caja;
-        var maxFrames = 50;
-        var frameCount = 0;
+        var story = caja.parentStory;
+        var textContainers = story.textContainers;
 
-        while (cajaActual && frameCount < maxFrames) {
+        for (var i = 0; i < textContainers.length && i < 100; i++) {
             try {
-                var parent = cajaActual.parent;
-                var maxDepth = 10;
-                var depth = 0;
-
-                while (parent && depth < maxDepth) {
+                var container = textContainers[i];
+                if (container.constructor.name === "TextFrame") {
                     try {
-                        if (parent.constructor.name === "Page") {
-                            var nombrePagina = parent.name;
-                            paginasObj[nombrePagina] = true;
-                            break;
+                        var parentPage = container.parentPage;
+                        if (parentPage && parentPage.name) {
+                            paginasObj[parentPage.name] = true;
                         }
-                        parent = parent.parent;
-                        depth++;
-                    } catch (e) {
-                        break;
-                    }
+                    } catch (e) {}
                 }
-
-                if (cajaActual.nextTextFrame) {
-                    cajaActual = cajaActual.nextTextFrame;
-                } else {
-                    break;
-                }
-                frameCount++;
-            } catch (e) {
-                break;
-            }
+            } catch (e) {}
         }
 
         for (var p in paginasObj) {
