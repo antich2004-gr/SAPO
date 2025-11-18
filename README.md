@@ -358,9 +358,17 @@ SAPO implementa múltiples capas de seguridad. Ver [SECURITY.md](SECURITY.md) pa
 
 ## 📊 Versiones
 
-## 📊 Versiones
+### v1.2.5 (Noviembre 2024) - Actual
+- 🔴 **Badge "AHORA EN DIRECTO" clickeable**: El indicador de programa en vivo ahora enlaza a la página de escucha de AzuraCast
+- 🏷️ **Auto-detección de categorías**: Detecta automáticamente categorías desde podcasts existentes para nuevos usuarios
+- ✅ **FIX Modal de edición**: Resuelto problema donde el modal no abría para usuarios nuevos
+- ✅ **FIX Índices de podcasts**: Corregida desalineación de índices en pausar/reanudar/eliminar/editar
+- ✅ **FIX Caducidades**: Resuelto problema donde las caducidades no se guardaban correctamente
+- ✅ **FIX Barra de progreso**: La actualización de feeds ahora siempre llega al 100%
+- 🧹 **Limpieza**: Eliminados archivos de testing temporal y código de debug
+- 📚 **Documentación actualizada**: Ayuda mejorada con nuevas funcionalidades
 
-### v1.2.0 (Noviembre 2024) - Actual
+### v1.2.0 (Noviembre 2024)
 - ⏸️ **Pausar/Reanudar podcasts**: Nueva funcionalidad para pausar descargas sin eliminar la suscripción
 - 🔄 **Renombrado automático de carpetas**: Al cambiar el nombre de un podcast, la carpeta física se renombra conservando todos los archivos
 - 🔍 **Búsqueda mejorada**: Buscar podcasts en toda la base de datos, no solo en los 25 de la página actual
