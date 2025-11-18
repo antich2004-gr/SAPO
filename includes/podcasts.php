@@ -463,6 +463,12 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
             }
         }
 
+        // Si hubo cambios en archivos (movimiento de categoría o renombre), ejecutar rescan en Radiobot
+        if ($categoryChanged || ($oldName !== $sanitizedName)) {
+            // Llamar de forma asíncrona (no bloquear si falla)
+            @triggerMediaRescan($username);
+        }
+
         return $result;
     } else {
         return ['success' => false, 'error' => 'Error al actualizar el podcast'];

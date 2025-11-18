@@ -260,11 +260,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $username = $_POST['username'] ?? '';
         $stationId = $_POST['station_id'] ?? '';
         $widgetColor = $_POST['widget_color'] ?? '#3b82f6';
+        $apiKey = $_POST['api_key'] ?? '';
 
         if (empty($username)) {
             $error = 'Usuario no especificado';
         } else {
-            if (updateAzuracastConfig($username, $stationId, $widgetColor)) {
+            if (updateAzuracastConfig($username, $stationId, $widgetColor, false, '', 'modern', 'medium', '', $apiKey)) {
                 $message = "Configuración de AzuraCast actualizada para $username";
             } else {
                 $error = 'Error al actualizar la configuración';
@@ -748,6 +749,9 @@ if ($action == 'rename_category' && isLoggedIn() && !isAdmin()) {
             $_SESSION['radiobot_action'] = 'rename';
             $_SESSION['radiobot_old_name'] = $oldName;
             $_SESSION['radiobot_new_name'] = $result['new_name'];
+
+            // Ejecutar rescan en Radiobot para que detecte los archivos movidos
+            @triggerMediaRescan($_SESSION['username']);
         } else {
             $_SESSION['error'] = $result['error'];
         }

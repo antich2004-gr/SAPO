@@ -107,10 +107,14 @@ $users = getAllUsers();
                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                             <input type="hidden" name="username" value="<?php echo htmlEsc($user['username']); ?>">
 
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: end;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; align-items: end;">
                                 <div class="form-group" style="margin: 0;">
                                     <label style="font-size: 12px; margin-bottom: 5px;">Station ID Radiobot:</label>
                                     <input type="number" name="station_id" value="<?php echo htmlEsc($azuracastConfig['station_id'] ?? ''); ?>" placeholder="34" style="padding: 6px;">
+                                </div>
+                                <div class="form-group" style="margin: 0;">
+                                    <label style="font-size: 12px; margin-bottom: 5px;">API Key Radiobot:</label>
+                                    <input type="text" name="api_key" value="<?php echo htmlEsc($azuracastConfig['api_key'] ?? ''); ?>" placeholder="opcional" style="padding: 6px;" maxlength="100">
                                 </div>
                                 <div class="form-group" style="margin: 0;">
                                     <label style="font-size: 12px; margin-bottom: 5px;">Color del widget:</label>

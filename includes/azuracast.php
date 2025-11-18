@@ -155,7 +155,7 @@ function saveScheduleToCache($username, $data) {
  * @param string $logoUrl URL del logo
  * @return bool True si se guardó correctamente
  */
-function updateAzuracastConfig($username, $stationId, $widgetColor = '#3b82f6', $showLogo = false, $logoUrl = '', $widgetStyle = 'modern', $widgetFontSize = 'medium', $streamUrl = '') {
+function updateAzuracastConfig($username, $stationId, $widgetColor = '#3b82f6', $showLogo = false, $logoUrl = '', $widgetStyle = 'modern', $widgetFontSize = 'medium', $streamUrl = '', $apiKey = '') {
     $userData = getUserDB($username);
 
     $userData['azuracast'] = [
@@ -165,7 +165,8 @@ function updateAzuracastConfig($username, $stationId, $widgetColor = '#3b82f6', 
         'logo_url' => $logoUrl,
         'widget_style' => $widgetStyle,
         'widget_font_size' => $widgetFontSize,
-        'stream_url' => $streamUrl
+        'stream_url' => $streamUrl,
+        'api_key' => $apiKey
     ];
 
     return saveUserDB($username, $userData);
@@ -186,7 +187,8 @@ function getAzuracastConfig($username) {
         'logo_url' => '',
         'widget_style' => 'modern',
         'widget_font_size' => 'medium',
-        'stream_url' => ''
+        'stream_url' => '',
+        'api_key' => ''
     ];
 }
 
@@ -374,4 +376,80 @@ function testAzuracastConnection() {
         'success' => true,
         'message' => 'Conexión exitosa'
     ];
+}
+
+/**
+ * Ejecutar CheckMediaTask en Radiobot/AzuraCast para que actualice la base de datos de medios
+ *
+ * @param string $username Nombre de usuario
+ * @return bool True si se ejecutó correctamente (o false en caso de error - no crítico)
+ */
+function triggerMediaRescan($username) {
+    // Obtener configuración
+    $config = getConfig();
+    $apiUrl = $config['azuracast_api_url'] ?? '';
+
+    if (empty($apiUrl)) {
+        error_log("triggerMediaRescan: URL de API no configurada");
+        return false;
+    }
+
+    $azuracastConfig = getAzuracastConfig($username);
+    $stationId = $azuracastConfig['station_id'] ?? null;
+    $apiKey = $azuracastConfig['api_key'] ?? '';
+
+    if (empty($stationId)) {
+        error_log("triggerMediaRescan: Station ID no configurado para usuario $username");
+        return false;
+    }
+
+    // Construir URL del endpoint
+    $endpoint = rtrim($apiUrl, '/') . '/station/' . $stationId . '/backend/check-media';
+
+    // Preparar headers
+    $headers = [
+        'Content-Type: application/json',
+        'User-Agent: SAPO/1.0'
+    ];
+
+    // Añadir API Key si está configurado
+    if (!empty($apiKey)) {
+        $headers[] = 'X-API-Key: ' . $apiKey;
+    }
+
+    // Preparar contexto para la petición POST
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'POST',
+            'header' => implode("\r\n", $headers),
+            'timeout' => 10,
+            'ignore_errors' => true  // Para poder leer la respuesta aunque sea error
+        ]
+    ]);
+
+    // Ejecutar petición
+    try {
+        $response = @file_get_contents($endpoint, false, $context);
+
+        // Verificar código de respuesta HTTP
+        if (isset($http_response_header)) {
+            $statusLine = $http_response_header[0] ?? '';
+            preg_match('/HTTP\/\d\.\d\s+(\d+)/', $statusLine, $matches);
+            $statusCode = isset($matches[1]) ? intval($matches[1]) : 0;
+
+            if ($statusCode >= 200 && $statusCode < 300) {
+                error_log("triggerMediaRescan: CheckMediaTask ejecutado correctamente para station $stationId");
+                return true;
+            } else {
+                error_log("triggerMediaRescan: HTTP $statusCode al ejecutar CheckMediaTask para station $stationId");
+                return false;
+            }
+        }
+
+        return false;
+
+    } catch (Exception $e) {
+        error_log("triggerMediaRescan: Excepción al ejecutar CheckMediaTask: " . $e->getMessage());
+        return false;
+    }
 }
