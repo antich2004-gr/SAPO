@@ -49,8 +49,8 @@ initSession();
     if (isset($_GET['action']) && $_GET['action'] == 'refresh_feeds' && isLoggedIn()) {
         header('Content-Type: application/json');
 
-        // SEGURIDAD: Rate limiting más restrictivo para operaciones costosas
-        if (!checkRateLimit('refresh_feeds', 30, 60)) {
+        // SEGURIDAD: Rate limiting para operaciones costosas (permite hasta 100 podcasts)
+        if (!checkRateLimit('refresh_feeds', 150, 60)) {
             http_response_code(429); // Too Many Requests
             echo json_encode(['success' => false, 'error' => ERROR_RATE_LIMIT]);
             exit;
