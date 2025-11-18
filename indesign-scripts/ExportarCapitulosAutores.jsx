@@ -74,44 +74,10 @@ function mostrarDialogoConfiguracion() {
         grupoPrefijo.enabled = false;
     };
 
-    grupoCajas.add("statictext", undefined, "Estilo de parrafo que contiene el autor:");
-
-    var doc = app.activeDocument;
-    var estilosParrafo = [];
-
-    try {
-        var allStyles = doc.allParagraphStyles;
-        for (var i = 0; i < allStyles.length; i++) {
-            try {
-                var nombreEstilo = allStyles[i].name;
-                if (nombreEstilo && nombreEstilo.indexOf("[") !== 0) {
-                    estilosParrafo.push(nombreEstilo);
-                }
-            } catch (e) {}
-        }
-    } catch (e) {
-        estilosParrafo.push("autor");
-    }
-
-    if (estilosParrafo.length === 0) {
-        estilosParrafo.push("autor");
-    }
-
-    var estiloAutorDropdown = grupoCajas.add("dropdownlist", undefined, estilosParrafo);
-    estiloAutorDropdown.preferredSize = [300, 25];
-
-    var indiceAutor = -1;
-    for (var i = 0; i < estilosParrafo.length; i++) {
-        if (estilosParrafo[i].toLowerCase().indexOf("autor") !== -1) {
-            indiceAutor = i;
-            break;
-        }
-    }
-    if (indiceAutor !== -1) {
-        estiloAutorDropdown.selection = indiceAutor;
-    } else {
-        estiloAutorDropdown.selection = 0;
-    }
+    grupoCajas.add("statictext", undefined, "Nombre del estilo de parrafo que contiene el autor:");
+    var estiloAutorInput = grupoCajas.add("edittext", undefined, "autor");
+    estiloAutorInput.characters = 25;
+    estiloAutorInput.helpTip = "Escribe el nombre exacto del estilo";
 
     var grupoNombre = dialog.add("panel", undefined, "Nomenclatura de archivos PDF");
     grupoNombre.orientation = "column";
@@ -198,7 +164,7 @@ function mostrarDialogoConfiguracion() {
         return {
             modoAutomatico: rbAutomatico.value,
             prefijoCaja: prefijoCajaInput.text,
-            estiloAutor: estiloAutorDropdown.selection.text,
+            estiloAutor: estiloAutorInput.text,
             prefijoArchivo: prefijoArchivoInput.text,
             nombreLibro: limpiarNombreArchivo(nombreLibroInput.text),
             numeroInicial: numeroInicial,
@@ -213,13 +179,16 @@ function mostrarDialogoConfiguracion() {
 function buscarCajasCapitulo(doc, config) {
     var cajas = [];
     var allTextFrames = doc.textFrames;
+    var maxCajasTotal = 200;
 
     if (config.modoAutomatico) {
         var estiloNombre = config.estiloAutor;
         var cajasYaProcesadas = [];
+        var cajasRevisadas = 0;
 
-        for (var i = 0; i < allTextFrames.length; i++) {
+        for (var i = 0; i < allTextFrames.length && cajasRevisadas < maxCajasTotal; i++) {
             var frame = allTextFrames[i];
+            cajasRevisadas++;
 
             var yaIncluida = false;
             for (var j = 0; j < cajasYaProcesadas.length; j++) {
@@ -237,7 +206,7 @@ function buscarCajasCapitulo(doc, config) {
 
                 try {
                     var parrafos = frame.parentStory.paragraphs;
-                    var maxCheck = Math.min(parrafos.length, 30);
+                    var maxCheck = Math.min(parrafos.length, 10);
                     for (var k = 0; k < maxCheck; k++) {
                         try {
                             if (parrafos[k].appliedParagraphStyle.name === estiloNombre) {
@@ -251,16 +220,19 @@ function buscarCajasCapitulo(doc, config) {
                 if (tieneEstiloAutor) {
                     cajas.push(frame);
 
+                    cajasYaProcesadas.push(frame);
                     var cajaActual = frame;
-                    cajasYaProcesadas.push(cajaActual);
-                    var iterMax = 50;
                     var iter = 0;
-                    while (cajaActual.nextTextFrame && iter < iterMax) {
+                    while (cajaActual.nextTextFrame && iter < 20) {
                         cajaActual = cajaActual.nextTextFrame;
                         cajasYaProcesadas.push(cajaActual);
                         iter++;
                     }
                 }
+            }
+
+            if (cajas.length > 100) {
+                break;
             }
         }
 
@@ -333,7 +305,7 @@ function procesarCapitulos(cajas, config) {
 function extraerNombreAutor(caja, estiloNombre) {
     try {
         var textos = caja.parentStory.paragraphs;
-        var maxParrafos = Math.min(textos.length, 100);
+        var maxParrafos = Math.min(textos.length, 20);
 
         for (var i = 0; i < maxParrafos; i++) {
             try {
