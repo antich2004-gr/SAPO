@@ -129,9 +129,6 @@ function mostrarDialogoConfiguracion() {
         preajusteDropdown.selection = 0;
     }
 
-    var cbAjustar = grupoPDF.add("checkbox", undefined, "Ajustar contenido a pagina");
-    cbAjustar.value = true;
-
     var grupoCarpeta = dialog.add("panel", undefined, "Carpeta de destino");
     grupoCarpeta.orientation = "row";
     grupoCarpeta.alignChildren = ["fill", "center"];
@@ -172,7 +169,6 @@ function mostrarDialogoConfiguracion() {
             nombreLibro: limpiarNombreArchivo(nombreLibroInput.text),
             numeroInicial: numeroInicial,
             preajuste: preajusteDropdown.selection.text,
-            ajustarPagina: cbAjustar.value,
             carpeta: new Folder(carpetaInput.text)
         };
     }
@@ -464,12 +460,7 @@ function exportarCapitulos(doc, capitulos, config) {
     }
 
     var pdfPrefs = app.pdfExportPreferences;
-    var magnificationOriginal = pdfPrefs.pdfMagnification;
     var viewOriginal = pdfPrefs.viewPDF;
-
-    if (config.ajustarPagina) {
-        pdfPrefs.pdfMagnification = PDFMagnification.FIT_PAGE;
-    }
 
     pdfPrefs.viewPDF = false;
 
@@ -512,7 +503,6 @@ function exportarCapitulos(doc, capitulos, config) {
 
     progreso.close();
 
-    pdfPrefs.pdfMagnification = magnificationOriginal;
     pdfPrefs.viewPDF = viewOriginal;
 
     var resultado = "===================================\n";
