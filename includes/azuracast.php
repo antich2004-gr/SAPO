@@ -419,8 +419,9 @@ function syncAzuracastMedia($username) {
     }
 
     // Construir URL de la API para ejecutar la tarea de sincronización
-    // Endpoint: POST /api/station/{station_id}/backend/reload
-    $syncUrl = rtrim($apiUrl, '/') . '/station/' . $stationId . '/backend/reload';
+    // Endpoint: POST /api/station/{station_id}/files/rescan
+    // Este endpoint ejecuta CheckMediaTask que escanea y sincroniza archivos multimedia
+    $syncUrl = rtrim($apiUrl, '/') . '/station/' . $stationId . '/files/rescan';
 
     error_log("AzuraCast Sync: URL de sincronización: $syncUrl");
     error_log("AzuraCast Sync: Station ID: $stationId");
