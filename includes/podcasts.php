@@ -108,6 +108,10 @@ function writeCaducidades($username, $caducidades) {
     }
 
     $result = file_put_contents($path, $content);
+
+    // DEBUG: Log para verificar escritura
+    error_log("[SAPO] writeCaducidades() - Path: $path, Result: " . ($result !== false ? 'OK' : 'FAIL') . ", Podcasts: " . count($caducidades));
+
     return $result !== false;
 }
 
@@ -135,6 +139,9 @@ function syncAllCaducidades($username, $oldDefaultCaducidad = null) {
     $podcasts = readServerList($username);
     $caducidades = readCaducidades($username);
     $defaultCaducidad = getDefaultCaducidad($username);
+
+    // DEBUG: Log inicio
+    error_log("[SAPO] syncAllCaducidades() INICIO - User: $username, OldDefault: " . ($oldDefaultCaducidad ?? 'null') . ", NewDefault: $defaultCaducidad, Podcasts: " . count($podcasts));
 
     // Si no se especifica el valor anterior, usar el actual (para otras llamadas)
     if ($oldDefaultCaducidad === null) {
