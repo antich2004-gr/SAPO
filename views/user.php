@@ -534,17 +534,17 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     <label>Categoría:</label>
                     <?php if (!empty($userCategories)): ?>
                         <div style="display: flex; gap: 10px; align-items: flex-start;">
-                            <select name="category" id="modal_category_select" required style="flex: 1;">
-                                <option value="">-- Selecciona una categoría --</option>
+                            <select name="category" id="modal_category_select" style="flex: 1;">
+                                <option value="">-- Sin categoría (carpeta principal) --</option>
                                 <?php foreach ($userCategories as $cat): ?>
                                     <option value="<?php echo htmlEsc($cat); ?>"><?php echo htmlEsc(displayName($cat)); ?></option>
                                 <?php endforeach; ?>
                             </select>
                             <button type="button" class="btn btn-secondary" onclick="showCategoryManager('modal')" style="white-space: nowrap;">Gestionar</button>
                         </div>
-                        <small style="color: #718096;">Usa el botón "Gestionar" para añadir nuevas categorías</small>
+                        <small style="color: #718096;">Categoría opcional. Usa el botón "Gestionar" para añadir nuevas categorías</small>
                     <?php else: ?>
-                        <p style="color: #e53e3e; margin-bottom: 10px;">No hay categorías disponibles. Por favor, créalas primero usando el botón "Gestionar".</p>
+                        <p style="color: #718096; margin-bottom: 10px;">Sin categorías. El podcast se guardará en la carpeta principal.</p>
                         <button type="button" class="btn btn-secondary" onclick="showCategoryManager('modal')">Gestionar Categorías</button>
                     <?php endif; ?>
                 </div>
@@ -604,17 +604,17 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     <label>Categoría:</label>
                     <?php if (!empty($userCategories)): ?>
                         <div style="display: flex; gap: 10px; align-items: flex-start;">
-                            <select name="category" id="edit_podcast_category" required style="flex: 1;">
-                                <option value="">-- Selecciona una categoría --</option>
+                            <select name="category" id="edit_podcast_category" style="flex: 1;">
+                                <option value="">-- Sin categoría (carpeta principal) --</option>
                                 <?php foreach ($userCategories as $cat): ?>
                                     <option value="<?php echo htmlEsc($cat); ?>"><?php echo htmlEsc(displayName($cat)); ?></option>
                                 <?php endforeach; ?>
                             </select>
                             <button type="button" class="btn btn-secondary" onclick="showCategoryManager('edit')" style="white-space: nowrap;">Gestionar</button>
                         </div>
-                        <small style="color: #718096;">Usa el botón "Gestionar" para añadir nuevas categorías</small>
+                        <small style="color: #718096;">Categoría opcional. Usa el botón "Gestionar" para añadir nuevas categorías</small>
                     <?php else: ?>
-                        <p style="color: #e53e3e; margin-bottom: 10px;">No hay categorías disponibles. Por favor, créalas primero usando el botón "Gestionar".</p>
+                        <p style="color: #718096; margin-bottom: 10px;">Sin categorías. El podcast se guardará en la carpeta principal.</p>
                         <button type="button" class="btn btn-secondary" onclick="showCategoryManager('edit')">Gestionar Categorías</button>
                     <?php endif; ?>
                 </div>
