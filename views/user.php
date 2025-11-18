@@ -69,7 +69,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
             'url' => $podcast['url'],
             'name' => displayName($podcast['name']),
             'category' => $podcast['category'],
-            'caducidad' => $caducidades[$podcast['name']] ?? 30,
+            'caducidad' => $caducidades[$podcast['name']] ?? $defaultCaducidad,
             'duracion' => $duraciones[$podcast['name']] ?? '',
             'paused' => isset($podcast['paused']) ? $podcast['paused'] : false,
             'feedInfo' => [
@@ -170,7 +170,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             <?php foreach ($podcastsPaginated as $index => $podcast):
                                 // Calcular índice global considerando paginación
                                 $globalIndex = $offset + $index;
-                                $podcastCaducidad = $caducidades[$podcast['name']] ?? 30;
+                                $podcastCaducidad = $caducidades[$podcast['name']] ?? $defaultCaducidad;
             $podcastDuracion = $duraciones[$podcast['name']] ?? '';
                                 $feedInfo = getCachedFeedInfo($podcast['url']);
                                 $statusInfo = formatFeedStatus($feedInfo['timestamp']);
@@ -315,7 +315,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     
                                     <div class="podcast-list">
                                         <?php foreach ($categoryPodcasts as $podcast):
-                                            $podcastCaducidad = $caducidades[$podcast['name']] ?? 30;
+                                            $podcastCaducidad = $caducidades[$podcast['name']] ?? $defaultCaducidad;
             $podcastDuracion = $duraciones[$podcast['name']] ?? '';
                                             $feedInfo = getCachedFeedInfo($podcast['url']);
                                             $statusInfo = formatFeedStatus($feedInfo['timestamp']);

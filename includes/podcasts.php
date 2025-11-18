@@ -234,12 +234,13 @@ function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracio
     ];
     
     if (writeServerList($username, $podcasts)) {
-        // Actualizar caducidades.txt solo si no es 30 (valor por defecto)
-        if ($caducidad != 30) {
+        // Actualizar caducidades.txt solo si no es el valor por defecto del usuario
+        $defaultCaducidad = getDefaultCaducidad($username);
+        if ($caducidad != $defaultCaducidad) {
             setCaducidad($username, $sanitizedName, $caducidad);
         }
-        
-        
+
+
         // Guardar duracion si no es vacia
         if (!empty($duracion)) {
             $duraciones = readDuraciones($username);
@@ -369,11 +370,12 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
             deleteCaducidad($username, $oldName);
         }
 
-        // Actualizar caducidades.txt solo si no es 30 (valor por defecto)
-        if ($caducidad != 30) {
+        // Actualizar caducidades.txt solo si no es el valor por defecto del usuario
+        $defaultCaducidad = getDefaultCaducidad($username);
+        if ($caducidad != $defaultCaducidad) {
             setCaducidad($username, $sanitizedName, $caducidad);
         } else {
-            // Si es 30, eliminar entrada (usará el default)
+            // Si es el valor por defecto, eliminar entrada (usará el default)
             deleteCaducidad($username, $sanitizedName);
         }
 
