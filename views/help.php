@@ -168,7 +168,7 @@
         </ol>
 
         <div style="background: #fffaf0; border-left: 4px solid #f6ad55; padding: 15px; margin: 15px 0;">
-            <strong>💡 Nota:</strong> Al eliminar un podcast de SAPO, los episodios ya descargados permanecen en el servidor hasta la próxima limpieza automática.
+            <strong>💡 Nota:</strong> Al eliminar un podcast de SAPO, los episodios ya descargados permanecen en Radiobot hasta la próxima limpieza automática.
         </div>
     </div>
 
@@ -310,7 +310,7 @@
         </ul>
 
         <div style="background: #fffaf0; border-left: 4px solid #f6ad55; padding: 15px; margin: 15px 0;">
-            <strong>💡 Consejo:</strong> Ajusta la caducidad según la frecuencia de publicación del podcast y el espacio disponible en tu servidor.
+            <strong>💡 Consejo:</strong> Ajusta la caducidad según la frecuencia de publicación del podcast y el espacio disponible en tu estación en Radiobot.
         </div>
     </div>
 

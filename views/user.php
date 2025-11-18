@@ -473,7 +473,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 <!-- PESTAÑA 3: DESCARGAS -->
                 <div id="tab-descargas" class="tab-panel">
                     <h4>Ejecutar Descargas</h4>
-                    <p style="color: #718096; margin-bottom: 20px;">Descarga los nuevos episodios de todos tus podcasts suscritos en el servidor.</p>
+                    <p style="color: #718096; margin-bottom: 20px;">Descarga los nuevos episodios de todos tus podcasts suscritos en Radiobot.</p>
                     
                     <button type="button" class="btn btn-info" style="font-size: 16px; padding: 15px 30px;" onclick="executePodgetViaAjax();">
                         <span class="btn-icon">🚀</span> Ejecutar descargas para <?php echo htmlEsc($_SESSION['station_name']); ?>
