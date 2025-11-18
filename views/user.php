@@ -7,6 +7,22 @@ $duraciones = readDuraciones($_SESSION['username']);
 $duracionesOptions = getDuracionesOptions();
 $defaultCaducidad = getDefaultCaducidad($_SESSION['username']);
 
+// Sincronizar caducidades si hay podcasts sin caducidad definida
+if (!empty($podcasts)) {
+    $podcastNames = array_column($podcasts, 'name');
+    $hasMissingCaducidades = false;
+    foreach ($podcastNames as $podcastName) {
+        if (!isset($caducidades[$podcastName])) {
+            $hasMissingCaducidades = true;
+            break;
+        }
+    }
+    if ($hasMissingCaducidades) {
+        syncAllCaducidades($_SESSION['username']);
+        $caducidades = readCaducidades($_SESSION['username']); // Releer caducidades actualizadas
+    }
+}
+
 // Auto-detectar categorías de los podcasts existentes si no hay categorías guardadas
 if (empty($userCategories) && !empty($podcasts)) {
     $categoriesFromPodcasts = array_unique(array_column($podcasts, 'category'));

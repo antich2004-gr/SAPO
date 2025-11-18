@@ -123,6 +123,36 @@ function deleteCaducidad($username, $podcastName) {
     return writeCaducidades($username, $caducidades);
 }
 
+/**
+ * Sincronizar caducidades.txt con todos los podcasts
+ * Asegura que todos los podcasts tienen una caducidad definida
+ */
+function syncAllCaducidades($username) {
+    $podcasts = readServerList($username);
+    $caducidades = readCaducidades($username);
+    $defaultCaducidad = getDefaultCaducidad($username);
+
+    // Para cada podcast, asegurar que tenga caducidad
+    foreach ($podcasts as $podcast) {
+        $podcastName = $podcast['name'];
+
+        // Si no tiene caducidad definida, usar el valor por defecto
+        if (!isset($caducidades[$podcastName])) {
+            $caducidades[$podcastName] = $defaultCaducidad;
+        }
+    }
+
+    // Limpiar caducidades de podcasts que ya no existen
+    $existingPodcastNames = array_column($podcasts, 'name');
+    foreach ($caducidades as $podcastName => $dias) {
+        if (!in_array($podcastName, $existingPodcastNames)) {
+            unset($caducidades[$podcastName]);
+        }
+    }
+
+    return writeCaducidades($username, $caducidades);
+}
+
 function readServerList($username) {
     $path = getServerListPath($username);
     if (!$path || !file_exists($path)) return [];
@@ -234,12 +264,8 @@ function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracio
     ];
     
     if (writeServerList($username, $podcasts)) {
-        // Actualizar caducidades.txt solo si no es el valor por defecto del usuario
-        $defaultCaducidad = getDefaultCaducidad($username);
-        if ($caducidad != $defaultCaducidad) {
-            setCaducidad($username, $sanitizedName, $caducidad);
-        }
-
+        // Actualizar caducidades.txt SIEMPRE (todos los podcasts deben tener caducidad definida)
+        setCaducidad($username, $sanitizedName, $caducidad);
 
         // Guardar duracion si no es vacia
         if (!empty($duracion)) {
@@ -370,14 +396,8 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
             deleteCaducidad($username, $oldName);
         }
 
-        // Actualizar caducidades.txt solo si no es el valor por defecto del usuario
-        $defaultCaducidad = getDefaultCaducidad($username);
-        if ($caducidad != $defaultCaducidad) {
-            setCaducidad($username, $sanitizedName, $caducidad);
-        } else {
-            // Si es el valor por defecto, eliminar entrada (usará el default)
-            deleteCaducidad($username, $sanitizedName);
-        }
+        // Actualizar caducidades.txt SIEMPRE (todos los podcasts deben tener caducidad definida)
+        setCaducidad($username, $sanitizedName, $caducidad);
 
         // Actualizar duraciones.txt
         $duraciones = readDuraciones($username);
