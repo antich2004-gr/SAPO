@@ -143,27 +143,9 @@ function syncAllCaducidades($username, $oldDefaultCaducidad = null) {
     // DEBUG: Log inicio
     error_log("[SAPO] syncAllCaducidades() INICIO - User: $username, OldDefault: " . ($oldDefaultCaducidad ?? 'null') . ", NewDefault: $defaultCaducidad, Podcasts: " . count($podcasts));
 
-    // Si no se especifica el valor anterior, usar el actual (para otras llamadas)
-    if ($oldDefaultCaducidad === null) {
-        $oldDefaultCaducidad = $defaultCaducidad;
-    }
-
-    // FASE 1: Detectar y marcar podcasts con valores personalizados existentes
-    // Comparar contra el valor por defecto ANTERIOR para detectar personalizaciones reales
-    foreach ($podcasts as $podcast) {
-        $podcastName = $podcast['name'];
-
-        // Si el podcast tiene caducidad definida Y es diferente al VIEJO default Y no está marcado
-        if (isset($caducidades[$podcastName]) &&
-            $caducidades[$podcastName] != $oldDefaultCaducidad &&
-            !hasCaducidadCustom($username, $podcastName)) {
-
-            // Marcar como personalizado para preservar su valor
-            markCaducidadAsCustom($username, $podcastName);
-        }
-    }
-
-    // FASE 2: Sincronizar caducidades según si son personalizadas o no
+    // Sincronizar caducidades según si son personalizadas o no
+    // IMPORTANTE: Solo se respetan los podcasts EXPLÍCITAMENTE marcados como personalizados
+    // (marcados cuando el usuario edita manualmente un podcast con valor != default)
     foreach ($podcasts as $podcast) {
         $podcastName = $podcast['name'];
 
@@ -175,10 +157,15 @@ function syncAllCaducidades($username, $oldDefaultCaducidad = null) {
                 // Usar valor por defecto y desmarcar
                 $caducidades[$podcastName] = $defaultCaducidad;
                 unmarkCaducidadAsCustom($username, $podcastName);
+                error_log("[SAPO] Podcast $podcastName marcado como personalizado pero sin valor, desmarcando");
+            } else {
+                error_log("[SAPO] Podcast $podcastName mantiene valor personalizado: " . $caducidades[$podcastName]);
             }
         } else {
             // No es personalizado: siempre usar el valor por defecto
+            $oldValue = $caducidades[$podcastName] ?? 'none';
             $caducidades[$podcastName] = $defaultCaducidad;
+            error_log("[SAPO] Podcast $podcastName actualizado: $oldValue -> $defaultCaducidad");
         }
     }
 
@@ -926,6 +913,16 @@ function cleanupCustomCaducidades($username) {
         $userData['custom_caducidades'] = array_values($userData['custom_caducidades']);
         saveUserDB($username, $userData);
     }
+}
+
+/**
+ * TEMPORAL: Resetear todas las marcas de personalización
+ * Usar solo una vez para limpiar marcas incorrectas
+ */
+function resetAllCustomCaducidades($username) {
+    $userData = getUserDB($username);
+    $userData['custom_caducidades'] = [];
+    return saveUserDB($username, $userData);
 }
 
 ?>
