@@ -201,18 +201,6 @@ if ($hasStationId) {
             </form>
         </div>
 
-        <?php if ($hasStationId): ?>
-        <div class="section" style="background: #f0f9ff; border: 1px solid #bae6fd;">
-            <h3>🧪 Probar Conexión</h3>
-            <p style="color: #0c4a6e; margin-bottom: 15px;">
-                Verifica que SAPO puede conectarse correctamente a tu estación en AzuraCast.
-            </p>
-            <a href="test_azuracast.php" target="_blank" class="btn btn-primary">
-                🧪 Ejecutar Test de Conexión
-            </a>
-        </div>
-        <?php endif; ?>
-
     <?php elseif ($section === 'embed'): ?>
         <!-- CÓDIGO DE EMBEBIDO -->
         <div class="section">
