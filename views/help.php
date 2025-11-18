@@ -229,7 +229,7 @@
         </div>
 
         <div style="background: #fffaf0; border-left: 4px solid #f6ad55; padding: 15px; margin: 15px 0;">
-            <strong>⚠️ Importante:</strong> Después de renombrar una categoría, recuerda actualizar las playlists en Radiobot/AzuraCast para que apunten a la nueva ruta.
+            <strong>⚠️ Importante:</strong> Después de renombrar una categoría, recuerda actualizar las playlists en Radiobot para que apunten a la nueva ruta.
         </div>
 
         <h4>🗑️ Eliminar una categoría</h4>
@@ -560,7 +560,7 @@
 
         <div style="margin-bottom: 20px;">
             <h4>¿Qué pasa si cambio la categoría de un podcast?</h4>
-            <p>SAPO moverá automáticamente el directorio completo del podcast (con todos sus archivos) a la nueva categoría. Recibirás un recordatorio para actualizar las playlists en Radiobot/AzuraCast.</p>
+            <p>SAPO moverá automáticamente el directorio completo del podcast (con todos sus archivos) a la nueva categoría. Recibirás un recordatorio para actualizar las playlists en Radiobot.</p>
         </div>
 
         <div style="margin-bottom: 20px;">
