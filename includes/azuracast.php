@@ -444,7 +444,7 @@ function syncAzuracastMedia($username) {
                     'User-Agent: SAPO/1.0'
                 ],
                 'content' => $payload,
-                'timeout' => 30,
+                'timeout' => 120,  // 2 minutos para reprocesamiento de archivos
                 'ignore_errors' => true
             ]
         ]);
