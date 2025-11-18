@@ -736,59 +736,31 @@ function resumePodcast($username, $index) {
 }
 
 /**
- * Obtener ruta del archivo default_caducidad.txt
- */
-function getDefaultCaducidadPath($username) {
-    $config = getConfig();
-    $basePath = $config['base_path'] ?? '';
-    $subscriptionsFolder = $config['subscriptions_folder'] ?? 'Podcasts';
-
-    if (empty($basePath)) {
-        return false;
-    }
-
-    $userSlug = slugify($username);
-    return $basePath . DIRECTORY_SEPARATOR . $userSlug . DIRECTORY_SEPARATOR .
-           'media' . DIRECTORY_SEPARATOR . $subscriptionsFolder . DIRECTORY_SEPARATOR .
-           'default_caducidad.txt';
-}
-
-/**
  * Obtener caducidad por defecto para un usuario
- * Retorna el valor guardado o 30 días por defecto
+ * Retorna el valor guardado en el JSON del usuario o 30 días por defecto
  */
 function getDefaultCaducidad($username) {
-    $path = getDefaultCaducidadPath($username);
-    if (!$path || !file_exists($path)) {
-        return 30; // Valor por defecto
+    $userData = getUserDB($username);
+
+    // Si existe el campo default_caducidad en el JSON
+    if (isset($userData['default_caducidad'])) {
+        $dias = intval($userData['default_caducidad']);
+
+        // Validar rango
+        if ($dias >= 1 && $dias <= 365) {
+            return $dias;
+        }
     }
 
-    $content = file_get_contents($path);
-    $dias = intval(trim($content));
-
-    // Validar rango
-    if ($dias < 1 || $dias > 365) {
-        return 30;
-    }
-
-    return $dias;
+    return 30; // Valor por defecto
 }
 
 /**
  * Establecer caducidad por defecto para un usuario
+ * Guarda el valor en el JSON del usuario
  */
 function setDefaultCaducidad($username, $dias) {
-    $path = getDefaultCaducidadPath($username);
-    if (!$path) {
-        return false;
-    }
-
-    $dir = dirname($path);
-    if (!is_dir($dir)) {
-        if (!mkdir($dir, 0755, true)) {
-            return false;
-        }
-    }
+    $userData = getUserDB($username);
 
     // Validar rango
     $dias = intval($dias);
@@ -796,12 +768,10 @@ function setDefaultCaducidad($username, $dias) {
         $dias = 30;
     }
 
-    $content = "# Caducidad por defecto - Generado por SAPO\n";
-    $content .= "# Este valor se usará al agregar nuevos podcasts\n";
-    $content .= $dias;
+    // Guardar en el JSON
+    $userData['default_caducidad'] = $dias;
 
-    $result = file_put_contents($path, $content);
-    return $result !== false;
+    return saveUserDB($username, $userData);
 }
 
 ?>
