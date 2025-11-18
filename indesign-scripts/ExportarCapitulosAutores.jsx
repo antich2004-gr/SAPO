@@ -23,15 +23,24 @@ function main() {
     var config = mostrarDialogoConfiguracion();
     if (!config) return; // Usuario canceló
 
-    // Paso 2: Buscar todas las cajas de texto que coincidan con el prefijo
-    var cajasCapitulo = buscarCajasCapitulo(doc, config.prefijoCaja);
+    // Paso 2: Buscar todas las cajas de texto
+    var cajasCapitulo = buscarCajasCapitulo(doc, config);
 
     if (cajasCapitulo.length === 0) {
-        alert("No se encontraron cajas de texto con el prefijo '" + config.prefijoCaja + "'.\n\n" +
-              "Asegúrate de:\n" +
-              "1. Nombrar las cajas de texto de cada capítulo\n" +
-              "2. Usar un prefijo común (ej: Capitulo1, Capitulo2, etc.)\n" +
-              "3. Verificar el prefijo en el panel de Capas");
+        if (config.modoAutomatico) {
+            alert("No se encontraron cajas de texto con el estilo '" + config.estiloAutor + "'.\n\n" +
+                  "Asegúrate de:\n" +
+                  "1. Tener cajas de texto en el documento\n" +
+                  "2. Aplicar el estilo '" + config.estiloAutor + "' al nombre del autor en cada capítulo\n" +
+                  "3. O usa el modo 'Manual' si tus cajas tienen nombres específicos");
+        } else {
+            alert("No se encontraron cajas de texto con el prefijo '" + config.prefijoCaja + "'.\n\n" +
+                  "Asegúrate de:\n" +
+                  "1. Nombrar las cajas de texto de cada capítulo\n" +
+                  "2. Usar un prefijo común (ej: Capitulo1, Capitulo2, etc.)\n" +
+                  "3. Verificar el prefijo en el panel de Capas\n" +
+                  "4. O usa el modo 'Automático' para detectar todas las cajas");
+        }
         return;
     }
 
@@ -64,10 +73,30 @@ function mostrarDialogoConfiguracion() {
     grupoCajas.alignChildren = "left";
     grupoCajas.spacing = 10;
 
-    grupoCajas.add("statictext", undefined, "Prefijo de las cajas de texto de capítulos:");
-    var prefijoCajaInput = grupoCajas.add("edittext", undefined, "Capitulo");
-    prefijoCajaInput.characters = 25;
-    prefijoCajaInput.helpTip = "Las cajas deben nombrarse como: Capitulo1, Capitulo2, etc.";
+    grupoCajas.add("statictext", undefined, "Método de detección de capítulos:");
+
+    var grupoMetodo = grupoCajas.add("group");
+    grupoMetodo.orientation = "column";
+    grupoMetodo.alignChildren = "left";
+
+    var rbAutomatico = grupoMetodo.add("radiobutton", undefined, "Automático: Detectar todas las cajas de texto con estilo 'autor'");
+    var rbPrefijo = grupoMetodo.add("radiobutton", undefined, "Manual: Solo cajas con un prefijo específico");
+    rbAutomatico.value = true;
+
+    var grupoPrefijo = grupoCajas.add("group");
+    grupoPrefijo.orientation = "row";
+    grupoPrefijo.enabled = false;
+    grupoPrefijo.add("statictext", undefined, "Prefijo:");
+    var prefijoCajaInput = grupoPrefijo.add("edittext", undefined, "Capitulo");
+    prefijoCajaInput.characters = 20;
+
+    rbPrefijo.onClick = function() {
+        grupoPrefijo.enabled = true;
+    };
+
+    rbAutomatico.onClick = function() {
+        grupoPrefijo.enabled = false;
+    };
 
     grupoCajas.add("statictext", undefined, "Nombre del estilo de párrafo que contiene el autor:");
     var estiloAutorInput = grupoCajas.add("edittext", undefined, "autor");
@@ -164,6 +193,7 @@ function mostrarDialogoConfiguracion() {
         }
 
         return {
+            modoAutomatico: rbAutomatico.value,
             prefijoCaja: prefijoCajaInput.text,
             estiloAutor: estiloAutorInput.text,
             prefijoArchivo: prefijoArchivoInput.text,
@@ -177,24 +207,127 @@ function mostrarDialogoConfiguracion() {
     return null;
 }
 
-// Buscar cajas de texto que coincidan con el prefijo
-function buscarCajasCapitulo(doc, prefijo) {
+// Buscar cajas de texto que coincidan con el prefijo o automáticamente
+function buscarCajasCapitulo(doc, config) {
     var cajas = [];
     var allTextFrames = doc.textFrames;
 
-    for (var i = 0; i < allTextFrames.length; i++) {
-        var frame = allTextFrames[i];
-        if (frame.name && frame.name.indexOf(prefijo) === 0) {
-            cajas.push(frame);
+    if (config.modoAutomatico) {
+        // Modo automático: buscar cajas que contengan el estilo "autor"
+        var estiloNombre = config.estiloAutor;
+        var estilo = null;
+
+        try {
+            estilo = doc.paragraphStyles.itemByName(estiloNombre);
+            if (!estilo.isValid) {
+                estilo = null;
+            }
+        } catch (e) {
+            // El estilo no existe
         }
+
+        if (!estilo) {
+            alert("ADVERTENCIA: No se encontró el estilo de párrafo '" + estiloNombre + "'.\n" +
+                  "Se detectarán todas las cajas de texto principales del documento.");
+        }
+
+        // Buscar cajas de texto que contengan el estilo o que sean cajas principales
+        var cajasYaProcesadas = [];
+
+        for (var i = 0; i < allTextFrames.length; i++) {
+            var frame = allTextFrames[i];
+
+            // Evitar cajas ya procesadas (que son parte de una cadena ya encontrada)
+            var yaIncluida = false;
+            for (var j = 0; j < cajasYaProcesadas.length; j++) {
+                if (frame.id === cajasYaProcesadas[j].id) {
+                    yaIncluida = true;
+                    break;
+                }
+            }
+            if (yaIncluida) continue;
+
+            // Verificar si es una caja principal (primera en la cadena)
+            var esPrincipal = !frame.previousTextFrame;
+
+            if (esPrincipal) {
+                // Si tiene el estilo "autor" o si no hay estilo definido, incluirla
+                var tieneEstiloAutor = false;
+
+                if (estilo) {
+                    try {
+                        var parrafos = frame.parentStory.paragraphs;
+                        for (var k = 0; k < Math.min(parrafos.length, 50); k++) { // Revisar primeros 50 párrafos
+                            try {
+                                if (parrafos[k].appliedParagraphStyle.name === estiloNombre) {
+                                    tieneEstiloAutor = true;
+                                    break;
+                                }
+                            } catch (e) {}
+                        }
+                    } catch (e) {}
+                }
+
+                // Si tiene el estilo o no hay estilo definido, incluir la caja
+                if (tieneEstiloAutor || !estilo) {
+                    cajas.push(frame);
+
+                    // Marcar toda la cadena como procesada
+                    var cajaActual = frame;
+                    cajasYaProcesadas.push(cajaActual);
+                    while (cajaActual.nextTextFrame) {
+                        cajaActual = cajaActual.nextTextFrame;
+                        cajasYaProcesadas.push(cajaActual);
+                    }
+                }
+            }
+        }
+
+        // Ordenar por posición en la página
+        cajas.sort(function(a, b) {
+            try {
+                var pageA = obtenerNumeroPaginaPrincipal(a);
+                var pageB = obtenerNumeroPaginaPrincipal(b);
+                return pageA - pageB;
+            } catch (e) {
+                return 0;
+            }
+        });
+
+    } else {
+        // Modo manual: buscar por prefijo
+        var prefijo = config.prefijoCaja;
+        for (var i = 0; i < allTextFrames.length; i++) {
+            var frame = allTextFrames[i];
+            if (frame.name && frame.name.indexOf(prefijo) === 0) {
+                cajas.push(frame);
+            }
+        }
+
+        // Ordenar por nombre
+        cajas.sort(function(a, b) {
+            return a.name.localeCompare(b.name);
+        });
     }
 
-    // Ordenar por nombre
-    cajas.sort(function(a, b) {
-        return a.name.localeCompare(b.name);
-    });
-
     return cajas;
+}
+
+// Obtener número de página principal de una caja
+function obtenerNumeroPaginaPrincipal(caja) {
+    try {
+        var parent = caja.parent;
+        while (parent && parent.constructor.name !== "Page") {
+            parent = parent.parent;
+        }
+        if (parent && parent.constructor.name === "Page") {
+            var numPagina = parseInt(parent.name);
+            if (!isNaN(numPagina)) {
+                return numPagina;
+            }
+        }
+    } catch (e) {}
+    return 0;
 }
 
 // Procesar cada capítulo y extraer información
