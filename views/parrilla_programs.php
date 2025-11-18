@@ -24,7 +24,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                 <input type="hidden" name="action" value="sync_programs">
                 <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                 <button type="submit" class="btn btn-primary">
-                    <span class="btn-icon">🔄</span> Sincronizar con AzuraCast
+                    <span class="btn-icon">🔄</span> Sincronizar con Radiobot
                 </button>
             </form>
         </div>
@@ -76,7 +76,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                            placeholder="Ej: El Despertador Matinal"
                            maxlength="100">
                     <small style="color: #6b7280; display: block; margin-top: 5px;">
-                        💡 Este título aparecerá en las cards. Si lo dejas vacío, se mostrará el nombre de la playlist de AzuraCast.
+                        💡 Este título aparecerá en las cards. Si lo dejas vacío, se mostrará el nombre de la playlist de Radiobot.
                     </small>
                 </div>
 
@@ -115,7 +115,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                         <?php endforeach; ?>
                     </div>
                     <small style="color: #6b7280;">
-                        Si no seleccionas ningún día, el programa solo aparecerá cuando AzuraCast lo programe
+                        Si no seleccionas ningún día, el programa solo aparecerá cuando Radiobot lo programe
                     </small>
                 </div>
 
@@ -422,7 +422,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
 
         <?php if (empty($programsData['programs'])): ?>
             <div class="alert alert-info">
-                No hay programas detectados. Haz click en "🔄 Sincronizar con AzuraCast" para detectar tus programas.
+                No hay programas detectados. Haz click en "🔄 Sincronizar con Radiobot" para detectar tus programas.
             </div>
         <?php else: ?>
             <div style="display: grid; gap: 15px;">
