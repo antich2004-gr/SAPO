@@ -191,14 +191,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
             $podcastDuracion = $duraciones[$podcast['name']] ?? '';
                                 $feedInfo = getCachedFeedInfo($podcast['url']);
                                 $statusInfo = formatFeedStatus($feedInfo['timestamp']);
-
-                                // Detectar si el podcast tiene playlist vinculada en AzuraCast
-                                $linkedPlaylist = null;
-                                if (!empty($config['azuracast_api_url'])) {
-                                    $podcastPath = $config['base_path'] . '/' . $_SESSION['username'] . '/media/Podcasts/' .
-                                                   $podcast['category'] . '/' . $podcast['name'];
-                                    $linkedPlaylist = findLinkedPlaylist($_SESSION['username'], $podcastPath);
-                                }
                             ?>
                                 <div class="podcast-item podcast-item-<?php echo htmlEsc($statusInfo['class']); ?> <?php echo (isset($podcast['paused']) && $podcast['paused']) ? 'podcast-paused' : ''; ?>" data-category="<?php echo htmlEsc($podcast['category']); ?>">
                                     <div class="podcast-info">
@@ -209,15 +201,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                             <?php endif; ?>
                                         </strong>
                                         <small>Categoría: <?php echo htmlEsc(displayName($podcast['category'])); ?> | Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días</small>
-                                        <?php if (!empty($config['azuracast_api_url'])): ?>
-                                            <small class="playlist-status">
-                                                <?php if ($linkedPlaylist !== null): ?>
-                                                    <span style="color: #48bb78;">✓ Playlist:</span> <?php echo htmlEsc($linkedPlaylist['name']); ?>
-                                                <?php else: ?>
-                                                    <span style="color: #ed8936;">⚠️ Sin playlist vinculada</span>
-                                                <?php endif; ?>
-                                            </small>
-                                        <?php endif; ?>
                                         <small><?php echo htmlEsc($podcast['url']); ?></small>
 
                                         <div class="last-episode <?php echo $statusInfo['class']; ?>">
