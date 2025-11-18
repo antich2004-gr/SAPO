@@ -129,11 +129,6 @@ function mostrarDialogoConfiguracion() {
         preajusteDropdown.selection = 0;
     }
 
-    grupoPDF.add("statictext", undefined, "Maquetacion del visor PDF:");
-    var maquetacionOpciones = ["Pagina simple", "Dos en una portada", "Dos en una sucesivas"];
-    var maquetacionDropdown = grupoPDF.add("dropdownlist", undefined, maquetacionOpciones);
-    maquetacionDropdown.selection = 1;
-
     var cbAjustar = grupoPDF.add("checkbox", undefined, "Ajustar contenido a pagina");
     cbAjustar.value = true;
 
@@ -177,7 +172,6 @@ function mostrarDialogoConfiguracion() {
             nombreLibro: limpiarNombreArchivo(nombreLibroInput.text),
             numeroInicial: numeroInicial,
             preajuste: preajusteDropdown.selection.text,
-            maquetacion: maquetacionDropdown.selection.index,
             ajustarPagina: cbAjustar.value,
             carpeta: new Folder(carpetaInput.text)
         };
@@ -472,18 +466,6 @@ function exportarCapitulos(doc, capitulos, config) {
     var pdfPrefs = app.pdfExportPreferences;
     var magnificationOriginal = pdfPrefs.pdfMagnification;
     var viewOriginal = pdfPrefs.viewPDF;
-    var pageLayoutOriginal = pdfPrefs.pageLayout;
-
-    try {
-        if (config.maquetacion === 0) {
-            pdfPrefs.pageLayout = 1398362975;
-        } else if (config.maquetacion === 1) {
-            pdfPrefs.pageLayout = 1398363251;
-        } else if (config.maquetacion === 2) {
-            pdfPrefs.pageLayout = 1398363235;
-        }
-    } catch (e) {
-    }
 
     if (config.ajustarPagina) {
         pdfPrefs.pdfMagnification = PDFMagnification.FIT_PAGE;
@@ -532,7 +514,6 @@ function exportarCapitulos(doc, capitulos, config) {
 
     pdfPrefs.pdfMagnification = magnificationOriginal;
     pdfPrefs.viewPDF = viewOriginal;
-    pdfPrefs.pageLayout = pageLayoutOriginal;
 
     var resultado = "===================================\n";
     resultado += "  EXPORTACION COMPLETADA\n";
