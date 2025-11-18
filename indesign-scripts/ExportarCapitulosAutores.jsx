@@ -417,8 +417,9 @@ function mostrarPrevisualizacion(capitulos, config) {
 
     dialog.add("statictext", undefined, "Se exportaran " + capitulos.length + " capitulos:");
 
-    var lista = dialog.add("edittext", undefined, "", {multiline: true, readonly: true});
-    lista.minimumSize = [600, 300];
+    var lista = dialog.add("edittext", undefined, "", {multiline: true, readonly: true, scrolling: true});
+    lista.preferredSize = [550, 250];
+    lista.maximumSize = [550, 250];
 
     var texto = "";
     for (var i = 0; i < capitulos.length; i++) {
@@ -432,7 +433,9 @@ function mostrarPrevisualizacion(capitulos, config) {
 
     lista.text = texto;
 
-    dialog.add("statictext", undefined, "Carpeta destino: " + config.carpeta.fsName);
+    var infoCarpeta = dialog.add("statictext", undefined, "Carpeta: " + config.carpeta.fsName, {truncate: "middle"});
+    infoCarpeta.preferredSize = [550, 20];
+
     dialog.add("statictext", undefined, "Preajuste PDF: " + config.preajuste);
 
     var grupoBotones = dialog.add("group");
