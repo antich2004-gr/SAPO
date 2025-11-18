@@ -277,8 +277,7 @@ function getConfig() {
         'base_path' => '',
         'subscriptions_folder' => 'Suscripciones',
         'cache_duration' => 43200,
-        'azuracast_api_url' => 'https://radio.radiobot.org/api',
-        'azuracast_api_key' => ''
+        'azuracast_api_url' => 'https://radio.radiobot.org/api'
     ];
 }
 
