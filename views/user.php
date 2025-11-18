@@ -1,5 +1,6 @@
 <?php
 // views/user.php - Interfaz de usuario regular
+$config = getConfig();
 $userCategories = getUserCategories($_SESSION['username']);
 $podcasts = readServerList($_SESSION['username']);
 $caducidades = readCaducidades($_SESSION['username']);
@@ -194,9 +195,9 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 // Detectar si el podcast tiene playlist vinculada en AzuraCast
                                 $linkedPlaylist = null;
                                 if (!empty($config['azuracast_api_url'])) {
-                                    $podcastPath = $config['base_path'] . '/' . $username . '/media/Podcasts/' .
+                                    $podcastPath = $config['base_path'] . '/' . $_SESSION['username'] . '/media/Podcasts/' .
                                                    $podcast['category'] . '/' . $podcast['name'];
-                                    $linkedPlaylist = findLinkedPlaylist($username, $podcastPath);
+                                    $linkedPlaylist = findLinkedPlaylist($_SESSION['username'], $podcastPath);
                                 }
                             ?>
                                 <div class="podcast-item podcast-item-<?php echo htmlEsc($statusInfo['class']); ?> <?php echo (isset($podcast['paused']) && $podcast['paused']) ? 'podcast-paused' : ''; ?>" data-category="<?php echo htmlEsc($podcast['category']); ?>">
