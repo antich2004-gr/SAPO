@@ -608,19 +608,27 @@ function findLinkedPlaylist($username, $podcastPath) {
     $relativePath = trim($relativePath, '/\\');
 
     error_log("AzuraCast: Buscando playlist para carpeta: $relativePath");
+    error_log("AzuraCast: basePath usado: $basePath");
+    error_log("AzuraCast: podcastPath completo: $podcastPath");
 
     foreach ($result['playlists'] as $playlist) {
+        error_log("AzuraCast: Revisando playlist: " . ($playlist['name'] ?? 'sin nombre'));
+        error_log("AzuraCast: Estructura completa de playlist: " . json_encode($playlist));
+
         // Verificar si la playlist tiene la carpeta asignada
         // Según la API, las playlists pueden tener info sobre carpetas en diferentes campos
 
         // Opción 1: Campo "folder" directo (para folder-based playlists)
         if (isset($playlist['folder']) && !empty($playlist['folder'])) {
             $playlistFolder = trim($playlist['folder'], '/\\');
+            error_log("AzuraCast: Comparando '$playlistFolder' con '$relativePath'");
 
             if ($playlistFolder === $relativePath) {
                 error_log("AzuraCast: Playlist encontrada: " . $playlist['name']);
                 return $playlist;
             }
+        } else {
+            error_log("AzuraCast: Playlist no tiene campo 'folder' definido o está vacío");
         }
     }
 
