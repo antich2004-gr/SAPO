@@ -98,10 +98,42 @@ function mostrarDialogoConfiguracion() {
         grupoPrefijo.enabled = false;
     };
 
-    grupoCajas.add("statictext", undefined, "Nombre del estilo de párrafo que contiene el autor:");
-    var estiloAutorInput = grupoCajas.add("edittext", undefined, "autor");
-    estiloAutorInput.characters = 25;
-    estiloAutorInput.helpTip = "Nombre exacto del estilo de párrafo (sensible a mayúsculas)";
+    grupoCajas.add("statictext", undefined, "Estilo de párrafo que contiene el autor:");
+
+    // Obtener todos los estilos de párrafo del documento
+    var doc = app.activeDocument;
+    var estilosParrafo = [];
+    var paragraphStyles = doc.paragraphStyles;
+
+    for (var i = 0; i < paragraphStyles.length; i++) {
+        var nombreEstilo = paragraphStyles[i].name;
+        // Excluir el estilo [No paragraph style] o [Basic Paragraph]
+        if (nombreEstilo.indexOf("[") !== 0) {
+            estilosParrafo.push(nombreEstilo);
+        }
+    }
+
+    // Si no hay estilos, agregar uno por defecto
+    if (estilosParrafo.length === 0) {
+        estilosParrafo.push("autor");
+    }
+
+    var estiloAutorDropdown = grupoCajas.add("dropdownlist", undefined, estilosParrafo);
+    estiloAutorDropdown.preferredSize = [250, 25];
+
+    // Seleccionar "autor" por defecto si existe
+    var indiceAutor = -1;
+    for (var i = 0; i < estilosParrafo.length; i++) {
+        if (estilosParrafo[i].toLowerCase() === "autor" || estilosParrafo[i].toLowerCase().indexOf("autor") !== -1) {
+            indiceAutor = i;
+            break;
+        }
+    }
+    if (indiceAutor !== -1) {
+        estiloAutorDropdown.selection = indiceAutor;
+    } else {
+        estiloAutorDropdown.selection = 0;
+    }
 
     // Grupo: Nomenclatura de archivos
     var grupoNombre = dialog.add("panel", undefined, "Nomenclatura de archivos PDF");
@@ -195,7 +227,7 @@ function mostrarDialogoConfiguracion() {
         return {
             modoAutomatico: rbAutomatico.value,
             prefijoCaja: prefijoCajaInput.text,
-            estiloAutor: estiloAutorInput.text,
+            estiloAutor: estiloAutorDropdown.selection.text,
             prefijoArchivo: prefijoArchivoInput.text,
             nombreLibro: limpiarNombreArchivo(nombreLibroInput.text),
             numeroInicial: numeroInicial,
