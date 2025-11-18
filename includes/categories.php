@@ -1,6 +1,129 @@
 <?php
 // includes/categories.php - Gestión de categorías de podcasts
 
+/**
+ * Copia recursivamente un directorio y todo su contenido
+ *
+ * @param string $source Directorio origen
+ * @param string $dest Directorio destino
+ * @return bool True si se copió correctamente
+ */
+function recursiveCopyDirectory($source, $dest) {
+    // Crear directorio destino si no existe
+    if (!is_dir($dest)) {
+        if (!@mkdir($dest, 0755, true)) {
+            return false;
+        }
+    }
+
+    // Abrir directorio origen
+    $dir = @opendir($source);
+    if ($dir === false) {
+        return false;
+    }
+
+    // Copiar cada archivo/subdirectorio
+    while (($file = readdir($dir)) !== false) {
+        if ($file === '.' || $file === '..') {
+            continue;
+        }
+
+        $srcPath = $source . DIRECTORY_SEPARATOR . $file;
+        $dstPath = $dest . DIRECTORY_SEPARATOR . $file;
+
+        if (is_dir($srcPath)) {
+            // Recursivo para subdirectorios
+            if (!recursiveCopyDirectory($srcPath, $dstPath)) {
+                closedir($dir);
+                return false;
+            }
+        } else {
+            // Copiar archivo
+            if (!@copy($srcPath, $dstPath)) {
+                closedir($dir);
+                return false;
+            }
+        }
+    }
+
+    closedir($dir);
+    return true;
+}
+
+/**
+ * Elimina recursivamente un directorio y todo su contenido
+ *
+ * @param string $dir Directorio a eliminar
+ * @return bool True si se eliminó correctamente
+ */
+function recursiveDeleteDirectory($dir) {
+    if (!is_dir($dir)) {
+        return false;
+    }
+
+    $items = @scandir($dir);
+    if ($items === false) {
+        return false;
+    }
+
+    foreach ($items as $item) {
+        if ($item === '.' || $item === '..') {
+            continue;
+        }
+
+        $path = $dir . DIRECTORY_SEPARATOR . $item;
+
+        if (is_dir($path)) {
+            // Recursivo para subdirectorios
+            if (!recursiveDeleteDirectory($path)) {
+                return false;
+            }
+        } else {
+            // Eliminar archivo
+            if (!@unlink($path)) {
+                return false;
+            }
+        }
+    }
+
+    // Eliminar el directorio vacío
+    return @rmdir($dir);
+}
+
+/**
+ * Cuenta archivos recursivamente en un directorio
+ *
+ * @param string $dir Directorio a contar
+ * @return int Número de archivos
+ */
+function recursiveCountFiles($dir) {
+    if (!is_dir($dir)) {
+        return 0;
+    }
+
+    $count = 0;
+    $items = @scandir($dir);
+    if ($items === false) {
+        return 0;
+    }
+
+    foreach ($items as $item) {
+        if ($item === '.' || $item === '..') {
+            continue;
+        }
+
+        $path = $dir . DIRECTORY_SEPARATOR . $item;
+
+        if (is_dir($path)) {
+            $count += recursiveCountFiles($path);
+        } else {
+            $count++;
+        }
+    }
+
+    return $count;
+}
+
 function getUserCategories($username) {
     $userData = getUserDB($username);
     return $userData['categories'] ?? [];
@@ -269,26 +392,57 @@ function movePodcastFiles($username, $podcastName, $oldCategory, $newCategory) {
     }
 
     // Contar archivos antes de mover (para estadísticas)
-    $filesBeforeMove = glob($actualPodcastDir . DIRECTORY_SEPARATOR . '*.{mp3,ogg,wav,m4a}', GLOB_BRACE);
-    $fileCount = $filesBeforeMove ? count($filesBeforeMove) : 0;
+    $fileCountBefore = recursiveCountFiles($actualPodcastDir);
 
-    // Intentar mover el directorio completo
+    // ESTRATEGIA: Intentar rename() primero (más eficiente)
+    // Si falla, hacer copy + verificar + delete
     $renamed = @rename($actualPodcastDir, $podcastDirInNewCategory);
 
     if ($renamed) {
+        // rename() exitoso - el directorio original ya no existe
         return [
             'success' => true,
-            'moved' => $fileCount,
-            'message' => "Directorio del podcast movido correctamente con $fileCount archivo(s)"
-        ];
-    } else {
-        $lastError = error_get_last();
-        $errorMsg = $lastError ? $lastError['message'] : 'Error desconocido';
-        return [
-            'success' => false,
-            'error' => 'No se pudo mover el directorio del podcast. Origen: ' . $actualPodcastDir . ' -> Destino: ' . $podcastDirInNewCategory . '. Error: ' . $errorMsg
+            'moved' => $fileCountBefore,
+            'message' => "Directorio del podcast movido correctamente con $fileCountBefore archivo(s)"
         ];
     }
+
+    // rename() falló - intentar copy + delete manual
+    // Esto puede suceder cuando origen y destino están en diferentes filesystems
+    $copySuccess = recursiveCopyDirectory($actualPodcastDir, $podcastDirInNewCategory);
+
+    if (!$copySuccess) {
+        return [
+            'success' => false,
+            'error' => 'No se pudo copiar el directorio del podcast'
+        ];
+    }
+
+    // Verificar que la copia fue exitosa comparando número de archivos
+    $fileCountAfter = recursiveCountFiles($podcastDirInNewCategory);
+
+    if ($fileCountAfter !== $fileCountBefore) {
+        return [
+            'success' => false,
+            'error' => "La copia no está completa. Origen: $fileCountBefore archivos, Destino: $fileCountAfter archivos"
+        ];
+    }
+
+    // La copia fue exitosa - ahora eliminar el original
+    $deleteSuccess = recursiveDeleteDirectory($actualPodcastDir);
+
+    if (!$deleteSuccess) {
+        return [
+            'success' => false,
+            'error' => 'Los archivos se copiaron correctamente pero no se pudo eliminar el directorio original. Elimínalo manualmente: ' . $actualPodcastDir
+        ];
+    }
+
+    return [
+        'success' => true,
+        'moved' => $fileCountBefore,
+        'message' => "Directorio del podcast copiado y original eliminado correctamente con $fileCountBefore archivo(s)"
+    ];
 }
 
 /**
@@ -691,26 +845,57 @@ function renamePodcastDirectory($username, $oldPodcastName, $newPodcastName, $ca
     }
 
     // Contar archivos antes de renombrar (para estadísticas)
-    $filesBeforeRename = glob($actualOldPodcastDir . DIRECTORY_SEPARATOR . '*.{mp3,ogg,wav,m4a}', GLOB_BRACE);
-    $fileCount = $filesBeforeRename ? count($filesBeforeRename) : 0;
+    $fileCountBefore = recursiveCountFiles($actualOldPodcastDir);
 
-    // Intentar renombrar el directorio
+    // ESTRATEGIA: Intentar rename() primero (más eficiente)
+    // Si falla, hacer copy + verificar + delete
     $renamed = @rename($actualOldPodcastDir, $newPodcastDir);
 
     if ($renamed) {
+        // rename() exitoso - el directorio original ya no existe
         return [
             'success' => true,
-            'moved' => $fileCount,
-            'message' => "Directorio del podcast renombrado correctamente con $fileCount archivo(s)"
-        ];
-    } else {
-        $lastError = error_get_last();
-        $errorMsg = $lastError ? $lastError['message'] : 'Error desconocido';
-        return [
-            'success' => false,
-            'error' => 'No se pudo renombrar el directorio del podcast. Origen: ' . $actualOldPodcastDir . ' -> Destino: ' . $newPodcastDir . '. Error: ' . $errorMsg
+            'moved' => $fileCountBefore,
+            'message' => "Directorio del podcast renombrado correctamente con $fileCountBefore archivo(s)"
         ];
     }
+
+    // rename() falló - intentar copy + delete manual
+    // Esto puede suceder cuando origen y destino están en diferentes filesystems
+    $copySuccess = recursiveCopyDirectory($actualOldPodcastDir, $newPodcastDir);
+
+    if (!$copySuccess) {
+        return [
+            'success' => false,
+            'error' => 'No se pudo copiar el directorio del podcast'
+        ];
+    }
+
+    // Verificar que la copia fue exitosa comparando número de archivos
+    $fileCountAfter = recursiveCountFiles($newPodcastDir);
+
+    if ($fileCountAfter !== $fileCountBefore) {
+        return [
+            'success' => false,
+            'error' => "La copia no está completa. Origen: $fileCountBefore archivos, Destino: $fileCountAfter archivos"
+        ];
+    }
+
+    // La copia fue exitosa - ahora eliminar el original
+    $deleteSuccess = recursiveDeleteDirectory($actualOldPodcastDir);
+
+    if (!$deleteSuccess) {
+        return [
+            'success' => false,
+            'error' => 'Los archivos se copiaron correctamente pero no se pudo eliminar el directorio original. Elimínalo manualmente: ' . $actualOldPodcastDir
+        ];
+    }
+
+    return [
+        'success' => true,
+        'moved' => $fileCountBefore,
+        'message' => "Directorio del podcast copiado y original eliminado correctamente con $fileCountBefore archivo(s)"
+    ];
 }
 
 ?>
