@@ -607,10 +607,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } else {
             $result = editPodcast($_SESSION['username'], $index, $url, $finalCategory, $name, $caducidad, $duracion);
             if ($result['success']) {
+                // Detectar si hubo cambios en archivos
+                $filesChanged = false;
+
                 // Si se cambió la categoría, mostrar recordatorio de Radiobot
                 if (!empty($result['category_changed'])) {
                     $_SESSION['show_radiobot_reminder'] = true;
                     $_SESSION['radiobot_action'] = 'move_podcast';
+                    $filesChanged = true;
                 }
                 // Si se renombró el podcast, también mostrar recordatorio
                 if (!empty($result['podcast_renamed'])) {
@@ -618,7 +622,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $_SESSION['radiobot_action'] = 'rename_podcast';
                     $_SESSION['radiobot_old_name'] = $result['old_name'];
                     $_SESSION['radiobot_new_name'] = $result['new_name'];
+                    $filesChanged = true;
                 }
+
+                // Sincronizar automáticamente con AzuraCast si hubo cambios en archivos
+                if ($filesChanged) {
+                    $syncResult = syncAzuracastMedia($_SESSION['username']);
+                    if ($syncResult['success']) {
+                        error_log("Auto-sync: Sincronización automática ejecutada tras cambios en podcast");
+                    }
+                }
+
                 header('Location: ' . basename($_SERVER['PHP_SELF']));
                 exit;
             } else {
@@ -770,6 +784,12 @@ if ($action == 'rename_category' && isLoggedIn() && !isAdmin()) {
             $_SESSION['radiobot_action'] = 'rename';
             $_SESSION['radiobot_old_name'] = $oldName;
             $_SESSION['radiobot_new_name'] = $result['new_name'];
+
+            // Sincronizar automáticamente con AzuraCast tras renombrar categoría
+            $syncResult = syncAzuracastMedia($_SESSION['username']);
+            if ($syncResult['success']) {
+                error_log("Auto-sync: Sincronización automática ejecutada tras renombrar categoría");
+            }
         } else {
             $_SESSION['error'] = $result['error'];
         }
