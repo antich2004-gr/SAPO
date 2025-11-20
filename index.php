@@ -349,13 +349,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (empty($programName)) {
             $error = 'Nombre de programa no especificado';
         } else {
-            // Verificar que el programa existe y es de tipo 'live'
+            // Verificar que el programa existe y es eliminable
             $programInfo = getProgramInfo($username, $programName);
             if ($programInfo === null) {
                 $error = 'El programa no existe';
-            } elseif (($programInfo['playlist_type'] ?? '') !== 'live') {
-                $error = 'Solo se pueden eliminar programas en directo creados manualmente';
             } else {
+                // Permitir eliminar si:
+                // 1. Es un programa en directo creado manualmente (tipo 'live')
+                // 2. Es un programa que ya no existe en AzuraCast (orphan_reason = 'no_en_azuracast')
+                $isManualProgram = ($programInfo['playlist_type'] ?? '') === 'live';
+                $isNotInAzuracast = !empty($programInfo['orphaned']) && ($programInfo['orphan_reason'] ?? '') === 'no_en_azuracast';
+
+                if (!$isManualProgram && !$isNotInAzuracast) {
+                    $error = 'Solo se pueden eliminar programas en directo o programas que ya no existen en AzuraCast';
+                } else
                 if (deleteProgram($username, $programName)) {
                     $message = "Programa \"$programName\" eliminado correctamente";
                     // Redirigir para limpiar la vista
