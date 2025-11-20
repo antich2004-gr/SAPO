@@ -223,16 +223,20 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
 
                     <div class="form-group">
                         <label>Tipo de lista de reproducción: <small>(importante para la parrilla)</small></label>
-                        <select name="playlist_type" required>
-                            <?php
+                        <?php
+                        $isImportedProgram = !isset($programInfo['created_at']);
+                        $currentType = $programInfo['playlist_type'] ?? 'program';
+
+                        // Programas importados no pueden cambiar a "live"
+                        if ($isImportedProgram):
                             $playlistTypes = [
                                 'program' => '📻 Programa (se muestra en la parrilla)',
-                                'live' => '🔴 Emisión en Directo (destacado especial)',
                                 'music_block' => '🎵 Bloque Musical (oculto)',
                                 'jingles' => '🔊 Jingles/Cortinillas (oculto)'
                             ];
-                            $currentType = $programInfo['playlist_type'] ?? 'program';
-                            foreach ($playlistTypes as $value => $label):
+                        ?>
+                        <select name="playlist_type" required>
+                            <?php foreach ($playlistTypes as $value => $label):
                                 $selected = $currentType === $value ? 'selected' : '';
                             ?>
                                 <option value="<?php echo htmlEsc($value); ?>" <?php echo $selected; ?>>
@@ -242,10 +246,21 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                         </select>
                         <small style="color: #6b7280;">
                             • <strong>Programa</strong>: Contenido producido (repeticiones, podcast)<br>
-                            • <strong>Emisión en Directo</strong>: Programas en vivo, destacados con estilo especial<br>
                             • <strong>Bloque Musical</strong>: Música automatizada (se oculta de la parrilla)<br>
-                            • <strong>Jingles/Cortinillas</strong>: Efectos de audio (se ocultan de la parrilla)
+                            • <strong>Jingles/Cortinillas</strong>: Efectos de audio (se ocultan de la parrilla)<br>
+                            <em>💡 Los programas importados no pueden cambiarse a "En Directo". Para añadir programas en directo, usa el formulario de la izquierda.</em>
                         </small>
+                        <?php else:
+                            // Programas manuales (en directo) mantienen su tipo
+                        ?>
+                        <select name="playlist_type" required disabled>
+                            <option value="live" selected>🟢 Emisión en Directo (programa manual)</option>
+                        </select>
+                        <input type="hidden" name="playlist_type" value="live">
+                        <small style="color: #6b7280;">
+                            <em>💡 Los programas en directo añadidos manualmente no pueden cambiar de tipo.</em>
+                        </small>
+                        <?php endif; ?>
                     </div>
 
                     <div class="form-group">
@@ -421,10 +436,17 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                                 <strong style="font-size: 16px;"><?php echo htmlEsc($program['name']); ?></strong>
                                 <?php
                                 $isManualLive = isset($program['info']['created_at']) && ($program['info']['playlist_type'] ?? '') === 'live';
+                                $playlistType = $program['info']['playlist_type'] ?? 'program';
+                                $isImported = !isset($program['info']['created_at']);
+
                                 if ($isManualLive):
                                 ?>
+                                    <span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
+                                        🟢 EN DIRECTO
+                                    </span>
+                                <?php elseif ($isImported && $playlistType === 'program'): ?>
                                     <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
-                                        🔴 EN DIRECTO
+                                        📻 PROGRAMA
                                     </span>
                                 <?php endif; ?>
                                 <?php
