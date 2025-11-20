@@ -1056,9 +1056,7 @@ if ($hasStationId) {
                         <div>
                             <label>Guardar en sección</label>
                             <select id="config-section">
-                                <option value="custom_config">Top of File (definiciones)</option>
-                                <option value="custom_config_pre_playlists">Before Playlists</option>
-                                <option value="custom_config_post_playlists">After Playlists</option>
+                                <option value="custom_config">Custom Configuration</option>
                             </select>
                         </div>
                     </div>

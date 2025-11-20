@@ -43,7 +43,7 @@ initSession();
         }
 
         // Validar sección permitida
-        $allowedSections = ['custom_config', 'custom_config_pre_playlists', 'custom_config_post_playlists'];
+        $allowedSections = ['custom_config', 'dj_on_air_hook', 'dj_off_air_hook'];
         if (!in_array($section, $allowedSections)) {
             echo json_encode(['success' => false, 'message' => 'Sección no válida']);
             exit;
