@@ -80,6 +80,61 @@ function getAzuracastSchedule($username, $cacheTTL = 600) {
 }
 
 /**
+ * Obtener todas las playlists de AzuraCast (incluyendo desactivadas)
+ *
+ * @param string $username Nombre de usuario
+ * @return array|false Array de playlists o false si hay error
+ */
+function getAzuracastPlaylists($username) {
+    // Obtener configuración global
+    $config = getConfig();
+    $apiUrl = $config['azuracast_api_url'] ?? '';
+
+    if (empty($apiUrl)) {
+        return false;
+    }
+
+    // Obtener station_id del usuario
+    $userData = getUserDB($username);
+    $stationId = $userData['azuracast']['station_id'] ?? null;
+
+    if (empty($stationId)) {
+        return false;
+    }
+
+    // Construir URL de la API de playlists
+    $playlistsUrl = rtrim($apiUrl, '/') . '/station/' . $stationId . '/playlists';
+
+    try {
+        $context = stream_context_create([
+            'http' => [
+                'timeout' => 10,
+                'user_agent' => 'SAPO/1.0'
+            ]
+        ]);
+
+        $response = @file_get_contents($playlistsUrl, false, $context);
+
+        if ($response === false) {
+            error_log("AzuraCast: Error al obtener playlists desde $playlistsUrl");
+            return false;
+        }
+
+        $data = json_decode($response, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return false;
+        }
+
+        return $data;
+
+    } catch (Exception $e) {
+        error_log("AzuraCast: Excepción al obtener playlists: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
  * Obtener schedule desde caché si existe y es válida
  *
  * @param string $username Nombre de usuario

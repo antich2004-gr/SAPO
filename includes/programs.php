@@ -103,10 +103,29 @@ function syncProgramsFromAzuracast($username) {
         }
     }
 
+    // Obtener todas las playlists para detectar desactivadas
+    $allPlaylists = getAzuracastPlaylists($username);
+    $disabledPlaylists = [];
+    $allPlaylistNames = [];
+
+    if ($allPlaylists !== false) {
+        foreach ($allPlaylists as $playlist) {
+            $playlistName = $playlist['name'] ?? '';
+            if (!empty($playlistName)) {
+                $allPlaylistNames[] = $playlistName;
+                // is_enabled es el campo que indica si está activa
+                if (isset($playlist['is_enabled']) && !$playlist['is_enabled']) {
+                    $disabledPlaylists[] = $playlistName;
+                }
+            }
+        }
+    }
+
     // Log para debug
     error_log("syncProgramsFromAzuracast: Total eventos recibidos: " . count($schedule));
     error_log("syncProgramsFromAzuracast: Programas únicos detectados: " . count($detectedPrograms));
     error_log("syncProgramsFromAzuracast: Nombres detectados: " . implode(', ', $detectedPrograms));
+    error_log("syncProgramsFromAzuracast: Playlists desactivadas: " . implode(', ', $disabledPlaylists));
 
     // Cargar programas existentes
     $data = loadProgramsDB($username);
@@ -137,13 +156,30 @@ function syncProgramsFromAzuracast($username) {
         }
     }
 
-    // Marcar programas huérfanos (no existen en Radiobot pero sí en SAPO)
+    // Marcar programas huérfanos y desactivados
+    $disabledCount = 0;
     foreach ($data['programs'] as $programName => $programInfo) {
-        // Solo marcar como huérfano si NO es un programa en directo manual (tipo 'live')
+        // Solo procesar si NO es un programa en directo manual (tipo 'live')
         $isLive = ($programInfo['playlist_type'] ?? 'program') === 'live';
-        if (!$isLive && !in_array($programName, $detectedPrograms)) {
-            $data['programs'][$programName]['orphaned'] = true;
-            $orphanedCount++;
+
+        if (!$isLive) {
+            // Marcar como huérfano si no existe en Radiobot
+            if (!in_array($programName, $detectedPrograms) && !in_array($programName, $allPlaylistNames)) {
+                $data['programs'][$programName]['orphaned'] = true;
+                $data['programs'][$programName]['disabled_in_radiobot'] = false;
+                $orphanedCount++;
+            }
+            // Marcar como desactivado si la playlist está deshabilitada
+            elseif (in_array($programName, $disabledPlaylists)) {
+                $data['programs'][$programName]['orphaned'] = false;
+                $data['programs'][$programName]['disabled_in_radiobot'] = true;
+                $disabledCount++;
+            }
+            // Marcar como activo si existe y está habilitado
+            else {
+                $data['programs'][$programName]['orphaned'] = false;
+                $data['programs'][$programName]['disabled_in_radiobot'] = false;
+            }
         }
     }
 
@@ -167,6 +203,9 @@ function syncProgramsFromAzuracast($username) {
     }
     if ($orphanedCount > 0) {
         $messageParts[] = "$orphanedCount huérfanos";
+    }
+    if ($disabledCount > 0) {
+        $messageParts[] = "$disabledCount desactivados";
     }
     $message = empty($messageParts)
         ? "Sincronización completada"

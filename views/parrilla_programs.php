@@ -435,6 +435,14 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                                         ⚠️ NO EN RADIOBOT
                                     </span>
                                 <?php endif; ?>
+                                <?php
+                                $isDisabled = !empty($program['info']['disabled_in_radiobot']);
+                                if ($isDisabled):
+                                ?>
+                                    <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;" title="Esta playlist está desactivada en Radiobot">
+                                        ⏸️ DESACTIVADO
+                                    </span>
+                                <?php endif; ?>
                             </div>
 
                             <div style="font-size: 13px; color: #4a5568; margin-top: 5px;">
