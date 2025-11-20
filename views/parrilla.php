@@ -565,28 +565,53 @@ if ($hasStationId) {
                 foreach ([1, 2, 3, 4, 5, 6, 0] as $day):
                     $dayContent = $contentByDay[$day];
 
-                    // Calcular minutos por tipo
-                    $minutesByType = ['music_block' => 0, 'program' => 0, 'live' => 0];
+                    // Calcular minutos reales por tipo
+                    $realMinutes = ['music_block' => 0, 'program' => 0, 'live' => 0];
                     $countsByType = ['music_block' => 0, 'program' => 0, 'live' => 0];
 
                     foreach (['music_block', 'program', 'live'] as $type) {
                         foreach ($dayContent[$type] as $item) {
                             $duration = $item['end_minutes'] - $item['start_minutes'];
                             if ($duration < 0) $duration += 24 * 60;
-                            $minutesByType[$type] += $duration;
+                            $realMinutes[$type] += $duration;
                             $countsByType[$type]++;
                         }
-                        $weekTotals[$type] += $minutesByType[$type];
                         $weekCounts[$type] += $countsByType[$type];
                     }
 
-                    $totalMinutes = array_sum($minutesByType);
-                    $totalPercentage = round(($totalMinutes / (24 * 60)) * 100, 1);
+                    // Calcular cobertura efectiva:
+                    // - Programas y directo tienen su tiempo real
+                    // - Bloques musicales = tiempo restante (llenan los huecos)
+                    $programLiveMinutes = $realMinutes['program'] + $realMinutes['live'];
+                    $dayTotalMinutes = 24 * 60;
 
-                    // Porcentajes por tipo para la barra
-                    $musicPct = round(($minutesByType['music_block'] / (24 * 60)) * 100, 1);
-                    $programPct = round(($minutesByType['program'] / (24 * 60)) * 100, 1);
-                    $livePct = round(($minutesByType['live'] / (24 * 60)) * 100, 1);
+                    // Los bloques musicales efectivos son el tiempo restante del día
+                    $effectiveMusicMinutes = max(0, $dayTotalMinutes - $programLiveMinutes);
+
+                    // Si no hay bloques musicales programados, el tiempo restante queda vacío
+                    if ($realMinutes['music_block'] == 0) {
+                        $effectiveMusicMinutes = 0;
+                    }
+
+                    // Para mostrar en stats usamos los valores efectivos
+                    $minutesByType = [
+                        'music_block' => $effectiveMusicMinutes,
+                        'program' => $realMinutes['program'],
+                        'live' => $realMinutes['live']
+                    ];
+
+                    // Acumular totales semanales
+                    $weekTotals['music_block'] += $effectiveMusicMinutes;
+                    $weekTotals['program'] += $realMinutes['program'];
+                    $weekTotals['live'] += $realMinutes['live'];
+
+                    $totalMinutes = array_sum($minutesByType);
+                    $totalPercentage = round(($totalMinutes / $dayTotalMinutes) * 100, 1);
+
+                    // Porcentajes por tipo para la barra (siempre suman 100% cuando hay contenido)
+                    $musicPct = round(($minutesByType['music_block'] / $dayTotalMinutes) * 100, 1);
+                    $programPct = round(($minutesByType['program'] / $dayTotalMinutes) * 100, 1);
+                    $livePct = round(($minutesByType['live'] / $dayTotalMinutes) * 100, 1);
 
                     // Formatear horas
                     $formatTime = function($minutes) {
