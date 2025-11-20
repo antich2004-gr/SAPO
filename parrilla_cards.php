@@ -438,6 +438,15 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
             flex: 1;
         }
 
+        /* Añadir margen cuando no hay imagen para alinear con las cards que sí tienen */
+        .program-card.no-image .program-info {
+            <?php if ($widgetStyle === 'compact'): ?>
+                margin-left: 100px; /* 80px imagen + 20px gap */
+            <?php else: ?>
+                margin-left: 140px; /* 120px imagen + 20px gap */
+            <?php endif; ?>
+        }
+
         .program-category {
             font-size: 0.7em;
             font-weight: 700;
@@ -696,7 +705,7 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                         $isLive = ($index === $liveEventIndex);
                         $isLiveProgram = ($event['playlist_type'] === 'live');
                     ?>
-                        <div class="program-card<?php echo $isLive ? ' live' : ''; ?><?php echo $isLiveProgram ? ' live-program' : ''; ?>"
+                        <div class="program-card<?php echo $isLive ? ' live' : ''; ?><?php echo $isLiveProgram ? ' live-program' : ''; ?><?php echo empty($event['image']) ? ' no-image' : ''; ?>"
                              id="program-<?php echo $day; ?>-<?php echo str_replace(':', '', $event['start_time']); ?>">
                             <div class="program-time">
                                 <?php echo htmlspecialchars(substr($event['start_time'], 0, 5)); ?>
