@@ -224,11 +224,21 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                     <div class="form-group">
                         <label>Tipo de lista de reproducción: <small>(importante para la parrilla)</small></label>
                         <?php
-                        $isImportedProgram = !isset($programInfo['created_at']);
                         $currentType = $programInfo['playlist_type'] ?? 'program';
+                        $isLiveProgram = ($currentType === 'live');
 
-                        // Programas importados no pueden cambiar a "live"
-                        if ($isImportedProgram):
+                        // Si es tipo 'live' es un programa manual y no se puede cambiar
+                        if ($isLiveProgram):
+                        ?>
+                        <select name="playlist_type" required disabled>
+                            <option value="live" selected>🟢 Emisión en Directo (programa manual)</option>
+                        </select>
+                        <input type="hidden" name="playlist_type" value="live">
+                        <small style="color: #6b7280;">
+                            <em>💡 Los programas en directo añadidos manualmente no pueden cambiar de tipo.</em>
+                        </small>
+                        <?php else:
+                            // Programas importados pueden cambiar entre program, music_block, jingles
                             $playlistTypes = [
                                 'program' => '📻 Programa (se muestra en la parrilla)',
                                 'music_block' => '🎵 Bloque Musical (oculto)',
@@ -249,16 +259,6 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                             • <strong>Bloque Musical</strong>: Música automatizada (se oculta de la parrilla)<br>
                             • <strong>Jingles/Cortinillas</strong>: Efectos de audio (se ocultan de la parrilla)<br>
                             <em>💡 Los programas importados no pueden cambiarse a "En Directo". Para añadir programas en directo, usa el formulario de la izquierda.</em>
-                        </small>
-                        <?php else:
-                            // Programas manuales (en directo) mantienen su tipo
-                        ?>
-                        <select name="playlist_type" required disabled>
-                            <option value="live" selected>🟢 Emisión en Directo (programa manual)</option>
-                        </select>
-                        <input type="hidden" name="playlist_type" value="live">
-                        <small style="color: #6b7280;">
-                            <em>💡 Los programas en directo añadidos manualmente no pueden cambiar de tipo.</em>
                         </small>
                         <?php endif; ?>
                     </div>
