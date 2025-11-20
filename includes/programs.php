@@ -73,8 +73,8 @@ function saveProgramsDB($username, $data) {
  * @return array Resultado con 'success', 'new_count', 'total_count', 'message'
  */
 function syncProgramsFromAzuracast($username) {
-    // Obtener schedule de AzuraCast
-    $schedule = getAzuracastSchedule($username);
+    // Obtener schedule de AzuraCast (sin caché para datos frescos)
+    $schedule = getAzuracastSchedule($username, 0);
 
     if ($schedule === false) {
         return [
@@ -111,13 +111,15 @@ function syncProgramsFromAzuracast($username) {
     // Cargar programas existentes
     $data = loadProgramsDB($username);
     $newCount = 0;
+    $orphanedCount = 0;
+    $reactivatedCount = 0;
 
     // Añadir nuevos programas (sin sobrescribir existentes)
     foreach ($detectedPrograms as $programName) {
         if (!isset($data['programs'][$programName])) {
             $data['programs'][$programName] = [
-                'display_title' => '', // Título personalizado (si está vacío, usa el nombre de la playlist)
-                'playlist_type' => 'program', // program, music_block, jingles
+                'display_title' => '',
+                'playlist_type' => 'program',
                 'short_description' => '',
                 'long_description' => '',
                 'type' => '',
@@ -126,9 +128,30 @@ function syncProgramsFromAzuracast($username) {
                 'presenters' => '',
                 'social_twitter' => '',
                 'social_instagram' => '',
-                'created_at' => date('Y-m-d H:i:s')
+                'orphaned' => false
+                // NO incluir created_at - solo programas manuales lo tienen
             ];
             $newCount++;
+        } else {
+            // Si el programa existía y estaba huérfano, reactivarlo
+            if (!empty($data['programs'][$programName]['orphaned'])) {
+                $data['programs'][$programName]['orphaned'] = false;
+                $reactivatedCount++;
+            }
+        }
+    }
+
+    // Detectar programas huérfanos (están en SAPO pero no en AzuraCast)
+    foreach ($data['programs'] as $programName => $programInfo) {
+        // Solo marcar como huérfano si NO es un programa manual (live)
+        $isManual = ($programInfo['playlist_type'] ?? 'program') === 'live';
+
+        if (!$isManual && !in_array($programName, $detectedPrograms)) {
+            // No está en AzuraCast, marcar como huérfano
+            if (empty($programInfo['orphaned'])) {
+                $data['programs'][$programName]['orphaned'] = true;
+                $orphanedCount++;
+            }
         }
     }
 
@@ -145,12 +168,28 @@ function syncProgramsFromAzuracast($username) {
         ];
     }
 
+    // Construir mensaje informativo
+    $messages = [];
+    if ($newCount > 0) {
+        $messages[] = "$newCount nuevos";
+    }
+    if ($orphanedCount > 0) {
+        $messages[] = "$orphanedCount marcados como no encontrados";
+    }
+    if ($reactivatedCount > 0) {
+        $messages[] = "$reactivatedCount reactivados";
+    }
+
+    $message = empty($messages)
+        ? "Sincronización completada. No hay cambios."
+        : "Sincronización completada: " . implode(', ', $messages);
+
     return [
         'success' => true,
-        'message' => $newCount > 0
-            ? "Se detectaron $newCount programas nuevos"
-            : "No hay programas nuevos",
+        'message' => $message,
         'new_count' => $newCount,
+        'orphaned_count' => $orphanedCount,
+        'reactivated_count' => $reactivatedCount,
         'total_count' => count($data['programs'])
     ];
 }
