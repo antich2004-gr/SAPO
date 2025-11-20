@@ -123,7 +123,17 @@ function getAzuracastPlaylists($username) {
         $data = json_decode($response, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log("AzuraCast Playlists: Error JSON: " . json_last_error_msg());
             return false;
+        }
+
+        // Debug: mostrar estructura de la primera playlist
+        if (!empty($data) && isset($data[0])) {
+            error_log("AzuraCast Playlists: Total playlists: " . count($data));
+            error_log("AzuraCast Playlists: Campos disponibles: " . implode(', ', array_keys($data[0])));
+            error_log("AzuraCast Playlists: Primera playlist: " . json_encode($data[0]));
+        } else {
+            error_log("AzuraCast Playlists: Respuesta vacía o no es array");
         }
 
         return $data;
