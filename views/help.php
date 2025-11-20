@@ -26,7 +26,7 @@
             <li><a href="#buscar-podcasts">Buscar podcasts</a></li>
             <li><a href="#categorias">Organizar categorías</a></li>
             <li><a href="#descargas">Ejecutar descargas</a></li>
-            <li><a href="<?php echo basename($_SERVER['PHP_SELF']); ?>?action=help_parrilla">📅 Parrilla de programación</a> <span style="color: #667eea; font-size: 12px;">(página dedicada)</span></li>
+            <li><a href="<?php echo basename($_SERVER['PHP_SELF']); ?>?page=help_parrilla">📅 Parrilla de programación</a> <span style="color: #667eea; font-size: 12px;">(página dedicada)</span></li>
             <li><a href="#estado-feeds">Entender el estado de los feeds</a></li>
             <li><a href="#importar-exportar">Importar y exportar</a></li>
             <li><a href="#ultimas-descargas">Ver últimas descargas</a></li>
@@ -328,7 +328,7 @@
                 <li>URLs para embeber la parrilla</li>
                 <li>Personalización de programas</li>
             </ul>
-            <a href="<?php echo basename($_SERVER['PHP_SELF']); ?>?action=help_parrilla" class="btn btn-primary" style="display: inline-block;">
+            <a href="<?php echo basename($_SERVER['PHP_SELF']); ?>?page=help_parrilla" class="btn btn-primary" style="display: inline-block;">
                 <span class="btn-icon">📅</span> Ver ayuda de Parrilla
             </a>
         </div>
