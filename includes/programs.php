@@ -111,6 +111,7 @@ function syncProgramsFromAzuracast($username) {
     // Cargar programas existentes
     $data = loadProgramsDB($username);
     $newCount = 0;
+    $orphanedCount = 0;
 
     // Añadir nuevos programas (sin sobrescribir existentes)
     foreach ($detectedPrograms as $programName) {
@@ -126,9 +127,23 @@ function syncProgramsFromAzuracast($username) {
                 'presenters' => '',
                 'social_twitter' => '',
                 'social_instagram' => '',
-                'created_at' => date('Y-m-d H:i:s')
+                'created_at' => date('Y-m-d H:i:s'),
+                'orphaned' => false
             ];
             $newCount++;
+        } else {
+            // Marcar como no huérfano (existe en Radiobot)
+            $data['programs'][$programName]['orphaned'] = false;
+        }
+    }
+
+    // Marcar programas huérfanos (no existen en Radiobot pero sí en SAPO)
+    foreach ($data['programs'] as $programName => $programInfo) {
+        // Solo marcar como huérfano si NO es un programa en directo manual (tipo 'live')
+        $isLive = ($programInfo['playlist_type'] ?? 'program') === 'live';
+        if (!$isLive && !in_array($programName, $detectedPrograms)) {
+            $data['programs'][$programName]['orphaned'] = true;
+            $orphanedCount++;
         }
     }
 
@@ -145,12 +160,23 @@ function syncProgramsFromAzuracast($username) {
         ];
     }
 
+    // Construir mensaje
+    $messageParts = [];
+    if ($newCount > 0) {
+        $messageParts[] = "$newCount nuevos";
+    }
+    if ($orphanedCount > 0) {
+        $messageParts[] = "$orphanedCount huérfanos";
+    }
+    $message = empty($messageParts)
+        ? "Sincronización completada"
+        : "Detectados: " . implode(', ', $messageParts);
+
     return [
         'success' => true,
-        'message' => $newCount > 0
-            ? "Se detectaron $newCount programas nuevos"
-            : "No hay programas nuevos",
+        'message' => $message,
         'new_count' => $newCount,
+        'orphaned_count' => $orphanedCount,
         'total_count' => count($data['programs'])
     ];
 }

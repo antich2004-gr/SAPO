@@ -427,6 +427,14 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                                         🔴 EN DIRECTO
                                     </span>
                                 <?php endif; ?>
+                                <?php
+                                $isOrphaned = !empty($program['info']['orphaned']);
+                                if ($isOrphaned):
+                                ?>
+                                    <span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;" title="Este programa ya no existe en Radiobot">
+                                        ⚠️ NO EN RADIOBOT
+                                    </span>
+                                <?php endif; ?>
                             </div>
 
                             <div style="font-size: 13px; color: #4a5568; margin-top: 5px;">
