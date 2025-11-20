@@ -656,7 +656,7 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
             .program-title { font-size: 1.1em; }
         }
 
-        /* Timeline de bloques musicales */
+        /* Cards compactas de bloques musicales */
         .blocks-container {
             margin-top: 20px;
             padding-top: 15px;
@@ -670,83 +670,62 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
             margin-bottom: 6px;
         }
 
-        .blocks-timeline {
-            height: 28px;
-            background: #f3f4f6;
-            border-radius: 4px;
-            position: relative;
-            overflow: hidden;
+        .blocks-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
 
-        .block-segment {
-            position: absolute;
-            top: 0;
-            height: 100%;
-            background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+        .block-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            padding: 6px 12px;
+            border-left: 3px solid #8b5cf6;
+            font-size: 11px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 9px;
-            font-weight: 600;
-            color: white;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            padding: 0 4px;
-            cursor: pointer;
-            transition: filter 0.2s;
-        }
-
-        .block-segment:hover {
-            filter: brightness(1.15);
-        }
-
-        .block-segment .block-tooltip {
-            display: none;
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1f2937;
-            color: white;
-            padding: 6px 10px;
-            border-radius: 4px;
-            font-size: 11px;
-            white-space: nowrap;
-            z-index: 100;
-            margin-bottom: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-
-        .block-segment .block-tooltip::after {
-            content: '';
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            border: 4px solid transparent;
-            border-top-color: #1f2937;
-        }
-
-        .block-segment:hover .block-tooltip {
-            display: block;
-        }
-
-        .blocks-hours {
-            display: flex;
             justify-content: space-between;
-            font-size: 8px;
+            gap: 12px;
+        }
+
+        .block-card:hover {
+            background: #f3f4f6;
+        }
+
+        .block-card-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .block-card-time {
+            font-weight: 600;
+            color: #6b7280;
+            white-space: nowrap;
+            min-width: 90px;
+        }
+
+        .block-card-name {
+            font-weight: 500;
+            color: #374151;
+            flex: 1;
+        }
+
+        .block-card-duration {
             color: #9ca3af;
-            margin-top: 3px;
-            padding: 0 2px;
+            white-space: nowrap;
+            text-align: right;
         }
 
         @media (max-width: 768px) {
-            .blocks-timeline {
-                height: 24px;
+            .block-card {
+                padding: 5px 10px;
+                font-size: 10px;
             }
-            .block-segment {
-                font-size: 8px;
+            .block-card-time {
+                min-width: 70px;
             }
         }
     </style>
@@ -937,7 +916,7 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                 <?php endif; ?>
 
                 <?php
-                // Timeline de bloques musicales para este día
+                // Cards compactas de bloques musicales para este día
                 $dayBlocks = $musicBlocksByDay[$day] ?? [];
 
                 if (!empty($dayBlocks)):
@@ -948,45 +927,32 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                 ?>
                 <div class="blocks-container">
                     <div class="blocks-title">🎵 Bloques Musicales</div>
-                    <div class="blocks-timeline">
-                        <?php
-                        $totalMinutes = 24 * 60;
-                        foreach ($dayBlocks as $block):
-                            // Calcular posición y ancho
+                    <div class="blocks-grid">
+                        <?php foreach ($dayBlocks as $block):
+                            // Calcular duración
                             $startParts = explode(':', $block['start_time']);
                             $endParts = explode(':', $block['end_time']);
                             $startMinutes = (int)$startParts[0] * 60 + (int)$startParts[1];
                             $endMinutes = (int)$endParts[0] * 60 + (int)$endParts[1];
 
                             if ($endMinutes <= $startMinutes) {
-                                $endMinutes = 24 * 60;
+                                $endMinutes += 24 * 60;
                             }
 
-                            $left = ($startMinutes / $totalMinutes) * 100;
-                            $width = (($endMinutes - $startMinutes) / $totalMinutes) * 100;
-
-                            // Calcular duración legible
                             $durationMinutes = $endMinutes - $startMinutes;
                             $hours = floor($durationMinutes / 60);
                             $mins = $durationMinutes % 60;
                             $durationText = $hours > 0 ? $hours . 'h' : '';
-                            if ($mins > 0) $durationText .= $mins . 'm';
+                            if ($mins > 0) $durationText .= ' ' . $mins . 'm';
                         ?>
-                            <div class="block-segment" style="left: <?php echo $left; ?>%; width: <?php echo $width; ?>%;">
-                                <span class="block-tooltip">
-                                    <strong><?php echo htmlspecialchars($block['title']); ?></strong><br>
-                                    <?php echo substr($block['start_time'], 0, 5); ?> - <?php echo substr($block['end_time'], 0, 5); ?> (<?php echo trim($durationText); ?>)
-                                </span>
-                                <?php echo $width > 6 ? htmlspecialchars(mb_substr($block['title'], 0, 12)) : ''; ?>
+                            <div class="block-card">
+                                <div class="block-card-info">
+                                    <span class="block-card-time"><?php echo substr($block['start_time'], 0, 5); ?> - <?php echo substr($block['end_time'], 0, 5); ?></span>
+                                    <span class="block-card-name"><?php echo htmlspecialchars($block['title']); ?></span>
+                                </div>
+                                <span class="block-card-duration"><?php echo trim($durationText); ?></span>
                             </div>
                         <?php endforeach; ?>
-                    </div>
-                    <div class="blocks-hours">
-                        <span>00</span>
-                        <span>06</span>
-                        <span>12</span>
-                        <span>18</span>
-                        <span>24</span>
                     </div>
                 </div>
                 <?php endif; ?>
