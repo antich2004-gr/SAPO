@@ -67,7 +67,7 @@ if ($hasStationId) {
 
             <?php if (!$hasStationId): ?>
                 <div class="alert alert-warning">
-                    ⚠️ Primero debes configurar el <strong>Station ID de Radiobot</strong> en la pestaña
+                    ⚠️ Primero debes configurar el <strong>Station ID de AzuraCast</strong> en la pestaña
                     <a href="?page=parrilla&section=config" style="color: #10b981; text-decoration: underline;">Configuración</a>
                 </div>
             <?php else: ?>
@@ -101,7 +101,7 @@ if ($hasStationId) {
     <?php elseif ($section === 'config'): ?>
         <!-- CONFIGURACIÓN -->
         <div class="section">
-            <h3>Configuración de Radiobot</h3>
+            <h3>Configuración de AzuraCast</h3>
 
             <form method="POST">
                 <input type="hidden" name="action" value="update_azuracast_config_user">
@@ -112,10 +112,10 @@ if ($hasStationId) {
                     <input type="url"
                            name="stream_url"
                            value="<?php echo htmlEsc($azConfig['stream_url'] ?? ''); ?>"
-                           placeholder="https://radio.radiobot.org/public/galapagar">
+                           placeholder="https://tu-servidor.com/public/tu_emisora">
                     <small style="color: #6b7280;">
-                        URL de la página pública de tu emisora en Radiobot. El badge "🔴 AHORA EN DIRECTO" enlazará a esta página.<br>
-                        Ejemplo: <code>https://radio.radiobot.org/public/tu_emisora</code>
+                        URL de la página pública de tu emisora en AzuraCast. El badge "🔴 AHORA EN DIRECTO" enlazará a esta página.<br>
+                        Ejemplo: <code>https://tu-servidor.com/public/tu_emisora</code>
                     </small>
                 </div>
 
@@ -197,7 +197,7 @@ if ($hasStationId) {
 
             <?php if (!$hasStationId): ?>
                 <div class="alert alert-warning">
-                    ⚠️ Primero debes configurar el <strong>Station ID de Radiobot</strong> en la pestaña
+                    ⚠️ Primero debes configurar el <strong>Station ID de AzuraCast</strong> en la pestaña
                     <a href="?page=parrilla&section=config" style="color: #10b981; text-decoration: underline;">Configuración</a>
                 </div>
             <?php else: ?>
@@ -249,7 +249,7 @@ if ($hasStationId) {
                 <div style="margin-top: 15px; background: #fffbeb; border: 1px solid #fde68a; padding: 15px; border-radius: 8px;">
                     <h4 style="margin: 0 0 10px 0; color: #92400e;">💡 Consejo</h4>
                     <p style="margin: 0; color: #92400e; font-size: 14px;">
-                        La parrilla se actualiza automáticamente con los cambios que hagas en Radiobot y en la gestión de programas de SAPO.
+                        La parrilla se actualiza automáticamente con los cambios que hagas en AzuraCast y en la gestión de programas de SAPO.
                     </p>
                 </div>
             <?php endif; ?>

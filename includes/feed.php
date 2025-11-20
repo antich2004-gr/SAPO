@@ -66,7 +66,7 @@ function getLastEpisodeDate($rssFeedUrl) {
     $context = stream_context_create([
         'http' => [
             'timeout' => 5,
-            'user_agent' => 'SAPO-Radiobot/1.0'
+            'user_agent' => 'SAPO/1.0'
         ]
     ]);
 

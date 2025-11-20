@@ -12,7 +12,7 @@ require_once INCLUDES_DIR . '/azuracast.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Radiobot - SAPO</title>
+    <title>Test AzuraCast - SAPO</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -42,7 +42,7 @@ require_once INCLUDES_DIR . '/azuracast.php';
     </style>
 </head>
 <body>
-    <h1>🧪 Test de Conexión Radiobot</h1>
+    <h1>🧪 Test de Conexión AzuraCast</h1>
 
     <!-- Test 1: Configuración Global -->
     <div class="test-card">

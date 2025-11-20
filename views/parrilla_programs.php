@@ -24,7 +24,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                 <input type="hidden" name="action" value="sync_programs">
                 <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                 <button type="submit" class="btn btn-primary">
-                    <span class="btn-icon">🔄</span> Sincronizar con Radiobot
+                    <span class="btn-icon">🔄</span> Sincronizar con AzuraCast
                 </button>
             </form>
         </div>
@@ -76,7 +76,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                            placeholder="Ej: El Despertador Matinal"
                            maxlength="100">
                     <small style="color: #6b7280; display: block; margin-top: 5px;">
-                        💡 Este título aparecerá en las cards. Si lo dejas vacío, se mostrará el nombre de la playlist de Radiobot.
+                        💡 Este título aparecerá en las cards. Si lo dejas vacío, se mostrará el nombre de la playlist de AzuraCast.
                     </small>
                 </div>
 
@@ -109,7 +109,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                         <?php endforeach; ?>
                     </div>
                     <small style="color: #6b7280;">
-                        Si no seleccionas ningún día, el programa solo aparecerá cuando Radiobot lo programe
+                        Si no seleccionas ningún día, el programa solo aparecerá cuando AzuraCast lo programe
                     </small>
                 </div>
 
@@ -425,7 +425,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
 
         <?php if (empty($programsData['programs'])): ?>
             <div class="alert alert-info">
-                No hay programas. Haz click en "🔄 Sincronizar con Radiobot" para detectar tus programas o añade programas en directo manualmente.
+                No hay programas. Haz click en "🔄 Sincronizar con AzuraCast" para detectar tus programas o añade programas en directo manualmente.
             </div>
         <?php else: ?>
             <div style="display: grid; gap: 15px;">
@@ -437,7 +437,6 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                                 <?php
                                 $playlistType = $program['info']['playlist_type'] ?? 'program';
 
-                                // Solo live = manual, program = importado, otros = sin badge
                                 if ($playlistType === 'live'):
                                 ?>
                                     <span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
@@ -447,13 +446,21 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                                     <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
                                         📻 PROGRAMA
                                     </span>
+                                <?php elseif ($playlistType === 'music_block'): ?>
+                                    <span style="background: #e5e7eb; color: #4b5563; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
+                                        🎵 BLOQUE MUSICAL
+                                    </span>
+                                <?php elseif ($playlistType === 'jingles'): ?>
+                                    <span style="background: #e5e7eb; color: #4b5563; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
+                                        🔊 JINGLES
+                                    </span>
                                 <?php endif; ?>
                                 <?php
                                 $isOrphaned = !empty($program['info']['orphaned']);
                                 if ($isOrphaned):
                                 ?>
-                                    <span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;" title="Este programa ya no existe en Radiobot">
-                                        ⚠️ NO EN RADIOBOT (DESACTIVADA O ELIMINADA)
+                                    <span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;" title="Este programa ya no existe en AzuraCast">
+                                        ⚠️ NO EN AZURACAST (DESACTIVADA O ELIMINADA)
                                     </span>
                                 <?php endif; ?>
                             </div>

@@ -232,7 +232,7 @@ function writeServerList($username, $podcasts) {
     $stationName = $user ? $user['station_name'] : 'Emisora';
     
     $dateTime = date('d/m/Y H:i:s');
-    $content = "# Serverlist generado por SAPO - Radiobot\n";
+    $content = "# Serverlist generado por SAPO\n";
     $content .= "# Emisora: $stationName\n";
     $content .= "# Fecha de generacion: $dateTime\n";
     $content .= "# Formato: URL_RSS Carpeta_categoria Nombre_Podcast\n";

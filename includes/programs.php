@@ -73,13 +73,13 @@ function saveProgramsDB($username, $data) {
  * @return array Resultado con 'success', 'new_count', 'total_count', 'message'
  */
 function syncProgramsFromAzuracast($username) {
-    // Obtener schedule de AzuraCast (sin caché para asegurar datos frescos)
+    // Obtener schedule de AzuraCast (sin caché para datos frescos)
     $schedule = getAzuracastSchedule($username, 0);
 
     if ($schedule === false) {
         return [
             'success' => false,
-            'message' => 'No se pudo obtener la programación de Radiobot',
+            'message' => 'No se pudo obtener la programación de AzuraCast',
             'new_count' => 0,
             'total_count' => 0
         ];
@@ -88,7 +88,7 @@ function syncProgramsFromAzuracast($username) {
     if (empty($schedule)) {
         return [
             'success' => false,
-            'message' => 'La programación de Radiobot está vacía',
+            'message' => 'La programación de AzuraCast está vacía',
             'new_count' => 0,
             'total_count' => 0
         ];
@@ -112,13 +112,14 @@ function syncProgramsFromAzuracast($username) {
     $data = loadProgramsDB($username);
     $newCount = 0;
     $orphanedCount = 0;
+    $reactivatedCount = 0;
 
     // Añadir nuevos programas (sin sobrescribir existentes)
     foreach ($detectedPrograms as $programName) {
         if (!isset($data['programs'][$programName])) {
             $data['programs'][$programName] = [
-                'display_title' => '', // Título personalizado (si está vacío, usa el nombre de la playlist)
-                'playlist_type' => 'program', // program, music_block, jingles
+                'display_title' => '',
+                'playlist_type' => 'program',
                 'short_description' => '',
                 'long_description' => '',
                 'type' => '',
@@ -127,24 +128,30 @@ function syncProgramsFromAzuracast($username) {
                 'presenters' => '',
                 'social_twitter' => '',
                 'social_instagram' => '',
-                // NO incluir created_at - solo los programas manuales lo tienen
                 'orphaned' => false
+                // NO incluir created_at - solo programas manuales lo tienen
             ];
             $newCount++;
         } else {
-            // Marcar como no huérfano (existe en Radiobot)
-            $data['programs'][$programName]['orphaned'] = false;
+            // Si el programa existía y estaba huérfano, reactivarlo
+            if (!empty($data['programs'][$programName]['orphaned'])) {
+                $data['programs'][$programName]['orphaned'] = false;
+                $reactivatedCount++;
+            }
         }
     }
 
-    // Marcar programas huérfanos (no aparecen en la programación de Radiobot)
+    // Detectar programas huérfanos (están en SAPO pero no en AzuraCast)
     foreach ($data['programs'] as $programName => $programInfo) {
-        // Solo procesar si NO es un programa en directo manual (tipo 'live')
-        $isLive = ($programInfo['playlist_type'] ?? 'program') === 'live';
+        // Solo marcar como huérfano si NO es un programa manual (live)
+        $isManual = ($programInfo['playlist_type'] ?? 'program') === 'live';
 
-        if (!$isLive && !in_array($programName, $detectedPrograms)) {
-            $data['programs'][$programName]['orphaned'] = true;
-            $orphanedCount++;
+        if (!$isManual && !in_array($programName, $detectedPrograms)) {
+            // No está en AzuraCast, marcar como huérfano
+            if (empty($programInfo['orphaned'])) {
+                $data['programs'][$programName]['orphaned'] = true;
+                $orphanedCount++;
+            }
         }
     }
 
@@ -161,23 +168,28 @@ function syncProgramsFromAzuracast($username) {
         ];
     }
 
-    // Construir mensaje
-    $messageParts = [];
+    // Construir mensaje informativo
+    $messages = [];
     if ($newCount > 0) {
-        $messageParts[] = "$newCount nuevos";
+        $messages[] = "$newCount nuevos";
     }
     if ($orphanedCount > 0) {
-        $messageParts[] = "$orphanedCount huérfanos";
+        $messages[] = "$orphanedCount marcados como no encontrados";
     }
-    $message = empty($messageParts)
-        ? "Sincronización completada"
-        : "Detectados: " . implode(', ', $messageParts);
+    if ($reactivatedCount > 0) {
+        $messages[] = "$reactivatedCount reactivados";
+    }
+
+    $message = empty($messages)
+        ? "Sincronización completada. No hay cambios."
+        : "Sincronización completada: " . implode(', ', $messages);
 
     return [
         'success' => true,
         'message' => $message,
         'new_count' => $newCount,
         'orphaned_count' => $orphanedCount,
+        'reactivated_count' => $reactivatedCount,
         'total_count' => count($data['programs'])
     ];
 }
