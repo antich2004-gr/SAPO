@@ -464,9 +464,13 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                                     <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;" title="La playlist existe pero está deshabilitada en AzuraCast">
                                         ⏸️ DESHABILITADA EN AZURACAST
                                     </span>
-                                <?php else: ?>
-                                    <span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;" title="Este programa no existe en la programación de AzuraCast">
+                                <?php elseif ($orphanReason === 'no_en_azuracast'): ?>
+                                    <span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;" title="Esta playlist no existe en AzuraCast">
                                         ❌ NO EN AZURACAST
+                                    </span>
+                                <?php else: ?>
+                                    <span style="background: #e5e7eb; color: #4b5563; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;" title="Este programa no aparece en la programación actual (sin API Key o sin horario)">
+                                        ⚠️ SIN HORARIO
                                     </span>
                                 <?php endif; ?>
                                 <?php endif; ?>

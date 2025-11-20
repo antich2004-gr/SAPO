@@ -155,7 +155,9 @@ function syncProgramsFromAzuracast($username) {
         }
     }
 
-    // Detectar programas huérfanos (no en AzuraCast o con playlist deshabilitada)
+    // Detectar programas huérfanos
+    // Si tenemos API Key: usar lista de playlists (más preciso)
+    // Si no: usar schedule (menos preciso, playlists sin horario parecerán huérfanas)
     $disabledCount = 0;
     foreach ($data['programs'] as $programName => $programInfo) {
         // Solo marcar como huérfano si NO es un programa manual (live)
@@ -165,16 +167,26 @@ function syncProgramsFromAzuracast($username) {
             $shouldBeOrphaned = false;
             $reason = '';
 
-            // Caso 1: No está en el schedule
-            if (!in_array($programName, $detectedPrograms)) {
-                $shouldBeOrphaned = true;
-                $reason = 'no_en_schedule';
-            }
-            // Caso 2: Está en schedule pero playlist deshabilitada (si tenemos esa info)
-            elseif (!empty($playlistStatus) && isset($playlistStatus[$programName]) && !$playlistStatus[$programName]) {
-                $shouldBeOrphaned = true;
-                $reason = 'playlist_deshabilitada';
-                $disabledCount++;
+            // Si tenemos acceso a la API de playlists, usar eso para determinar estado
+            if (!empty($playlistStatus)) {
+                // Caso 1: La playlist no existe en AzuraCast
+                if (!isset($playlistStatus[$programName])) {
+                    $shouldBeOrphaned = true;
+                    $reason = 'no_en_azuracast';
+                }
+                // Caso 2: La playlist existe pero está deshabilitada
+                elseif (!$playlistStatus[$programName]) {
+                    $shouldBeOrphaned = true;
+                    $reason = 'playlist_deshabilitada';
+                    $disabledCount++;
+                }
+                // Caso 3: La playlist existe y está habilitada -> NO huérfano
+            } else {
+                // Sin API Key: usar schedule (menos preciso)
+                if (!in_array($programName, $detectedPrograms)) {
+                    $shouldBeOrphaned = true;
+                    $reason = 'no_en_schedule';
+                }
             }
 
             // Debug: mostrar estado actual
@@ -194,10 +206,9 @@ function syncProgramsFromAzuracast($username) {
             }
 
             // Debug adicional
-            if (in_array($programName, $detectedPrograms)) {
-                $playlistEnabled = isset($playlistStatus[$programName]) ? ($playlistStatus[$programName] ? 'SI' : 'NO') : 'DESCONOCIDO';
-                error_log("syncProgramsFromAzuracast: '$programName' - En schedule: SI, Habilitada: $playlistEnabled, Huérfano actual: " . ($currentOrphaned ? 'SI' : 'NO') . ", Debería ser huérfano: " . ($shouldBeOrphaned ? 'SI' : 'NO'));
-            }
+            $existsInPlaylists = isset($playlistStatus[$programName]) ? 'SI' : 'NO';
+            $playlistEnabled = isset($playlistStatus[$programName]) ? ($playlistStatus[$programName] ? 'SI' : 'NO') : 'N/A';
+            error_log("syncProgramsFromAzuracast: '$programName' - Existe en playlists: $existsInPlaylists, Habilitada: $playlistEnabled, Huérfano actual: " . ($currentOrphaned ? 'SI' : 'NO') . ", Debería ser huérfano: " . ($shouldBeOrphaned ? 'SI' : 'NO'));
         }
     }
 
