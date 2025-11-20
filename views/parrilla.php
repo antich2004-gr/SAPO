@@ -740,6 +740,347 @@ if ($hasStationId) {
                 </div>
             <?php endif; ?>
         </div>
+
+    <?php elseif ($section === 'liquidsoap'): ?>
+        <!-- GENERADOR LIQUIDSOAP -->
+        <div class="section">
+            <h3>🎛️ Generador de Código Liquidsoap</h3>
+            <p style="color: #6b7280; margin-bottom: 20px;">
+                Crea rotaciones personalizadas de playlists y genera el código para pegar en AzuraCast.
+            </p>
+
+            <?php if (!$hasStationId): ?>
+                <div class="alert alert-warning">
+                    ⚠️ Primero debes configurar el <strong>Station ID de AzuraCast</strong> en la pestaña
+                    <a href="?page=parrilla&section=config" style="color: #10b981; text-decoration: underline;">Configuración</a>
+                </div>
+            <?php else: ?>
+                <?php
+                // Obtener playlists de AzuraCast
+                $playlists = getAzuracastPlaylists($username);
+                if ($playlists === false) $playlists = [];
+                ?>
+
+                <style>
+                    .liquidsoap-form {
+                        background: #f9fafb;
+                        border: 1px solid #e5e7eb;
+                        border-radius: 8px;
+                        padding: 20px;
+                        margin-bottom: 20px;
+                    }
+                    .rotation-item {
+                        background: white;
+                        border: 1px solid #e5e7eb;
+                        border-radius: 6px;
+                        padding: 15px;
+                        margin-bottom: 10px;
+                        display: grid;
+                        grid-template-columns: 1fr 100px 40px;
+                        gap: 10px;
+                        align-items: center;
+                    }
+                    .rotation-item select, .rotation-item input {
+                        padding: 8px 12px;
+                        border: 1px solid #d1d5db;
+                        border-radius: 4px;
+                        font-size: 14px;
+                    }
+                    .rotation-item input[type="number"] {
+                        text-align: center;
+                    }
+                    .btn-remove {
+                        background: #fee2e2;
+                        color: #dc2626;
+                        border: none;
+                        border-radius: 4px;
+                        padding: 8px;
+                        cursor: pointer;
+                        font-size: 16px;
+                    }
+                    .btn-remove:hover {
+                        background: #fecaca;
+                    }
+                    .btn-add {
+                        background: #dbeafe;
+                        color: #1d4ed8;
+                        border: none;
+                        border-radius: 4px;
+                        padding: 10px 15px;
+                        cursor: pointer;
+                        font-size: 14px;
+                        margin-top: 10px;
+                    }
+                    .btn-add:hover {
+                        background: #bfdbfe;
+                    }
+                    .schedule-config {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                        gap: 15px;
+                        margin-top: 20px;
+                        padding-top: 20px;
+                        border-top: 1px solid #e5e7eb;
+                    }
+                    .schedule-config label {
+                        display: block;
+                        font-size: 12px;
+                        color: #6b7280;
+                        margin-bottom: 5px;
+                    }
+                    .schedule-config input, .schedule-config select {
+                        width: 100%;
+                        padding: 8px 12px;
+                        border: 1px solid #d1d5db;
+                        border-radius: 4px;
+                        font-size: 14px;
+                    }
+                    .code-output {
+                        background: #1f2937;
+                        color: #e5e7eb;
+                        padding: 20px;
+                        border-radius: 8px;
+                        font-family: 'Courier New', monospace;
+                        font-size: 13px;
+                        overflow-x: auto;
+                        white-space: pre-wrap;
+                        position: relative;
+                        margin-top: 20px;
+                    }
+                    .code-output .copy-btn {
+                        position: absolute;
+                        top: 10px;
+                        right: 10px;
+                        background: #10b981;
+                        color: white;
+                        border: none;
+                        padding: 6px 12px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 12px;
+                    }
+                    .code-output .copy-btn:hover {
+                        background: #059669;
+                    }
+                    .rotation-header {
+                        display: grid;
+                        grid-template-columns: 1fr 100px 40px;
+                        gap: 10px;
+                        padding: 0 15px;
+                        margin-bottom: 5px;
+                        font-size: 12px;
+                        color: #6b7280;
+                        font-weight: 600;
+                    }
+                    .info-box {
+                        background: #eff6ff;
+                        border: 1px solid #bfdbfe;
+                        border-radius: 8px;
+                        padding: 15px;
+                        margin-bottom: 20px;
+                        font-size: 13px;
+                        color: #1e40af;
+                    }
+                </style>
+
+                <div class="info-box">
+                    💡 <strong>Cómo funciona:</strong> Añade playlists en el orden que quieres que se reproduzcan.
+                    Indica cuántos audios de cada una. El código generado lo pegas en
+                    <strong>Settings > Edit Liquidsoap Configuration</strong> en AzuraCast.
+                </div>
+
+                <div class="liquidsoap-form">
+                    <h4 style="margin: 0 0 15px 0; color: #374151;">Rotación de Playlists</h4>
+
+                    <div class="rotation-header">
+                        <span>Playlist</span>
+                        <span>Nº Audios</span>
+                        <span></span>
+                    </div>
+
+                    <div id="rotation-items">
+                        <div class="rotation-item">
+                            <select name="playlist[]" class="playlist-select">
+                                <option value="">-- Seleccionar playlist --</option>
+                                <?php foreach ($playlists as $playlist): ?>
+                                    <option value="<?php echo htmlspecialchars($playlist['short_name'] ?? $playlist['name']); ?>">
+                                        <?php echo htmlspecialchars($playlist['name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <input type="number" name="tracks[]" value="1" min="1" max="10">
+                            <button type="button" class="btn-remove" onclick="removeRotationItem(this)">×</button>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-add" onclick="addRotationItem()">+ Añadir Playlist</button>
+
+                    <div class="schedule-config">
+                        <div>
+                            <label>Hora inicio</label>
+                            <input type="time" id="start-time" value="08:00">
+                        </div>
+                        <div>
+                            <label>Hora fin</label>
+                            <input type="time" id="end-time" value="10:00">
+                        </div>
+                        <div>
+                            <label>Tipo de rotación</label>
+                            <select id="rotation-type">
+                                <option value="sequence">Secuencial (en orden)</option>
+                                <option value="rotate">Rotación (alterna)</option>
+                                <option value="random">Aleatorio</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-primary" style="margin-top: 20px;" onclick="generateCode()">
+                        🎵 Generar Código Liquidsoap
+                    </button>
+                </div>
+
+                <div id="code-container" style="display: none;">
+                    <h4 style="margin: 0 0 10px 0; color: #374151;">Código Generado</h4>
+                    <div class="code-output">
+                        <button class="copy-btn" onclick="copyCode()">📋 Copiar</button>
+                        <pre id="generated-code"></pre>
+                    </div>
+
+                    <div style="margin-top: 15px; background: #fef3c7; border: 1px solid #fde68a; padding: 15px; border-radius: 8px;">
+                        <h4 style="margin: 0 0 10px 0; color: #92400e;">⚠️ Instrucciones</h4>
+                        <ol style="margin: 0; padding-left: 20px; color: #92400e; font-size: 13px;">
+                            <li>Ve a tu estación en AzuraCast</li>
+                            <li>Settings > Edit Liquidsoap Configuration</li>
+                            <li>Busca la sección adecuada y pega el código</li>
+                            <li>Guarda y reinicia el servicio</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <script>
+                    const playlistOptions = `
+                        <option value="">-- Seleccionar playlist --</option>
+                        <?php foreach ($playlists as $playlist): ?>
+                            <option value="<?php echo htmlspecialchars($playlist['short_name'] ?? $playlist['name']); ?>">
+                                <?php echo htmlspecialchars($playlist['name']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    `;
+
+                    function addRotationItem() {
+                        const container = document.getElementById('rotation-items');
+                        const item = document.createElement('div');
+                        item.className = 'rotation-item';
+                        item.innerHTML = `
+                            <select name="playlist[]" class="playlist-select">
+                                ${playlistOptions}
+                            </select>
+                            <input type="number" name="tracks[]" value="1" min="1" max="10">
+                            <button type="button" class="btn-remove" onclick="removeRotationItem(this)">×</button>
+                        `;
+                        container.appendChild(item);
+                    }
+
+                    function removeRotationItem(btn) {
+                        const items = document.querySelectorAll('.rotation-item');
+                        if (items.length > 1) {
+                            btn.parentElement.remove();
+                        }
+                    }
+
+                    function generateCode() {
+                        const items = document.querySelectorAll('.rotation-item');
+                        const startTime = document.getElementById('start-time').value;
+                        const endTime = document.getElementById('end-time').value;
+                        const rotationType = document.getElementById('rotation-type').value;
+
+                        const playlists = [];
+                        items.forEach(item => {
+                            const select = item.querySelector('select');
+                            const tracks = item.querySelector('input[type="number"]').value;
+                            if (select.value) {
+                                playlists.push({
+                                    name: select.value,
+                                    displayName: select.options[select.selectedIndex].text,
+                                    tracks: parseInt(tracks)
+                                });
+                            }
+                        });
+
+                        if (playlists.length === 0) {
+                            alert('Selecciona al menos una playlist');
+                            return;
+                        }
+
+                        // Generar código Liquidsoap
+                        let code = '# Rotación personalizada generada por SAPO\n';
+                        code += '# Horario: ' + startTime + ' - ' + endTime + '\n\n';
+
+                        // Definir playlists
+                        playlists.forEach((p, i) => {
+                            const safeName = p.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+                            code += `# ${p.displayName}\n`;
+                            code += `playlist_${safeName} = playlist(mode="randomize", "/var/azuracast/stations/TU_ESTACION/media/${p.name}")\n\n`;
+                        });
+
+                        // Generar rotación
+                        code += '# Configuración de rotación\n';
+
+                        if (rotationType === 'sequence') {
+                            code += 'programa_rotacion = sequence([\n';
+                            playlists.forEach((p, i) => {
+                                const safeName = p.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+                                for (let j = 0; j < p.tracks; j++) {
+                                    code += `  once(playlist_${safeName})`;
+                                    if (i < playlists.length - 1 || j < p.tracks - 1) code += ',';
+                                    code += '\n';
+                                }
+                            });
+                            code += '])\n\n';
+                        } else if (rotationType === 'rotate') {
+                            const weights = playlists.map(p => p.tracks).join(',');
+                            code += `programa_rotacion = rotate(weights=[${weights}], [\n`;
+                            playlists.forEach((p, i) => {
+                                const safeName = p.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+                                code += `  playlist_${safeName}`;
+                                if (i < playlists.length - 1) code += ',';
+                                code += '\n';
+                            });
+                            code += '])\n\n';
+                        } else {
+                            const weights = playlists.map(p => p.tracks).join(',');
+                            code += `programa_rotacion = random(weights=[${weights}], [\n`;
+                            playlists.forEach((p, i) => {
+                                const safeName = p.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+                                code += `  playlist_${safeName}`;
+                                if (i < playlists.length - 1) code += ',';
+                                code += '\n';
+                            });
+                            code += '])\n\n';
+                        }
+
+                        // Horario
+                        const startH = startTime.split(':')[0];
+                        const endH = endTime.split(':')[0];
+                        code += '# Programación horaria\n';
+                        code += `# Añade esto a tu switch principal:\n`;
+                        code += `({ ${startH}h-${endH}h }, programa_rotacion),\n`;
+
+                        document.getElementById('generated-code').textContent = code;
+                        document.getElementById('code-container').style.display = 'block';
+                    }
+
+                    function copyCode() {
+                        const code = document.getElementById('generated-code').textContent;
+                        navigator.clipboard.writeText(code).then(() => {
+                            alert('✅ Código copiado al portapapeles');
+                        }).catch(() => {
+                            alert('❌ Error al copiar');
+                        });
+                    }
+                </script>
+            <?php endif; ?>
+        </div>
     <?php endif; ?>
 </div>
 
