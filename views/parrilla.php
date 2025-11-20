@@ -265,7 +265,7 @@ if ($hasStationId) {
         <div class="section">
             <h3>📊 Resumen de Cobertura Semanal</h3>
             <p style="color: #6b7280; margin-bottom: 20px;">
-                Visualiza la cobertura de bloques musicales para cada día de la semana.
+                Estadísticas de todos los tipos de contenido: programas, bloques musicales y emisiones en directo.
             </p>
 
             <?php if (!$hasStationId): ?>
@@ -282,9 +282,45 @@ if ($hasStationId) {
                 $programsDB = loadProgramsDB($username);
                 $programsData = $programsDB['programs'] ?? [];
 
-                // Organizar bloques musicales por día
-                $musicBlocksByDay = [1 => [], 2 => [], 3 => [], 4 => [], 5 => [], 6 => [], 0 => []];
+                // Organizar contenido por día y tipo
+                $contentByDay = [
+                    1 => ['music_block' => [], 'program' => [], 'live' => []],
+                    2 => ['music_block' => [], 'program' => [], 'live' => []],
+                    3 => ['music_block' => [], 'program' => [], 'live' => []],
+                    4 => ['music_block' => [], 'program' => [], 'live' => []],
+                    5 => ['music_block' => [], 'program' => [], 'live' => []],
+                    6 => ['music_block' => [], 'program' => [], 'live' => []],
+                    0 => ['music_block' => [], 'program' => [], 'live' => []]
+                ];
 
+                // Primero: Añadir programas en directo (live) manuales
+                foreach ($programsData as $programName => $programInfo) {
+                    if (($programInfo['playlist_type'] ?? '') === 'live') {
+                        if (!empty($programInfo['hidden_from_schedule'])) continue;
+
+                        $scheduleDays = $programInfo['schedule_days'] ?? [];
+                        $startTime = $programInfo['schedule_start_time'] ?? '';
+                        $duration = (int)($programInfo['schedule_duration'] ?? 60);
+
+                        if (!empty($scheduleDays) && !empty($startTime)) {
+                            foreach ($scheduleDays as $day) {
+                                $startDateTime = DateTime::createFromFormat('H:i', $startTime);
+                                $endDateTime = clone $startDateTime;
+                                $endDateTime->modify("+{$duration} minutes");
+
+                                $contentByDay[$day]['live'][] = [
+                                    'title' => $programInfo['display_title'] ?: $programName,
+                                    'start_time' => $startDateTime->format('H:i'),
+                                    'end_time' => $endDateTime->format('H:i'),
+                                    'start_minutes' => (int)$startDateTime->format('H') * 60 + (int)$startDateTime->format('i'),
+                                    'end_minutes' => (int)$endDateTime->format('H') * 60 + (int)$endDateTime->format('i')
+                                ];
+                            }
+                        }
+                    }
+                }
+
+                // Segundo: Añadir eventos de AzuraCast
                 foreach ($schedule as $event) {
                     $title = $event['name'] ?? $event['playlist'] ?? 'Sin nombre';
                     $start = $event['start_timestamp'] ?? $event['start'] ?? null;
@@ -299,8 +335,8 @@ if ($hasStationId) {
                     $programInfo = $programsData[$title] ?? null;
                     $playlistType = $programInfo['playlist_type'] ?? 'program';
 
-                    // Solo bloques musicales
-                    if ($playlistType !== 'music_block') continue;
+                    // Omitir jingles y ocultos
+                    if ($playlistType === 'jingles') continue;
                     if (!empty($programInfo['hidden_from_schedule'])) continue;
 
                     $end = $event['end_timestamp'] ?? $event['end'] ?? null;
@@ -315,22 +351,30 @@ if ($hasStationId) {
                         $endDateTime->modify('+1 hour');
                     }
 
-                    $musicBlocksByDay[$dayOfWeek][] = [
+                    $eventData = [
                         'title' => !empty($programInfo['display_title']) ? $programInfo['display_title'] : $title,
                         'start_time' => $startDateTime->format('H:i'),
                         'end_time' => $endDateTime->format('H:i'),
                         'start_minutes' => (int)$startDateTime->format('H') * 60 + (int)$startDateTime->format('i'),
                         'end_minutes' => (int)$endDateTime->format('H') * 60 + (int)$endDateTime->format('i')
                     ];
+
+                    if ($playlistType === 'music_block') {
+                        $contentByDay[$dayOfWeek]['music_block'][] = $eventData;
+                    } else {
+                        $contentByDay[$dayOfWeek]['program'][] = $eventData;
+                    }
                 }
 
-                // Ordenar bloques por hora de inicio
-                foreach ($musicBlocksByDay as $day => &$dayBlocks) {
-                    usort($dayBlocks, function($a, $b) {
-                        return $a['start_minutes'] - $b['start_minutes'];
-                    });
+                // Ordenar contenido por hora de inicio
+                foreach ($contentByDay as $day => &$types) {
+                    foreach ($types as $type => &$items) {
+                        usort($items, function($a, $b) {
+                            return $a['start_minutes'] - $b['start_minutes'];
+                        });
+                    }
                 }
-                unset($dayBlocks);
+                unset($types, $items);
 
                 $daysOfWeek = [1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado', 0 => 'Domingo'];
                 ?>
@@ -348,6 +392,8 @@ if ($hasStationId) {
                         justify-content: space-between;
                         align-items: center;
                         margin-bottom: 12px;
+                        flex-wrap: wrap;
+                        gap: 10px;
                     }
                     .coverage-day-name {
                         font-weight: 600;
@@ -356,70 +402,83 @@ if ($hasStationId) {
                     }
                     .coverage-stats {
                         display: flex;
-                        gap: 15px;
-                        font-size: 13px;
+                        gap: 12px;
+                        font-size: 12px;
+                        flex-wrap: wrap;
                     }
                     .coverage-stat {
                         display: flex;
                         align-items: center;
                         gap: 4px;
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        background: white;
+                        border: 1px solid #e5e7eb;
                     }
                     .coverage-stat-value {
                         font-weight: 600;
-                        color: #10b981;
                     }
                     .coverage-stat-label {
                         color: #6b7280;
                     }
+                    .coverage-stat.music .coverage-stat-value { color: #8b5cf6; }
+                    .coverage-stat.program .coverage-stat-value { color: #3b82f6; }
+                    .coverage-stat.live .coverage-stat-value { color: #ef4444; }
+                    .coverage-stat.total .coverage-stat-value { color: #10b981; }
                     .coverage-progress-bar {
-                        height: 8px;
+                        height: 12px;
                         background: #e5e7eb;
-                        border-radius: 4px;
+                        border-radius: 6px;
                         overflow: hidden;
                         margin-bottom: 12px;
+                        display: flex;
                     }
-                    .coverage-progress-fill {
+                    .coverage-progress-segment {
                         height: 100%;
-                        background: linear-gradient(90deg, #8b5cf6, #a78bfa);
-                        border-radius: 4px;
                         transition: width 0.3s ease;
                     }
-                    .coverage-gaps {
-                        font-size: 12px;
+                    .coverage-progress-segment.music {
+                        background: #8b5cf6;
                     }
-                    .coverage-gaps-title {
+                    .coverage-progress-segment.program {
+                        background: #3b82f6;
+                    }
+                    .coverage-progress-segment.live {
+                        background: #ef4444;
+                    }
+                    .coverage-content-list {
+                        font-size: 12px;
+                        margin-top: 8px;
+                    }
+                    .coverage-content-title {
                         font-weight: 600;
                         color: #6b7280;
                         margin-bottom: 6px;
-                    }
-                    .coverage-gap {
-                        display: inline-block;
-                        background: #fef3c7;
-                        color: #92400e;
-                        padding: 3px 8px;
-                        border-radius: 4px;
-                        margin: 2px 4px 2px 0;
-                        font-size: 11px;
-                    }
-                    .coverage-blocks-list {
-                        font-size: 12px;
                         margin-top: 10px;
                     }
-                    .coverage-blocks-title {
-                        font-weight: 600;
-                        color: #6b7280;
-                        margin-bottom: 6px;
+                    .coverage-content-title:first-child {
+                        margin-top: 0;
                     }
-                    .coverage-block {
+                    .coverage-item {
                         display: inline-block;
-                        background: #ede9fe;
-                        color: #7c3aed;
                         padding: 3px 8px;
                         border-radius: 4px;
                         margin: 2px 4px 2px 0;
                         font-size: 11px;
                     }
-                    .no-blocks-message {
+                    .coverage-item.music {
+                        background: #ede9fe;
+                        color: #7c3aed;
+                    }
+                    .coverage-item.program {
+                        background: #dbeafe;
+                        color: #1d4ed8;
+                    }
+                    .coverage-item.live {
+                        background: #fee2e2;
+                        color: #dc2626;
+                    }
+                    .no-content-message {
                         color: #9ca3af;
                         font-style: italic;
                         font-size: 13px;
@@ -432,172 +491,225 @@ if ($hasStationId) {
                         margin-top: 20px;
                     }
                     .summary-totals h4 {
-                        margin: 0 0 10px 0;
+                        margin: 0 0 15px 0;
                         color: #166534;
                     }
                     .summary-grid {
                         display: grid;
-                        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
                         gap: 15px;
                     }
                     .summary-item {
                         text-align: center;
+                        padding: 10px;
+                        background: white;
+                        border-radius: 8px;
+                        border: 1px solid #bbf7d0;
                     }
                     .summary-value {
-                        font-size: 24px;
+                        font-size: 20px;
                         font-weight: 700;
-                        color: #166534;
                     }
+                    .summary-value.music { color: #8b5cf6; }
+                    .summary-value.program { color: #3b82f6; }
+                    .summary-value.live { color: #ef4444; }
+                    .summary-value.total { color: #166534; }
                     .summary-label {
-                        font-size: 12px;
+                        font-size: 11px;
                         color: #166534;
+                        margin-top: 4px;
                     }
+                    .coverage-legend {
+                        display: flex;
+                        gap: 15px;
+                        margin-bottom: 15px;
+                        font-size: 12px;
+                        flex-wrap: wrap;
+                    }
+                    .legend-item {
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                    }
+                    .legend-color {
+                        width: 12px;
+                        height: 12px;
+                        border-radius: 3px;
+                    }
+                    .legend-color.music { background: #8b5cf6; }
+                    .legend-color.program { background: #3b82f6; }
+                    .legend-color.live { background: #ef4444; }
                 </style>
 
+                <!-- Leyenda -->
+                <div class="coverage-legend">
+                    <div class="legend-item">
+                        <div class="legend-color music"></div>
+                        <span>Bloques Musicales</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color program"></div>
+                        <span>Programas</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color live"></div>
+                        <span>En Directo</span>
+                    </div>
+                </div>
+
                 <?php
-                $totalWeekMinutes = 0;
-                $totalGaps = 0;
+                // Totales semanales por tipo
+                $weekTotals = ['music_block' => 0, 'program' => 0, 'live' => 0];
+                $weekCounts = ['music_block' => 0, 'program' => 0, 'live' => 0];
 
                 foreach ([1, 2, 3, 4, 5, 6, 0] as $day):
-                    $dayBlocks = $musicBlocksByDay[$day];
+                    $dayContent = $contentByDay[$day];
 
-                    // Calcular cobertura total del día
-                    $totalMinutes = 0;
-                    foreach ($dayBlocks as $block) {
-                        $duration = $block['end_minutes'] - $block['start_minutes'];
-                        if ($duration < 0) $duration += 24 * 60; // Cruza medianoche
-                        $totalMinutes += $duration;
+                    // Calcular minutos por tipo
+                    $minutesByType = ['music_block' => 0, 'program' => 0, 'live' => 0];
+                    $countsByType = ['music_block' => 0, 'program' => 0, 'live' => 0];
+
+                    foreach (['music_block', 'program', 'live'] as $type) {
+                        foreach ($dayContent[$type] as $item) {
+                            $duration = $item['end_minutes'] - $item['start_minutes'];
+                            if ($duration < 0) $duration += 24 * 60;
+                            $minutesByType[$type] += $duration;
+                            $countsByType[$type]++;
+                        }
+                        $weekTotals[$type] += $minutesByType[$type];
+                        $weekCounts[$type] += $countsByType[$type];
                     }
 
-                    $totalWeekMinutes += $totalMinutes;
-                    $hours = floor($totalMinutes / 60);
-                    $mins = $totalMinutes % 60;
-                    $percentage = round(($totalMinutes / (24 * 60)) * 100, 1);
+                    $totalMinutes = array_sum($minutesByType);
+                    $totalPercentage = round(($totalMinutes / (24 * 60)) * 100, 1);
 
-                    // Calcular huecos
-                    $gaps = [];
-                    if (!empty($dayBlocks)) {
-                        // Hueco desde inicio del día
-                        $firstStart = $dayBlocks[0]['start_minutes'];
-                        if ($firstStart > 0) {
-                            $gaps[] = [
-                                'start' => '00:00',
-                                'end' => sprintf('%02d:%02d', floor($firstStart / 60), $firstStart % 60),
-                                'duration' => $firstStart
-                            ];
-                        }
+                    // Porcentajes por tipo para la barra
+                    $musicPct = round(($minutesByType['music_block'] / (24 * 60)) * 100, 1);
+                    $programPct = round(($minutesByType['program'] / (24 * 60)) * 100, 1);
+                    $livePct = round(($minutesByType['live'] / (24 * 60)) * 100, 1);
 
-                        // Huecos entre bloques
-                        for ($i = 0; $i < count($dayBlocks) - 1; $i++) {
-                            $currentEnd = $dayBlocks[$i]['end_minutes'];
-                            $nextStart = $dayBlocks[$i + 1]['start_minutes'];
+                    // Formatear horas
+                    $formatTime = function($minutes) {
+                        $h = floor($minutes / 60);
+                        $m = $minutes % 60;
+                        return $h . 'h ' . $m . 'm';
+                    };
 
-                            if ($nextStart > $currentEnd) {
-                                $gapDuration = $nextStart - $currentEnd;
-                                $gaps[] = [
-                                    'start' => sprintf('%02d:%02d', floor($currentEnd / 60), $currentEnd % 60),
-                                    'end' => sprintf('%02d:%02d', floor($nextStart / 60), $nextStart % 60),
-                                    'duration' => $gapDuration
-                                ];
-                            }
-                        }
-
-                        // Hueco hasta fin del día
-                        $lastEnd = $dayBlocks[count($dayBlocks) - 1]['end_minutes'];
-                        if ($lastEnd < 24 * 60) {
-                            $gaps[] = [
-                                'start' => sprintf('%02d:%02d', floor($lastEnd / 60), $lastEnd % 60),
-                                'end' => '24:00',
-                                'duration' => (24 * 60) - $lastEnd
-                            ];
-                        }
-                    }
-
-                    $totalGaps += count($gaps);
+                    $hasContent = $totalMinutes > 0;
                 ?>
                     <div class="coverage-day">
                         <div class="coverage-day-header">
                             <div class="coverage-day-name"><?php echo $daysOfWeek[$day]; ?></div>
                             <div class="coverage-stats">
-                                <div class="coverage-stat">
-                                    <span class="coverage-stat-value"><?php echo $hours; ?>h <?php echo $mins; ?>m</span>
-                                    <span class="coverage-stat-label">música</span>
+                                <?php if ($minutesByType['music_block'] > 0): ?>
+                                <div class="coverage-stat music">
+                                    <span class="coverage-stat-value"><?php echo $formatTime($minutesByType['music_block']); ?></span>
+                                    <span class="coverage-stat-label">🎵</span>
                                 </div>
-                                <div class="coverage-stat">
-                                    <span class="coverage-stat-value"><?php echo $percentage; ?>%</span>
-                                    <span class="coverage-stat-label">cobertura</span>
+                                <?php endif; ?>
+                                <?php if ($minutesByType['program'] > 0): ?>
+                                <div class="coverage-stat program">
+                                    <span class="coverage-stat-value"><?php echo $formatTime($minutesByType['program']); ?></span>
+                                    <span class="coverage-stat-label">📻</span>
                                 </div>
-                                <div class="coverage-stat">
-                                    <span class="coverage-stat-value"><?php echo count($dayBlocks); ?></span>
-                                    <span class="coverage-stat-label">bloques</span>
+                                <?php endif; ?>
+                                <?php if ($minutesByType['live'] > 0): ?>
+                                <div class="coverage-stat live">
+                                    <span class="coverage-stat-value"><?php echo $formatTime($minutesByType['live']); ?></span>
+                                    <span class="coverage-stat-label">🔴</span>
+                                </div>
+                                <?php endif; ?>
+                                <div class="coverage-stat total">
+                                    <span class="coverage-stat-value"><?php echo $totalPercentage; ?>%</span>
+                                    <span class="coverage-stat-label">total</span>
                                 </div>
                             </div>
                         </div>
 
                         <div class="coverage-progress-bar">
-                            <div class="coverage-progress-fill" style="width: <?php echo min($percentage, 100); ?>%"></div>
+                            <?php if ($musicPct > 0): ?>
+                                <div class="coverage-progress-segment music" style="width: <?php echo $musicPct; ?>%"></div>
+                            <?php endif; ?>
+                            <?php if ($programPct > 0): ?>
+                                <div class="coverage-progress-segment program" style="width: <?php echo $programPct; ?>%"></div>
+                            <?php endif; ?>
+                            <?php if ($livePct > 0): ?>
+                                <div class="coverage-progress-segment live" style="width: <?php echo $livePct; ?>%"></div>
+                            <?php endif; ?>
                         </div>
 
-                        <?php if (empty($dayBlocks)): ?>
-                            <p class="no-blocks-message">No hay bloques musicales programados para este día.</p>
+                        <?php if (!$hasContent): ?>
+                            <p class="no-content-message">No hay contenido programado para este día.</p>
                         <?php else: ?>
-                            <div class="coverage-blocks-list">
-                                <div class="coverage-blocks-title">🎵 Bloques:</div>
-                                <?php foreach ($dayBlocks as $block): ?>
-                                    <span class="coverage-block">
-                                        <?php echo htmlspecialchars($block['title']); ?>
-                                        (<?php echo $block['start_time']; ?> - <?php echo $block['end_time']; ?>)
-                                    </span>
-                                <?php endforeach; ?>
-                            </div>
-
-                            <?php if (!empty($gaps)): ?>
-                                <div class="coverage-gaps">
-                                    <div class="coverage-gaps-title">⏸️ Huecos sin música (<?php echo count($gaps); ?>):</div>
-                                    <?php foreach ($gaps as $gap):
-                                        $gapHours = floor($gap['duration'] / 60);
-                                        $gapMins = $gap['duration'] % 60;
-                                        $gapText = $gapHours > 0 ? $gapHours . 'h' : '';
-                                        if ($gapMins > 0) $gapText .= ($gapText ? ' ' : '') . $gapMins . 'm';
-                                    ?>
-                                        <span class="coverage-gap">
-                                            <?php echo $gap['start']; ?> - <?php echo $gap['end']; ?>
-                                            (<?php echo $gapText; ?>)
+                            <div class="coverage-content-list">
+                                <?php if (!empty($dayContent['program'])): ?>
+                                    <div class="coverage-content-title">📻 Programas (<?php echo count($dayContent['program']); ?>):</div>
+                                    <?php foreach ($dayContent['program'] as $item): ?>
+                                        <span class="coverage-item program">
+                                            <?php echo htmlspecialchars($item['title']); ?>
+                                            (<?php echo $item['start_time']; ?> - <?php echo $item['end_time']; ?>)
                                         </span>
                                     <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
+                                <?php endif; ?>
+
+                                <?php if (!empty($dayContent['live'])): ?>
+                                    <div class="coverage-content-title">🔴 En Directo (<?php echo count($dayContent['live']); ?>):</div>
+                                    <?php foreach ($dayContent['live'] as $item): ?>
+                                        <span class="coverage-item live">
+                                            <?php echo htmlspecialchars($item['title']); ?>
+                                            (<?php echo $item['start_time']; ?> - <?php echo $item['end_time']; ?>)
+                                        </span>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+
+                                <?php if (!empty($dayContent['music_block'])): ?>
+                                    <div class="coverage-content-title">🎵 Bloques Musicales (<?php echo count($dayContent['music_block']); ?>):</div>
+                                    <?php foreach ($dayContent['music_block'] as $item): ?>
+                                        <span class="coverage-item music">
+                                            <?php echo htmlspecialchars($item['title']); ?>
+                                            (<?php echo $item['start_time']; ?> - <?php echo $item['end_time']; ?>)
+                                        </span>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
                         <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
 
                 <!-- Resumen semanal -->
                 <?php
-                $weekHours = floor($totalWeekMinutes / 60);
-                $weekMins = $totalWeekMinutes % 60;
-                $avgPerDay = $totalWeekMinutes / 7;
-                $avgHours = floor($avgPerDay / 60);
-                $avgMins = round($avgPerDay % 60);
+                $totalWeekMinutes = array_sum($weekTotals);
                 $weekPercentage = round(($totalWeekMinutes / (7 * 24 * 60)) * 100, 1);
+
+                // Formatear tiempos
+                $formatWeekTime = function($minutes) {
+                    $h = floor($minutes / 60);
+                    $m = $minutes % 60;
+                    return $h . 'h ' . $m . 'm';
+                };
                 ?>
                 <div class="summary-totals">
                     <h4>📈 Resumen Semanal</h4>
                     <div class="summary-grid">
                         <div class="summary-item">
-                            <div class="summary-value"><?php echo $weekHours; ?>h <?php echo $weekMins; ?>m</div>
-                            <div class="summary-label">Total música semanal</div>
+                            <div class="summary-value music"><?php echo $formatWeekTime($weekTotals['music_block']); ?></div>
+                            <div class="summary-label">🎵 Bloques Musicales (<?php echo $weekCounts['music_block']; ?>)</div>
                         </div>
                         <div class="summary-item">
-                            <div class="summary-value"><?php echo $avgHours; ?>h <?php echo $avgMins; ?>m</div>
-                            <div class="summary-label">Media diaria</div>
+                            <div class="summary-value program"><?php echo $formatWeekTime($weekTotals['program']); ?></div>
+                            <div class="summary-label">📻 Programas (<?php echo $weekCounts['program']; ?>)</div>
                         </div>
                         <div class="summary-item">
-                            <div class="summary-value"><?php echo $weekPercentage; ?>%</div>
-                            <div class="summary-label">Cobertura semanal</div>
+                            <div class="summary-value live"><?php echo $formatWeekTime($weekTotals['live']); ?></div>
+                            <div class="summary-label">🔴 En Directo (<?php echo $weekCounts['live']; ?>)</div>
                         </div>
                         <div class="summary-item">
-                            <div class="summary-value"><?php echo $totalGaps; ?></div>
-                            <div class="summary-label">Huecos totales</div>
+                            <div class="summary-value total"><?php echo $formatWeekTime($totalWeekMinutes); ?></div>
+                            <div class="summary-label">Total Semanal</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-value total"><?php echo $weekPercentage; ?>%</div>
+                            <div class="summary-label">Cobertura</div>
                         </div>
                     </div>
                 </div>
