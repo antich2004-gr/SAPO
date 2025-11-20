@@ -418,11 +418,11 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
 
     <!-- Lista de programas -->
     <div class="section">
-        <h3>Programas Detectados</h3>
+        <h3>Programas</h3>
 
         <?php if (empty($programsData['programs'])): ?>
             <div class="alert alert-info">
-                No hay programas detectados. Haz click en "🔄 Sincronizar con Radiobot" para detectar tus programas.
+                No hay programas. Haz click en "🔄 Sincronizar con Radiobot" para detectar tus programas o añade programas en directo manualmente.
             </div>
         <?php else: ?>
             <div style="display: grid; gap: 15px;">
@@ -431,6 +431,18 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                         <div style="flex: 1;">
                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
                                 <strong style="font-size: 16px;"><?php echo htmlEsc($program['name']); ?></strong>
+                                <?php
+                                $isManualLive = isset($program['info']['created_at']) && ($program['info']['playlist_type'] ?? '') === 'live';
+                                if ($isManualLive):
+                                ?>
+                                    <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
+                                        🔴 EN DIRECTO
+                                    </span>
+                                <?php elseif (($program['info']['playlist_type'] ?? '') === 'live'): ?>
+                                    <span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
+                                        🔴 DIRECTO
+                                    </span>
+                                <?php endif; ?>
                             </div>
 
                             <div style="font-size: 13px; color: #4a5568; margin-top: 5px;">
