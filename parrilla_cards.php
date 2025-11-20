@@ -672,7 +672,6 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
 
         .blocks-grid {
             display: flex;
-            flex-direction: column;
             gap: 4px;
         }
 
@@ -680,52 +679,45 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
             background: #f9fafb;
             border: 1px solid #e5e7eb;
             border-radius: 4px;
-            padding: 6px 12px;
+            padding: 5px 8px;
             border-left: 3px solid #8b5cf6;
-            font-size: 11px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
+            font-size: 10px;
+            flex: 1;
+            min-width: 0;
         }
 
         .block-card:hover {
             background: #f3f4f6;
         }
 
-        .block-card-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex: 1;
-        }
-
         .block-card-time {
             font-weight: 600;
             color: #6b7280;
             white-space: nowrap;
-            min-width: 90px;
+            font-size: 9px;
         }
 
         .block-card-name {
             font-weight: 500;
             color: #374151;
-            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .block-card-duration {
+            font-size: 9px;
             color: #9ca3af;
-            white-space: nowrap;
-            text-align: right;
         }
 
         @media (max-width: 768px) {
-            .block-card {
-                padding: 5px 10px;
-                font-size: 10px;
+            .blocks-grid {
+                flex-wrap: wrap;
             }
-            .block-card-time {
-                min-width: 70px;
+            .block-card {
+                padding: 4px 6px;
+                font-size: 9px;
+                flex: 1 1 45%;
             }
         }
     </style>
@@ -946,11 +938,9 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                             if ($mins > 0) $durationText .= ' ' . $mins . 'm';
                         ?>
                             <div class="block-card">
-                                <div class="block-card-info">
-                                    <span class="block-card-time"><?php echo substr($block['start_time'], 0, 5); ?> - <?php echo substr($block['end_time'], 0, 5); ?></span>
-                                    <span class="block-card-name"><?php echo htmlspecialchars($block['title']); ?></span>
-                                </div>
-                                <span class="block-card-duration"><?php echo trim($durationText); ?></span>
+                                <div class="block-card-time"><?php echo substr($block['start_time'], 0, 5); ?>-<?php echo substr($block['end_time'], 0, 5); ?></div>
+                                <div class="block-card-name"><?php echo htmlspecialchars($block['title']); ?></div>
+                                <div class="block-card-duration"><?php echo trim($durationText); ?></div>
                             </div>
                         <?php endforeach; ?>
                     </div>
