@@ -150,11 +150,8 @@ function syncProgramsFromAzuracast($username) {
             ];
             $newCount++;
         } else {
-            // Si el programa existía y estaba huérfano, reactivarlo
-            if (!empty($data['programs'][$programName]['orphaned'])) {
-                $data['programs'][$programName]['orphaned'] = false;
-                $reactivatedCount++;
-            }
+            // Si el programa existía y estaba huérfano, preparar para verificación
+            // La reactivación real se hace en el segundo bucle para considerar el estado de la playlist
         }
     }
 
