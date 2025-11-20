@@ -24,7 +24,10 @@ if ($hasStationId) {
         <h2>📺 Parrilla de Programación</h2>
         <div style="text-align: right;">
             <p style="margin: 0 0 10px 0; color: #4a5568; font-size: 14px;">Conectado como <strong><?php echo htmlEsc($_SESSION['station_name']); ?></strong></p>
-            <a href="?page=dashboard" class="btn btn-secondary">
+            <a href="?page=help_parrilla" class="btn btn-secondary" style="margin-right: 10px;">
+                <span class="btn-icon">❓</span> Ayuda
+            </a>
+            <a href="<?php echo basename($_SERVER['PHP_SELF']); ?>" class="btn btn-secondary">
                 <span class="btn-icon">◀️</span> Volver al Dashboard
             </a>
         </div>
