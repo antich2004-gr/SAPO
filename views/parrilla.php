@@ -766,6 +766,26 @@ if ($hasStationId) {
                 // Obtener configuración actual de Liquidsoap
                 $liquidsoapConfig = getAzuracastLiquidsoapConfig($username);
                 $hasLiquidsoapConfig = is_array($liquidsoapConfig) && !empty($liquidsoapConfig);
+
+                // Obtener nombre corto de la estación para el código
+                $stationShortName = '';
+                $azConfig = getAzuracastConfig($username);
+                $stationId = $azConfig['station_id'] ?? null;
+                if ($stationId && !empty($globalConfig['azuracast_api_url'])) {
+                    $stationUrl = rtrim($globalConfig['azuracast_api_url'], '/') . '/station/' . $stationId;
+                    $context = stream_context_create([
+                        'http' => [
+                            'timeout' => 5,
+                            'user_agent' => 'SAPO/1.0',
+                            'header' => 'X-API-Key: ' . ($globalConfig['azuracast_api_key'] ?? '')
+                        ]
+                    ]);
+                    $stationResponse = @file_get_contents($stationUrl, false, $context);
+                    if ($stationResponse !== false) {
+                        $stationData = json_decode($stationResponse, true);
+                        $stationShortName = $stationData['short_name'] ?? $stationData['name'] ?? '';
+                    }
+                }
                 ?>
 
                 <style>
@@ -1070,20 +1090,22 @@ if ($hasStationId) {
                     <div style="margin-top: 15px; background: #fef3c7; border: 1px solid #fde68a; padding: 15px; border-radius: 8px;">
                         <h4 style="margin: 0 0 10px 0; color: #92400e;">⚠️ Importante - Código de Plantilla</h4>
                         <p style="margin: 0 0 10px 0; color: #92400e; font-size: 13px;">
-                            Este código es una <strong>plantilla de referencia</strong> que necesita ajustes:
+                            Este código es una <strong>plantilla de referencia</strong>. Pasos a seguir:
                         </p>
                         <ol style="margin: 0; padding-left: 20px; color: #92400e; font-size: 13px;">
                             <li>Copia el código generado</li>
-                            <li>Cambia <code>TU_ESTACION</code> por el nombre real de tu estación</li>
-                            <li>Verifica que las rutas de las playlists sean correctas</li>
                             <li>Ve a AzuraCast → Settings → Edit Liquidsoap Configuration</li>
                             <li>Pega en la sección "Custom Configuration"</li>
                             <li>Guarda y reinicia el backend</li>
                         </ol>
+                        <p style="margin: 10px 0 0 0; color: #92400e; font-size: 12px;">
+                            <strong>Nota:</strong> Las rutas usan el nombre de tu estación automáticamente.
+                        </p>
                     </div>
                 </div>
 
                 <script>
+                    const stationShortName = '<?php echo htmlspecialchars($stationShortName); ?>';
                     const playlistOptions = `
                         <option value="">-- Seleccionar playlist --</option>
                         <?php foreach ($playlists as $playlist): ?>
@@ -1147,10 +1169,11 @@ if ($hasStationId) {
                         code += '# ========================================\n\n';
 
                         // Definir playlists
+                        const stationPath = stationShortName || 'TU_ESTACION';
                         playlists.forEach((p, i) => {
                             const safeName = p.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
                             code += `# ${p.displayName}\n`;
-                            code += `playlist_${safeName} = playlist(mode="randomize", "/var/azuracast/stations/TU_ESTACION/media/${p.name}")\n\n`;
+                            code += `playlist_${safeName} = playlist(mode="randomize", "/var/azuracast/stations/${stationPath}/media/${p.name}")\n\n`;
                         });
 
                         // Generar rotación
