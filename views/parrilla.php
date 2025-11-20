@@ -756,9 +756,16 @@ if ($hasStationId) {
                 </div>
             <?php else: ?>
                 <?php
+                // Obtener configuración global
+                $globalConfig = getConfig();
+
                 // Obtener playlists de AzuraCast
                 $playlists = getAzuracastPlaylists($username);
                 if ($playlists === false) $playlists = [];
+
+                // Obtener configuración actual de Liquidsoap
+                $liquidsoapConfig = getAzuracastLiquidsoapConfig($username);
+                $hasLiquidsoapConfig = is_array($liquidsoapConfig) && !empty($liquidsoapConfig);
                 ?>
 
                 <style>
@@ -881,12 +888,122 @@ if ($hasStationId) {
                         font-size: 13px;
                         color: #1e40af;
                     }
+                    .current-config {
+                        background: #f0fdf4;
+                        border: 1px solid #bbf7d0;
+                        border-radius: 8px;
+                        padding: 15px;
+                        margin-bottom: 20px;
+                    }
+                    .current-config h4 {
+                        margin: 0 0 15px 0;
+                        color: #166534;
+                        font-size: 14px;
+                    }
+                    .config-section {
+                        background: white;
+                        border: 1px solid #dcfce7;
+                        border-radius: 6px;
+                        margin-bottom: 10px;
+                    }
+                    .config-section:last-child {
+                        margin-bottom: 0;
+                    }
+                    .config-section-header {
+                        padding: 10px 15px;
+                        background: #f0fdf4;
+                        border-bottom: 1px solid #dcfce7;
+                        font-weight: 600;
+                        font-size: 13px;
+                        color: #15803d;
+                        cursor: pointer;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    }
+                    .config-section-header:hover {
+                        background: #dcfce7;
+                    }
+                    .config-section-content {
+                        padding: 10px 15px;
+                        font-family: 'Courier New', monospace;
+                        font-size: 12px;
+                        white-space: pre-wrap;
+                        max-height: 200px;
+                        overflow-y: auto;
+                        display: none;
+                        background: #f9fafb;
+                        color: #374151;
+                    }
+                    .config-section-content.expanded {
+                        display: block;
+                    }
+                    .config-empty {
+                        color: #9ca3af;
+                        font-style: italic;
+                        font-family: inherit;
+                    }
+                    .toggle-icon {
+                        transition: transform 0.2s;
+                    }
+                    .toggle-icon.expanded {
+                        transform: rotate(180deg);
+                    }
+                    .no-config {
+                        color: #6b7280;
+                        font-size: 13px;
+                        padding: 10px;
+                        text-align: center;
+                    }
                 </style>
 
                 <div class="info-box">
                     💡 <strong>Cómo funciona:</strong> Añade playlists en el orden que quieres que se reproduzcan.
                     Indica cuántos audios de cada una. El código generado lo pegas en
                     <strong>Settings > Edit Liquidsoap Configuration</strong> en AzuraCast.
+                </div>
+
+                <!-- Configuración actual de Liquidsoap -->
+                <div class="current-config">
+                    <h4>📋 Configuración Actual de Liquidsoap</h4>
+                    <?php if ($hasLiquidsoapConfig): ?>
+                        <?php foreach ($liquidsoapConfig as $configItem): ?>
+                            <?php
+                            $field = $configItem['field'] ?? '';
+                            $label = $configItem['label'] ?? $field;
+                            $value = $configItem['value'] ?? '';
+                            $hasValue = !empty(trim($value));
+                            ?>
+                            <div class="config-section">
+                                <div class="config-section-header" onclick="toggleConfigSection(this)">
+                                    <span><?php echo htmlspecialchars($label); ?></span>
+                                    <span class="toggle-icon">▼</span>
+                                </div>
+                                <div class="config-section-content">
+                                    <?php if ($hasValue): ?>
+                                        <?php echo htmlspecialchars($value); ?>
+                                    <?php else: ?>
+                                        <span class="config-empty">(Sin configuración personalizada)</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                        <script>
+                            function toggleConfigSection(header) {
+                                const content = header.nextElementSibling;
+                                const icon = header.querySelector('.toggle-icon');
+                                content.classList.toggle('expanded');
+                                icon.classList.toggle('expanded');
+                            }
+                        </script>
+                    <?php else: ?>
+                        <div class="no-config">
+                            No se pudo obtener la configuración de Liquidsoap.
+                            <?php if (empty($globalConfig['azuracast_api_key'] ?? '')): ?>
+                                <br><small>Verifica que la API Key esté configurada en Administración.</small>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <div class="liquidsoap-form">

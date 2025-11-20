@@ -452,3 +452,145 @@ function testAzuracastConnection() {
         'message' => 'Conexión exitosa'
     ];
 }
+
+/**
+ * Obtener configuración avanzada de Liquidsoap de una emisora
+ * Requiere API Key para autenticación
+ *
+ * @param string $username Nombre de usuario
+ * @return array|false Array con la configuración de Liquidsoap o false si hay error
+ */
+function getAzuracastLiquidsoapConfig($username) {
+    // Obtener configuración global
+    $config = getConfig();
+    $apiUrl = $config['azuracast_api_url'] ?? '';
+    $apiKey = $config['azuracast_api_key'] ?? '';
+
+    if (empty($apiUrl)) {
+        error_log("AzuraCast Liquidsoap: URL de API no configurada");
+        return false;
+    }
+
+    if (empty($apiKey)) {
+        error_log("AzuraCast Liquidsoap: API Key no configurada");
+        return false;
+    }
+
+    // Obtener station_id del usuario
+    $userData = getUserDB($username);
+    $stationId = $userData['azuracast']['station_id'] ?? null;
+
+    if (empty($stationId)) {
+        error_log("AzuraCast Liquidsoap: Station ID no configurado para usuario $username");
+        return false;
+    }
+
+    // Construir URL de la API de configuración de Liquidsoap
+    $liquidsoapUrl = rtrim($apiUrl, '/') . '/station/' . $stationId . '/liquidsoap-config';
+
+    try {
+        // Crear contexto con autenticación API Key
+        $context = stream_context_create([
+            'http' => [
+                'timeout' => 10,
+                'user_agent' => 'SAPO/1.0',
+                'header' => 'X-API-Key: ' . $apiKey
+            ]
+        ]);
+
+        $response = @file_get_contents($liquidsoapUrl, false, $context);
+
+        if ($response === false) {
+            error_log("AzuraCast Liquidsoap: Error al obtener config desde $liquidsoapUrl");
+            return false;
+        }
+
+        $data = json_decode($response, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log("AzuraCast Liquidsoap: Error JSON: " . json_last_error_msg());
+            return false;
+        }
+
+        error_log("AzuraCast Liquidsoap: Configuración obtenida correctamente para station $stationId");
+        return $data;
+
+    } catch (Exception $e) {
+        error_log("AzuraCast Liquidsoap: Excepción: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Actualizar configuración avanzada de Liquidsoap de una emisora
+ * Requiere API Key para autenticación
+ *
+ * @param string $username Nombre de usuario
+ * @param array $configData Configuración de Liquidsoap a guardar
+ * @return array Array con 'success' (bool) y 'message' (string)
+ */
+function updateAzuracastLiquidsoapConfig($username, $configData) {
+    // Obtener configuración global
+    $config = getConfig();
+    $apiUrl = $config['azuracast_api_url'] ?? '';
+    $apiKey = $config['azuracast_api_key'] ?? '';
+
+    if (empty($apiUrl)) {
+        return ['success' => false, 'message' => 'URL de API no configurada'];
+    }
+
+    if (empty($apiKey)) {
+        return ['success' => false, 'message' => 'API Key no configurada'];
+    }
+
+    // Obtener station_id del usuario
+    $userData = getUserDB($username);
+    $stationId = $userData['azuracast']['station_id'] ?? null;
+
+    if (empty($stationId)) {
+        return ['success' => false, 'message' => 'Station ID no configurado'];
+    }
+
+    // Construir URL de la API
+    $liquidsoapUrl = rtrim($apiUrl, '/') . '/station/' . $stationId . '/liquidsoap-config';
+
+    try {
+        // Preparar datos JSON
+        $jsonData = json_encode($configData, JSON_UNESCAPED_UNICODE);
+
+        // Crear contexto con autenticación y método PUT
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'PUT',
+                'timeout' => 10,
+                'user_agent' => 'SAPO/1.0',
+                'header' => [
+                    'X-API-Key: ' . $apiKey,
+                    'Content-Type: application/json',
+                    'Content-Length: ' . strlen($jsonData)
+                ],
+                'content' => $jsonData
+            ]
+        ]);
+
+        $response = @file_get_contents($liquidsoapUrl, false, $context);
+
+        if ($response === false) {
+            error_log("AzuraCast Liquidsoap: Error al actualizar config en $liquidsoapUrl");
+            return ['success' => false, 'message' => 'Error al conectar con la API'];
+        }
+
+        $data = json_decode($response, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return ['success' => false, 'message' => 'Error al procesar respuesta de la API'];
+        }
+
+        error_log("AzuraCast Liquidsoap: Configuración actualizada correctamente para station $stationId");
+        return ['success' => true, 'message' => 'Configuración guardada correctamente', 'data' => $data];
+
+    } catch (Exception $e) {
+        error_log("AzuraCast Liquidsoap: Excepción al actualizar: " . $e->getMessage());
+        return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+    }
+}
