@@ -30,22 +30,19 @@ Options -Indexes
     RewriteRule .* - [F,L]
 </IfModule>
 
+# Variable de entorno para permitir iframes en parrilla_cards.php
+SetEnvIf Request_URI "parrilla_cards\.php" ALLOW_FRAMING
+
 # Headers de seguridad adicionales (si mod_headers está disponible)
 <IfModule mod_headers.c>
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-XSS-Protection "1; mode=block"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
-    Header always set X-Frame-Options "SAMEORIGIN"
+    # X-Frame-Options solo cuando NO es parrilla_cards.php
+    Header always set X-Frame-Options "SAMEORIGIN" env=!ALLOW_FRAMING
     # Descomentar si se usa HTTPS:
     # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
 </IfModule>
-
-# Eliminar X-Frame-Options solo para parrilla_cards.php (permite embedding del widget)
-<Files "parrilla_cards.php">
-    <IfModule mod_headers.c>
-        Header always unset X-Frame-Options
-    </IfModule>
-</Files>
 
 # Prevenir ataques de inyección de NULL byte
 <IfModule mod_rewrite.c>
