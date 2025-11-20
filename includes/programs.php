@@ -163,19 +163,19 @@ function syncProgramsFromAzuracast($username) {
         $isLive = ($programInfo['playlist_type'] ?? 'program') === 'live';
 
         if (!$isLive) {
-            // Marcar como huérfano si no existe en Radiobot
-            if (!in_array($programName, $detectedPrograms) && !in_array($programName, $allPlaylistNames)) {
-                $data['programs'][$programName]['orphaned'] = true;
-                $data['programs'][$programName]['disabled_in_radiobot'] = false;
-                $orphanedCount++;
-            }
-            // Marcar como desactivado si la playlist está deshabilitada
-            elseif (in_array($programName, $disabledPlaylists)) {
+            // Primero: Marcar como desactivado si la playlist está deshabilitada
+            if (in_array($programName, $disabledPlaylists)) {
                 $data['programs'][$programName]['orphaned'] = false;
                 $data['programs'][$programName]['disabled_in_radiobot'] = true;
                 $disabledCount++;
             }
-            // Marcar como activo si existe y está habilitado
+            // Segundo: Marcar como huérfano si no existe en ninguna lista de Radiobot
+            elseif (!in_array($programName, $allPlaylistNames)) {
+                $data['programs'][$programName]['orphaned'] = true;
+                $data['programs'][$programName]['disabled_in_radiobot'] = false;
+                $orphanedCount++;
+            }
+            // Tercero: Marcar como activo si existe y está habilitado
             else {
                 $data['programs'][$programName]['orphaned'] = false;
                 $data['programs'][$programName]['disabled_in_radiobot'] = false;
