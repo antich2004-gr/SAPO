@@ -90,6 +90,7 @@ $programsData = $programsDB['programs'] ?? [];
 
 // Organizar eventos por día de la semana
 $eventsByDay = [1 => [], 2 => [], 3 => [], 4 => [], 5 => [], 6 => [], 0 => []];
+$musicBlocksByDay = [1 => [], 2 => [], 3 => [], 4 => [], 5 => [], 6 => [], 0 => []];
 
 // PRIMERO: Añadir programas en directo (live) manuales de SAPO
 foreach ($programsData as $programName => $programInfo) {
@@ -147,7 +148,8 @@ foreach ($schedule as $event) {
     $programInfo = $programsData[$title] ?? null;
     $playlistType = $programInfo['playlist_type'] ?? 'program';
 
-    if ($playlistType === 'jingles' || $playlistType === 'music_block') continue;
+    // Omitir jingles
+    if ($playlistType === 'jingles') continue;
 
     $end = $event['end_timestamp'] ?? $event['end'] ?? null;
     $endDateTime = $end ? (is_numeric($end) ? new DateTime('@' . $end) : new DateTime($end)) : null;
@@ -168,9 +170,10 @@ foreach ($schedule as $event) {
     // Usar título personalizado si existe, sino el nombre de la playlist
     $displayTitle = !empty($programInfo['display_title']) ? $programInfo['display_title'] : $title;
 
-    $eventsByDay[$dayOfWeek][] = [
+    // Crear evento
+    $eventData = [
         'title' => $displayTitle,
-        'original_title' => $title, // Guardar el título original para referencia
+        'original_title' => $title,
         'start_time' => $startDateTime->format('H:i'),
         'end_time' => $endDateTime->format('H:i'),
         'start_timestamp' => $normalizedTimestamp,
@@ -183,7 +186,23 @@ foreach ($schedule as $event) {
         'social_instagram' => $programInfo['social_instagram'] ?? '',
         'playlist_type' => $playlistType
     ];
+
+    // Separar bloques musicales de programas
+    if ($playlistType === 'music_block') {
+        $musicBlocksByDay[$dayOfWeek][] = $eventData;
+    } else {
+        $eventsByDay[$dayOfWeek][] = $eventData;
+    }
 }
+
+// Ordenar bloques musicales por hora de inicio
+foreach ($musicBlocksByDay as $day => &$dayBlocks) {
+    usort($dayBlocks, function($a, $b) {
+        return $a['start_timestamp'] - $b['start_timestamp'];
+    });
+}
+unset($dayBlocks);
+
 
 // Deduplicar eventos
 foreach ($eventsByDay as $day => &$dayEvents) {
@@ -636,6 +655,139 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
             .header h1 { font-size: 1.3em; }
             .program-title { font-size: 1.1em; }
         }
+
+        /* Timeline de bloques musicales */
+        .timeline-container {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .timeline-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .timeline-bar {
+            display: flex;
+            height: 36px;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #f3f4f6;
+            position: relative;
+        }
+
+        .timeline-segment {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 600;
+            color: white;
+            padding: 0 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            position: relative;
+            min-width: 2px;
+        }
+
+        .timeline-segment.music {
+            background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+        }
+
+        .timeline-segment.program {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+        }
+
+        .timeline-segment.live {
+            background: linear-gradient(135deg, #10b981, #34d399);
+        }
+
+        .timeline-segment.gap {
+            background: #e5e7eb;
+        }
+
+        .timeline-segment:hover {
+            filter: brightness(1.1);
+        }
+
+        .timeline-segment .segment-tooltip {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            z-index: 100;
+            margin-bottom: 5px;
+        }
+
+        .timeline-segment:hover .segment-tooltip {
+            display: block;
+        }
+
+        .timeline-hours {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            color: #9ca3af;
+            margin-top: 4px;
+            padding: 0 2px;
+        }
+
+        .timeline-legend {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .timeline-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .timeline-legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .timeline-legend-color.music {
+            background: #8b5cf6;
+        }
+
+        .timeline-legend-color.program {
+            background: #f59e0b;
+        }
+
+        .timeline-legend-color.live {
+            background: #10b981;
+        }
+
+        @media (max-width: 768px) {
+            .timeline-segment {
+                font-size: 8px;
+                padding: 0 3px;
+            }
+            .timeline-hours {
+                font-size: 8px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -821,6 +973,103 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                             </div>
                         </div>
                     <?php endforeach; ?>
+                <?php endif; ?>
+
+                <?php
+                // Timeline de bloques musicales para este día
+                $dayBlocks = $musicBlocksByDay[$day] ?? [];
+                $dayEvents = $eventsByDay[$day] ?? [];
+
+                // Combinar todos los eventos del día para el timeline
+                $allDayEvents = array_merge($dayEvents, $dayBlocks);
+                usort($allDayEvents, function($a, $b) {
+                    return $a['start_timestamp'] - $b['start_timestamp'];
+                });
+
+                if (!empty($allDayEvents)):
+                ?>
+                <div class="timeline-container">
+                    <div class="timeline-title">
+                        <span>📊</span> Distribución del día
+                    </div>
+                    <div class="timeline-bar">
+                        <?php
+                        $totalMinutes = 24 * 60; // 1440 minutos en un día
+                        $lastEnd = 0;
+
+                        foreach ($allDayEvents as $event):
+                            // Calcular minutos desde medianoche
+                            $startParts = explode(':', $event['start_time']);
+                            $endParts = explode(':', $event['end_time']);
+                            $startMinutes = (int)$startParts[0] * 60 + (int)$startParts[1];
+                            $endMinutes = (int)$endParts[0] * 60 + (int)$endParts[1];
+
+                            // Si termina antes de que empiece (cruza medianoche)
+                            if ($endMinutes <= $startMinutes) {
+                                $endMinutes = 24 * 60;
+                            }
+
+                            // Gap antes de este evento
+                            if ($startMinutes > $lastEnd):
+                                $gapWidth = (($startMinutes - $lastEnd) / $totalMinutes) * 100;
+                        ?>
+                            <div class="timeline-segment gap" style="width: <?php echo $gapWidth; ?>%;"></div>
+                        <?php endif;
+
+                            // Calcular ancho del segmento
+                            $duration = $endMinutes - $startMinutes;
+                            $width = ($duration / $totalMinutes) * 100;
+
+                            // Determinar tipo de segmento
+                            $segmentClass = 'program';
+                            if ($event['playlist_type'] === 'music_block') {
+                                $segmentClass = 'music';
+                            } elseif ($event['playlist_type'] === 'live') {
+                                $segmentClass = 'live';
+                            }
+
+                            $lastEnd = $endMinutes;
+                        ?>
+                            <div class="timeline-segment <?php echo $segmentClass; ?>"
+                                 style="width: <?php echo $width; ?>%;"
+                                 title="<?php echo htmlspecialchars($event['title'] . ' (' . $event['start_time'] . ' - ' . $event['end_time'] . ')'); ?>">
+                                <span class="segment-tooltip">
+                                    <?php echo htmlspecialchars($event['title']); ?><br>
+                                    <?php echo $event['start_time']; ?> - <?php echo $event['end_time']; ?>
+                                </span>
+                                <?php echo $width > 8 ? htmlspecialchars(mb_substr($event['title'], 0, 10)) : ''; ?>
+                            </div>
+                        <?php endforeach;
+
+                        // Gap al final si no llegamos a medianoche
+                        if ($lastEnd < $totalMinutes):
+                            $gapWidth = (($totalMinutes - $lastEnd) / $totalMinutes) * 100;
+                        ?>
+                            <div class="timeline-segment gap" style="width: <?php echo $gapWidth; ?>%;"></div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="timeline-hours">
+                        <span>00:00</span>
+                        <span>06:00</span>
+                        <span>12:00</span>
+                        <span>18:00</span>
+                        <span>24:00</span>
+                    </div>
+                    <div class="timeline-legend">
+                        <div class="timeline-legend-item">
+                            <div class="timeline-legend-color music"></div>
+                            <span>Bloque Musical</span>
+                        </div>
+                        <div class="timeline-legend-item">
+                            <div class="timeline-legend-color program"></div>
+                            <span>Programa</span>
+                        </div>
+                        <div class="timeline-legend-item">
+                            <div class="timeline-legend-color live"></div>
+                            <span>En Directo</span>
+                        </div>
+                    </div>
+                </div>
                 <?php endif; ?>
             </div>
         <?php endforeach; ?>
