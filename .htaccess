@@ -46,7 +46,7 @@ Options -Indexes
     RewriteRule .* - [E=NEED_FRAME_OPTIONS:1]
 </IfModule>
 <IfModule mod_headers.c>
-    Header always set X-Frame-Options "SAMEORIGIN" env=NEED_FRAME_OPTIONS
+    Header always set X-Frame-Options "SAMEORIGIN" env=REDIRECT_NEED_FRAME_OPTIONS
 </IfModule>
 
 # Prevenir ataques de inyección de NULL byte
