@@ -249,7 +249,7 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #ffffff;
             padding: 20px;
             font-size: <?php echo $baseFontSize; ?>;
             min-height: 100vh;

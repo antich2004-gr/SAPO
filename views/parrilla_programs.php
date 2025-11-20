@@ -84,13 +84,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                     <label>Descripción corta: <small>(para cards y previews)</small></label>
                     <input type="text" name="short_description"
                            placeholder="Programa de música alternativa de los 90"
-                           maxlength="200">
-                </div>
-
-                <div class="form-group">
-                    <label>Descripción larga: <small>(para página de detalle)</small></label>
-                    <textarea name="long_description" rows="4"
-                              placeholder="Descripción detallada del programa, presentadores, temáticas, etc."></textarea>
+                           maxlength="300">
                 </div>
 
                 <div class="form-group">
@@ -270,13 +264,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                         <input type="text" name="short_description"
                                value="<?php echo htmlEsc($programInfo['short_description'] ?? ''); ?>"
                                placeholder="Programa de música alternativa de los 90"
-                               maxlength="200">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Descripción larga: <small>(para página de detalle)</small></label>
-                        <textarea name="long_description" rows="4"
-                                  placeholder="Descripción detallada del programa, presentadores, temáticas, etc."><?php echo htmlEsc($programInfo['long_description'] ?? ''); ?></textarea>
+                               maxlength="300">
                     </div>
 
                     <?php
