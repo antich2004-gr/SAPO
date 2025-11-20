@@ -13,7 +13,7 @@
                 <span class="btn-icon">📖</span> Ayuda General
             </a>
             <a href="<?php echo basename($_SERVER['PHP_SELF']); ?>" class="btn btn-secondary">
-                <span class="btn-icon">⬅️</span> Volver
+                <span class="btn-icon">⬅️</span> Volver al Dashboard
             </a>
         </div>
     </div>
