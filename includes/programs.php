@@ -177,16 +177,26 @@ function syncProgramsFromAzuracast($username) {
                 $disabledCount++;
             }
 
-            if ($shouldBeOrphaned && empty($programInfo['orphaned'])) {
+            // Debug: mostrar estado actual
+            $currentOrphaned = $data['programs'][$programName]['orphaned'] ?? false;
+
+            if ($shouldBeOrphaned && !$currentOrphaned) {
                 $data['programs'][$programName]['orphaned'] = true;
                 $data['programs'][$programName]['orphan_reason'] = $reason;
                 $orphanedCount++;
                 error_log("syncProgramsFromAzuracast: Marcando '$programName' como huérfano (razón: $reason)");
-            } elseif (!$shouldBeOrphaned && !empty($programInfo['orphaned'])) {
+            } elseif (!$shouldBeOrphaned && $currentOrphaned) {
                 // Reactivar si ya no debería ser huérfano
                 $data['programs'][$programName]['orphaned'] = false;
                 unset($data['programs'][$programName]['orphan_reason']);
                 $reactivatedCount++;
+                error_log("syncProgramsFromAzuracast: Reactivando '$programName' (estaba huérfano, ahora activo)");
+            }
+
+            // Debug adicional
+            if (in_array($programName, $detectedPrograms)) {
+                $playlistEnabled = isset($playlistStatus[$programName]) ? ($playlistStatus[$programName] ? 'SI' : 'NO') : 'DESCONOCIDO';
+                error_log("syncProgramsFromAzuracast: '$programName' - En schedule: SI, Habilitada: $playlistEnabled, Huérfano actual: " . ($currentOrphaned ? 'SI' : 'NO') . ", Debería ser huérfano: " . ($shouldBeOrphaned ? 'SI' : 'NO'));
             }
         }
     }

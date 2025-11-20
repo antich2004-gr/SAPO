@@ -461,12 +461,12 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                                 if ($isOrphaned):
                                     if ($orphanReason === 'playlist_deshabilitada'):
                                 ?>
-                                    <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;" title="La playlist está deshabilitada en AzuraCast">
-                                        ⏸️ PLAYLIST DESHABILITADA
+                                    <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;" title="La playlist existe pero está deshabilitada en AzuraCast">
+                                        ⏸️ DESHABILITADA EN AZURACAST
                                     </span>
                                 <?php else: ?>
-                                    <span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;" title="Este programa no aparece en la programación de AzuraCast">
-                                        ⚠️ NO EN AZURACAST
+                                    <span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;" title="Este programa no existe en la programación de AzuraCast">
+                                        ❌ NO EN AZURACAST
                                     </span>
                                 <?php endif; ?>
                                 <?php endif; ?>
