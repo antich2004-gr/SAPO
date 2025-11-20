@@ -731,10 +731,10 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                                            class="live-badge-right"
                                            style="text-decoration: none; cursor: pointer;"
                                            title="Escuchar en directo">
-                                            🔴 AHORA EN DIRECTO
+                                            ▶️ AHORA EN DIRECTO
                                         </a>
                                     <?php else: ?>
-                                        <div class="live-badge-right">🔴 AHORA EN DIRECTO</div>
+                                        <div class="live-badge-right">▶️ AHORA EN DIRECTO</div>
                                     <?php endif; ?>
                                 <?php endif; ?>
 
