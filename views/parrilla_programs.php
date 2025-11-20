@@ -241,7 +241,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                             // Programas importados pueden cambiar entre program, music_block, jingles
                             $playlistTypes = [
                                 'program' => '📻 Programa (se muestra en la parrilla)',
-                                'music_block' => '🎵 Bloque Musical (oculto)',
+                                'music_block' => '🎵 Bloque Musical (en timeline)',
                                 'jingles' => '🔊 Jingles/Cortinillas (oculto)'
                             ];
                         ?>
@@ -256,7 +256,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                         </select>
                         <small style="color: #6b7280;">
                             • <strong>Programa</strong>: Contenido producido (repeticiones, podcast)<br>
-                            • <strong>Bloque Musical</strong>: Música automatizada (se oculta de la parrilla)<br>
+                            • <strong>Bloque Musical</strong>: Música automatizada (se muestra en el timeline)<br>
                             • <strong>Jingles/Cortinillas</strong>: Efectos de audio (se ocultan de la parrilla)<br>
                             <em>💡 Los programas importados no pueden cambiarse a "En Directo". Para añadir programas en directo, usa el formulario de la izquierda.</em>
                         </small>
