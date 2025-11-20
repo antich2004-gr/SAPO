@@ -148,8 +148,9 @@ foreach ($schedule as $event) {
     $programInfo = $programsData[$title] ?? null;
     $playlistType = $programInfo['playlist_type'] ?? 'program';
 
-    // Omitir jingles
+    // Omitir jingles y programas ocultos
     if ($playlistType === 'jingles') continue;
+    if (!empty($programInfo['hidden_from_schedule'])) continue;
 
     $end = $event['end_timestamp'] ?? $event['end'] ?? null;
     $endDateTime = $end ? (is_numeric($end) ? new DateTime('@' . $end) : new DateTime($end)) : null;

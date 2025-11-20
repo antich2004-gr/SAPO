@@ -396,7 +396,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'presenters' => trim($_POST['presenters'] ?? ''),
                 'social_twitter' => trim($_POST['social_twitter'] ?? ''),
                 'social_instagram' => trim($_POST['social_instagram'] ?? ''),
-                'rss_feed' => trim($_POST['rss_feed'] ?? '')
+                'rss_feed' => trim($_POST['rss_feed'] ?? ''),
+                'hidden_from_schedule' => isset($_POST['hidden_from_schedule']) ? true : false
             ];
 
             // Solo guardar campos de horario si es programa en directo

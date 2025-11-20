@@ -264,6 +264,18 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                     </div>
 
                     <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" name="hidden_from_schedule" value="1"
+                                   <?php echo !empty($programInfo['hidden_from_schedule']) ? 'checked' : ''; ?>
+                                   style="width: 18px; height: 18px; cursor: pointer;">
+                            <span>Ocultar en la parrilla</span>
+                        </label>
+                        <small style="color: #6b7280; display: block; margin-top: 5px;">
+                            Si está marcado, este programa/bloque no aparecerá en la parrilla pública.
+                        </small>
+                    </div>
+
+                    <div class="form-group">
                         <label>Título personalizado: <small>(opcional - si está vacío se usa el nombre de la playlist)</small></label>
                         <input type="text" name="display_title"
                                value="<?php echo htmlEsc($programInfo['display_title'] ?? ''); ?>"
