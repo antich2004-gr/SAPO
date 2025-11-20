@@ -79,7 +79,7 @@ function syncProgramsFromAzuracast($username) {
     if ($schedule === false) {
         return [
             'success' => false,
-            'message' => 'No se pudo obtener la programación de Radiobot',
+            'message' => 'No se pudo obtener la programación de AzuraCast',
             'new_count' => 0,
             'total_count' => 0
         ];
@@ -88,7 +88,7 @@ function syncProgramsFromAzuracast($username) {
     if (empty($schedule)) {
         return [
             'success' => false,
-            'message' => 'La programación de Radiobot está vacía',
+            'message' => 'La programación de AzuraCast está vacía',
             'new_count' => 0,
             'total_count' => 0
         ];

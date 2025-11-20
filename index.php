@@ -269,7 +269,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $error = 'Usuario no especificado';
         } else {
             if (updateAzuracastConfig($username, $stationId, $widgetColor)) {
-                $message = "Configuración de Radiobot actualizada para $username";
+                $message = "Configuración de AzuraCast actualizada para $username";
             } else {
                 $error = 'Error al actualizar la configuración';
             }
@@ -426,7 +426,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $streamUrl = $_POST['stream_url'] ?? '';
 
         if (updateAzuracastConfig($username, $stationId, $widgetColor, false, '', $widgetStyle, $widgetFontSize, $streamUrl)) {
-            $message = "Configuración de Radiobot actualizada correctamente";
+            $message = "Configuración de AzuraCast actualizada correctamente";
         } else {
             $error = 'Error al actualizar la configuración';
         }
@@ -606,10 +606,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } else {
             $result = editPodcast($_SESSION['username'], $index, $url, $finalCategory, $name, $caducidad, $duracion);
             if ($result['success']) {
-                // Si se cambió la categoría, mostrar recordatorio de Radiobot
+                // Si se cambió la categoría, mostrar recordatorio de AzuraCast
                 if (!empty($result['category_changed'])) {
-                    $_SESSION['show_radiobot_reminder'] = true;
-                    $_SESSION['radiobot_action'] = 'move_podcast';
+                    $_SESSION['show_azuracast_reminder'] = true;
+                    $_SESSION['azuracast_action'] = 'move_podcast';
                 }
                 header('Location: ' . basename($_SERVER['PHP_SELF']));
                 exit;
@@ -748,10 +748,10 @@ if ($action == 'rename_category' && isLoggedIn() && !isAdmin()) {
         $result = renameCategory($_SESSION['username'], $oldName, $newName);
         if ($result['success']) {
             $_SESSION['message'] = $result['message'];
-            $_SESSION['show_radiobot_reminder'] = true;
-            $_SESSION['radiobot_action'] = 'rename';
-            $_SESSION['radiobot_old_name'] = $oldName;
-            $_SESSION['radiobot_new_name'] = $result['new_name'];
+            $_SESSION['show_azuracast_reminder'] = true;
+            $_SESSION['azuracast_action'] = 'rename';
+            $_SESSION['azuracast_old_name'] = $oldName;
+            $_SESSION['azuracast_new_name'] = $result['new_name'];
         } else {
             $_SESSION['error'] = $result['error'];
         }

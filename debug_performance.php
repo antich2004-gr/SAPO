@@ -16,13 +16,13 @@ echo "Station: $station\n\n";
 
 $totalStart = microtime(true);
 
-// 1. Cargar config de Radiobot
+// 1. Cargar config de AzuraCast
 $t1 = microtime(true);
 $azConfig = getAzuracastConfig($station);
 $t2 = microtime(true);
 echo sprintf("1. getAzuracastConfig: %.3fs\n", $t2 - $t1);
 
-// 2. Cargar schedule de Radiobot
+// 2. Cargar schedule de AzuraCast
 $t1 = microtime(true);
 $schedule = getAzuracastSchedule($station);
 $t2 = microtime(true);

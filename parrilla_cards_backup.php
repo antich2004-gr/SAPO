@@ -60,7 +60,7 @@ $widgetFontSize = $azConfig['widget_font_size'] ?? 'medium';
 $stationId = $azConfig['station_id'] ?? null;
 
 if (!$stationId) {
-    die('Error: Esta estación no tiene configurado el Station ID de Radiobot');
+    die('Error: Esta estación no tiene configurado el Station ID de AzuraCast');
 }
 
 // Obtener programación
