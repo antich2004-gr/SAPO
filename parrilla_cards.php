@@ -658,85 +658,70 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
 
         /* Cards compactas de bloques musicales */
         .blocks-container {
-            margin-top: 30px;
-            padding-top: 20px;
+            margin-top: 20px;
+            padding-top: 15px;
             border-top: 1px solid #e5e7eb;
         }
 
         .blocks-title {
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 600;
-            color: #6b7280;
-            margin-bottom: 12px;
+            color: #9ca3af;
+            margin-bottom: 8px;
+        }
+
+        .blocks-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .block-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            padding: 6px 10px;
+            border-left: 3px solid #8b5cf6;
+            font-size: 11px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .blocks-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 10px;
-        }
-
-        .block-card {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 10px 12px;
-            border-left: 4px solid #8b5cf6;
-            transition: all 0.2s;
-        }
-
         .block-card:hover {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transform: translateY(-1px);
-        }
-
-        .block-card.program {
-            border-left-color: #f59e0b;
-        }
-
-        .block-card.live {
-            border-left-color: #10b981;
+            background: #f3f4f6;
         }
 
         .block-card-time {
-            font-size: 11px;
             font-weight: 600;
             color: #6b7280;
-            margin-bottom: 3px;
+            white-space: nowrap;
         }
 
         .block-card-name {
-            font-size: 13px;
-            font-weight: 600;
-            color: #1f2937;
-            margin-bottom: 3px;
-            line-height: 1.3;
-        }
-
-        .block-card-type {
-            font-size: 10px;
-            color: #9ca3af;
+            font-weight: 500;
+            color: #374151;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 120px;
         }
 
         .block-card-duration {
-            font-size: 10px;
-            color: #6b7280;
-            margin-top: 4px;
+            color: #9ca3af;
+            white-space: nowrap;
         }
 
         @media (max-width: 768px) {
             .blocks-grid {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-                gap: 8px;
+                gap: 4px;
             }
             .block-card {
-                padding: 8px 10px;
+                padding: 4px 8px;
+                font-size: 10px;
             }
             .block-card-name {
-                font-size: 12px;
+                max-width: 80px;
             }
         }
     </style>
@@ -956,17 +941,12 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                             $hours = floor($durationMinutes / 60);
                             $minutes = $durationMinutes % 60;
                             $durationText = $hours > 0 ? $hours . 'h' : '';
-                            $durationText .= $minutes > 0 ? ' ' . $minutes . 'min' : '';
+                            if ($minutes > 0) $durationText .= ($hours > 0 ? '' : '') . $minutes . 'm';
                         ?>
                             <div class="block-card">
-                                <div class="block-card-time">
-                                    <?php echo $block['start_time']; ?> - <?php echo $block['end_time']; ?>
-                                </div>
-                                <div class="block-card-name">
-                                    🎵 <?php echo htmlspecialchars($block['title']); ?>
-                                </div>
-                                <div class="block-card-type">Automático</div>
-                                <div class="block-card-duration"><?php echo trim($durationText); ?></div>
+                                <span class="block-card-time"><?php echo substr($block['start_time'], 0, 5); ?>-<?php echo substr($block['end_time'], 0, 5); ?></span>
+                                <span class="block-card-name"><?php echo htmlspecialchars($block['title']); ?></span>
+                                <span class="block-card-duration"><?php echo trim($durationText); ?></span>
                             </div>
                         <?php endforeach; ?>
                     </div>
