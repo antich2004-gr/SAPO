@@ -168,7 +168,62 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         header('Location: ' . basename($_SERVER['PHP_SELF']));
         exit;
     }
-    
+
+    // SAVE LIQUIDSOAP CONFIG (AJAX)
+    if ($action == 'save_liquidsoap_config') {
+        header('Content-Type: application/json');
+
+        $section = $_POST['section'] ?? '';
+        $code = $_POST['code'] ?? '';
+
+        if (empty($section) || empty($code)) {
+            echo json_encode(['success' => false, 'message' => 'Datos incompletos']);
+            exit;
+        }
+
+        // Validar sección permitida
+        $allowedSections = ['custom_config', 'custom_config_pre_playlists', 'custom_config_post_playlists'];
+        if (!in_array($section, $allowedSections)) {
+            echo json_encode(['success' => false, 'message' => 'Sección no válida']);
+            exit;
+        }
+
+        // Obtener configuración actual
+        $currentConfig = getAzuracastLiquidsoapConfig($username);
+        if ($currentConfig === false) {
+            echo json_encode(['success' => false, 'message' => 'No se pudo obtener la configuración actual de AzuraCast']);
+            exit;
+        }
+
+        // Preparar datos para actualizar (formato clave => valor)
+        $configToUpdate = [];
+        foreach ($currentConfig as $item) {
+            $field = $item['field'] ?? '';
+            $value = $item['value'] ?? '';
+
+            // Si es la sección donde queremos añadir, concatenar el código
+            if ($field === $section) {
+                // Añadir salto de línea si ya hay contenido
+                if (!empty(trim($value))) {
+                    $value .= "\n\n";
+                }
+                $value .= $code;
+            }
+
+            $configToUpdate[$field] = $value;
+        }
+
+        // Guardar configuración actualizada
+        $result = updateAzuracastLiquidsoapConfig($username, $configToUpdate);
+
+        if ($result['success']) {
+            echo json_encode(['success' => true, 'message' => 'Configuración guardada correctamente en AzuraCast']);
+        } else {
+            echo json_encode(['success' => false, 'message' => $result['message']]);
+        }
+        exit;
+    }
+
     // SAVE CONFIG (admin)
     if ($action == 'save_config' && isAdmin()) {
         $basePath = trim($_POST['base_path'] ?? '');

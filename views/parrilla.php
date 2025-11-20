@@ -1034,6 +1034,10 @@ if ($hasStationId) {
 
                     <div class="schedule-config">
                         <div>
+                            <label>Título/Nombre</label>
+                            <input type="text" id="rotation-title" placeholder="Ej: Programa Mañanas" maxlength="50">
+                        </div>
+                        <div>
                             <label>Hora inicio</label>
                             <input type="time" id="start-time" value="08:00">
                         </div>
@@ -1049,11 +1053,24 @@ if ($hasStationId) {
                                 <option value="random">Aleatorio</option>
                             </select>
                         </div>
+                        <div>
+                            <label>Guardar en sección</label>
+                            <select id="config-section">
+                                <option value="custom_config">Top of File (definiciones)</option>
+                                <option value="custom_config_pre_playlists">Before Playlists</option>
+                                <option value="custom_config_post_playlists">After Playlists</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <button type="button" class="btn btn-primary" style="margin-top: 20px;" onclick="generateCode()">
-                        🎵 Generar Código Liquidsoap
-                    </button>
+                    <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-primary" onclick="generateCode()">
+                            🎵 Generar Código
+                        </button>
+                        <button type="button" class="btn" id="save-btn" style="background: #10b981; color: white; display: none;" onclick="saveToAzuraCast()">
+                            💾 Guardar en AzuraCast
+                        </button>
+                    </div>
                 </div>
 
                 <div id="code-container" style="display: none;">
@@ -1107,6 +1124,7 @@ if ($hasStationId) {
 
                     function generateCode() {
                         const items = document.querySelectorAll('.rotation-item');
+                        const title = document.getElementById('rotation-title').value.trim() || 'Rotación sin nombre';
                         const startTime = document.getElementById('start-time').value;
                         const endTime = document.getElementById('end-time').value;
                         const rotationType = document.getElementById('rotation-type').value;
@@ -1130,8 +1148,11 @@ if ($hasStationId) {
                         }
 
                         // Generar código Liquidsoap
-                        let code = '# Rotación personalizada generada por SAPO\n';
-                        code += '# Horario: ' + startTime + ' - ' + endTime + '\n\n';
+                        let code = '# ========================================\n';
+                        code += '# ' + title + '\n';
+                        code += '# Generado por SAPO - ' + new Date().toLocaleDateString('es-ES') + '\n';
+                        code += '# Horario: ' + startTime + ' - ' + endTime + '\n';
+                        code += '# ========================================\n\n';
 
                         // Definir playlists
                         playlists.forEach((p, i) => {
@@ -1185,6 +1206,7 @@ if ($hasStationId) {
 
                         document.getElementById('generated-code').textContent = code;
                         document.getElementById('code-container').style.display = 'block';
+                        document.getElementById('save-btn').style.display = 'inline-block';
                     }
 
                     function copyCode() {
@@ -1194,6 +1216,53 @@ if ($hasStationId) {
                         }).catch(() => {
                             alert('❌ Error al copiar');
                         });
+                    }
+
+                    async function saveToAzuraCast() {
+                        const code = document.getElementById('generated-code').textContent;
+                        const section = document.getElementById('config-section').value;
+                        const title = document.getElementById('rotation-title').value.trim() || 'Rotación sin nombre';
+
+                        if (!code) {
+                            alert('Primero genera el código');
+                            return;
+                        }
+
+                        if (!confirm('¿Guardar "' + title + '" en AzuraCast?\n\nEl código se añadirá a la sección seleccionada.')) {
+                            return;
+                        }
+
+                        const saveBtn = document.getElementById('save-btn');
+                        const originalText = saveBtn.textContent;
+                        saveBtn.textContent = '⏳ Guardando...';
+                        saveBtn.disabled = true;
+
+                        try {
+                            const formData = new FormData();
+                            formData.append('action', 'save_liquidsoap_config');
+                            formData.append('section', section);
+                            formData.append('code', code);
+
+                            const response = await fetch('', {
+                                method: 'POST',
+                                body: formData
+                            });
+
+                            const result = await response.json();
+
+                            if (result.success) {
+                                alert('✅ ' + result.message);
+                                // Recargar página para mostrar la nueva configuración
+                                window.location.reload();
+                            } else {
+                                alert('❌ Error: ' + result.message);
+                            }
+                        } catch (error) {
+                            alert('❌ Error de conexión: ' + error.message);
+                        } finally {
+                            saveBtn.textContent = originalText;
+                            saveBtn.disabled = false;
+                        }
                     }
                 </script>
             <?php endif; ?>
