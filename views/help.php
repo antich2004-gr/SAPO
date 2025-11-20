@@ -229,7 +229,7 @@
         </div>
 
         <div style="background: #fffaf0; border-left: 4px solid #f6ad55; padding: 15px; margin: 15px 0;">
-            <strong>⚠️ Importante:</strong> Después de renombrar una categoría, recuerda actualizar las playlists en Radiobot/AzuraCast para que apunten a la nueva ruta.
+            <strong>⚠️ Importante:</strong> Después de renombrar una categoría, recuerda actualizar las playlists en Radiobot para que apunten a la nueva ruta.
         </div>
 
         <h4>🗑️ Eliminar una categoría</h4>
@@ -317,12 +317,12 @@
     <!-- Sección: Parrilla de programación -->
     <div id="parrilla" style="margin-bottom: 40px;">
         <h3>📅 Parrilla de programación</h3>
-        <p>SAPO incluye un widget de parrilla de programación que muestra tu programación semanal de manera visual y profesional, integrándose perfectamente con AzuraCast.</p>
+        <p>SAPO incluye un widget de parrilla de programación que muestra tu programación semanal de manera visual y profesional, integrándose perfectamente con Radiobot.</p>
 
         <h4>🎯 ¿Qué es la parrilla de programación?</h4>
         <p>Es una vista organizada por días de la semana que muestra:</p>
         <ul>
-            <li>📻 Programas automatizados desde AzuraCast</li>
+            <li>📻 Programas automatizados desde Radiobot</li>
             <li>🎙️ Programas en directo manuales</li>
             <li>🎧 Últimos episodios de podcasts con RSS</li>
             <li>🔴 Indicador de programa en emisión actual (con enlace al stream)</li>
@@ -335,8 +335,8 @@
             <li>Accede a la sección <strong>"Parrilla → Configuración"</strong> en el panel</li>
             <li>Configura los siguientes parámetros:
                 <ul>
-                    <li><strong>Station ID:</strong> ID de tu estación en AzuraCast (requerido)</li>
-                    <li><strong>URL de la Página Pública del Stream:</strong> URL de tu emisora en AzuraCast para escucha en directo (opcional)</li>
+                    <li><strong>Station ID:</strong> ID de tu estación en Radiobot (requerido)</li>
+                    <li><strong>URL de la Página Pública del Stream:</strong> URL de tu emisora en Radiobot para escucha en directo (opcional)</li>
                     <li><strong>Color del widget:</strong> Color principal de la parrilla (hexadecimal)</li>
                     <li><strong>Estilo visual:</strong> Modern, Classic, Compact o Minimal</li>
                     <li><strong>Tamaño de fuente:</strong> Small, Medium o Large</li>
@@ -352,7 +352,7 @@
         <h4>🎨 Estilos visuales disponibles</h4>
         <div style="display: grid; grid-template-columns: auto 1fr; gap: 15px; margin: 20px 0;">
             <div style="background: #e6f2ff; padding: 10px 20px; border-radius: 6px; font-weight: bold;">Modern</div>
-            <div style="padding: 10px 0;">Bordes redondeados, sombras suaves. Estilo inspirado en Radio 3 RTVE.</div>
+            <div style="padding: 10px 0;">Bordes redondeados, sombras suaves.</div>
 
             <div style="background: #f0f0f0; padding: 10px 20px; border-radius: 6px; font-weight: bold;">Classic</div>
             <div style="padding: 10px 0;">Bordes rectos, aspecto tradicional y profesional.</div>
@@ -364,8 +364,8 @@
             <div style="padding: 10px 0;">Sin bordes, máxima limpieza visual.</div>
         </div>
 
-        <h4>📺 Integración con AzuraCast</h4>
-        <p>La parrilla se sincroniza automáticamente con AzuraCast para mostrar:</p>
+        <h4>📺 Integración con Radiobot</h4>
+        <p>La parrilla se sincroniza automáticamente con Radiobot para mostrar:</p>
         <ul>
             <li>✅ Horarios de emisión de cada programa</li>
             <li>✅ Nombres de playlists configuradas</li>
@@ -374,11 +374,11 @@
         </ul>
 
         <div style="background: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 15px 0;">
-            <strong>🔄 Sincronización automática:</strong> La parrilla se actualiza cada 10 minutos desde AzuraCast. Los cambios en tu programación se reflejan automáticamente.
+            <strong>🔄 Sincronización automática:</strong> La parrilla se actualiza cada 10 minutos desde Radiobot. Los cambios en tu programación se reflejan automáticamente.
         </div>
 
         <h4>🎙️ Programas en directo manuales</h4>
-        <p>Además de los programas automatizados de AzuraCast, puedes añadir programas en directo que se mostrarán independientemente:</p>
+        <p>Además de los programas automatizados de Radiobot, puedes añadir programas en directo que se mostrarán independientemente:</p>
         <ol>
             <li>Edita un programa en SAPO</li>
             <li>Selecciona <strong>"Tipo de playlist: En directo"</strong></li>
@@ -447,7 +447,7 @@
         <h4>🎨 Personalización de programas</h4>
         <p>Cada programa puede tener información personalizada que se muestra en la parrilla:</p>
         <ul>
-            <li><strong>Título personalizado:</strong> Diferente al nombre de la playlist en AzuraCast</li>
+            <li><strong>Título personalizado:</strong> Diferente al nombre de la playlist en Radiobot</li>
             <li><strong>Imagen:</strong> Logo o portada del programa</li>
             <li><strong>Descripción:</strong> Texto explicativo del contenido</li>
             <li><strong>Presentadores:</strong> Nombres de los conductores</li>
@@ -455,7 +455,7 @@
         </ul>
 
         <div style="background: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 15px 0;">
-            <strong>💡 Tip:</strong> Configura toda la información de tus programas en SAPO para que la parrilla se vea completa y profesional, incluso si los nombres en AzuraCast son técnicos o codificados.
+            <strong>💡 Tip:</strong> Configura toda la información de tus programas en SAPO para que la parrilla se vea completa y profesional, incluso si los nombres en Radiobot son técnicos o codificados.
         </div>
 
         <h4>📱 Diseño responsive</h4>
@@ -570,7 +570,7 @@
 
         <div style="margin-bottom: 20px;">
             <h4>¿Qué pasa si cambio la categoría de un podcast?</h4>
-            <p>SAPO moverá automáticamente el directorio completo del podcast (con todos sus archivos) a la nueva categoría. Recibirás un recordatorio para actualizar las playlists en Radiobot/AzuraCast.</p>
+            <p>SAPO moverá automáticamente el directorio completo del podcast (con todos sus archivos) a la nueva categoría. Recibirás un recordatorio para actualizar las playlists en Radiobot.</p>
         </div>
 
         <div style="margin-bottom: 20px;">
