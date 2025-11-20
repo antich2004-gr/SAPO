@@ -1053,22 +1053,11 @@ if ($hasStationId) {
                                 <option value="random">Aleatorio</option>
                             </select>
                         </div>
-                        <div>
-                            <label>Guardar en sección</label>
-                            <select id="config-section">
-                                <option value="custom_config">Custom Configuration</option>
-                            </select>
-                        </div>
                     </div>
 
-                    <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
-                        <button type="button" class="btn btn-primary" onclick="generateCode()">
-                            🎵 Generar Código
-                        </button>
-                        <button type="button" class="btn" id="save-btn" style="background: #10b981; color: white; display: none;" onclick="saveToAzuraCast()">
-                            💾 Guardar en AzuraCast
-                        </button>
-                    </div>
+                    <button type="button" class="btn btn-primary" style="margin-top: 20px;" onclick="generateCode()">
+                        🎵 Generar Código
+                    </button>
                 </div>
 
                 <div id="code-container" style="display: none;">
@@ -1079,12 +1068,17 @@ if ($hasStationId) {
                     </div>
 
                     <div style="margin-top: 15px; background: #fef3c7; border: 1px solid #fde68a; padding: 15px; border-radius: 8px;">
-                        <h4 style="margin: 0 0 10px 0; color: #92400e;">⚠️ Instrucciones</h4>
+                        <h4 style="margin: 0 0 10px 0; color: #92400e;">⚠️ Importante - Código de Plantilla</h4>
+                        <p style="margin: 0 0 10px 0; color: #92400e; font-size: 13px;">
+                            Este código es una <strong>plantilla de referencia</strong> que necesita ajustes:
+                        </p>
                         <ol style="margin: 0; padding-left: 20px; color: #92400e; font-size: 13px;">
-                            <li>Ve a tu estación en AzuraCast</li>
-                            <li>Settings > Edit Liquidsoap Configuration</li>
-                            <li>Busca la sección adecuada y pega el código</li>
-                            <li>Guarda y reinicia el servicio</li>
+                            <li>Copia el código generado</li>
+                            <li>Cambia <code>TU_ESTACION</code> por el nombre real de tu estación</li>
+                            <li>Verifica que las rutas de las playlists sean correctas</li>
+                            <li>Ve a AzuraCast → Settings → Edit Liquidsoap Configuration</li>
+                            <li>Pega en la sección "Custom Configuration"</li>
+                            <li>Guarda y reinicia el backend</li>
                         </ol>
                     </div>
                 </div>
@@ -1204,7 +1198,6 @@ if ($hasStationId) {
 
                         document.getElementById('generated-code').textContent = code;
                         document.getElementById('code-container').style.display = 'block';
-                        document.getElementById('save-btn').style.display = 'inline-block';
                     }
 
                     function copyCode() {
@@ -1214,53 +1207,6 @@ if ($hasStationId) {
                         }).catch(() => {
                             alert('❌ Error al copiar');
                         });
-                    }
-
-                    async function saveToAzuraCast() {
-                        const code = document.getElementById('generated-code').textContent;
-                        const section = document.getElementById('config-section').value;
-                        const title = document.getElementById('rotation-title').value.trim() || 'Rotación sin nombre';
-
-                        if (!code) {
-                            alert('Primero genera el código');
-                            return;
-                        }
-
-                        if (!confirm('¿Guardar "' + title + '" en AzuraCast?\n\nEl código se añadirá a la sección seleccionada.')) {
-                            return;
-                        }
-
-                        const saveBtn = document.getElementById('save-btn');
-                        const originalText = saveBtn.textContent;
-                        saveBtn.textContent = '⏳ Guardando...';
-                        saveBtn.disabled = true;
-
-                        try {
-                            const formData = new FormData();
-                            formData.append('action', 'save_liquidsoap_config');
-                            formData.append('section', section);
-                            formData.append('code', code);
-
-                            const response = await fetch('', {
-                                method: 'POST',
-                                body: formData
-                            });
-
-                            const result = await response.json();
-
-                            if (result.success) {
-                                alert('✅ ' + result.message);
-                                // Recargar página para mostrar la nueva configuración
-                                window.location.reload();
-                            } else {
-                                alert('❌ Error: ' + result.message);
-                            }
-                        } catch (error) {
-                            alert('❌ Error de conexión: ' + error.message);
-                        } finally {
-                            saveBtn.textContent = originalText;
-                            saveBtn.disabled = false;
-                        }
                     }
                 </script>
             <?php endif; ?>
