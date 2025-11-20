@@ -26,7 +26,7 @@
             <li><a href="#buscar-podcasts">Buscar podcasts</a></li>
             <li><a href="#categorias">Organizar categorías</a></li>
             <li><a href="#descargas">Ejecutar descargas</a></li>
-            <li><a href="#parrilla">Parrilla de programación</a></li>
+            <li><a href="<?php echo basename($_SERVER['PHP_SELF']); ?>?action=help_parrilla">📅 Parrilla de programación</a> <span style="color: #667eea; font-size: 12px;">(página dedicada)</span></li>
             <li><a href="#estado-feeds">Entender el estado de los feeds</a></li>
             <li><a href="#importar-exportar">Importar y exportar</a></li>
             <li><a href="#ultimas-descargas">Ver últimas descargas</a></li>
@@ -314,157 +314,24 @@
         </div>
     </div>
 
-    <!-- Sección: Parrilla de programación -->
+    <!-- Sección: Parrilla de programación (enlace a página dedicada) -->
     <div id="parrilla" style="margin-bottom: 40px;">
         <h3>📅 Parrilla de programación</h3>
-        <p>SAPO incluye un widget de parrilla de programación que muestra tu programación semanal de manera visual y profesional, integrándose perfectamente con Radiobot.</p>
+        <p>SAPO incluye un widget de parrilla de programación que muestra tu programación semanal de manera visual y profesional.</p>
 
-        <h4>🎯 ¿Qué es la parrilla de programación?</h4>
-        <p>Es una vista organizada por días de la semana que muestra:</p>
-        <ul>
-            <li>📻 Programas automatizados desde Radiobot</li>
-            <li>🎙️ Programas en directo manuales</li>
-            <li>🎧 Últimos episodios de podcasts con RSS</li>
-            <li>🔴 Indicador de programa en emisión actual (con enlace al stream)</li>
-            <li>📱 Iconos de redes sociales (Twitter/Instagram)</li>
-        </ul>
-
-        <h4>⚙️ Configuración de la parrilla</h4>
-        <p>Para configurar la visualización de tu parrilla:</p>
-        <ol>
-            <li>Accede a la sección <strong>"Parrilla → Configuración"</strong> en el panel</li>
-            <li>Configura los siguientes parámetros:
-                <ul>
-                    <li><strong>Station ID:</strong> ID de tu estación en Radiobot (requerido)</li>
-                    <li><strong>URL de la Página Pública del Stream:</strong> URL de tu emisora en Radiobot para escucha en directo (opcional)</li>
-                    <li><strong>Color del widget:</strong> Color principal de la parrilla (hexadecimal)</li>
-                    <li><strong>Estilo visual:</strong> Modern, Classic, Compact o Minimal</li>
-                    <li><strong>Tamaño de fuente:</strong> Small, Medium o Large</li>
-                </ul>
-            </li>
-            <li>Guarda los cambios</li>
-        </ol>
-
-        <div style="background: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 15px 0;">
-            <strong>🎯 URL del Stream:</strong> Si configuras la URL de tu página pública del stream (ej: <code>https://radio.radiobot.org/public/tu_emisora</code>), el badge "🔴 AHORA EN DIRECTO" se convertirá en un enlace clickeable que llevará a tus oyentes directamente a escuchar la emisora.
+        <div style="background: #e6f7ff; border-left: 4px solid #667eea; padding: 20px; margin: 15px 0;">
+            <p style="margin: 0 0 15px 0;">La documentación completa de la parrilla de programación está disponible en una página dedicada con información detallada sobre:</p>
+            <ul style="margin: 0 0 15px 0;">
+                <li>Configuración y estilos visuales</li>
+                <li>Integración con Radiobot</li>
+                <li>Programas en directo y feeds RSS</li>
+                <li>URLs para embeber la parrilla</li>
+                <li>Personalización de programas</li>
+            </ul>
+            <a href="<?php echo basename($_SERVER['PHP_SELF']); ?>?action=help_parrilla" class="btn btn-primary" style="display: inline-block;">
+                <span class="btn-icon">📅</span> Ver ayuda de Parrilla
+            </a>
         </div>
-
-        <h4>🎨 Estilos visuales disponibles</h4>
-        <div style="display: grid; grid-template-columns: auto 1fr; gap: 15px; margin: 20px 0;">
-            <div style="background: #e6f2ff; padding: 10px 20px; border-radius: 6px; font-weight: bold;">Modern</div>
-            <div style="padding: 10px 0;">Bordes redondeados, sombras suaves.</div>
-
-            <div style="background: #f0f0f0; padding: 10px 20px; border-radius: 6px; font-weight: bold;">Classic</div>
-            <div style="padding: 10px 0;">Bordes rectos, aspecto tradicional y profesional.</div>
-
-            <div style="background: #fff3e0; padding: 10px 20px; border-radius: 6px; font-weight: bold;">Compact</div>
-            <div style="padding: 10px 0;">Espaciado reducido, ideal para mostrar más programas.</div>
-
-            <div style="background: #f5f5f5; padding: 10px 20px; border-radius: 6px; font-weight: bold;">Minimal</div>
-            <div style="padding: 10px 0;">Sin bordes, máxima limpieza visual.</div>
-        </div>
-
-        <h4>📺 Integración con Radiobot</h4>
-        <p>La parrilla se sincroniza automáticamente con Radiobot para mostrar:</p>
-        <ul>
-            <li>✅ Horarios de emisión de cada programa</li>
-            <li>✅ Nombres de playlists configuradas</li>
-            <li>✅ Detección automática del programa en emisión</li>
-            <li>✅ Zona horaria correcta (Europe/Madrid - CET/CEST)</li>
-        </ul>
-
-        <div style="background: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 15px 0;">
-            <strong>🔄 Sincronización automática:</strong> La parrilla se actualiza cada 10 minutos desde Radiobot. Los cambios en tu programación se reflejan automáticamente.
-        </div>
-
-        <h4>🎙️ Programas en directo manuales</h4>
-        <p>Además de los programas automatizados de Radiobot, puedes añadir programas en directo que se mostrarán independientemente:</p>
-        <ol>
-            <li>Edita un programa en SAPO</li>
-            <li>Selecciona <strong>"Tipo de playlist: En directo"</strong></li>
-            <li>Configura el horario:
-                <ul>
-                    <li><strong>Días de emisión:</strong> Selecciona los días de la semana</li>
-                    <li><strong>Hora de inicio:</strong> Hora en formato HH:MM</li>
-                    <li><strong>Duración:</strong> Duración en minutos</li>
-                </ul>
-            </li>
-            <li>Añade información adicional:
-                <ul>
-                    <li><strong>Título personalizado:</strong> Nombre a mostrar en la parrilla</li>
-                    <li><strong>Descripción corta:</strong> Subtítulo o descripción breve</li>
-                    <li><strong>Descripción larga:</strong> Información detallada del programa</li>
-                    <li><strong>Imagen:</strong> URL de la imagen del programa</li>
-                    <li><strong>Presentadores:</strong> Nombres de los conductores</li>
-                    <li><strong>Redes sociales:</strong> Usuarios de Twitter e Instagram</li>
-                </ul>
-            </li>
-        </ol>
-
-        <div style="background: #e6f7ff; border-left: 4px solid #1890ff; padding: 15px; margin: 15px 0;">
-            <strong>✨ Ventaja:</strong> Los programas en directo se muestran con una etiqueta especial "EN DIRECTO" y un diseño distintivo en la parrilla.
-        </div>
-
-        <h4>🎧 Feed RSS en programas</h4>
-        <p>Si configuras un feed RSS en un programa, la parrilla mostrará:</p>
-        <ul>
-            <li>📻 Enlace al último episodio publicado</li>
-            <li>📌 Título del último episodio</li>
-            <li>🔗 Link clickable al episodio</li>
-        </ul>
-
-        <div style="background: #fff7e6; border-left: 4px solid #ffa940; padding: 15px; margin: 15px 0;">
-            <strong>⏱️ Caché de RSS:</strong> Los feeds RSS se cachean durante 6 horas para optimizar el rendimiento. Puedes pre-cargar los feeds ejecutando el cron de RSS.
-        </div>
-
-        <h4>📱 URLs de la parrilla</h4>
-        <p>Existen dos versiones de la parrilla:</p>
-
-        <h5>1. Versión completa</h5>
-        <pre style="background: #2d3748; color: #e2e8f0; padding: 15px; border-radius: 6px; overflow-x: auto;">https://sapo.radiobot.org/parrilla_cards.php?station=TU_USUARIO</pre>
-        <p>Incluye header con nombre de la emisora y diseño completo.</p>
-
-        <h5>2. Versión embebible (iframe)</h5>
-        <pre style="background: #2d3748; color: #e2e8f0; padding: 15px; border-radius: 6px; overflow-x: auto;">https://sapo.radiobot.org/parrilla_cards_embed.php?station=TU_USUARIO</pre>
-        <p>Sin header, ideal para incluir en otras webs mediante iframe:</p>
-        <pre style="background: #2d3748; color: #e2e8f0; padding: 15px; border-radius: 6px; overflow-x: auto;">&lt;iframe src="https://sapo.radiobot.org/parrilla_cards_embed.php?station=TU_USUARIO"
-        width="100%" height="800" frameborder="0"&gt;&lt;/iframe&gt;</pre>
-
-        <h4>🔴 Indicador "AHORA EN DIRECTO"</h4>
-        <p>La parrilla detecta automáticamente qué programa está en emisión:</p>
-        <ul>
-            <li>🕐 Compara la hora actual con los horarios configurados</li>
-            <li>🎯 Muestra badge rojo "🔴 AHORA EN DIRECTO" en el programa activo</li>
-            <li>🔗 Si tienes configurada la URL del stream, el badge es clickeable y lleva a la página de escucha</li>
-            <li>📜 Auto-scroll al programa en vivo al cargar la página</li>
-            <li>⚡ Si hay solapamiento, muestra solo el programa que empezó más recientemente</li>
-        </ul>
-
-        <div style="background: #ffe6e6; border-left: 4px solid #dc2626; padding: 15px; margin: 15px 0;">
-            <strong>🎧 Enlace al Stream:</strong> Para que el badge "🔴 AHORA EN DIRECTO" sea clickeable, configura la <strong>URL de la Página Pública del Stream</strong> en <em>Parrilla → Configuración</em>. Ejemplo: <code>https://radio.radiobot.org/public/tu_emisora</code>
-        </div>
-
-        <h4>🎨 Personalización de programas</h4>
-        <p>Cada programa puede tener información personalizada que se muestra en la parrilla:</p>
-        <ul>
-            <li><strong>Título personalizado:</strong> Diferente al nombre de la playlist en Radiobot</li>
-            <li><strong>Imagen:</strong> Logo o portada del programa</li>
-            <li><strong>Descripción:</strong> Texto explicativo del contenido</li>
-            <li><strong>Presentadores:</strong> Nombres de los conductores</li>
-            <li><strong>Redes sociales:</strong> Links a Twitter e Instagram</li>
-        </ul>
-
-        <div style="background: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 15px 0;">
-            <strong>💡 Tip:</strong> Configura toda la información de tus programas en SAPO para que la parrilla se vea completa y profesional, incluso si los nombres en Radiobot son técnicos o codificados.
-        </div>
-
-        <h4>📱 Diseño responsive</h4>
-        <p>La parrilla se adapta automáticamente a todos los dispositivos:</p>
-        <ul>
-            <li>💻 Desktop: Vista completa con todas las columnas</li>
-            <li>📱 Tablet: Layout adaptado para pantalla media</li>
-            <li>📲 Móvil: Diseño vertical optimizado para táctil</li>
-        </ul>
     </div>
 
     <!-- Sección: Estado de feeds -->
