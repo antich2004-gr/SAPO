@@ -20,7 +20,7 @@ $azConfig = getAzuracastConfig($station);
 $widgetColor = $azConfig['widget_color'] ?? '#10b981';
 echo "✅ Config obtenida, color: $widgetColor<br><br>";
 
-echo "PASO 4: Obtener schedule de AzuraCast<br>";
+echo "PASO 4: Obtener schedule de Radiobot<br>";
 $schedule = getAzuracastSchedule($station);
 if ($schedule === false) {
     $schedule = [];

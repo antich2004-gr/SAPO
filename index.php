@@ -269,7 +269,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $error = 'Usuario no especificado';
         } else {
             if (updateAzuracastConfig($username, $stationId, $widgetColor)) {
-                $message = "Configuración de AzuraCast actualizada para $username";
+                $message = "Configuración de Radiobot actualizada para $username";
             } else {
                 $error = 'Error al actualizar la configuración';
             }
@@ -426,7 +426,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $streamUrl = $_POST['stream_url'] ?? '';
 
         if (updateAzuracastConfig($username, $stationId, $widgetColor, false, '', $widgetStyle, $widgetFontSize, $streamUrl)) {
-            $message = "Configuración de AzuraCast actualizada correctamente";
+            $message = "Configuración de Radiobot actualizada correctamente";
         } else {
             $error = 'Error al actualizar la configuración';
         }

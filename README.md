@@ -6,7 +6,7 @@ Sistema web para la gestión automatizada de suscripciones de podcasts en múlti
 
 ## 📋 Descripción
 
-SAPO es una aplicación web desarrollada en PHP que permite a múltiples emisoras de radio gestionar sus suscripciones a podcasts de forma independiente. El sistema descarga automáticamente nuevos episodios mediante Podget, los organiza por categorías personalizadas y los integra con Radiobot/AzuraCast para su reproducción automática.
+SAPO es una aplicación web desarrollada en PHP que permite a múltiples emisoras de radio gestionar sus suscripciones a podcasts de forma independiente. El sistema descarga automáticamente nuevos episodios mediante Podget, los organiza por categorías personalizadas y los integra con Radiobot para su reproducción automática.
 
 ### Características principales
 
@@ -137,7 +137,7 @@ Cada emisora tiene su propio directorio en `{base_path}/{username}/` con:
 - Servidor web (Apache o Nginx)
 - Extensiones PHP: json, curl, simplexml, mbstring, fileinfo
 - Podget instalado en el servidor (para descargas automáticas)
-- Radiobot/AzuraCast (opcional, para integración)
+- Radiobot (opcional, para integración)
 
 ### Pasos de instalación
 
@@ -359,7 +359,7 @@ SAPO implementa múltiples capas de seguridad. Ver [SECURITY.md](SECURITY.md) pa
 ## 📊 Versiones
 
 ### v1.2.5 (Noviembre 2024) - Actual
-- 🔴 **Badge "AHORA EN DIRECTO" clickeable**: El indicador de programa en vivo ahora enlaza a la página de escucha de AzuraCast
+- 🔴 **Badge "AHORA EN DIRECTO" clickeable**: El indicador de programa en vivo ahora enlaza a la página de escucha de Radiobot
 - 🏷️ **Auto-detección de categorías**: Detecta automáticamente categorías desde podcasts existentes para nuevos usuarios
 - ✅ **FIX Modal de edición**: Resuelto problema donde el modal no abría para usuarios nuevos
 - ✅ **FIX Índices de podcasts**: Corregida desalineación de índices en pausar/reanudar/eliminar/editar
@@ -414,7 +414,7 @@ Ver [ROADMAP_v2.0.md](ROADMAP_v2.0.md) para la hoja de ruta completa de la versi
 - 🧹 Limpieza automática de duplicados
 - 📁 Soporte de subcarpetas jerárquicas
 - 📺 Descarga de YouTube con yt-dlp
-- 🔌 Integración API AzuraCast (detección de playlists vacías)
+- 🔌 Integración API Radiobot (detección de playlists vacías)
 - 📊 Informes mejorados con emisiones en directo
 
 ## 🤝 Contribución
@@ -433,7 +433,7 @@ Este proyecto es de uso interno para emisoras de radio. Contactar con el autor p
 
 ## 👨‍💻 Autor
 
-Desarrollado para automatizar la gestión de podcasts en emisoras de radio que utilizan Radiobot/AzuraCast.
+Desarrollado para automatizar la gestión de podcasts en emisoras de radio que utilizan Radiobot.
 
 ## 🐛 Reporte de problemas
 
