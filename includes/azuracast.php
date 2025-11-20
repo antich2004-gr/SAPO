@@ -609,8 +609,11 @@ function updateAzuracastLiquidsoapConfig($username, $configData) {
 
         $jsonData = json_encode($updateData, JSON_UNESCAPED_UNICODE);
 
+        // URL para admin endpoint (necesario para actualizar)
+        $adminStationUrl = rtrim($apiUrl, '/') . '/admin/station/' . $stationId;
+
         // Usar cURL para el PUT request (más fiable que file_get_contents)
-        $ch = curl_init($stationUrl);
+        $ch = curl_init($adminStationUrl);
         curl_setopt_array($ch, [
             CURLOPT_CUSTOMREQUEST => 'PUT',
             CURLOPT_POSTFIELDS => $jsonData,
