@@ -193,10 +193,18 @@ function syncProgramsFromAzuracast($username) {
             $currentOrphaned = $data['programs'][$programName]['orphaned'] ?? false;
 
             if ($shouldBeOrphaned && !$currentOrphaned) {
+                // Marcar como huérfano
                 $data['programs'][$programName]['orphaned'] = true;
                 $data['programs'][$programName]['orphan_reason'] = $reason;
                 $orphanedCount++;
                 error_log("syncProgramsFromAzuracast: Marcando '$programName' como huérfano (razón: $reason)");
+            } elseif ($shouldBeOrphaned && $currentOrphaned) {
+                // Ya es huérfano, pero actualizar el motivo si cambió
+                $currentReason = $data['programs'][$programName]['orphan_reason'] ?? '';
+                if ($currentReason !== $reason) {
+                    $data['programs'][$programName]['orphan_reason'] = $reason;
+                    error_log("syncProgramsFromAzuracast: Actualizando razón de '$programName': '$currentReason' -> '$reason'");
+                }
             } elseif (!$shouldBeOrphaned && $currentOrphaned) {
                 // Reactivar si ya no debería ser huérfano
                 $data['programs'][$programName]['orphaned'] = false;
