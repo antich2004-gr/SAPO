@@ -438,10 +438,6 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                                     <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
                                         🔴 EN DIRECTO
                                     </span>
-                                <?php elseif (($program['info']['playlist_type'] ?? '') === 'live'): ?>
-                                    <span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
-                                        🔴 DIRECTO
-                                    </span>
                                 <?php endif; ?>
                             </div>
 
