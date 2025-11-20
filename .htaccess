@@ -39,12 +39,8 @@ Options -Indexes
     # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
 </IfModule>
 
-# X-Frame-Options para todo EXCEPTO parrilla_cards.php (permite embedding del widget)
-<If "%{REQUEST_URI} !~ m#parrilla_cards\.php#">
-    <IfModule mod_headers.c>
-        Header always set X-Frame-Options "SAMEORIGIN"
-    </IfModule>
-</If>
+# X-Frame-Options se configura individualmente en cada archivo PHP
+# parrilla_cards.php NO lo tiene para permitir embedding en iframes externos
 
 # Prevenir ataques de inyección de NULL byte
 <IfModule mod_rewrite.c>
