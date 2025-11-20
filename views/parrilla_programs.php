@@ -498,11 +498,24 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                                 <span class="btn-icon">✏️</span> Editar
                             </a>
                             <?php
-                            // Mostrar botón de eliminar solo para programas creados manualmente (tipo 'live')
+                            // Mostrar botón de eliminar para:
+                            // 1. Programas creados manualmente (tipo 'live')
+                            // 2. Programas que no existen en AzuraCast (orphan_reason = 'no_en_azuracast')
                             $isManualProgram = isset($program['info']['created_at']) && ($program['info']['playlist_type'] ?? '') === 'live';
+                            $isNotInAzuracast = !empty($program['info']['orphaned']) && ($program['info']['orphan_reason'] ?? '') === 'no_en_azuracast';
+
                             if ($isManualProgram):
                             ?>
                                 <form method="POST" style="display: inline;" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este programa en directo?');">
+                                    <input type="hidden" name="action" value="delete_program">
+                                    <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                                    <input type="hidden" name="program_name" value="<?php echo htmlEsc($program['name']); ?>">
+                                    <button type="submit" class="btn btn-danger">
+                                        <span class="btn-icon">🗑️</span> Eliminar
+                                    </button>
+                                </form>
+                            <?php elseif ($isNotInAzuracast): ?>
+                                <form method="POST" style="display: inline;" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este programa? Ya no existe en AzuraCast.');">
                                     <input type="hidden" name="action" value="delete_program">
                                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                                     <input type="hidden" name="program_name" value="<?php echo htmlEsc($program['name']); ?>">
