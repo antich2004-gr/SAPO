@@ -68,6 +68,7 @@ function saveProgramsDB($username, $data) {
 /**
  * Sincronizar programas desde AzuraCast
  * Detecta nuevos programas y los añade sin sobrescribir existentes
+ * También detecta playlists deshabilitadas si hay API Key configurada
  *
  * @param string $username Nombre de usuario
  * @return array Resultado con 'success', 'new_count', 'total_count', 'message'
@@ -92,6 +93,22 @@ function syncProgramsFromAzuracast($username) {
             'new_count' => 0,
             'total_count' => 0
         ];
+    }
+
+    // Obtener estado de playlists (requiere API Key)
+    // Crear mapa de playlist_name => is_enabled
+    $playlistStatus = [];
+    $playlists = getAzuracastPlaylists($username);
+    if ($playlists !== false && is_array($playlists)) {
+        foreach ($playlists as $playlist) {
+            $playlistName = $playlist['name'] ?? null;
+            if ($playlistName) {
+                $playlistStatus[$playlistName] = $playlist['is_enabled'] ?? true;
+            }
+        }
+        error_log("syncProgramsFromAzuracast: Estado de playlists obtenido para " . count($playlistStatus) . " playlists");
+    } else {
+        error_log("syncProgramsFromAzuracast: No se pudo obtener estado de playlists (¿API Key configurada?)");
     }
 
     // Extraer nombres únicos de programas
@@ -141,16 +158,38 @@ function syncProgramsFromAzuracast($username) {
         }
     }
 
-    // Detectar programas huérfanos (están en SAPO pero no en AzuraCast)
+    // Detectar programas huérfanos (no en AzuraCast o con playlist deshabilitada)
+    $disabledCount = 0;
     foreach ($data['programs'] as $programName => $programInfo) {
         // Solo marcar como huérfano si NO es un programa manual (live)
         $isManual = ($programInfo['playlist_type'] ?? 'program') === 'live';
 
-        if (!$isManual && !in_array($programName, $detectedPrograms)) {
-            // No está en AzuraCast, marcar como huérfano
-            if (empty($programInfo['orphaned'])) {
+        if (!$isManual) {
+            $shouldBeOrphaned = false;
+            $reason = '';
+
+            // Caso 1: No está en el schedule
+            if (!in_array($programName, $detectedPrograms)) {
+                $shouldBeOrphaned = true;
+                $reason = 'no_en_schedule';
+            }
+            // Caso 2: Está en schedule pero playlist deshabilitada (si tenemos esa info)
+            elseif (!empty($playlistStatus) && isset($playlistStatus[$programName]) && !$playlistStatus[$programName]) {
+                $shouldBeOrphaned = true;
+                $reason = 'playlist_deshabilitada';
+                $disabledCount++;
+            }
+
+            if ($shouldBeOrphaned && empty($programInfo['orphaned'])) {
                 $data['programs'][$programName]['orphaned'] = true;
+                $data['programs'][$programName]['orphan_reason'] = $reason;
                 $orphanedCount++;
+                error_log("syncProgramsFromAzuracast: Marcando '$programName' como huérfano (razón: $reason)");
+            } elseif (!$shouldBeOrphaned && !empty($programInfo['orphaned'])) {
+                // Reactivar si ya no debería ser huérfano
+                $data['programs'][$programName]['orphaned'] = false;
+                unset($data['programs'][$programName]['orphan_reason']);
+                $reactivatedCount++;
             }
         }
     }
@@ -174,7 +213,11 @@ function syncProgramsFromAzuracast($username) {
         $messages[] = "$newCount nuevos";
     }
     if ($orphanedCount > 0) {
-        $messages[] = "$orphanedCount marcados como no encontrados";
+        if ($disabledCount > 0) {
+            $messages[] = "$orphanedCount marcados como no encontrados ($disabledCount deshabilitadas)";
+        } else {
+            $messages[] = "$orphanedCount marcados como no encontrados";
+        }
     }
     if ($reactivatedCount > 0) {
         $messages[] = "$reactivatedCount reactivados";
@@ -184,11 +227,17 @@ function syncProgramsFromAzuracast($username) {
         ? "Sincronización completada. No hay cambios."
         : "Sincronización completada: " . implode(', ', $messages);
 
+    // Añadir nota si no hay API Key
+    if (empty($playlistStatus)) {
+        $message .= " (Sin API Key: no se detectan playlists deshabilitadas)";
+    }
+
     return [
         'success' => true,
         'message' => $message,
         'new_count' => $newCount,
         'orphaned_count' => $orphanedCount,
+        'disabled_count' => $disabledCount,
         'reactivated_count' => $reactivatedCount,
         'total_count' => count($data['programs'])
     ];

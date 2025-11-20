@@ -81,6 +81,7 @@ function getAzuracastSchedule($username, $cacheTTL = 600) {
 
 /**
  * Obtener todas las playlists de AzuraCast (incluyendo desactivadas)
+ * Requiere API Key para autenticación
  *
  * @param string $username Nombre de usuario
  * @return array|false Array de playlists o false si hay error
@@ -89,8 +90,15 @@ function getAzuracastPlaylists($username) {
     // Obtener configuración global
     $config = getConfig();
     $apiUrl = $config['azuracast_api_url'] ?? '';
+    $apiKey = $config['azuracast_api_key'] ?? '';
 
     if (empty($apiUrl)) {
+        error_log("AzuraCast Playlists: URL de API no configurada");
+        return false;
+    }
+
+    if (empty($apiKey)) {
+        error_log("AzuraCast Playlists: API Key no configurada - no se puede consultar estado de playlists");
         return false;
     }
 
@@ -99,6 +107,7 @@ function getAzuracastPlaylists($username) {
     $stationId = $userData['azuracast']['station_id'] ?? null;
 
     if (empty($stationId)) {
+        error_log("AzuraCast Playlists: Station ID no configurado para usuario $username");
         return false;
     }
 
@@ -106,17 +115,19 @@ function getAzuracastPlaylists($username) {
     $playlistsUrl = rtrim($apiUrl, '/') . '/station/' . $stationId . '/playlists';
 
     try {
+        // Crear contexto con autenticación API Key
         $context = stream_context_create([
             'http' => [
                 'timeout' => 10,
-                'user_agent' => 'SAPO/1.0'
+                'user_agent' => 'SAPO/1.0',
+                'header' => 'X-API-Key: ' . $apiKey
             ]
         ]);
 
         $response = @file_get_contents($playlistsUrl, false, $context);
 
         if ($response === false) {
-            error_log("AzuraCast: Error al obtener playlists desde $playlistsUrl");
+            error_log("AzuraCast Playlists: Error al obtener playlists desde $playlistsUrl (¿API Key válida?)");
             return false;
         }
 
@@ -130,8 +141,9 @@ function getAzuracastPlaylists($username) {
         // Debug: mostrar estructura de la primera playlist
         if (!empty($data) && isset($data[0])) {
             error_log("AzuraCast Playlists: Total playlists: " . count($data));
-            error_log("AzuraCast Playlists: Campos disponibles: " . implode(', ', array_keys($data[0])));
-            error_log("AzuraCast Playlists: Primera playlist: " . json_encode($data[0]));
+            $enabledCount = count(array_filter($data, fn($p) => ($p['is_enabled'] ?? true)));
+            $disabledCount = count($data) - $enabledCount;
+            error_log("AzuraCast Playlists: Habilitadas: $enabledCount, Deshabilitadas: $disabledCount");
         } else {
             error_log("AzuraCast Playlists: Respuesta vacía o no es array");
         }
@@ -139,7 +151,7 @@ function getAzuracastPlaylists($username) {
         return $data;
 
     } catch (Exception $e) {
-        error_log("AzuraCast: Excepción al obtener playlists: " . $e->getMessage());
+        error_log("AzuraCast Playlists: Excepción: " . $e->getMessage());
         return false;
     }
 }

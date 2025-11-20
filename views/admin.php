@@ -46,6 +46,13 @@ $users = getAllUsers();
                 <label>URL API de AzuraCast: <small>(para parrilla de programación)</small></label>
                 <input type="text" name="azuracast_api_url" value="<?php echo htmlEsc($config['azuracast_api_url'] ?? ''); ?>" placeholder="https://tu-servidor.com/api" maxlength="255">
             </div>
+            <div class="form-group">
+                <label>API Key de AzuraCast: <small>(opcional - para detectar playlists deshabilitadas)</small></label>
+                <input type="password" name="azuracast_api_key" value="<?php echo htmlEsc($config['azuracast_api_key'] ?? ''); ?>" placeholder="Clave API de AzuraCast" maxlength="255" autocomplete="new-password">
+                <small style="color: #718096; display: block; margin-top: 5px;">
+                    Obtén la API Key en AzuraCast → Admin → API Keys. Permite consultar estado de playlists (habilitada/deshabilitada).
+                </small>
+            </div>
             <button type="submit" class="btn btn-warning"><span class="btn-icon">💾</span> Guardar Configuracion</button>
         </form>
     </div>
