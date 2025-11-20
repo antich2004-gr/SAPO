@@ -1,6 +1,9 @@
 <?php
 // index.php - Punto de entrada principal SAPO
 
+// Configurar zona horaria a CET/CEST (Europe/Madrid)
+date_default_timezone_set('Europe/Madrid');
+
 // Headers de seguridad
 header("X-Content-Type-Options: nosniff");
 header("X-Frame-Options: SAMEORIGIN");
