@@ -514,6 +514,10 @@ function getAzuracastLiquidsoapConfig($username) {
         // Extraer backend_config que contiene la configuración de Liquidsoap
         $backendConfig = $stationData['backend_config'] ?? [];
 
+        // Debug: ver qué campos hay en backend_config
+        error_log("AzuraCast Liquidsoap: Campos en backend_config: " . implode(', ', array_keys($backendConfig)));
+        error_log("AzuraCast Liquidsoap: custom_config = " . ($backendConfig['custom_config'] ?? 'NO EXISTE'));
+
         // Convertir a formato compatible con la UI
         $liquidConfig = [
             [
