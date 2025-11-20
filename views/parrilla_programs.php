@@ -435,16 +435,15 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
                                 <strong style="font-size: 16px;"><?php echo htmlEsc($program['name']); ?></strong>
                                 <?php
-                                $isManualLive = isset($program['info']['created_at']) && ($program['info']['playlist_type'] ?? '') === 'live';
                                 $playlistType = $program['info']['playlist_type'] ?? 'program';
-                                $isImported = !isset($program['info']['created_at']);
 
-                                if ($isManualLive):
+                                // Solo live = manual, program = importado, otros = sin badge
+                                if ($playlistType === 'live'):
                                 ?>
                                     <span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
                                         🟢 EN DIRECTO
                                     </span>
-                                <?php elseif ($isImported && $playlistType === 'program'): ?>
+                                <?php elseif ($playlistType === 'program'): ?>
                                     <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
                                         📻 PROGRAMA
                                     </span>

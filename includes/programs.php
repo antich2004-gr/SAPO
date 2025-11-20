@@ -127,7 +127,7 @@ function syncProgramsFromAzuracast($username) {
                 'presenters' => '',
                 'social_twitter' => '',
                 'social_instagram' => '',
-                'created_at' => date('Y-m-d H:i:s'),
+                // NO incluir created_at - solo los programas manuales lo tienen
                 'orphaned' => false
             ];
             $newCount++;
