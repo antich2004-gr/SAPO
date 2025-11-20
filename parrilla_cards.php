@@ -656,14 +656,14 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
             .program-title { font-size: 1.1em; }
         }
 
-        /* Timeline de bloques musicales */
-        .timeline-container {
+        /* Cards compactas de bloques musicales */
+        .blocks-container {
             margin-top: 30px;
             padding-top: 20px;
             border-top: 1px solid #e5e7eb;
         }
 
-        .timeline-title {
+        .blocks-title {
             font-size: 14px;
             font-weight: 600;
             color: #6b7280;
@@ -673,119 +673,70 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
             gap: 8px;
         }
 
-        .timeline-bar {
-            display: flex;
-            height: 36px;
-            border-radius: 6px;
-            overflow: hidden;
-            background: #f3f4f6;
-            position: relative;
+        .blocks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
         }
 
-        .timeline-segment {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
+        .block-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 10px 12px;
+            border-left: 4px solid #8b5cf6;
+            transition: all 0.2s;
+        }
+
+        .block-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+        }
+
+        .block-card.program {
+            border-left-color: #f59e0b;
+        }
+
+        .block-card.live {
+            border-left-color: #10b981;
+        }
+
+        .block-card-time {
+            font-size: 11px;
             font-weight: 600;
-            color: white;
-            padding: 0 6px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            position: relative;
-            min-width: 2px;
-        }
-
-        .timeline-segment.music {
-            background: linear-gradient(135deg, #8b5cf6, #a78bfa);
-        }
-
-        .timeline-segment.program {
-            background: linear-gradient(135deg, #f59e0b, #fbbf24);
-        }
-
-        .timeline-segment.live {
-            background: linear-gradient(135deg, #10b981, #34d399);
-        }
-
-        .timeline-segment.gap {
-            background: #e5e7eb;
-        }
-
-        .timeline-segment:hover {
-            filter: brightness(1.1);
-        }
-
-        .timeline-segment .segment-tooltip {
-            display: none;
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1f2937;
-            color: white;
-            padding: 6px 10px;
-            border-radius: 4px;
-            font-size: 11px;
-            white-space: nowrap;
-            z-index: 100;
-            margin-bottom: 5px;
-        }
-
-        .timeline-segment:hover .segment-tooltip {
-            display: block;
-        }
-
-        .timeline-hours {
-            display: flex;
-            justify-content: space-between;
-            font-size: 9px;
-            color: #9ca3af;
-            margin-top: 4px;
-            padding: 0 2px;
-        }
-
-        .timeline-legend {
-            display: flex;
-            gap: 15px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-
-        .timeline-legend-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 11px;
             color: #6b7280;
+            margin-bottom: 3px;
         }
 
-        .timeline-legend-color {
-            width: 12px;
-            height: 12px;
-            border-radius: 3px;
+        .block-card-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 3px;
+            line-height: 1.3;
         }
 
-        .timeline-legend-color.music {
-            background: #8b5cf6;
+        .block-card-type {
+            font-size: 10px;
+            color: #9ca3af;
         }
 
-        .timeline-legend-color.program {
-            background: #f59e0b;
-        }
-
-        .timeline-legend-color.live {
-            background: #10b981;
+        .block-card-duration {
+            font-size: 10px;
+            color: #6b7280;
+            margin-top: 4px;
         }
 
         @media (max-width: 768px) {
-            .timeline-segment {
-                font-size: 8px;
-                padding: 0 3px;
+            .blocks-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 8px;
             }
-            .timeline-hours {
-                font-size: 8px;
+            .block-card {
+                padding: 8px 10px;
+            }
+            .block-card-name {
+                font-size: 12px;
             }
         }
     </style>
@@ -976,98 +927,48 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                 <?php endif; ?>
 
                 <?php
-                // Timeline de bloques musicales para este día
+                // Cards compactas de bloques musicales para este día
                 $dayBlocks = $musicBlocksByDay[$day] ?? [];
-                $dayEvents = $eventsByDay[$day] ?? [];
 
-                // Combinar todos los eventos del día para el timeline
-                $allDayEvents = array_merge($dayEvents, $dayBlocks);
-                usort($allDayEvents, function($a, $b) {
-                    return $a['start_timestamp'] - $b['start_timestamp'];
-                });
-
-                if (!empty($allDayEvents)):
+                if (!empty($dayBlocks)):
+                    // Ordenar por hora de inicio
+                    usort($dayBlocks, function($a, $b) {
+                        return $a['start_timestamp'] - $b['start_timestamp'];
+                    });
                 ?>
-                <div class="timeline-container">
-                    <div class="timeline-title">
-                        <span>📊</span> Distribución del día
+                <div class="blocks-container">
+                    <div class="blocks-title">
+                        <span>🎵</span> Bloques Musicales
                     </div>
-                    <div class="timeline-bar">
-                        <?php
-                        $totalMinutes = 24 * 60; // 1440 minutos en un día
-                        $lastEnd = 0;
-
-                        foreach ($allDayEvents as $event):
-                            // Calcular minutos desde medianoche
-                            $startParts = explode(':', $event['start_time']);
-                            $endParts = explode(':', $event['end_time']);
+                    <div class="blocks-grid">
+                        <?php foreach ($dayBlocks as $block):
+                            // Calcular duración
+                            $startParts = explode(':', $block['start_time']);
+                            $endParts = explode(':', $block['end_time']);
                             $startMinutes = (int)$startParts[0] * 60 + (int)$startParts[1];
                             $endMinutes = (int)$endParts[0] * 60 + (int)$endParts[1];
 
-                            // Si termina antes de que empiece (cruza medianoche)
                             if ($endMinutes <= $startMinutes) {
-                                $endMinutes = 24 * 60;
+                                $endMinutes += 24 * 60;
                             }
 
-                            // Gap antes de este evento
-                            if ($startMinutes > $lastEnd):
-                                $gapWidth = (($startMinutes - $lastEnd) / $totalMinutes) * 100;
+                            $durationMinutes = $endMinutes - $startMinutes;
+                            $hours = floor($durationMinutes / 60);
+                            $minutes = $durationMinutes % 60;
+                            $durationText = $hours > 0 ? $hours . 'h' : '';
+                            $durationText .= $minutes > 0 ? ' ' . $minutes . 'min' : '';
                         ?>
-                            <div class="timeline-segment gap" style="width: <?php echo $gapWidth; ?>%;"></div>
-                        <?php endif;
-
-                            // Calcular ancho del segmento
-                            $duration = $endMinutes - $startMinutes;
-                            $width = ($duration / $totalMinutes) * 100;
-
-                            // Determinar tipo de segmento
-                            $segmentClass = 'program';
-                            if ($event['playlist_type'] === 'music_block') {
-                                $segmentClass = 'music';
-                            } elseif ($event['playlist_type'] === 'live') {
-                                $segmentClass = 'live';
-                            }
-
-                            $lastEnd = $endMinutes;
-                        ?>
-                            <div class="timeline-segment <?php echo $segmentClass; ?>"
-                                 style="width: <?php echo $width; ?>%;"
-                                 title="<?php echo htmlspecialchars($event['title'] . ' (' . $event['start_time'] . ' - ' . $event['end_time'] . ')'); ?>">
-                                <span class="segment-tooltip">
-                                    <?php echo htmlspecialchars($event['title']); ?><br>
-                                    <?php echo $event['start_time']; ?> - <?php echo $event['end_time']; ?>
-                                </span>
-                                <?php echo $width > 8 ? htmlspecialchars(mb_substr($event['title'], 0, 10)) : ''; ?>
+                            <div class="block-card">
+                                <div class="block-card-time">
+                                    <?php echo $block['start_time']; ?> - <?php echo $block['end_time']; ?>
+                                </div>
+                                <div class="block-card-name">
+                                    🎵 <?php echo htmlspecialchars($block['title']); ?>
+                                </div>
+                                <div class="block-card-type">Automático</div>
+                                <div class="block-card-duration"><?php echo trim($durationText); ?></div>
                             </div>
-                        <?php endforeach;
-
-                        // Gap al final si no llegamos a medianoche
-                        if ($lastEnd < $totalMinutes):
-                            $gapWidth = (($totalMinutes - $lastEnd) / $totalMinutes) * 100;
-                        ?>
-                            <div class="timeline-segment gap" style="width: <?php echo $gapWidth; ?>%;"></div>
-                        <?php endif; ?>
-                    </div>
-                    <div class="timeline-hours">
-                        <span>00:00</span>
-                        <span>06:00</span>
-                        <span>12:00</span>
-                        <span>18:00</span>
-                        <span>24:00</span>
-                    </div>
-                    <div class="timeline-legend">
-                        <div class="timeline-legend-item">
-                            <div class="timeline-legend-color music"></div>
-                            <span>Bloque Musical</span>
-                        </div>
-                        <div class="timeline-legend-item">
-                            <div class="timeline-legend-color program"></div>
-                            <span>Programa</span>
-                        </div>
-                        <div class="timeline-legend-item">
-                            <div class="timeline-legend-color live"></div>
-                            <span>En Directo</span>
-                        </div>
+                        <?php endforeach; ?>
                     </div>
                 </div>
                 <?php endif; ?>
