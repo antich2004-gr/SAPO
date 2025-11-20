@@ -12,9 +12,9 @@ $section = $_GET['section'] ?? 'preview';
 $widgetUrl = '';
 $hasStationId = !empty($stationId) && $stationId !== '';
 if ($hasStationId) {
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    // Forzar HTTPS para que el iframe funcione en sitios HTTPS
     $host = $_SERVER['HTTP_HOST'];
-    $baseUrl = $protocol . '://' . $host . dirname($_SERVER['PHP_SELF']);
+    $baseUrl = 'https://' . $host . dirname($_SERVER['PHP_SELF']);
     $widgetUrl = rtrim($baseUrl, '/') . '/parrilla_widget.php?station=' . urlencode($username);
 }
 ?>
@@ -72,10 +72,9 @@ if ($hasStationId) {
                 </div>
             <?php else: ?>
                 <?php
-                // Generar URL del widget
-                $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                // Generar URL del widget - Forzar HTTPS para que funcione en sitios HTTPS
                 $host = $_SERVER['HTTP_HOST'];
-                $baseUrl = $protocol . '://' . $host . dirname($_SERVER['PHP_SELF']);
+                $baseUrl = 'https://' . $host . dirname($_SERVER['PHP_SELF']);
                 $widgetUrl = rtrim($baseUrl, '/') . '/parrilla_cards.php?station=' . urlencode($username);
                 ?>
 
@@ -203,10 +202,9 @@ if ($hasStationId) {
                 </div>
             <?php else: ?>
                 <?php
-                // Generar URL del widget
-                $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                // Generar URL del widget - Forzar HTTPS para que funcione en sitios HTTPS
                 $host = $_SERVER['HTTP_HOST'];
-                $baseUrl = $protocol . '://' . $host . dirname($_SERVER['PHP_SELF']);
+                $baseUrl = 'https://' . $host . dirname($_SERVER['PHP_SELF']);
                 $widgetUrl = rtrim($baseUrl, '/') . '/parrilla_cards.php?station=' . urlencode($username);
                 ?>
 
