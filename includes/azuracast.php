@@ -609,28 +609,35 @@ function updateAzuracastLiquidsoapConfig($username, $configData) {
 
         $jsonData = json_encode($updateData, JSON_UNESCAPED_UNICODE);
 
-        // Crear contexto con autenticación y método PUT
-        $putContext = stream_context_create([
-            'http' => [
-                'method' => 'PUT',
-                'timeout' => 10,
-                'user_agent' => 'SAPO/1.0',
-                'header' => [
-                    'X-API-Key: ' . $apiKey,
-                    'Content-Type: application/json',
-                    'Content-Length: ' . strlen($jsonData)
-                ],
-                'content' => $jsonData
+        // Usar cURL para el PUT request (más fiable que file_get_contents)
+        $ch = curl_init($stationUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_CUSTOMREQUEST => 'PUT',
+            CURLOPT_POSTFIELDS => $jsonData,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_HTTPHEADER => [
+                'X-API-Key: ' . $apiKey,
+                'Content-Type: application/json',
+                'Content-Length: ' . strlen($jsonData)
             ]
         ]);
 
-        $putResponse = @file_get_contents($stationUrl, false, $putContext);
+        $putResponse = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
 
-        if ($putResponse === false) {
-            // Obtener más información del error
-            $error = error_get_last();
-            error_log("AzuraCast Liquidsoap: Error al actualizar estación - " . ($error['message'] ?? 'Unknown'));
-            return ['success' => false, 'message' => 'Error al conectar con la API'];
+        if ($putResponse === false || !empty($curlError)) {
+            error_log("AzuraCast Liquidsoap: cURL error - " . $curlError);
+            return ['success' => false, 'message' => 'Error de conexión: ' . $curlError];
+        }
+
+        if ($httpCode >= 400) {
+            $errorData = json_decode($putResponse, true);
+            $errorMsg = $errorData['message'] ?? $errorData['error'] ?? "HTTP $httpCode";
+            error_log("AzuraCast Liquidsoap: HTTP $httpCode - $errorMsg");
+            return ['success' => false, 'message' => "Error HTTP $httpCode: $errorMsg"];
         }
 
         $data = json_decode($putResponse, true);
