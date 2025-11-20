@@ -672,42 +672,59 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
 
         .blocks-grid {
             display: flex;
-            gap: 4px;
+            gap: 3px;
         }
 
         .block-card {
             background: #f9fafb;
             border: 1px solid #e5e7eb;
             border-radius: 4px;
-            padding: 5px 8px;
+            padding: 6px 10px;
             border-left: 3px solid #8b5cf6;
             font-size: 10px;
             flex: 1;
             min-width: 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            overflow: hidden;
         }
 
         .block-card:hover {
-            background: #f3f4f6;
-        }
-
-        .block-card-time {
-            font-weight: 600;
-            color: #6b7280;
-            white-space: nowrap;
-            font-size: 9px;
+            background: #ede9fe;
+            flex: 3;
+            border-left-color: #7c3aed;
         }
 
         .block-card-name {
-            font-weight: 500;
+            font-weight: 600;
             color: #374151;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
+        .block-card-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, margin-top 0.3s ease;
+            margin-top: 0;
+        }
+
+        .block-card:hover .block-card-details {
+            max-height: 40px;
+            margin-top: 4px;
+        }
+
+        .block-card-time {
+            font-weight: 500;
+            color: #6b7280;
+            font-size: 9px;
+        }
+
         .block-card-duration {
             font-size: 9px;
-            color: #9ca3af;
+            color: #8b5cf6;
+            font-weight: 600;
         }
 
         @media (max-width: 768px) {
@@ -715,8 +732,11 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                 flex-wrap: wrap;
             }
             .block-card {
-                padding: 4px 6px;
+                padding: 5px 8px;
                 font-size: 9px;
+                flex: 1 1 45%;
+            }
+            .block-card:hover {
                 flex: 1 1 45%;
             }
         }
@@ -938,9 +958,11 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                             if ($mins > 0) $durationText .= ' ' . $mins . 'm';
                         ?>
                             <div class="block-card">
-                                <div class="block-card-time"><?php echo substr($block['start_time'], 0, 5); ?>-<?php echo substr($block['end_time'], 0, 5); ?></div>
                                 <div class="block-card-name"><?php echo htmlspecialchars($block['title']); ?></div>
-                                <div class="block-card-duration"><?php echo trim($durationText); ?></div>
+                                <div class="block-card-details">
+                                    <div class="block-card-time"><?php echo substr($block['start_time'], 0, 5); ?> - <?php echo substr($block['end_time'], 0, 5); ?></div>
+                                    <div class="block-card-duration"><?php echo trim($durationText); ?></div>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
