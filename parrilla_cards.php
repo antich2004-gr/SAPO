@@ -54,6 +54,33 @@ $widgetStyle = $azConfig['widget_style'] ?? 'modern';
 $widgetFontSize = $azConfig['widget_font_size'] ?? 'medium';
 $streamUrl = $azConfig['stream_url'] ?? '';
 
+// Función para calcular color de texto legible basado en el color del widget
+function getReadableLinkColor($hexColor) {
+    // Convertir hex a RGB
+    $hex = ltrim($hexColor, '#');
+    $r = hexdec(substr($hex, 0, 2));
+    $g = hexdec(substr($hex, 2, 2));
+    $b = hexdec(substr($hex, 4, 2));
+
+    // Calcular luminancia relativa (fórmula WCAG)
+    $luminance = (0.299 * $r + 0.587 * $g + 0.114 * $b) / 255;
+
+    // Si el color es muy claro (luminancia > 0.6), oscurecerlo para que sea legible
+    if ($luminance > 0.6) {
+        // Oscurecer el color multiplicando por un factor
+        $factor = 0.5;
+        $r = max(0, floor($r * $factor));
+        $g = max(0, floor($g * $factor));
+        $b = max(0, floor($b * $factor));
+        return sprintf('#%02x%02x%02x', $r, $g, $b);
+    }
+
+    // El color original es suficientemente oscuro
+    return $hexColor;
+}
+
+$linkHoverColor = getReadableLinkColor($widgetColor);
+
 $schedule = getAzuracastSchedule($station);
 if ($schedule === false) $schedule = [];
 
@@ -288,7 +315,7 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
         }
 
         .tab-button.active {
-            color: <?php echo htmlspecialchars($widgetColor); ?>;
+            color: <?php echo htmlspecialchars($linkHoverColor); ?>;
             background: white;
         }
 
@@ -563,7 +590,7 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
         }
 
         .rss-episode-link:hover .rss-episode-title {
-            color: <?php echo htmlspecialchars($widgetColor); ?>;
+            color: <?php echo htmlspecialchars($linkHoverColor); ?>;
         }
 
         .rss-episode-date {
