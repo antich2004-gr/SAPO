@@ -73,8 +73,8 @@ function saveProgramsDB($username, $data) {
  * @return array Resultado con 'success', 'new_count', 'total_count', 'message'
  */
 function syncProgramsFromAzuracast($username) {
-    // Obtener schedule de AzuraCast
-    $schedule = getAzuracastSchedule($username);
+    // Obtener schedule de AzuraCast (sin caché para asegurar datos frescos)
+    $schedule = getAzuracastSchedule($username, 0);
 
     if ($schedule === false) {
         return [
