@@ -313,6 +313,7 @@ foreach ($eventsByDay as $day => &$dayEvents) {
         $traceLog[] = ['stage' => '3c_dedup_after', 'day' => $day, 'count' => $tracedAfter, 'total_day_events' => count($dayEvents)];
     }
 }
+unset($dayEvents); // IMPORTANTE: romper la referencia para evitar sobrescribir el array
 
 // PRE-CARGAR todos los RSS ANTES de generar HTML (optimización de rendimiento)
 $t1 = microtime(true);
