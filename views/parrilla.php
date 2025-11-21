@@ -490,6 +490,39 @@ if ($hasStationId) {
                         text-align: right;
                         flex: 0.5;
                     }
+                    /* Alerts de solapamiento y huecos */
+                    .coverage-alerts {
+                        margin-top: 10px;
+                    }
+                    .coverage-alert {
+                        padding: 8px 12px;
+                        border-radius: 6px;
+                        font-size: 11px;
+                        margin-bottom: 6px;
+                    }
+                    .coverage-alert.warning {
+                        background: #fef3c7;
+                        border: 1px solid #f59e0b;
+                        color: #92400e;
+                    }
+                    .coverage-alert.error {
+                        background: #fee2e2;
+                        border: 1px solid #ef4444;
+                        color: #991b1b;
+                    }
+                    .coverage-alert.info {
+                        background: #dbeafe;
+                        border: 1px solid #3b82f6;
+                        color: #1e40af;
+                    }
+                    .coverage-alert-title {
+                        font-weight: 600;
+                        margin-bottom: 4px;
+                    }
+                    .coverage-alert-details {
+                        font-size: 10px;
+                        opacity: 0.9;
+                    }
                     /* Legacy support */
                     .coverage-progress-bar {
                         height: 12px;
@@ -687,6 +720,77 @@ if ($hasStationId) {
                     };
 
                     $hasContent = $totalMinutes > 0;
+
+                    // Detectar solapamientos entre todos los eventos del día
+                    $allEvents = [];
+                    foreach (['program', 'live', 'music_block'] as $type) {
+                        foreach ($dayContent[$type] as $item) {
+                            $allEvents[] = [
+                                'title' => $item['title'],
+                                'start' => $item['start_minutes'],
+                                'end' => $item['end_minutes'],
+                                'start_time' => $item['start_time'],
+                                'end_time' => $item['end_time'],
+                                'type' => $type
+                            ];
+                        }
+                    }
+
+                    // Buscar solapamientos
+                    $overlaps = [];
+                    $eventCount = count($allEvents);
+                    for ($i = 0; $i < $eventCount; $i++) {
+                        for ($j = $i + 1; $j < $eventCount; $j++) {
+                            $a = $allEvents[$i];
+                            $b = $allEvents[$j];
+
+                            // Manejar eventos que cruzan medianoche
+                            $aEnd = $a['end'] <= $a['start'] ? $a['end'] + 1440 : $a['end'];
+                            $bEnd = $b['end'] <= $b['start'] ? $b['end'] + 1440 : $b['end'];
+                            $aStart = $a['start'];
+                            $bStart = $b['start'];
+
+                            // Detectar solapamiento
+                            if ($aStart < $bEnd && $bStart < $aEnd) {
+                                $overlaps[] = [
+                                    'event1' => $a['title'] . ' (' . $a['start_time'] . '-' . $a['end_time'] . ')',
+                                    'event2' => $b['title'] . ' (' . $b['start_time'] . '-' . $b['end_time'] . ')'
+                                ];
+                            }
+                        }
+                    }
+
+                    // Calcular huecos (gaps) en la programación
+                    $gaps = [];
+                    if (!empty($allEvents)) {
+                        // Ordenar eventos por inicio
+                        usort($allEvents, function($a, $b) {
+                            return $a['start'] - $b['start'];
+                        });
+
+                        // Buscar huecos
+                        $lastEnd = 0;
+                        foreach ($allEvents as $event) {
+                            $eventEnd = $event['end'] <= $event['start'] ? $event['end'] + 1440 : $event['end'];
+                            if ($event['start'] > $lastEnd) {
+                                $gapStart = floor($lastEnd / 60) . ':' . str_pad($lastEnd % 60, 2, '0', STR_PAD_LEFT);
+                                $gapEnd = floor($event['start'] / 60) . ':' . str_pad($event['start'] % 60, 2, '0', STR_PAD_LEFT);
+                                $gapDuration = $event['start'] - $lastEnd;
+                                if ($gapDuration >= 30) { // Solo mostrar huecos de 30+ minutos
+                                    $gaps[] = $gapStart . ' - ' . $gapEnd . ' (' . floor($gapDuration / 60) . 'h ' . ($gapDuration % 60) . 'm)';
+                                }
+                            }
+                            $lastEnd = max($lastEnd, $eventEnd > 1440 ? $eventEnd - 1440 : $eventEnd);
+                        }
+                        // Hueco hasta medianoche
+                        if ($lastEnd < 1440) {
+                            $gapStart = floor($lastEnd / 60) . ':' . str_pad($lastEnd % 60, 2, '0', STR_PAD_LEFT);
+                            $gapDuration = 1440 - $lastEnd;
+                            if ($gapDuration >= 30) {
+                                $gaps[] = $gapStart . ' - 24:00 (' . floor($gapDuration / 60) . 'h ' . ($gapDuration % 60) . 'm)';
+                            }
+                        }
+                    }
                 ?>
                     <div class="coverage-day">
                         <div class="coverage-day-header">
@@ -787,6 +891,33 @@ if ($hasStationId) {
                                 <?php endfor; ?>
                             </div>
                         </div>
+
+                        <!-- Alerts de solapamientos y huecos -->
+                        <?php if (!empty($overlaps) || !empty($gaps)): ?>
+                        <div class="coverage-alerts">
+                            <?php if (!empty($overlaps)): ?>
+                            <div class="coverage-alert error">
+                                <div class="coverage-alert-title">⚠️ Solapamientos detectados (<?php echo count($overlaps); ?>)</div>
+                                <div class="coverage-alert-details">
+                                    <?php foreach ($overlaps as $overlap): ?>
+                                        <div>• <?php echo htmlspecialchars($overlap['event1']); ?> ↔ <?php echo htmlspecialchars($overlap['event2']); ?></div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+
+                            <?php if (!empty($gaps)): ?>
+                            <div class="coverage-alert info">
+                                <div class="coverage-alert-title">📋 Huecos sin programar (<?php echo count($gaps); ?>)</div>
+                                <div class="coverage-alert-details">
+                                    <?php foreach ($gaps as $gap): ?>
+                                        <div>• <?php echo $gap; ?></div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                        <?php endif; ?>
 
                         <?php if (!$hasContent): ?>
                             <p class="no-content-message">No hay contenido programado para este día.</p>
