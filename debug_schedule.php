@@ -227,4 +227,11 @@ if (!empty($searchTerm)) {
     $result['eventos_procesados_por_dia'] = $processedByDay;
 }
 
+$result = [
+    'total_eventos_api' => count($schedule),
+    'playlists_unicas' => count($eventsByPlaylist),
+    'eventos_por_playlist' => $eventsByPlaylist,
+    'eventos_procesados_por_dia' => $processedByDay
+];
+
 echo json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);

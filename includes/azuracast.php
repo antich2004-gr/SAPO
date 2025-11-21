@@ -199,6 +199,27 @@ function getScheduleFromCache($username, $ttl = 600) {
 }
 
 /**
+ * Borrar caché del schedule
+ *
+ * @param string $username Nombre de usuario
+ * @return bool True si se borró correctamente o no existía
+ */
+function clearScheduleCache($username) {
+    $cacheDir = DATA_DIR . '/cache/schedule';
+    $cacheFile = $cacheDir . '/' . md5($username) . '.json';
+
+    if (file_exists($cacheFile)) {
+        $result = @unlink($cacheFile);
+        if ($result) {
+            error_log("AzuraCast: Caché de schedule borrada para $username");
+        }
+        return $result;
+    }
+
+    return true; // No existía, consideramos éxito
+}
+
+/**
  * Guardar schedule en caché
  *
  * @param string $username Nombre de usuario

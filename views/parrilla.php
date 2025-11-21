@@ -425,6 +425,118 @@ if ($hasStationId) {
                     .coverage-stat.program .coverage-stat-value { color: #3b82f6; }
                     .coverage-stat.live .coverage-stat-value { color: #ef4444; }
                     .coverage-stat.total .coverage-stat-value { color: #10b981; }
+                    .coverage-stat.error .coverage-stat-value { color: #dc2626; font-weight: 700; }
+                    .coverage-stat.error { background: #fee2e2; border-color: #fecaca; }
+                    .coverage-stat.ok .coverage-stat-value { color: #10b981; }
+                    .coverage-timeline-container {
+                        margin-bottom: 12px;
+                    }
+                    .coverage-timeline {
+                        height: 24px;
+                        background: #f3f4f6;
+                        border-radius: 4px;
+                        position: relative;
+                        overflow: hidden;
+                        border: 1px solid #e5e7eb;
+                    }
+                    .coverage-timeline-segment {
+                        position: absolute;
+                        top: 0;
+                        height: 100%;
+                        min-width: 1px;
+                    }
+                    .coverage-timeline-segment.music {
+                        background: #8b5cf6;
+                    }
+                    .coverage-timeline-segment.program {
+                        background: #3b82f6;
+                    }
+                    .coverage-timeline-segment.live {
+                        background: #ef4444;
+                    }
+                    .coverage-timeline-segment:hover {
+                        opacity: 0.8;
+                    }
+                    .coverage-timeline-segment.overlap {
+                        background: repeating-linear-gradient(
+                            45deg,
+                            #dc2626,
+                            #dc2626 3px,
+                            #fca5a5 3px,
+                            #fca5a5 6px
+                        );
+                        z-index: 10 !important;
+                    }
+                    .coverage-hour-ticks {
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        display: flex;
+                        pointer-events: none;
+                    }
+                    .coverage-hour-tick {
+                        flex: 1;
+                        border-right: 1px solid rgba(0, 0, 0, 0.1);
+                    }
+                    .coverage-hour-tick:last-child {
+                        border-right: none;
+                    }
+                    .coverage-hour-markers {
+                        display: flex;
+                        justify-content: space-between;
+                        font-size: 8px;
+                        color: #9ca3af;
+                        margin-top: 2px;
+                        padding: 0;
+                    }
+                    .coverage-hour-marker {
+                        text-align: center;
+                        flex: 1;
+                    }
+                    .coverage-hour-marker:first-child {
+                        text-align: left;
+                        flex: 0.5;
+                    }
+                    .coverage-hour-marker:last-child {
+                        text-align: right;
+                        flex: 0.5;
+                    }
+                    /* Alerts de solapamiento y huecos */
+                    .coverage-alerts {
+                        margin-top: 10px;
+                    }
+                    .coverage-alert {
+                        padding: 8px 12px;
+                        border-radius: 6px;
+                        font-size: 11px;
+                        margin-bottom: 6px;
+                    }
+                    .coverage-alert.warning {
+                        background: #fef3c7;
+                        border: 1px solid #f59e0b;
+                        color: #92400e;
+                    }
+                    .coverage-alert.error {
+                        background: #fee2e2;
+                        border: 1px solid #ef4444;
+                        color: #991b1b;
+                    }
+                    .coverage-alert.info {
+                        background: #dbeafe;
+                        border: 1px solid #3b82f6;
+                        color: #1e40af;
+                    }
+                    .coverage-alert-title {
+                        font-weight: 600;
+                        margin-bottom: 4px;
+                    }
+                    .coverage-alert-details {
+                        font-size: 10px;
+                        opacity: 0.9;
+                    }
+                    /* Legacy support */
                     .coverage-progress-bar {
                         height: 12px;
                         background: #e5e7eb;
@@ -621,6 +733,77 @@ if ($hasStationId) {
                     };
 
                     $hasContent = $totalMinutes > 0;
+
+                    // Detectar solapamientos entre todos los eventos del día
+                    $allEvents = [];
+                    foreach (['program', 'live', 'music_block'] as $type) {
+                        foreach ($dayContent[$type] as $item) {
+                            $allEvents[] = [
+                                'title' => $item['title'],
+                                'start' => $item['start_minutes'],
+                                'end' => $item['end_minutes'],
+                                'start_time' => $item['start_time'],
+                                'end_time' => $item['end_time'],
+                                'type' => $type
+                            ];
+                        }
+                    }
+
+                    // Buscar solapamientos y calcular tiempo total solapado
+                    $overlapSegments = [];
+                    $totalOverlapMinutes = 0;
+                    $eventCount = count($allEvents);
+                    for ($i = 0; $i < $eventCount; $i++) {
+                        for ($j = $i + 1; $j < $eventCount; $j++) {
+                            $a = $allEvents[$i];
+                            $b = $allEvents[$j];
+
+                            // Manejar eventos que cruzan medianoche
+                            $aEnd = $a['end'] <= $a['start'] ? $a['end'] + 1440 : $a['end'];
+                            $bEnd = $b['end'] <= $b['start'] ? $b['end'] + 1440 : $b['end'];
+                            $aStart = $a['start'];
+                            $bStart = $b['start'];
+
+                            // Detectar solapamiento
+                            if ($aStart < $bEnd && $bStart < $aEnd) {
+                                $overlapStart = max($aStart, $bStart);
+                                $overlapEnd = min($aEnd, $bEnd);
+                                $overlapMinutes = $overlapEnd - $overlapStart;
+                                $totalOverlapMinutes += $overlapMinutes;
+
+                                // Guardar segmento para visualización
+                                $overlapSegments[] = [
+                                    'start' => $overlapStart > 1440 ? $overlapStart - 1440 : $overlapStart,
+                                    'end' => $overlapEnd > 1440 ? $overlapEnd - 1440 : $overlapEnd
+                                ];
+                            }
+                        }
+                    }
+
+                    // Calcular tiempo total sin asignar
+                    $totalGapMinutes = 0;
+                    if (!empty($allEvents)) {
+                        // Ordenar eventos por inicio
+                        usort($allEvents, function($a, $b) {
+                            return $a['start'] - $b['start'];
+                        });
+
+                        // Sumar huecos
+                        $lastEnd = 0;
+                        foreach ($allEvents as $event) {
+                            $eventEnd = $event['end'] <= $event['start'] ? $event['end'] + 1440 : $event['end'];
+                            if ($event['start'] > $lastEnd) {
+                                $totalGapMinutes += $event['start'] - $lastEnd;
+                            }
+                            $lastEnd = max($lastEnd, $eventEnd > 1440 ? $eventEnd - 1440 : $eventEnd);
+                        }
+                        // Hueco hasta medianoche
+                        if ($lastEnd < 1440) {
+                            $totalGapMinutes += 1440 - $lastEnd;
+                        }
+                    } else {
+                        $totalGapMinutes = 1440; // Todo el día sin asignar
+                    }
                 ?>
                     <div class="coverage-day">
                         <div class="coverage-day-header">
@@ -644,23 +827,96 @@ if ($hasStationId) {
                                     <span class="coverage-stat-label">🔴</span>
                                 </div>
                                 <?php endif; ?>
-                                <div class="coverage-stat total">
-                                    <span class="coverage-stat-value"><?php echo $totalPercentage; ?>%</span>
-                                    <span class="coverage-stat-label">total</span>
+                                <div class="coverage-stat <?php echo $totalGapMinutes > 0 ? 'error' : 'ok'; ?>">
+                                    <span class="coverage-stat-value"><?php echo $formatTime($totalGapMinutes); ?></span>
+                                    <span class="coverage-stat-label">huecos</span>
+                                </div>
+                                <div class="coverage-stat <?php echo $totalOverlapMinutes > 0 ? 'error' : 'ok'; ?>">
+                                    <span class="coverage-stat-value"><?php echo $formatTime($totalOverlapMinutes); ?></span>
+                                    <span class="coverage-stat-label">solapes</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="coverage-progress-bar">
-                            <?php if ($musicPct > 0): ?>
-                                <div class="coverage-progress-segment music" style="width: <?php echo $musicPct; ?>%"></div>
-                            <?php endif; ?>
-                            <?php if ($programPct > 0): ?>
-                                <div class="coverage-progress-segment program" style="width: <?php echo $programPct; ?>%"></div>
-                            <?php endif; ?>
-                            <?php if ($livePct > 0): ?>
-                                <div class="coverage-progress-segment live" style="width: <?php echo $livePct; ?>%"></div>
-                            <?php endif; ?>
+                        <div class="coverage-timeline-container">
+                            <div class="coverage-timeline">
+                                <?php
+                                // Generar segmentos para cada tipo de contenido
+                                // Prioridad: live > program > music (para que se vean encima)
+                                $allSegments = [];
+
+                                // Procesar cada tipo
+                                foreach (['music_block', 'program', 'live'] as $type) {
+                                    $cssClass = $type === 'music_block' ? 'music' : $type;
+                                    foreach ($dayContent[$type] as $item) {
+                                        $startMin = $item['start_minutes'];
+                                        $endMin = $item['end_minutes'];
+
+                                        // Manejar eventos que cruzan medianoche
+                                        if ($endMin <= $startMin) {
+                                            // Primer segmento: desde inicio hasta medianoche
+                                            $allSegments[] = [
+                                                'start' => $startMin,
+                                                'end' => 1440,
+                                                'type' => $cssClass,
+                                                'title' => $item['title'],
+                                                'time' => $item['start_time'] . ' - 00:00'
+                                            ];
+                                            // Segundo segmento: desde medianoche hasta fin
+                                            if ($endMin > 0) {
+                                                $allSegments[] = [
+                                                    'start' => 0,
+                                                    'end' => $endMin,
+                                                    'type' => $cssClass,
+                                                    'title' => $item['title'],
+                                                    'time' => '00:00 - ' . $item['end_time']
+                                                ];
+                                            }
+                                        } else {
+                                            $allSegments[] = [
+                                                'start' => $startMin,
+                                                'end' => $endMin,
+                                                'type' => $cssClass,
+                                                'title' => $item['title'],
+                                                'time' => $item['start_time'] . ' - ' . $item['end_time']
+                                            ];
+                                        }
+                                    }
+                                }
+
+                                // Renderizar segmentos
+                                foreach ($allSegments as $seg) {
+                                    $leftPct = ($seg['start'] / 1440) * 100;
+                                    $widthPct = (($seg['end'] - $seg['start']) / 1440) * 100;
+                                    $zIndex = $seg['type'] === 'live' ? 3 : ($seg['type'] === 'program' ? 2 : 1);
+                                    ?>
+                                    <div class="coverage-timeline-segment <?php echo $seg['type']; ?>"
+                                         style="left: <?php echo $leftPct; ?>%; width: <?php echo $widthPct; ?>%; z-index: <?php echo $zIndex; ?>;"
+                                         title="<?php echo htmlspecialchars($seg['title'] . ' (' . $seg['time'] . ')'); ?>">
+                                    </div>
+                                <?php } ?>
+                                <!-- Segmentos de solapamiento -->
+                                <?php foreach ($overlapSegments as $overlap):
+                                    $leftPct = ($overlap['start'] / 1440) * 100;
+                                    $widthPct = (($overlap['end'] - $overlap['start']) / 1440) * 100;
+                                ?>
+                                    <div class="coverage-timeline-segment overlap"
+                                         style="left: <?php echo $leftPct; ?>%; width: <?php echo $widthPct; ?>%;"
+                                         title="⚠️ Solapamiento">
+                                    </div>
+                                <?php endforeach; ?>
+                                <!-- Rayitas de hora -->
+                                <div class="coverage-hour-ticks">
+                                    <?php for ($h = 0; $h < 24; $h++): ?>
+                                        <div class="coverage-hour-tick"></div>
+                                    <?php endfor; ?>
+                                </div>
+                            </div>
+                            <div class="coverage-hour-markers">
+                                <?php for ($h = 0; $h <= 24; $h++): ?>
+                                    <span class="coverage-hour-marker"><?php echo $h; ?></span>
+                                <?php endfor; ?>
+                            </div>
                         </div>
 
                         <?php if (!$hasContent): ?>
