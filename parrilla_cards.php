@@ -270,6 +270,20 @@ foreach ($eventsByDay as $day => &$dayEvents) {
     $uniqueEvents = [];
     $seenKeys = [];
 
+    // Trace: contar eventos antes de deduplicar
+    $tracedBefore = 0;
+    if (!empty($traceProgram)) {
+        foreach ($dayEvents as $event) {
+            if (stripos($event['title'], $traceProgram) !== false ||
+                stripos($event['original_title'] ?? '', $traceProgram) !== false) {
+                $tracedBefore++;
+            }
+        }
+        if ($tracedBefore > 0) {
+            $traceLog[] = ['stage' => '3b_dedup_before', 'day' => $day, 'count' => $tracedBefore, 'total_day_events' => count($dayEvents)];
+        }
+    }
+
     foreach ($dayEvents as $event) {
         $normalizedTitle = trim(mb_strtolower($event['title']));
         $uniqueKey = $normalizedTitle . '_' . $event['start_time'];
@@ -286,6 +300,18 @@ foreach ($eventsByDay as $day => &$dayEvents) {
     });
 
     $dayEvents = $uniqueEvents;
+
+    // Trace: contar eventos después de deduplicar
+    if (!empty($traceProgram) && $tracedBefore > 0) {
+        $tracedAfter = 0;
+        foreach ($dayEvents as $event) {
+            if (stripos($event['title'], $traceProgram) !== false ||
+                stripos($event['original_title'] ?? '', $traceProgram) !== false) {
+                $tracedAfter++;
+            }
+        }
+        $traceLog[] = ['stage' => '3c_dedup_after', 'day' => $day, 'count' => $tracedAfter, 'total_day_events' => count($dayEvents)];
+    }
 }
 
 // PRE-CARGAR todos los RSS ANTES de generar HTML (optimización de rendimiento)
