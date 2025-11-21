@@ -21,6 +21,10 @@ if ($schedule === false) {
     die(json_encode(['error' => 'No se pudo obtener el schedule de AzuraCast'], JSON_PRETTY_PRINT));
 }
 
+// Cargar datos de programas para ver tipos
+$programsDB = loadProgramsDB($station);
+$programsData = $programsDB['programs'] ?? [];
+
 // Agrupar eventos por nombre de playlist
 $eventsByPlaylist = [];
 foreach ($schedule as $event) {
@@ -44,12 +48,21 @@ foreach ($schedule as $event) {
     }
 
     $dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    $dayNumber = $startDateTime ? (int)$startDateTime->format('w') : -1;
+
+    // Obtener info del programa
+    $programInfo = $programsData[$name] ?? null;
+    $playlistType = $programInfo['playlist_type'] ?? 'program';
+    $isHidden = !empty($programInfo['hidden_from_schedule']);
 
     $eventsByPlaylist[$name][] = [
-        'dia' => $startDateTime ? $dayNames[(int)$startDateTime->format('w')] : 'N/A',
+        'dia' => $startDateTime ? $dayNames[$dayNumber] : 'N/A',
+        'dia_numero' => $dayNumber,
         'fecha' => $startDateTime ? $startDateTime->format('Y-m-d') : 'N/A',
         'hora_inicio' => $startDateTime ? $startDateTime->format('H:i') : 'N/A',
         'hora_fin' => $endDateTime ? $endDateTime->format('H:i') : 'N/A',
+        'playlist_type' => $playlistType,
+        'hidden' => $isHidden,
         'raw_start' => $start,
         'raw_end' => $end
     ];
