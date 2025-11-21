@@ -204,6 +204,24 @@ foreach ($musicBlocksByDay as $day => &$dayBlocks) {
 }
 unset($dayBlocks);
 
+// Deduplicar bloques musicales
+foreach ($musicBlocksByDay as $day => &$dayBlocks) {
+    $uniqueBlocks = [];
+    $seenKeys = [];
+
+    foreach ($dayBlocks as $block) {
+        $normalizedTitle = trim(mb_strtolower($block['title']));
+        $uniqueKey = $normalizedTitle . '_' . $block['start_time'];
+
+        if (!isset($seenKeys[$uniqueKey])) {
+            $seenKeys[$uniqueKey] = true;
+            $uniqueBlocks[] = $block;
+        }
+    }
+
+    $dayBlocks = $uniqueBlocks;
+}
+unset($dayBlocks);
 
 // Deduplicar eventos
 foreach ($eventsByDay as $day => &$dayEvents) {
