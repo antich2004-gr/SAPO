@@ -34,10 +34,12 @@ function getAzuracastSchedule($username, $cacheTTL = 600) {
     }
 
     // Construir URL de la API
-    // Obtener programación de toda la semana (7 días desde hoy)
+    // Obtener programación de 2 semanas (14 días) para asegurar que capturamos
+    // todas las ocurrencias de cada día de la semana, incluso cuando
+    // la próxima ocurrencia de un día está después del rango de 7 días
     $now = time();
     $startDate = date('Y-m-d\T00:00:00P', $now); // Hoy a las 00:00
-    $endDate = date('Y-m-d\T23:59:59P', strtotime('+7 days', $now)); // +7 días
+    $endDate = date('Y-m-d\T23:59:59P', strtotime('+14 days', $now)); // +14 días
 
     $scheduleUrl = rtrim($apiUrl, '/') . '/station/' . $stationId . '/schedule';
     $scheduleUrl .= '?start=' . urlencode($startDate) . '&end=' . urlencode($endDate);
