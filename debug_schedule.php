@@ -128,6 +128,105 @@ foreach ($eventsByDay as $day => $events) {
     $processedByDay[$dayName] = $events;
 }
 
+// ===== DEBUG ESPECÍFICO: Buscar programa específico =====
+$searchTerm = $_GET['search'] ?? '';
+$specificProgramEvents = [];
+
+if (!empty($searchTerm)) {
+    $searchLower = mb_strtolower($searchTerm);
+
+    // Buscar en eventos de la API
+    foreach ($schedule as $event) {
+        $name = $event['name'] ?? $event['playlist'] ?? '';
+        if (stripos($name, $searchTerm) !== false) {
+            $start = $event['start_timestamp'] ?? $event['start'] ?? null;
+            $end = $event['end_timestamp'] ?? $event['end'] ?? null;
+
+            $startDT = $start ? (is_numeric($start) ? new DateTime('@' . $start) : new DateTime($start)) : null;
+            $endDT = $end ? (is_numeric($end) ? new DateTime('@' . $end) : new DateTime($end)) : null;
+
+            if ($startDT) $startDT->setTimezone(new DateTimeZone('Europe/Madrid'));
+            if ($endDT) $endDT->setTimezone(new DateTimeZone('Europe/Madrid'));
+
+            $dayNum = $startDT ? (int)$startDT->format('w') : -1;
+
+            $programInfo = $programsData[$name] ?? null;
+
+            $specificProgramEvents[] = [
+                'api_name' => $name,
+                'dia_numero' => $dayNum,
+                'dia_nombre' => $startDT ? $dayNames[$dayNum] : 'N/A',
+                'fecha' => $startDT ? $startDT->format('Y-m-d') : 'N/A',
+                'hora_inicio' => $startDT ? $startDT->format('H:i') : 'N/A',
+                'hora_fin' => $endDT ? $endDT->format('H:i') : 'N/A',
+                'programa_en_db' => $programInfo !== null,
+                'playlist_type' => $programInfo['playlist_type'] ?? 'program',
+                'hidden' => !empty($programInfo['hidden_from_schedule']),
+                'rss_feed' => $programInfo['rss_feed'] ?? '',
+                'display_title' => $programInfo['display_title'] ?? ''
+            ];
+        }
+    }
+
+    // Ver cómo queda en eventsByDay después del procesamiento
+    $processedForSearch = [];
+    foreach ($eventsByDay as $day => $events) {
+        foreach ($events as $event) {
+            if (stripos($event['title'], $searchTerm) !== false) {
+                $processedForSearch[$dayNames[$day]][] = [
+                    'title' => $event['title'],
+                    'start_time' => $event['start_time'],
+                    'playlist_type' => $event['playlist_type']
+                ];
+            }
+        }
+    }
+
+    // Verificar si hay algún problema con deduplicación
+    $deduplicationCheck = [];
+    foreach ($schedule as $event) {
+        $name = $event['name'] ?? $event['playlist'] ?? '';
+        if (stripos($name, $searchTerm) !== false) {
+            $start = $event['start_timestamp'] ?? $event['start'] ?? null;
+            if ($start === null) continue;
+
+            $startDT = is_numeric($start) ? new DateTime('@' . $start) : new DateTime($start);
+            $startDT->setTimezone(new DateTimeZone('Europe/Madrid'));
+
+            $programInfo = $programsData[$name] ?? null;
+            $displayTitle = !empty($programInfo['display_title']) ? $programInfo['display_title'] : $name;
+
+            $normalizedTitle = trim(mb_strtolower($displayTitle));
+            $uniqueKey = $normalizedTitle . '_' . $startDT->format('H:i');
+
+            $deduplicationCheck[] = [
+                'api_name' => $name,
+                'display_title' => $displayTitle,
+                'hora' => $startDT->format('H:i'),
+                'dia' => $dayNames[(int)$startDT->format('w')],
+                'unique_key' => $uniqueKey
+            ];
+        }
+    }
+}
+
+$result = [
+    'total_eventos_api' => count($schedule),
+    'playlists_unicas' => count($eventsByPlaylist)
+];
+
+// Si hay búsqueda específica, mostrar solo eso
+if (!empty($searchTerm)) {
+    $result['busqueda'] = $searchTerm;
+    $result['eventos_api_encontrados'] = count($specificProgramEvents);
+    $result['detalle_eventos_api'] = $specificProgramEvents;
+    $result['claves_deduplicacion'] = $deduplicationCheck;
+    $result['eventos_procesados_encontrados'] = $processedForSearch;
+} else {
+    $result['eventos_por_playlist'] = $eventsByPlaylist;
+    $result['eventos_procesados_por_dia'] = $processedByDay;
+}
+
 $result = [
     'total_eventos_api' => count($schedule),
     'playlists_unicas' => count($eventsByPlaylist),
