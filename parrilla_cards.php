@@ -101,6 +101,10 @@ if (isset($_GET['debug_cache'])) {
     die(json_encode($cacheInfo, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 }
 
+// Debug: rastrear un programa específico
+$traceProgram = $_GET['trace'] ?? '';
+$traceLog = [];
+
 $programsDB = loadProgramsDB($station);
 $programsData = $programsDB['programs'] ?? [];
 
@@ -164,9 +168,29 @@ foreach ($schedule as $event) {
     $programInfo = $programsData[$title] ?? null;
     $playlistType = $programInfo['playlist_type'] ?? 'program';
 
+    // Trace: registrar evento si coincide con el programa buscado
+    $isTracked = !empty($traceProgram) && stripos($title, $traceProgram) !== false;
+    if ($isTracked) {
+        $traceLog[] = [
+            'stage' => '1_api_event',
+            'title' => $title,
+            'day' => $dayOfWeek,
+            'time' => $startDateTime->format('H:i'),
+            'date' => $startDateTime->format('Y-m-d'),
+            'playlist_type' => $playlistType,
+            'program_in_db' => $programInfo !== null
+        ];
+    }
+
     // Omitir jingles y programas ocultos
-    if ($playlistType === 'jingles') continue;
-    if (!empty($programInfo['hidden_from_schedule'])) continue;
+    if ($playlistType === 'jingles') {
+        if ($isTracked) $traceLog[] = ['stage' => '2_filtered', 'reason' => 'jingles'];
+        continue;
+    }
+    if (!empty($programInfo['hidden_from_schedule'])) {
+        if ($isTracked) $traceLog[] = ['stage' => '2_filtered', 'reason' => 'hidden_from_schedule'];
+        continue;
+    }
 
     $end = $event['end_timestamp'] ?? $event['end'] ?? null;
     $endDateTime = $end ? (is_numeric($end) ? new DateTime('@' . $end) : new DateTime($end)) : null;
@@ -207,8 +231,10 @@ foreach ($schedule as $event) {
     // Separar bloques musicales de programas
     if ($playlistType === 'music_block') {
         $musicBlocksByDay[$dayOfWeek][] = $eventData;
+        if ($isTracked) $traceLog[] = ['stage' => '3_added', 'array' => 'musicBlocksByDay', 'day' => $dayOfWeek];
     } else {
         $eventsByDay[$dayOfWeek][] = $eventData;
+        if ($isTracked) $traceLog[] = ['stage' => '3_added', 'array' => 'eventsByDay', 'day' => $dayOfWeek, 'rss_feed' => $eventData['rss_feed']];
     }
 }
 
@@ -275,6 +301,33 @@ foreach ($eventsByDay as $dayEvents) {
 }
 $t2 = microtime(true);
 error_log(sprintf("PERFORMANCE: Pre-carga RSS: %.3fs (%d feeds únicos)", $t2 - $t1, count($rssCache)));
+
+// Trace: mostrar log de rastreo si se solicitó
+if (!empty($traceProgram)) {
+    // Contar cuántos eventos quedaron para el programa rastreado
+    $dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    $finalCount = [];
+    foreach ($eventsByDay as $day => $events) {
+        foreach ($events as $event) {
+            if (stripos($event['title'], $traceProgram) !== false ||
+                stripos($event['original_title'] ?? '', $traceProgram) !== false) {
+                $finalCount[] = [
+                    'day' => $dayNames[$day],
+                    'time' => $event['start_time'],
+                    'title' => $event['title']
+                ];
+            }
+        }
+    }
+    $traceLog[] = ['stage' => '4_final_events', 'count' => count($finalCount), 'events' => $finalCount];
+
+    header('Content-Type: application/json');
+    die(json_encode([
+        'trace_program' => $traceProgram,
+        'total_api_events' => count($schedule),
+        'trace_log' => $traceLog
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+}
 
 // Detectar día y hora actual
 $now = new DateTime();
