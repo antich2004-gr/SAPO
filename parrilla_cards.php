@@ -82,8 +82,24 @@ function getReadableLinkColor($hexColor) {
 
 $linkHoverColor = getReadableLinkColor($widgetColor);
 
-$schedule = getAzuracastSchedule($station);
+// Parámetro para forzar datos frescos (bypass cache)
+$forceRefresh = isset($_GET['refresh']) && $_GET['refresh'] === '1';
+$cacheTTL = $forceRefresh ? 0 : 600;
+
+$schedule = getAzuracastSchedule($station, $cacheTTL);
 if ($schedule === false) $schedule = [];
+
+// Debug: mostrar info de caché si se solicita
+if (isset($_GET['debug_cache'])) {
+    header('Content-Type: application/json');
+    $cacheInfo = [
+        'force_refresh' => $forceRefresh,
+        'cache_ttl' => $cacheTTL,
+        'total_events' => count($schedule),
+        'sample_events' => array_slice($schedule, 0, 3)
+    ];
+    die(json_encode($cacheInfo, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+}
 
 $programsDB = loadProgramsDB($station);
 $programsData = $programsDB['programs'] ?? [];
