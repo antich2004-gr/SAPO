@@ -454,26 +454,41 @@ if ($hasStationId) {
                     .coverage-timeline-segment:hover {
                         opacity: 0.8;
                     }
+                    .coverage-hour-ticks {
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        display: flex;
+                        pointer-events: none;
+                    }
+                    .coverage-hour-tick {
+                        flex: 1;
+                        border-right: 1px solid rgba(0, 0, 0, 0.1);
+                    }
+                    .coverage-hour-tick:last-child {
+                        border-right: none;
+                    }
                     .coverage-hour-markers {
                         display: flex;
                         justify-content: space-between;
-                        font-size: 9px;
+                        font-size: 8px;
                         color: #9ca3af;
                         margin-top: 2px;
-                        padding: 0 2px;
+                        padding: 0;
                     }
                     .coverage-hour-marker {
                         text-align: center;
-                        width: 20px;
-                        margin-left: -10px;
+                        flex: 1;
                     }
                     .coverage-hour-marker:first-child {
-                        margin-left: 0;
                         text-align: left;
+                        flex: 0.5;
                     }
                     .coverage-hour-marker:last-child {
-                        margin-right: 0;
                         text-align: right;
+                        flex: 0.5;
                     }
                     /* Legacy support */
                     .coverage-progress-bar {
@@ -759,9 +774,15 @@ if ($hasStationId) {
                                          title="<?php echo htmlspecialchars($seg['title'] . ' (' . $seg['time'] . ')'); ?>">
                                     </div>
                                 <?php } ?>
+                                <!-- Rayitas de hora -->
+                                <div class="coverage-hour-ticks">
+                                    <?php for ($h = 0; $h < 24; $h++): ?>
+                                        <div class="coverage-hour-tick"></div>
+                                    <?php endfor; ?>
+                                </div>
                             </div>
                             <div class="coverage-hour-markers">
-                                <?php for ($h = 0; $h <= 24; $h += 6): ?>
+                                <?php for ($h = 0; $h <= 24; $h++): ?>
                                     <span class="coverage-hour-marker"><?php echo $h; ?></span>
                                 <?php endfor; ?>
                             </div>
