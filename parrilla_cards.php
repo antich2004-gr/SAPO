@@ -748,15 +748,15 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
 
         @media (max-width: 768px) {
             .blocks-grid {
-                flex-wrap: wrap;
+                flex-direction: column;
             }
             .block-card {
                 padding: 5px 8px;
                 font-size: 9px;
-                flex: 1 1 45%;
+                width: 100%;
             }
             .block-card:hover {
-                flex: 1 1 45%;
+                width: 100%;
             }
         }
     </style>
