@@ -997,7 +997,8 @@ if ($hasStationId) {
                 <!-- Resumen semanal -->
                 <?php
                 $totalWeekMinutes = array_sum($weekTotals);
-                $weekPercentage = round(($totalWeekMinutes / (7 * 24 * 60)) * 100, 1);
+                $totalWeekAvailable = 7 * 24 * 60; // 10080 minutos
+                $uncoveredMinutes = max(0, $totalWeekAvailable - $totalWeekMinutes);
 
                 // Formatear tiempos
                 $formatWeekTime = function($minutes) {
@@ -1026,8 +1027,8 @@ if ($hasStationId) {
                             <div class="summary-label">Total Semanal</div>
                         </div>
                         <div class="summary-item">
-                            <div class="summary-value total"><?php echo $weekPercentage; ?>%</div>
-                            <div class="summary-label">Cobertura</div>
+                            <div class="summary-value <?php echo $uncoveredMinutes > 0 ? 'live' : 'total'; ?>"><?php echo $formatWeekTime($uncoveredMinutes); ?></div>
+                            <div class="summary-label">Por cubrir</div>
                         </div>
                     </div>
                 </div>
