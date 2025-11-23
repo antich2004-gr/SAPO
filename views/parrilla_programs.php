@@ -84,13 +84,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                     <label>Descripción corta: <small>(para cards y previews)</small></label>
                     <input type="text" name="short_description"
                            placeholder="Programa de música alternativa de los 90"
-                           maxlength="200">
-                </div>
-
-                <div class="form-group">
-                    <label>Descripción larga: <small>(para página de detalle)</small></label>
-                    <textarea name="long_description" rows="4"
-                              placeholder="Descripción detallada del programa, presentadores, temáticas, etc."></textarea>
+                           maxlength="300">
                 </div>
 
                 <div class="form-group">
@@ -229,16 +223,30 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
 
                     <div class="form-group">
                         <label>Tipo de lista de reproducción: <small>(importante para la parrilla)</small></label>
-                        <select name="playlist_type" required>
-                            <?php
+                        <?php
+                        $currentType = $programInfo['playlist_type'] ?? 'program';
+                        $isLiveProgram = ($currentType === 'live');
+
+                        // Si es tipo 'live' es un programa manual y no se puede cambiar
+                        if ($isLiveProgram):
+                        ?>
+                        <select name="playlist_type" required disabled>
+                            <option value="live" selected>🟢 Emisión en Directo (programa manual)</option>
+                        </select>
+                        <input type="hidden" name="playlist_type" value="live">
+                        <small style="color: #6b7280;">
+                            <em>💡 Los programas en directo añadidos manualmente no pueden cambiar de tipo.</em>
+                        </small>
+                        <?php else:
+                            // Programas importados pueden cambiar entre program, music_block, jingles
                             $playlistTypes = [
                                 'program' => '📻 Programa (se muestra en la parrilla)',
-                                'live' => '🔴 Emisión en Directo (destacado especial)',
-                                'music_block' => '🎵 Bloque Musical (oculto)',
+                                'music_block' => '🎵 Bloque Musical (en timeline)',
                                 'jingles' => '🔊 Jingles/Cortinillas (oculto)'
                             ];
-                            $currentType = $programInfo['playlist_type'] ?? 'program';
-                            foreach ($playlistTypes as $value => $label):
+                        ?>
+                        <select name="playlist_type" required>
+                            <?php foreach ($playlistTypes as $value => $label):
                                 $selected = $currentType === $value ? 'selected' : '';
                             ?>
                                 <option value="<?php echo htmlEsc($value); ?>" <?php echo $selected; ?>>
@@ -248,9 +256,22 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                         </select>
                         <small style="color: #6b7280;">
                             • <strong>Programa</strong>: Contenido producido (repeticiones, podcast)<br>
-                            • <strong>Emisión en Directo</strong>: Programas en vivo, destacados con estilo especial<br>
-                            • <strong>Bloque Musical</strong>: Música automatizada (se oculta de la parrilla)<br>
-                            • <strong>Jingles/Cortinillas</strong>: Efectos de audio (se ocultan de la parrilla)
+                            • <strong>Bloque Musical</strong>: Música automatizada (se muestra en el timeline)<br>
+                            • <strong>Jingles/Cortinillas</strong>: Efectos de audio (se ocultan de la parrilla)<br>
+                            <em>💡 Los programas importados no pueden cambiarse a "En Directo". Para añadir programas en directo, usa el formulario de la izquierda.</em>
+                        </small>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" name="hidden_from_schedule" value="1"
+                                   <?php echo !empty($programInfo['hidden_from_schedule']) ? 'checked' : ''; ?>
+                                   style="width: 18px; height: 18px; cursor: pointer;">
+                            <span>Ocultar en la parrilla</span>
+                        </label>
+                        <small style="color: #6b7280; display: block; margin-top: 5px;">
+                            Si está marcado, este programa/bloque no aparecerá en la parrilla pública.
                         </small>
                     </div>
 
@@ -270,13 +291,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                         <input type="text" name="short_description"
                                value="<?php echo htmlEsc($programInfo['short_description'] ?? ''); ?>"
                                placeholder="Programa de música alternativa de los 90"
-                               maxlength="200">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Descripción larga: <small>(para página de detalle)</small></label>
-                        <textarea name="long_description" rows="4"
-                                  placeholder="Descripción detallada del programa, presentadores, temáticas, etc."><?php echo htmlEsc($programInfo['long_description'] ?? ''); ?></textarea>
+                               maxlength="300">
                     </div>
 
                     <?php
@@ -418,11 +433,11 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
 
     <!-- Lista de programas -->
     <div class="section">
-        <h3>Programas Detectados</h3>
+        <h3>Programas</h3>
 
         <?php if (empty($programsData['programs'])): ?>
             <div class="alert alert-info">
-                No hay programas detectados. Haz click en "🔄 Sincronizar con AzuraCast" para detectar tus programas.
+                No hay programas. Haz click en "🔄 Sincronizar con AzuraCast" para detectar tus programas o añade programas en directo manualmente.
             </div>
         <?php else: ?>
             <div style="display: grid; gap: 15px;">
@@ -431,6 +446,46 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                         <div style="flex: 1;">
                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
                                 <strong style="font-size: 16px;"><?php echo htmlEsc($program['name']); ?></strong>
+                                <?php
+                                $playlistType = $program['info']['playlist_type'] ?? 'program';
+
+                                if ($playlistType === 'live'):
+                                ?>
+                                    <span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
+                                        🟢 EN DIRECTO
+                                    </span>
+                                <?php elseif ($playlistType === 'program'): ?>
+                                    <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
+                                        📻 PROGRAMA
+                                    </span>
+                                <?php elseif ($playlistType === 'music_block'): ?>
+                                    <span style="background: #e5e7eb; color: #4b5563; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
+                                        🎵 BLOQUE MUSICAL
+                                    </span>
+                                <?php elseif ($playlistType === 'jingles'): ?>
+                                    <span style="background: #e5e7eb; color: #4b5563; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
+                                        🔊 JINGLES
+                                    </span>
+                                <?php endif; ?>
+                                <?php
+                                $isOrphaned = !empty($program['info']['orphaned']);
+                                $orphanReason = $program['info']['orphan_reason'] ?? '';
+                                if ($isOrphaned):
+                                    if ($orphanReason === 'playlist_deshabilitada'):
+                                ?>
+                                    <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;" title="La playlist existe pero está deshabilitada en AzuraCast">
+                                        ⏸️ DESHABILITADA EN AZURACAST
+                                    </span>
+                                <?php elseif ($orphanReason === 'no_en_azuracast'): ?>
+                                    <span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;" title="Esta playlist no existe en AzuraCast">
+                                        ❌ NO EN AZURACAST
+                                    </span>
+                                <?php else: ?>
+                                    <span style="background: #e5e7eb; color: #4b5563; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;" title="Este programa no aparece en la programación actual (sin API Key o sin horario)">
+                                        ⚠️ SIN HORARIO
+                                    </span>
+                                <?php endif; ?>
+                                <?php endif; ?>
                             </div>
 
                             <div style="font-size: 13px; color: #4a5568; margin-top: 5px;">
@@ -455,11 +510,24 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                                 <span class="btn-icon">✏️</span> Editar
                             </a>
                             <?php
-                            // Mostrar botón de eliminar solo para programas creados manualmente (tipo 'live')
+                            // Mostrar botón de eliminar para:
+                            // 1. Programas creados manualmente (tipo 'live')
+                            // 2. Programas que no existen en AzuraCast (orphan_reason = 'no_en_azuracast')
                             $isManualProgram = isset($program['info']['created_at']) && ($program['info']['playlist_type'] ?? '') === 'live';
+                            $isNotInAzuracast = !empty($program['info']['orphaned']) && ($program['info']['orphan_reason'] ?? '') === 'no_en_azuracast';
+
                             if ($isManualProgram):
                             ?>
                                 <form method="POST" style="display: inline;" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este programa en directo?');">
+                                    <input type="hidden" name="action" value="delete_program">
+                                    <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                                    <input type="hidden" name="program_name" value="<?php echo htmlEsc($program['name']); ?>">
+                                    <button type="submit" class="btn btn-danger">
+                                        <span class="btn-icon">🗑️</span> Eliminar
+                                    </button>
+                                </form>
+                            <?php elseif ($isNotInAzuracast): ?>
+                                <form method="POST" style="display: inline;" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este programa? Ya no existe en AzuraCast.');">
                                     <input type="hidden" name="action" value="delete_program">
                                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                                     <input type="hidden" name="program_name" value="<?php echo htmlEsc($program['name']); ?>">

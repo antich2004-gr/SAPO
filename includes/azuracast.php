@@ -34,10 +34,12 @@ function getAzuracastSchedule($username, $cacheTTL = 600) {
     }
 
     // Construir URL de la API
-    // Obtener programación de toda la semana (7 días desde hoy)
+    // Obtener programación de 2 semanas (14 días) para asegurar que capturamos
+    // todas las ocurrencias de cada día de la semana, incluso cuando
+    // la próxima ocurrencia de un día está después del rango de 7 días
     $now = time();
     $startDate = date('Y-m-d\T00:00:00P', $now); // Hoy a las 00:00
-    $endDate = date('Y-m-d\T23:59:59P', strtotime('+7 days', $now)); // +7 días
+    $endDate = date('Y-m-d\T23:59:59P', strtotime('+14 days', $now)); // +14 días
 
     $scheduleUrl = rtrim($apiUrl, '/') . '/station/' . $stationId . '/schedule';
     $scheduleUrl .= '?start=' . urlencode($startDate) . '&end=' . urlencode($endDate);
@@ -75,6 +77,83 @@ function getAzuracastSchedule($username, $cacheTTL = 600) {
 
     } catch (Exception $e) {
         error_log("AzuraCast: Excepción al obtener programación: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Obtener todas las playlists de AzuraCast (incluyendo desactivadas)
+ * Requiere API Key para autenticación
+ *
+ * @param string $username Nombre de usuario
+ * @return array|false Array de playlists o false si hay error
+ */
+function getAzuracastPlaylists($username) {
+    // Obtener configuración global
+    $config = getConfig();
+    $apiUrl = $config['azuracast_api_url'] ?? '';
+    $apiKey = $config['azuracast_api_key'] ?? '';
+
+    if (empty($apiUrl)) {
+        error_log("AzuraCast Playlists: URL de API no configurada");
+        return false;
+    }
+
+    if (empty($apiKey)) {
+        error_log("AzuraCast Playlists: API Key no configurada - no se puede consultar estado de playlists");
+        return false;
+    }
+
+    // Obtener station_id del usuario
+    $userData = getUserDB($username);
+    $stationId = $userData['azuracast']['station_id'] ?? null;
+
+    if (empty($stationId)) {
+        error_log("AzuraCast Playlists: Station ID no configurado para usuario $username");
+        return false;
+    }
+
+    // Construir URL de la API de playlists
+    $playlistsUrl = rtrim($apiUrl, '/') . '/station/' . $stationId . '/playlists';
+
+    try {
+        // Crear contexto con autenticación API Key
+        $context = stream_context_create([
+            'http' => [
+                'timeout' => 10,
+                'user_agent' => 'SAPO/1.0',
+                'header' => 'X-API-Key: ' . $apiKey
+            ]
+        ]);
+
+        $response = @file_get_contents($playlistsUrl, false, $context);
+
+        if ($response === false) {
+            error_log("AzuraCast Playlists: Error al obtener playlists desde $playlistsUrl (¿API Key válida?)");
+            return false;
+        }
+
+        $data = json_decode($response, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log("AzuraCast Playlists: Error JSON: " . json_last_error_msg());
+            return false;
+        }
+
+        // Debug: mostrar estructura de la primera playlist
+        if (!empty($data) && isset($data[0])) {
+            error_log("AzuraCast Playlists: Total playlists: " . count($data));
+            $enabledCount = count(array_filter($data, fn($p) => ($p['is_enabled'] ?? true)));
+            $disabledCount = count($data) - $enabledCount;
+            error_log("AzuraCast Playlists: Habilitadas: $enabledCount, Deshabilitadas: $disabledCount");
+        } else {
+            error_log("AzuraCast Playlists: Respuesta vacía o no es array");
+        }
+
+        return $data;
+
+    } catch (Exception $e) {
+        error_log("AzuraCast Playlists: Excepción: " . $e->getMessage());
         return false;
     }
 }
@@ -120,6 +199,27 @@ function getScheduleFromCache($username, $ttl = 600) {
 }
 
 /**
+ * Borrar caché del schedule
+ *
+ * @param string $username Nombre de usuario
+ * @return bool True si se borró correctamente o no existía
+ */
+function clearScheduleCache($username) {
+    $cacheDir = DATA_DIR . '/cache/schedule';
+    $cacheFile = $cacheDir . '/' . md5($username) . '.json';
+
+    if (file_exists($cacheFile)) {
+        $result = @unlink($cacheFile);
+        if ($result) {
+            error_log("AzuraCast: Caché de schedule borrada para $username");
+        }
+        return $result;
+    }
+
+    return true; // No existía, consideramos éxito
+}
+
+/**
  * Guardar schedule en caché
  *
  * @param string $username Nombre de usuario
@@ -155,7 +255,7 @@ function saveScheduleToCache($username, $data) {
  * @param string $logoUrl URL del logo
  * @return bool True si se guardó correctamente
  */
-function updateAzuracastConfig($username, $stationId, $widgetColor = '#3b82f6', $showLogo = false, $logoUrl = '', $widgetStyle = 'modern', $widgetFontSize = 'medium') {
+function updateAzuracastConfig($username, $stationId, $widgetColor = '#3b82f6', $showLogo = false, $logoUrl = '', $widgetStyle = 'modern', $widgetFontSize = 'medium', $streamUrl = '') {
     $userData = getUserDB($username);
 
     $userData['azuracast'] = [
@@ -164,7 +264,8 @@ function updateAzuracastConfig($username, $stationId, $widgetColor = '#3b82f6', 
         'show_logo' => (bool)$showLogo,
         'logo_url' => $logoUrl,
         'widget_style' => $widgetStyle,
-        'widget_font_size' => $widgetFontSize
+        'widget_font_size' => $widgetFontSize,
+        'stream_url' => $streamUrl
     ];
 
     return saveUserDB($username, $userData);
@@ -184,7 +285,8 @@ function getAzuracastConfig($username) {
         'show_logo' => false,
         'logo_url' => '',
         'widget_style' => 'modern',
-        'widget_font_size' => 'medium'
+        'widget_font_size' => 'medium',
+        'stream_url' => ''
     ];
 }
 
@@ -372,4 +474,213 @@ function testAzuracastConnection() {
         'success' => true,
         'message' => 'Conexión exitosa'
     ];
+}
+
+/**
+ * Obtener configuración avanzada de Liquidsoap de una emisora
+ * Requiere API Key para autenticación
+ *
+ * @param string $username Nombre de usuario
+ * @return array|false Array con la configuración de Liquidsoap o false si hay error
+ */
+function getAzuracastLiquidsoapConfig($username) {
+    // Obtener configuración global
+    $config = getConfig();
+    $apiUrl = $config['azuracast_api_url'] ?? '';
+    $apiKey = $config['azuracast_api_key'] ?? '';
+
+    if (empty($apiUrl)) {
+        error_log("AzuraCast Liquidsoap: URL de API no configurada");
+        return false;
+    }
+
+    if (empty($apiKey)) {
+        error_log("AzuraCast Liquidsoap: API Key no configurada");
+        return false;
+    }
+
+    // Obtener station_id del usuario
+    $userData = getUserDB($username);
+    $stationId = $userData['azuracast']['station_id'] ?? null;
+
+    if (empty($stationId)) {
+        error_log("AzuraCast Liquidsoap: Station ID no configurado para usuario $username");
+        return false;
+    }
+
+    // Obtener perfil de la estación
+    $stationUrl = rtrim($apiUrl, '/') . '/station/' . $stationId;
+
+    try {
+        $context = stream_context_create([
+            'http' => [
+                'timeout' => 10,
+                'user_agent' => 'SAPO/1.0',
+                'header' => 'X-API-Key: ' . $apiKey
+            ]
+        ]);
+
+        $response = @file_get_contents($stationUrl, false, $context);
+
+        if ($response === false) {
+            error_log("AzuraCast Liquidsoap: Error al obtener estación desde $stationUrl");
+            return false;
+        }
+
+        $stationData = json_decode($response, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log("AzuraCast Liquidsoap: Error JSON: " . json_last_error_msg());
+            return false;
+        }
+
+        // Extraer backend_config que contiene la configuración de Liquidsoap
+        $backendConfig = $stationData['backend_config'] ?? [];
+
+        // Debug: ver qué campos hay en backend_config
+        error_log("AzuraCast Liquidsoap: Campos en backend_config: " . implode(', ', array_keys($backendConfig)));
+        error_log("AzuraCast Liquidsoap: custom_config = " . ($backendConfig['custom_config'] ?? 'NO EXISTE'));
+
+        // Convertir a formato compatible con la UI
+        $liquidConfig = [
+            [
+                'field' => 'custom_config',
+                'label' => 'Custom Configuration (Top of File)',
+                'value' => $backendConfig['custom_config'] ?? ''
+            ],
+            [
+                'field' => 'dj_on_air_hook',
+                'label' => 'Custom Code on DJ Connect',
+                'value' => $backendConfig['dj_on_air_hook'] ?? ''
+            ],
+            [
+                'field' => 'dj_off_air_hook',
+                'label' => 'Custom Code on DJ Disconnect',
+                'value' => $backendConfig['dj_off_air_hook'] ?? ''
+            ]
+        ];
+
+        error_log("AzuraCast Liquidsoap: Configuración obtenida correctamente para station $stationId");
+        return $liquidConfig;
+
+    } catch (Exception $e) {
+        error_log("AzuraCast Liquidsoap: Excepción: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Actualizar configuración avanzada de Liquidsoap de una emisora
+ * Requiere API Key para autenticación
+ *
+ * @param string $username Nombre de usuario
+ * @param array $configData Configuración de Liquidsoap a guardar (clave => valor)
+ * @return array Array con 'success' (bool) y 'message' (string)
+ */
+function updateAzuracastLiquidsoapConfig($username, $configData) {
+    // Obtener configuración global
+    $config = getConfig();
+    $apiUrl = $config['azuracast_api_url'] ?? '';
+    $apiKey = $config['azuracast_api_key'] ?? '';
+
+    if (empty($apiUrl)) {
+        return ['success' => false, 'message' => 'URL de API no configurada'];
+    }
+
+    if (empty($apiKey)) {
+        return ['success' => false, 'message' => 'API Key no configurada'];
+    }
+
+    // Obtener station_id del usuario
+    $userData = getUserDB($username);
+    $stationId = $userData['azuracast']['station_id'] ?? null;
+
+    if (empty($stationId)) {
+        return ['success' => false, 'message' => 'Station ID no configurado'];
+    }
+
+    $stationUrl = rtrim($apiUrl, '/') . '/station/' . $stationId;
+
+    try {
+        // Primero obtener la configuración actual de la estación
+        $getContext = stream_context_create([
+            'http' => [
+                'timeout' => 10,
+                'user_agent' => 'SAPO/1.0',
+                'header' => 'X-API-Key: ' . $apiKey
+            ]
+        ]);
+
+        $getResponse = @file_get_contents($stationUrl, false, $getContext);
+
+        if ($getResponse === false) {
+            return ['success' => false, 'message' => 'Error al obtener configuración actual'];
+        }
+
+        $stationData = json_decode($getResponse, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return ['success' => false, 'message' => 'Error al procesar configuración actual'];
+        }
+
+        // Actualizar backend_config con los nuevos valores
+        $backendConfig = $stationData['backend_config'] ?? [];
+        foreach ($configData as $key => $value) {
+            $backendConfig[$key] = $value;
+        }
+
+        // Preparar datos para PUT (solo enviamos backend_config)
+        $updateData = [
+            'backend_config' => $backendConfig
+        ];
+
+        $jsonData = json_encode($updateData, JSON_UNESCAPED_UNICODE);
+
+        // URL para admin endpoint (necesario para actualizar)
+        $adminStationUrl = rtrim($apiUrl, '/') . '/admin/station/' . $stationId;
+
+        // Usar cURL para el PUT request (más fiable que file_get_contents)
+        $ch = curl_init($adminStationUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_CUSTOMREQUEST => 'PUT',
+            CURLOPT_POSTFIELDS => $jsonData,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_HTTPHEADER => [
+                'X-API-Key: ' . $apiKey,
+                'Content-Type: application/json',
+                'Content-Length: ' . strlen($jsonData)
+            ]
+        ]);
+
+        $putResponse = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        if ($putResponse === false || !empty($curlError)) {
+            error_log("AzuraCast Liquidsoap: cURL error - " . $curlError);
+            return ['success' => false, 'message' => 'Error de conexión: ' . $curlError];
+        }
+
+        if ($httpCode >= 400) {
+            $errorData = json_decode($putResponse, true);
+            $errorMsg = $errorData['message'] ?? $errorData['error'] ?? "HTTP $httpCode";
+            error_log("AzuraCast Liquidsoap: HTTP $httpCode - $errorMsg");
+            return ['success' => false, 'message' => "Error HTTP $httpCode: $errorMsg"];
+        }
+
+        $data = json_decode($putResponse, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return ['success' => false, 'message' => 'Error al procesar respuesta de la API'];
+        }
+
+        error_log("AzuraCast Liquidsoap: Configuración actualizada correctamente para station $stationId");
+        return ['success' => true, 'message' => 'Configuración guardada correctamente', 'data' => $data];
+
+    } catch (Exception $e) {
+        error_log("AzuraCast Liquidsoap: Excepción al actualizar: " . $e->getMessage());
+        return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+    }
 }

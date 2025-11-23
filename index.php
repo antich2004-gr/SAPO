@@ -1,6 +1,9 @@
 <?php
 // index.php - Punto de entrada principal SAPO
 
+// Configurar zona horaria a CET/CEST (Europe/Madrid)
+date_default_timezone_set('Europe/Madrid');
+
 // Headers de seguridad
 header("X-Content-Type-Options: nosniff");
 header("X-Frame-Options: SAMEORIGIN");
@@ -25,6 +28,63 @@ require_once INCLUDES_DIR . '/reports.php';
 require_once INCLUDES_DIR . '/azuracast.php';
 
 initSession();
+
+    // AJAX: Guardar configuración de Liquidsoap
+    if (isset($_POST['action']) && $_POST['action'] == 'save_liquidsoap_config' && isLoggedIn()) {
+        header('Content-Type: application/json');
+
+        $username = $_SESSION['username'];
+        $section = $_POST['section'] ?? '';
+        $code = $_POST['code'] ?? '';
+
+        if (empty($section) || empty($code)) {
+            echo json_encode(['success' => false, 'message' => 'Datos incompletos']);
+            exit;
+        }
+
+        // Validar sección permitida
+        $allowedSections = ['custom_config', 'dj_on_air_hook', 'dj_off_air_hook'];
+        if (!in_array($section, $allowedSections)) {
+            echo json_encode(['success' => false, 'message' => 'Sección no válida']);
+            exit;
+        }
+
+        // Obtener configuración actual
+        $currentConfig = getAzuracastLiquidsoapConfig($username);
+        if ($currentConfig === false) {
+            echo json_encode(['success' => false, 'message' => 'No se pudo obtener la configuración actual de AzuraCast']);
+            exit;
+        }
+
+        // Preparar datos para actualizar (formato clave => valor)
+        $configToUpdate = [];
+        foreach ($currentConfig as $item) {
+            $field = $item['field'] ?? '';
+            $value = $item['value'] ?? '';
+
+            // Si es la sección donde queremos añadir, concatenar el código
+            if ($field === $section) {
+                // Añadir salto de línea si ya hay contenido
+                if (!empty(trim($value))) {
+                    $value .= "\n\n";
+                }
+                $value .= $code;
+            }
+
+            $configToUpdate[$field] = $value;
+        }
+
+        // Guardar configuración actualizada
+        $result = updateAzuracastLiquidsoapConfig($username, $configToUpdate);
+
+        if ($result['success']) {
+            echo json_encode(['success' => true, 'message' => 'Configuración guardada correctamente en AzuraCast']);
+        } else {
+            echo json_encode(['success' => false, 'message' => $result['message']]);
+        }
+        exit;
+    }
+
     // AJAX: Guardar timestamp de última actualización de feeds
     if (isset($_GET['action']) && $_GET['action'] == 'save_feeds_timestamp' && isLoggedIn() && !isAdmin()) {
         header('Content-Type: application/json');
@@ -58,7 +118,13 @@ initSession();
 
         $username = $_SESSION['username'];
         $podcasts = readServerList($username);
-        
+
+        // Ordenar alfabéticamente igual que en user.php para consistencia
+        usort($podcasts, function($a, $b) {
+            return strcasecmp($a['name'], $b['name']);
+        });
+        $podcasts = array_values($podcasts);
+
         // Si se especifica un índice, actualizar solo ese podcast
         if (isset($_GET['index']) && is_numeric($_GET['index'])) {
             $index = intval($_GET['index']);
@@ -159,19 +225,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         header('Location: ' . basename($_SERVER['PHP_SELF']));
         exit;
     }
-    
+
     // SAVE CONFIG (admin)
     if ($action == 'save_config' && isAdmin()) {
         $basePath = trim($_POST['base_path'] ?? '');
         $subsFolder = trim($_POST['subscriptions_folder'] ?? 'Suscripciones');
         $azuracastApiUrl = trim($_POST['azuracast_api_url'] ?? '');
+        $azuracastApiKey = trim($_POST['azuracast_api_key'] ?? '');
 
         if (empty($basePath)) {
             $error = 'La ruta base es obligatoria';
         } elseif (!is_dir($basePath)) {
             $error = 'La ruta base no existe o no es accesible';
         } else {
-            if (saveConfig($basePath, $subsFolder, $azuracastApiUrl)) {
+            if (saveConfig($basePath, $subsFolder, $azuracastApiUrl, $azuracastApiKey)) {
                 $message = 'Configuracion guardada correctamente';
             } else {
                 $error = 'Error al guardar la configuracion';
@@ -339,13 +406,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (empty($programName)) {
             $error = 'Nombre de programa no especificado';
         } else {
-            // Verificar que el programa existe y es de tipo 'live'
+            // Verificar que el programa existe y es eliminable
             $programInfo = getProgramInfo($username, $programName);
             if ($programInfo === null) {
                 $error = 'El programa no existe';
-            } elseif (($programInfo['playlist_type'] ?? '') !== 'live') {
-                $error = 'Solo se pueden eliminar programas en directo creados manualmente';
             } else {
+                // Permitir eliminar si:
+                // 1. Es un programa en directo creado manualmente (tipo 'live')
+                // 2. Es un programa que ya no existe en AzuraCast (orphan_reason = 'no_en_azuracast')
+                $isManualProgram = ($programInfo['playlist_type'] ?? '') === 'live';
+                $isNotInAzuracast = !empty($programInfo['orphaned']) && ($programInfo['orphan_reason'] ?? '') === 'no_en_azuracast';
+
+                if (!$isManualProgram && !$isNotInAzuracast) {
+                    $error = 'Solo se pueden eliminar programas en directo o programas que ya no existen en AzuraCast';
+                } else
                 if (deleteProgram($username, $programName)) {
                     $message = "Programa \"$programName\" eliminado correctamente";
                     // Redirigir para limpiar la vista
@@ -379,7 +453,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'presenters' => trim($_POST['presenters'] ?? ''),
                 'social_twitter' => trim($_POST['social_twitter'] ?? ''),
                 'social_instagram' => trim($_POST['social_instagram'] ?? ''),
-                'rss_feed' => trim($_POST['rss_feed'] ?? '')
+                'rss_feed' => trim($_POST['rss_feed'] ?? ''),
+                'hidden_from_schedule' => isset($_POST['hidden_from_schedule']) ? true : false
             ];
 
             // Solo guardar campos de horario si es programa en directo
@@ -408,12 +483,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // UPDATE AZURACAST CONFIG (usuario regular desde pestaña Parrilla)
     if ($action == 'update_azuracast_config_user' && isLoggedIn() && !isAdmin()) {
         $username = $_SESSION['username'];
-        $stationId = $_POST['station_id'] ?? '';
+
+        // Obtener el Station ID actual (solo el admin puede cambiarlo)
+        $currentConfig = getAzuracastConfig($username);
+        $stationId = $currentConfig['station_id'] ?? '';
+
+        // Los usuarios solo pueden actualizar personalización y stream URL
         $widgetColor = $_POST['widget_color'] ?? $_POST['widget_color_text'] ?? '#3b82f6';
         $widgetStyle = $_POST['widget_style'] ?? 'modern';
         $widgetFontSize = $_POST['widget_font_size'] ?? 'medium';
+        $streamUrl = $_POST['stream_url'] ?? '';
 
-        if (updateAzuracastConfig($username, $stationId, $widgetColor, false, '', $widgetStyle, $widgetFontSize)) {
+        if (updateAzuracastConfig($username, $stationId, $widgetColor, false, '', $widgetStyle, $widgetFontSize, $streamUrl)) {
             $message = "Configuración de AzuraCast actualizada correctamente";
         } else {
             $error = 'Error al actualizar la configuración';
@@ -500,25 +581,54 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         }
     }
-    
+
+    // SET DEFAULT CADUCIDAD
+    if ($action == 'set_default_caducidad' && isLoggedIn() && !isAdmin()) {
+        $defaultCaducidad = intval($_POST['default_caducidad'] ?? 30);
+
+        // Validar rango
+        if ($defaultCaducidad < 1 || $defaultCaducidad > 365) {
+            $error = 'La caducidad debe estar entre 1 y 365 días';
+        } else {
+            // Guardar el valor ANTERIOR antes de cambiarlo (para detectar personalizaciones)
+            $oldDefaultCaducidad = getDefaultCaducidad($_SESSION['username']);
+
+            if (setDefaultCaducidad($_SESSION['username'], $defaultCaducidad)) {
+                // Sincronizar caducidades.txt pasando el valor ANTERIOR como referencia
+                $syncResult = syncAllCaducidades($_SESSION['username'], $oldDefaultCaducidad);
+
+                // Guardar mensaje en sesión para mostrarlo después del redirect
+                $_SESSION['message'] = 'Caducidad por defecto actualizada a ' . $defaultCaducidad . ' días' .
+                                       ($syncResult ? ' y sincronizada con todos los podcasts' : '');
+
+                // Redirect para que se recargue la página con los valores actualizados
+                header('Location: ' . basename($_SERVER['PHP_SELF']));
+                exit;
+            } else {
+                $error = 'Error al actualizar la caducidad por defecto';
+            }
+        }
+    }
+
     // ADD PODCAST
     if ($action == 'add_podcast' && isLoggedIn() && !isAdmin()) {
         $url = trim($_POST['url'] ?? '');
         $category = trim($_POST['category'] ?? '');
         $customCategory = trim($_POST['custom_category'] ?? '');
         $name = trim($_POST['name'] ?? '');
-        
-        $caducidad = intval($_POST['caducidad'] ?? 30);
+
+        $defaultCaducidad = getDefaultCaducidad($_SESSION['username']);
+        $caducidad = intval($_POST['caducidad'] ?? $defaultCaducidad);
         $duracion = trim($_POST['duracion'] ?? '');
 
         // Validar caducidad
         if ($caducidad < 1 || $caducidad > 365) {
-            $caducidad = 30; // Valor por defecto si está fuera de rango
+            $caducidad = $defaultCaducidad; // Valor por defecto del usuario si está fuera de rango
         }
 
         $finalCategory = !empty($customCategory) ? $customCategory : $category;
-        
-        if (empty($url) || empty($finalCategory) || empty($name)) {
+
+        if (empty($url) || empty($name)) {
             $error = 'Todos los campos son obligatorios';
         } elseif (!validateInput($url, 'url')) {
             $error = 'URL de RSS invalida';
@@ -541,20 +651,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $category = trim($_POST['category'] ?? '');
         $customCategory = trim($_POST['custom_category'] ?? '');
         $name = trim($_POST['name'] ?? '');
-        $caducidad = intval($_POST['caducidad'] ?? 30);
+
+        $defaultCaducidad = getDefaultCaducidad($_SESSION['username']);
+        $caducidad = intval($_POST['caducidad'] ?? $defaultCaducidad);
         $duracion = trim($_POST['duracion'] ?? '');
 
         // Validar caducidad
         if ($caducidad < 1 || $caducidad > 365) {
-            $caducidad = 30; // Valor por defecto si está fuera de rango
+            $caducidad = $defaultCaducidad; // Valor por defecto del usuario si está fuera de rango
         }
 
-        
+
         $finalCategory = !empty($customCategory) ? $customCategory : $category;
-        
+
         if ($index < 0) {
             $error = 'Podcast no valido';
-        } elseif (empty($url) || empty($finalCategory) || empty($name)) {
+        } elseif (empty($url) || empty($name)) {
             $error = 'Todos los campos son obligatorios';
         } elseif (!validateInput($url, 'url')) {
             $error = 'URL de RSS invalida';
@@ -563,10 +675,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } else {
             $result = editPodcast($_SESSION['username'], $index, $url, $finalCategory, $name, $caducidad, $duracion);
             if ($result['success']) {
-                // Si se cambió la categoría, mostrar recordatorio de Radiobot
+                // Si se cambió la categoría, mostrar recordatorio de AzuraCast
                 if (!empty($result['category_changed'])) {
-                    $_SESSION['show_radiobot_reminder'] = true;
-                    $_SESSION['radiobot_action'] = 'move_podcast';
+                    $_SESSION['show_azuracast_reminder'] = true;
+                    $_SESSION['azuracast_action'] = 'move_podcast';
                 }
                 header('Location: ' . basename($_SERVER['PHP_SELF']));
                 exit;
@@ -705,10 +817,10 @@ if ($action == 'rename_category' && isLoggedIn() && !isAdmin()) {
         $result = renameCategory($_SESSION['username'], $oldName, $newName);
         if ($result['success']) {
             $_SESSION['message'] = $result['message'];
-            $_SESSION['show_radiobot_reminder'] = true;
-            $_SESSION['radiobot_action'] = 'rename';
-            $_SESSION['radiobot_old_name'] = $oldName;
-            $_SESSION['radiobot_new_name'] = $result['new_name'];
+            $_SESSION['show_azuracast_reminder'] = true;
+            $_SESSION['azuracast_action'] = 'rename';
+            $_SESSION['azuracast_old_name'] = $oldName;
+            $_SESSION['azuracast_new_name'] = $result['new_name'];
         } else {
             $_SESSION['error'] = $result['error'];
         }

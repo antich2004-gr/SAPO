@@ -33,12 +33,14 @@ Options -Indexes
 # Headers de seguridad adicionales (si mod_headers está disponible)
 <IfModule mod_headers.c>
     Header always set X-Content-Type-Options "nosniff"
-    Header always set X-Frame-Options "SAMEORIGIN"
     Header always set X-XSS-Protection "1; mode=block"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
     # Descomentar si se usa HTTPS:
     # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
 </IfModule>
+
+# X-Frame-Options se configura individualmente en cada archivo PHP
+# parrilla_cards.php NO lo tiene para permitir embedding en iframes externos
 
 # Prevenir ataques de inyección de NULL byte
 <IfModule mod_rewrite.c>

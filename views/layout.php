@@ -15,7 +15,7 @@
 <div class="container">
     <div class="header">
         <h1>🐸 SAPO</h1>
-        <div class="subtitle">Sistema de Automatización de Podcasts para Radiobot</div>
+        <div class="subtitle">Sistema de Automatización de Podcasts</div>
     </div>
 
     <?php if ($message): ?>
@@ -47,28 +47,30 @@
         unset($_SESSION['error']);
     }
 
-    // Mostrar recordatorio de Radiobot si es necesario
-    if (isset($_SESSION['show_radiobot_reminder']) && $_SESSION['show_radiobot_reminder']) {
-        $radiobotAction = $_SESSION['radiobot_action'] ?? '';
+    // Mostrar recordatorio de AzuraCast si es necesario
+    if (isset($_SESSION['show_azuracast_reminder']) && $_SESSION['show_azuracast_reminder']) {
+        $azuracastAction = $_SESSION['azuracast_action'] ?? '';
         $config = getConfig();
-        $radiobotUrl = $config['radiobot_url'] ?? 'https://radiobot.radioslibres.info';
+        $azuracastUrl = $config['azuracast_url'] ?? '';
 
         echo '<div class="alert alert-warning" style="border-left: 4px solid #ffc107;">';
         echo '<strong>⚠️ RECORDATORIO IMPORTANTE:</strong><br>';
-        echo 'No olvides actualizar las playlists en Radiobot/AzuraCast para que apunten a las nuevas rutas.';
+        echo 'No olvides actualizar las playlists en AzuraCast para que apunten a las nuevas rutas.';
         echo '</div>';
 
-        unset($_SESSION['show_radiobot_reminder']);
-        unset($_SESSION['radiobot_action']);
-        unset($_SESSION['radiobot_old_name']);
-        unset($_SESSION['radiobot_new_name']);
-        unset($_SESSION['radiobot_source']);
-        unset($_SESSION['radiobot_target']);
+        unset($_SESSION['show_azuracast_reminder']);
+        unset($_SESSION['azuracast_action']);
+        unset($_SESSION['azuracast_old_name']);
+        unset($_SESSION['azuracast_new_name']);
+        unset($_SESSION['azuracast_source']);
+        unset($_SESSION['azuracast_target']);
     }
     ?>
 
     <?php if (isset($_GET['page']) && $_GET['page'] == 'help'): ?>
         <?php require_once 'views/help.php'; ?>
+    <?php elseif (isset($_GET['page']) && $_GET['page'] == 'help_parrilla'): ?>
+        <?php require_once 'views/help_parrilla.php'; ?>
     <?php elseif (isset($_GET['page']) && $_GET['page'] == 'parrilla' && isLoggedIn() && !isAdmin()): ?>
         <?php require_once 'views/parrilla.php'; ?>
     <?php elseif (!isLoggedIn()): ?>
@@ -80,7 +82,7 @@
     <?php endif; ?>
 
     <footer style="margin-top: 40px; padding: 20px 0; border-top: 1px solid #e2e8f0; text-align: center; color: #718096; font-size: 14px;">
-        <p style="margin: 0;">🐸 <strong>SAPO</strong> - Sistema de Automatización de Podcasts para Radiobot</p>
+        <p style="margin: 0;">🐸 <strong>SAPO</strong> - Sistema de Automatización de Podcasts</p>
         <p style="margin: 5px 0 0 0;">Versión 1.2.0</p>
     </footer>
 </div>

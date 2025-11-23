@@ -177,9 +177,9 @@ function movePodcastFiles($username, $podcastName, $oldCategory, $newCategory) {
         return ['success' => false, 'error' => 'Username contiene caracteres inválidos'];
     }
 
-    // VALIDACIÓN 3: Nombres vacíos
-    if (empty($podcastName) || empty($oldCategory) || empty($newCategory)) {
-        return ['success' => false, 'error' => 'Parámetros vacíos'];
+    // VALIDACIÓN 3: Nombres vacíos (solo el podcast es obligatorio)
+    if (empty($podcastName)) {
+        return ['success' => false, 'error' => 'Nombre de podcast vacío'];
     }
 
     // VALIDACIÓN 4: Si son la misma categoría, no hacer nada
@@ -189,13 +189,15 @@ function movePodcastFiles($username, $podcastName, $oldCategory, $newCategory) {
 
     // Construir rutas
     $basePath = $config['base_path'];
-    $oldCategoryPath = $basePath . DIRECTORY_SEPARATOR . $username .
-                       DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR .
-                       'Podcasts' . DIRECTORY_SEPARATOR . $oldCategory;
+    $podcastsBasePath = $basePath . DIRECTORY_SEPARATOR . $username .
+                        DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . 'Podcasts';
 
-    $newCategoryPath = $basePath . DIRECTORY_SEPARATOR . $username .
-                       DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR .
-                       'Podcasts' . DIRECTORY_SEPARATOR . $newCategory;
+    // Si la categoría está vacía, usar la carpeta Podcasts directamente
+    $oldCategoryPath = empty($oldCategory) ? $podcastsBasePath :
+                       $podcastsBasePath . DIRECTORY_SEPARATOR . $oldCategory;
+
+    $newCategoryPath = empty($newCategory) ? $podcastsBasePath :
+                       $podcastsBasePath . DIRECTORY_SEPARATOR . $newCategory;
 
     // VALIDACIÓN 5: Carpeta origen existe
     if (!is_dir($oldCategoryPath)) {
@@ -610,9 +612,9 @@ function renamePodcastDirectory($username, $oldPodcastName, $newPodcastName, $ca
         return ['success' => false, 'error' => 'Username contiene caracteres inválidos'];
     }
 
-    // VALIDACIÓN 3: Nombres vacíos
-    if (empty($oldPodcastName) || empty($newPodcastName) || empty($category)) {
-        return ['success' => false, 'error' => 'Parámetros vacíos'];
+    // VALIDACIÓN 3: Nombres vacíos (solo los nombres de podcast son obligatorios)
+    if (empty($oldPodcastName) || empty($newPodcastName)) {
+        return ['success' => false, 'error' => 'Nombres de podcast vacíos'];
     }
 
     // VALIDACIÓN 4: Si son el mismo nombre, no hacer nada
@@ -622,9 +624,12 @@ function renamePodcastDirectory($username, $oldPodcastName, $newPodcastName, $ca
 
     // Construir ruta de la categoría
     $basePath = $config['base_path'];
-    $categoryPath = $basePath . DIRECTORY_SEPARATOR . $username .
-                    DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR .
-                    'Podcasts' . DIRECTORY_SEPARATOR . $category;
+    $podcastsBasePath = $basePath . DIRECTORY_SEPARATOR . $username .
+                        DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . 'Podcasts';
+
+    // Si la categoría está vacía, usar la carpeta Podcasts directamente
+    $categoryPath = empty($category) ? $podcastsBasePath :
+                    $podcastsBasePath . DIRECTORY_SEPARATOR . $category;
 
     // VALIDACIÓN 5: Carpeta de categoría existe
     if (!is_dir($categoryPath)) {

@@ -11,7 +11,8 @@ $cspNonce = base64_encode(random_bytes(16));
 
 // Headers de seguridad
 header("X-Content-Type-Options: nosniff");
-header("X-Frame-Options: SAMEORIGIN");
+// X-Frame-Options removed to allow iframe embedding on external sites
+// CSP frame-ancestors handles this more flexibly
 header("X-XSS-Protection: 1; mode=block");
 header("Referrer-Policy: strict-origin-when-cross-origin");
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-$cspNonce'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors 'self' *; base-uri 'self'; form-action 'self'");
@@ -52,15 +53,64 @@ $stationName = $user['station_name'] ?? $station;
 $widgetColor = $azConfig['widget_color'] ?? '#10b981';
 $widgetStyle = $azConfig['widget_style'] ?? 'modern';
 $widgetFontSize = $azConfig['widget_font_size'] ?? 'medium';
+$streamUrl = $azConfig['stream_url'] ?? '';
 
-$schedule = getAzuracastSchedule($station);
+// Función para calcular color de texto legible basado en el color del widget
+function getReadableLinkColor($hexColor) {
+    // Convertir hex a RGB
+    $hex = ltrim($hexColor, '#');
+    $r = hexdec(substr($hex, 0, 2));
+    $g = hexdec(substr($hex, 2, 2));
+    $b = hexdec(substr($hex, 4, 2));
+
+    // Calcular luminancia relativa (fórmula WCAG)
+    $luminance = (0.299 * $r + 0.587 * $g + 0.114 * $b) / 255;
+
+    // Si el color es muy claro (luminancia > 0.6), oscurecerlo para que sea legible
+    if ($luminance > 0.6) {
+        // Oscurecer el color multiplicando por un factor
+        $factor = 0.5;
+        $r = max(0, floor($r * $factor));
+        $g = max(0, floor($g * $factor));
+        $b = max(0, floor($b * $factor));
+        return sprintf('#%02x%02x%02x', $r, $g, $b);
+    }
+
+    // El color original es suficientemente oscuro
+    return $hexColor;
+}
+
+$linkHoverColor = getReadableLinkColor($widgetColor);
+
+// Parámetro para forzar datos frescos (bypass cache)
+$forceRefresh = isset($_GET['refresh']) && $_GET['refresh'] === '1';
+$cacheTTL = $forceRefresh ? 0 : 600;
+
+$schedule = getAzuracastSchedule($station, $cacheTTL);
 if ($schedule === false) $schedule = [];
+
+// Debug: mostrar info de caché si se solicita
+if (isset($_GET['debug_cache'])) {
+    header('Content-Type: application/json');
+    $cacheInfo = [
+        'force_refresh' => $forceRefresh,
+        'cache_ttl' => $cacheTTL,
+        'total_events' => count($schedule),
+        'sample_events' => array_slice($schedule, 0, 3)
+    ];
+    die(json_encode($cacheInfo, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+}
+
+// Debug: rastrear un programa específico
+$traceProgram = $_GET['trace'] ?? '';
+$traceLog = [];
 
 $programsDB = loadProgramsDB($station);
 $programsData = $programsDB['programs'] ?? [];
 
 // Organizar eventos por día de la semana
 $eventsByDay = [1 => [], 2 => [], 3 => [], 4 => [], 5 => [], 6 => [], 0 => []];
+$musicBlocksByDay = [1 => [], 2 => [], 3 => [], 4 => [], 5 => [], 6 => [], 0 => []];
 
 // PRIMERO: Añadir programas en directo (live) manuales de SAPO
 foreach ($programsData as $programName => $programInfo) {
@@ -118,7 +168,29 @@ foreach ($schedule as $event) {
     $programInfo = $programsData[$title] ?? null;
     $playlistType = $programInfo['playlist_type'] ?? 'program';
 
-    if ($playlistType === 'jingles' || $playlistType === 'music_block') continue;
+    // Trace: registrar evento si coincide con el programa buscado
+    $isTracked = !empty($traceProgram) && stripos($title, $traceProgram) !== false;
+    if ($isTracked) {
+        $traceLog[] = [
+            'stage' => '1_api_event',
+            'title' => $title,
+            'day' => $dayOfWeek,
+            'time' => $startDateTime->format('H:i'),
+            'date' => $startDateTime->format('Y-m-d'),
+            'playlist_type' => $playlistType,
+            'program_in_db' => $programInfo !== null
+        ];
+    }
+
+    // Omitir jingles y programas ocultos
+    if ($playlistType === 'jingles') {
+        if ($isTracked) $traceLog[] = ['stage' => '2_filtered', 'reason' => 'jingles'];
+        continue;
+    }
+    if (!empty($programInfo['hidden_from_schedule'])) {
+        if ($isTracked) $traceLog[] = ['stage' => '2_filtered', 'reason' => 'hidden_from_schedule'];
+        continue;
+    }
 
     $end = $event['end_timestamp'] ?? $event['end'] ?? null;
     $endDateTime = $end ? (is_numeric($end) ? new DateTime('@' . $end) : new DateTime($end)) : null;
@@ -139,9 +211,10 @@ foreach ($schedule as $event) {
     // Usar título personalizado si existe, sino el nombre de la playlist
     $displayTitle = !empty($programInfo['display_title']) ? $programInfo['display_title'] : $title;
 
-    $eventsByDay[$dayOfWeek][] = [
+    // Crear evento
+    $eventData = [
         'title' => $displayTitle,
-        'original_title' => $title, // Guardar el título original para referencia
+        'original_title' => $title,
         'start_time' => $startDateTime->format('H:i'),
         'end_time' => $endDateTime->format('H:i'),
         'start_timestamp' => $normalizedTimestamp,
@@ -154,12 +227,62 @@ foreach ($schedule as $event) {
         'social_instagram' => $programInfo['social_instagram'] ?? '',
         'playlist_type' => $playlistType
     ];
+
+    // Separar bloques musicales de programas
+    if ($playlistType === 'music_block') {
+        $musicBlocksByDay[$dayOfWeek][] = $eventData;
+        if ($isTracked) $traceLog[] = ['stage' => '3_added', 'array' => 'musicBlocksByDay', 'day' => $dayOfWeek];
+    } else {
+        $eventsByDay[$dayOfWeek][] = $eventData;
+        if ($isTracked) $traceLog[] = ['stage' => '3_added', 'array' => 'eventsByDay', 'day' => $dayOfWeek, 'rss_feed' => $eventData['rss_feed']];
+    }
 }
+
+// Ordenar bloques musicales por hora de inicio
+foreach ($musicBlocksByDay as $day => &$dayBlocks) {
+    usort($dayBlocks, function($a, $b) {
+        return $a['start_timestamp'] - $b['start_timestamp'];
+    });
+}
+unset($dayBlocks);
+
+// Deduplicar bloques musicales
+foreach ($musicBlocksByDay as $day => &$dayBlocks) {
+    $uniqueBlocks = [];
+    $seenKeys = [];
+
+    foreach ($dayBlocks as $block) {
+        $normalizedTitle = trim(mb_strtolower($block['title']));
+        $uniqueKey = $normalizedTitle . '_' . $block['start_time'];
+
+        if (!isset($seenKeys[$uniqueKey])) {
+            $seenKeys[$uniqueKey] = true;
+            $uniqueBlocks[] = $block;
+        }
+    }
+
+    $dayBlocks = $uniqueBlocks;
+}
+unset($dayBlocks);
 
 // Deduplicar eventos
 foreach ($eventsByDay as $day => &$dayEvents) {
     $uniqueEvents = [];
     $seenKeys = [];
+
+    // Trace: contar eventos antes de deduplicar
+    $tracedBefore = 0;
+    if (!empty($traceProgram)) {
+        foreach ($dayEvents as $event) {
+            if (stripos($event['title'], $traceProgram) !== false ||
+                stripos($event['original_title'] ?? '', $traceProgram) !== false) {
+                $tracedBefore++;
+            }
+        }
+        if ($tracedBefore > 0) {
+            $traceLog[] = ['stage' => '3b_dedup_before', 'day' => $day, 'count' => $tracedBefore, 'total_day_events' => count($dayEvents)];
+        }
+    }
 
     foreach ($dayEvents as $event) {
         $normalizedTitle = trim(mb_strtolower($event['title']));
@@ -177,7 +300,20 @@ foreach ($eventsByDay as $day => &$dayEvents) {
     });
 
     $dayEvents = $uniqueEvents;
+
+    // Trace: contar eventos después de deduplicar
+    if (!empty($traceProgram) && $tracedBefore > 0) {
+        $tracedAfter = 0;
+        foreach ($dayEvents as $event) {
+            if (stripos($event['title'], $traceProgram) !== false ||
+                stripos($event['original_title'] ?? '', $traceProgram) !== false) {
+                $tracedAfter++;
+            }
+        }
+        $traceLog[] = ['stage' => '3c_dedup_after', 'day' => $day, 'count' => $tracedAfter, 'total_day_events' => count($dayEvents)];
+    }
 }
+unset($dayEvents); // IMPORTANTE: romper la referencia para evitar sobrescribir el array
 
 // PRE-CARGAR todos los RSS ANTES de generar HTML (optimización de rendimiento)
 $t1 = microtime(true);
@@ -192,6 +328,33 @@ foreach ($eventsByDay as $dayEvents) {
 }
 $t2 = microtime(true);
 error_log(sprintf("PERFORMANCE: Pre-carga RSS: %.3fs (%d feeds únicos)", $t2 - $t1, count($rssCache)));
+
+// Trace: mostrar log de rastreo si se solicitó
+if (!empty($traceProgram)) {
+    // Contar cuántos eventos quedaron para el programa rastreado
+    $dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    $finalCount = [];
+    foreach ($eventsByDay as $day => $events) {
+        foreach ($events as $event) {
+            if (stripos($event['title'], $traceProgram) !== false ||
+                stripos($event['original_title'] ?? '', $traceProgram) !== false) {
+                $finalCount[] = [
+                    'day' => $dayNames[$day],
+                    'time' => $event['start_time'],
+                    'title' => $event['title']
+                ];
+            }
+        }
+    }
+    $traceLog[] = ['stage' => '4_final_events', 'count' => count($finalCount), 'events' => $finalCount];
+
+    header('Content-Type: application/json');
+    die(json_encode([
+        'trace_program' => $traceProgram,
+        'total_api_events' => count($schedule),
+        'trace_log' => $traceLog
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+}
 
 // Detectar día y hora actual
 $now = new DateTime();
@@ -220,7 +383,7 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #ffffff;
             padding: 20px;
             font-size: <?php echo $baseFontSize; ?>;
             min-height: 100vh;
@@ -231,7 +394,6 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
             margin: 0 auto;
             background: white;
             border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             overflow: hidden;
         }
 
@@ -287,7 +449,7 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
         }
 
         .tab-button.active {
-            color: <?php echo htmlspecialchars($widgetColor); ?>;
+            color: <?php echo htmlspecialchars($linkHoverColor); ?>;
             background: white;
         }
 
@@ -410,6 +572,15 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
             flex: 1;
         }
 
+        /* Añadir margen cuando no hay imagen para alinear con las cards que sí tienen */
+        .program-card.no-image .program-info {
+            <?php if ($widgetStyle === 'compact'): ?>
+                margin-left: 100px; /* 80px imagen + 20px gap */
+            <?php else: ?>
+                margin-left: 140px; /* 120px imagen + 20px gap */
+            <?php endif; ?>
+        }
+
         .program-category {
             font-size: 0.7em;
             font-weight: 700;
@@ -448,6 +619,13 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
             font-size: 0.75em;
             font-weight: 700;
             letter-spacing: 0.5px;
+            transition: all 0.3s;
+        }
+
+        a.live-badge-right:hover {
+            background: #b91c1c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
         }
 
         .live-badge {
@@ -555,7 +733,7 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
         }
 
         .rss-episode-link:hover .rss-episode-title {
-            color: <?php echo htmlspecialchars($widgetColor); ?>;
+            color: <?php echo htmlspecialchars($linkHoverColor); ?>;
         }
 
         .rss-episode-date {
@@ -591,6 +769,91 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
         @media (max-width: 480px) {
             .header h1 { font-size: 1.3em; }
             .program-title { font-size: 1.1em; }
+        }
+
+        /* Cards compactas de bloques musicales */
+        .blocks-container {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .blocks-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #9ca3af;
+            margin-bottom: 6px;
+        }
+
+        .blocks-grid {
+            display: flex;
+            gap: 3px;
+        }
+
+        .block-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            padding: 6px 10px;
+            border-left: 3px solid #8b5cf6;
+            font-size: 10px;
+            flex: 1;
+            min-width: 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .block-card:hover {
+            background: #ede9fe;
+            flex: 3;
+            border-left-color: #7c3aed;
+        }
+
+        .block-card-name {
+            font-weight: 600;
+            color: #374151;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .block-card-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, margin-top 0.3s ease;
+            margin-top: 0;
+        }
+
+        .block-card:hover .block-card-details {
+            max-height: 40px;
+            margin-top: 4px;
+        }
+
+        .block-card-time {
+            font-weight: 500;
+            color: #6b7280;
+            font-size: 9px;
+        }
+
+        .block-card-duration {
+            font-size: 9px;
+            color: #8b5cf6;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .blocks-grid {
+                flex-direction: column;
+            }
+            .block-card {
+                padding: 5px 8px;
+                font-size: 9px;
+                width: 100%;
+            }
+            .block-card:hover {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -661,7 +924,7 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                         $isLive = ($index === $liveEventIndex);
                         $isLiveProgram = ($event['playlist_type'] === 'live');
                     ?>
-                        <div class="program-card<?php echo $isLive ? ' live' : ''; ?><?php echo $isLiveProgram ? ' live-program' : ''; ?>"
+                        <div class="program-card<?php echo $isLive ? ' live' : ''; ?><?php echo $isLiveProgram ? ' live-program' : ''; ?><?php echo empty($event['image']) ? ' no-image' : ''; ?>"
                              id="program-<?php echo $day; ?>-<?php echo str_replace(':', '', $event['start_time']); ?>">
                             <div class="program-time">
                                 <?php echo htmlspecialchars(substr($event['start_time'], 0, 5)); ?>
@@ -689,7 +952,18 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                                 </div>
 
                                 <?php if ($isLive): ?>
-                                    <div class="live-badge-right">🔴 AHORA EN DIRECTO</div>
+                                    <?php if (!empty($streamUrl)): ?>
+                                        <a href="<?php echo htmlspecialchars($streamUrl); ?>"
+                                           target="_blank"
+                                           rel="noopener"
+                                           class="live-badge-right"
+                                           style="text-decoration: none; cursor: pointer;"
+                                           title="Escuchar en directo">
+                                            ▶️ AHORA EN DIRECTO
+                                        </a>
+                                    <?php else: ?>
+                                        <div class="live-badge-right">▶️ AHORA EN DIRECTO</div>
+                                    <?php endif; ?>
                                 <?php endif; ?>
 
                                 <?php if (!empty($event['description'])): ?>
@@ -766,6 +1040,48 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                             </div>
                         </div>
                     <?php endforeach; ?>
+                <?php endif; ?>
+
+                <?php
+                // Cards compactas de bloques musicales para este día
+                $dayBlocks = $musicBlocksByDay[$day] ?? [];
+
+                if (!empty($dayBlocks)):
+                    // Ordenar por hora de inicio
+                    usort($dayBlocks, function($a, $b) {
+                        return $a['start_timestamp'] - $b['start_timestamp'];
+                    });
+                ?>
+                <div class="blocks-container">
+                    <div class="blocks-title">🎵 Bloques Musicales</div>
+                    <div class="blocks-grid">
+                        <?php foreach ($dayBlocks as $block):
+                            // Calcular duración
+                            $startParts = explode(':', $block['start_time']);
+                            $endParts = explode(':', $block['end_time']);
+                            $startMinutes = (int)$startParts[0] * 60 + (int)$startParts[1];
+                            $endMinutes = (int)$endParts[0] * 60 + (int)$endParts[1];
+
+                            if ($endMinutes <= $startMinutes) {
+                                $endMinutes += 24 * 60;
+                            }
+
+                            $durationMinutes = $endMinutes - $startMinutes;
+                            $hours = floor($durationMinutes / 60);
+                            $mins = $durationMinutes % 60;
+                            $durationText = $hours > 0 ? $hours . 'h' : '';
+                            if ($mins > 0) $durationText .= ' ' . $mins . 'm';
+                        ?>
+                            <div class="block-card">
+                                <div class="block-card-name"><?php echo htmlspecialchars($block['title']); ?></div>
+                                <div class="block-card-details">
+                                    <div class="block-card-time"><?php echo substr($block['start_time'], 0, 5); ?> - <?php echo substr($block['end_time'], 0, 5); ?></div>
+                                    <div class="block-card-duration"><?php echo trim($durationText); ?></div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
                 <?php endif; ?>
             </div>
         <?php endforeach; ?>

@@ -950,6 +950,8 @@ async function refreshFeedsWithProgress() {
                 updateFeedsProgress(i + 1, total, data.podcast);
             } else {
                 console.error('Error al actualizar feed:', data.error);
+                // Actualizar progreso incluso si falla, para que la barra llegue al 100%
+                updateFeedsProgress(i + 1, total, data.error || 'Error');
             }
         }
 
