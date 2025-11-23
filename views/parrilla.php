@@ -755,11 +755,12 @@ if ($hasStationId) {
 
                     $hasContent = $totalMinutes > 0;
 
-                    // Detectar solapamientos entre todos los eventos del día
-                    $allEvents = [];
-                    foreach (['program', 'live', 'music_block'] as $type) {
+                    // Detectar solapamientos solo entre programas y emisiones en directo
+                    // Los bloques musicales NO generan solapes (son de menor prioridad, actúan como relleno)
+                    $priorityEvents = [];
+                    foreach (['program', 'live'] as $type) {
                         foreach ($dayContent[$type] as $item) {
-                            $allEvents[] = [
+                            $priorityEvents[] = [
                                 'title' => $item['title'],
                                 'start' => $item['start_minutes'],
                                 'end' => $item['end_minutes'],
@@ -773,11 +774,11 @@ if ($hasStationId) {
                     // Buscar solapamientos y calcular tiempo total solapado
                     $overlapSegments = [];
                     $totalOverlapMinutes = 0;
-                    $eventCount = count($allEvents);
+                    $eventCount = count($priorityEvents);
                     for ($i = 0; $i < $eventCount; $i++) {
                         for ($j = $i + 1; $j < $eventCount; $j++) {
-                            $a = $allEvents[$i];
-                            $b = $allEvents[$j];
+                            $a = $priorityEvents[$i];
+                            $b = $priorityEvents[$j];
 
                             // Manejar eventos que cruzan medianoche
                             $aEnd = $a['end'] <= $a['start'] ? $a['end'] + 1440 : $a['end'];
@@ -798,6 +799,21 @@ if ($hasStationId) {
                                     'end' => $overlapEnd > 1440 ? $overlapEnd - 1440 : $overlapEnd
                                 ];
                             }
+                        }
+                    }
+
+                    // Todos los eventos para cálculo de huecos (incluye bloques musicales)
+                    $allEvents = [];
+                    foreach (['program', 'live', 'music_block'] as $type) {
+                        foreach ($dayContent[$type] as $item) {
+                            $allEvents[] = [
+                                'title' => $item['title'],
+                                'start' => $item['start_minutes'],
+                                'end' => $item['end_minutes'],
+                                'start_time' => $item['start_time'],
+                                'end_time' => $item['end_time'],
+                                'type' => $type
+                            ];
                         }
                     }
 
