@@ -14,7 +14,11 @@ define('SESSION_TIMEOUT', 1800); // 30 minutos
 
 // Configuración de sesión
 ini_set('session.cookie_httponly', 1);
-ini_set('session.cookie_secure', 0); // Cambiar a 1 si se usa HTTPS en producción
+// Activar cookie_secure automáticamente si se detecta HTTPS
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+        || (!empty($_SERVER['REQUEST_SCHEME']) && $_SERVER['REQUEST_SCHEME'] === 'https');
+ini_set('session.cookie_secure', $isHttps ? 1 : 0);
 ini_set('session.use_strict_mode', 1);
 ini_set('session.cookie_samesite', 'Strict');
 ini_set('session.gc_maxlifetime', SESSION_TIMEOUT);
