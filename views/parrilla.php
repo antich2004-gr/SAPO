@@ -366,6 +366,27 @@ if ($hasStationId) {
                     }
                 }
 
+                // Deduplicar eventos (mismo título y misma hora de inicio)
+                foreach ($contentByDay as $day => &$types) {
+                    foreach ($types as $type => &$items) {
+                        $uniqueItems = [];
+                        $seenKeys = [];
+
+                        foreach ($items as $item) {
+                            $normalizedTitle = trim(mb_strtolower($item['title']));
+                            $uniqueKey = $normalizedTitle . '_' . $item['start_time'];
+
+                            if (!isset($seenKeys[$uniqueKey])) {
+                                $seenKeys[$uniqueKey] = true;
+                                $uniqueItems[] = $item;
+                            }
+                        }
+
+                        $items = $uniqueItems;
+                    }
+                }
+                unset($types, $items);
+
                 // Ordenar contenido por hora de inicio
                 foreach ($contentByDay as $day => &$types) {
                     foreach ($types as $type => &$items) {
