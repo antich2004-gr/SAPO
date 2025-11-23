@@ -11,6 +11,13 @@ validate_https_plan.sh
 *.bak
 *.backup
 
+# Archivos de debug y test (no deben estar en producción)
+debug_*.php
+test_*.php
+test_*.html
+*_backup.php
+*_old.php
+
 # Logs
 *.log
 
