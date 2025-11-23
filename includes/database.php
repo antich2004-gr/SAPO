@@ -338,7 +338,7 @@ function createUser($username, $password, $station_name) {
 
 function deleteUser($userId) {
     if ($userId == 1) {
-        return false;
+        return ['success' => false, 'error' => 'No se puede eliminar el usuario administrador principal'];
     }
 
     $db = getGlobalDB();
@@ -352,6 +352,10 @@ function deleteUser($userId) {
         }
     }
 
+    if ($username === null) {
+        return ['success' => false, 'error' => 'Usuario no encontrado'];
+    }
+
     $db['users'] = array_filter($db['users'], function($user) use ($userId) {
         return $user['id'] != $userId;
     });
@@ -359,15 +363,17 @@ function deleteUser($userId) {
 
     $result = saveGlobalDB($db);
 
-    // Eliminar archivo de usuario
-    if ($username && $result) {
-        $userFile = USERS_DIR . '/' . $username . '.json';
-        if (file_exists($userFile)) {
-            unlink($userFile);
-        }
+    if (!$result) {
+        return ['success' => false, 'error' => 'Error al guardar en la base de datos'];
     }
 
-    return $result;
+    // Eliminar archivo de usuario
+    $userFile = USERS_DIR . '/' . $username . '.json';
+    if (file_exists($userFile)) {
+        unlink($userFile);
+    }
+
+    return ['success' => true, 'message' => 'Usuario eliminado correctamente'];
 }
 
 /**
@@ -379,11 +385,16 @@ function updateUserPassword($userId, $hashedPassword) {
     foreach ($db['users'] as &$user) {
         if ($user['id'] == $userId) {
             $user['password'] = $hashedPassword;
-            return saveGlobalDB($db);
+            $result = saveGlobalDB($db);
+            if ($result) {
+                return ['success' => true, 'message' => 'Contraseña actualizada correctamente'];
+            } else {
+                return ['success' => false, 'error' => 'Error al guardar en la base de datos'];
+            }
         }
     }
 
-    return false;
+    return ['success' => false, 'error' => 'Usuario no encontrado'];
 }
 
 function updateUser($userId, $username, $password, $station_name) {

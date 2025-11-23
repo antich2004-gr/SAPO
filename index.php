@@ -286,10 +286,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // DELETE USER (admin)
     if ($action == 'delete_user' && isAdmin()) {
         $userId = intval($_POST['user_id'] ?? 0);
-        if (deleteUser($userId)) {
-            $message = 'Usuario eliminado correctamente';
+        $result = deleteUser($userId);
+        if ($result['success']) {
+            $message = $result['message'];
         } else {
-            $error = 'No se puede eliminar el usuario administrador principal';
+            $error = $result['error'];
         }
     }
 
@@ -311,10 +312,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $error = 'Usuario no encontrado';
             } else {
                 $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-                if (updateUserPassword($user['id'], $hashedPassword)) {
+                $result = updateUserPassword($user['id'], $hashedPassword);
+                if ($result['success']) {
                     $message = "Contraseña actualizada correctamente para el usuario $username";
                 } else {
-                    $error = 'Error al actualizar la contraseña';
+                    $error = $result['error'];
                 }
             }
         }
