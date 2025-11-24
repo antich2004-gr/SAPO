@@ -591,21 +591,45 @@ function executePodget($username) {
 
     error_log("[SAPO-Security] EXEC PODGET | Usuario objetivo: $username | Ejecutado por: $userInfo | IP: $clientIP | Timestamp: $timestamp");
 
-    // Ejecutar el script como usuario radioslibres usando sudo
-    $command = 'sudo -u radioslibres /bin/bash ' . escapeshellarg($scriptPath) . ' --emisora ' . escapeshellarg($username);
-    $command .= ' > ' . escapeshellarg($logFile) . ' 2>&1 &';
-
-    // SEGURIDAD: Usar proc_open para mejor control (timeout implícito por background)
-    // Nota: exec() con & es aceptable para procesos background, pero logging es crítico
-    exec($command, $output, $returnCode);
-
-    // Logging post-ejecución
-    error_log("[SAPO-Security] EXEC PODGET completado | Usuario: $username | Return code: $returnCode | Comando: " . substr($command, 0, 200));
-
-    return [
-        'success' => true,
-        'message' => 'Las descargas se estan ejecutando. Log: ' . $logFile
+    // SEGURIDAD: Usar proc_open con array de argumentos (sin concatenación de strings)
+    // Esto previene command injection incluso si escapeshellarg() falla
+    $descriptorspec = [
+        0 => ["pipe", "r"],  // stdin
+        1 => ["file", $logFile, "w"],  // stdout -> log file
+        2 => ["file", $logFile, "a"]   // stderr -> log file (append)
     ];
+
+    // Comando como array (sin concatenación de strings = sin injection)
+    $cmd = [
+        '/usr/bin/sudo',
+        '-u', 'radioslibres',
+        '/bin/bash',
+        $scriptPath,
+        '--emisora', $username
+    ];
+
+    // Ejecutar proceso
+    $process = proc_open($cmd, $descriptorspec, $pipes);
+
+    if (is_resource($process)) {
+        // Cerrar el proceso inmediatamente (background execution)
+        // No esperamos a que termine
+        proc_close($process);
+
+        error_log("[SAPO-Security] EXEC PODGET iniciado correctamente | Usuario: $username | PID: (background)");
+
+        return [
+            'success' => true,
+            'message' => 'Las descargas se estan ejecutando. Log: ' . $logFile
+        ];
+    } else {
+        error_log("[SAPO-Security] EXEC PODGET FAILED | Usuario: $username | Error al iniciar proceso");
+
+        return [
+            'success' => false,
+            'message' => 'Error al iniciar el proceso de descarga'
+        ];
+    }
 }
 
 

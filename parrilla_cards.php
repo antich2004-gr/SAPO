@@ -35,6 +35,32 @@ require_once INCLUDES_DIR . '/azuracast.php';
 require_once INCLUDES_DIR . '/programs.php';
 require_once INCLUDES_DIR . '/utils.php';
 
+// SEGURIDAD: Rate limiting por IP para archivo público
+session_start();
+$ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+$rateLimitKey = 'parrilla_' . md5($ip);
+
+if (!isset($_SESSION[$rateLimitKey])) {
+    $_SESSION[$rateLimitKey] = ['count' => 0, 'window_start' => time()];
+}
+
+$rateData = $_SESSION[$rateLimitKey];
+
+// Resetear contador si pasó la ventana de tiempo (60 segundos)
+if (time() - $rateData['window_start'] >= 60) {
+    $_SESSION[$rateLimitKey] = ['count' => 1, 'window_start' => time()];
+} else {
+    // Incrementar contador
+    $_SESSION[$rateLimitKey]['count']++;
+
+    // Límite: 20 peticiones por minuto por IP
+    if ($_SESSION[$rateLimitKey]['count'] > 20) {
+        http_response_code(429);
+        header('Content-Type: text/html; charset=UTF-8');
+        die('<h1>429 Too Many Requests</h1><p>Límite de peticiones excedido. Espera 1 minuto.</p>');
+    }
+}
+
 // Medición de rendimiento
 $_START_TIME = microtime(true);
 
@@ -82,15 +108,27 @@ function getReadableLinkColor($hexColor) {
 
 $linkHoverColor = getReadableLinkColor($widgetColor);
 
-// Parámetro para forzar datos frescos (bypass cache)
-$forceRefresh = isset($_GET['refresh']) && $_GET['refresh'] === '1';
+// SEGURIDAD: Limitar parámetro de refresh para prevenir abuso
+$forceRefresh = false;
+if (isset($_GET['refresh']) && $_GET['refresh'] === '1') {
+    // Verificar que no se abuse del refresh (máximo 1 cada 5 minutos por IP)
+    $refreshKey = 'parrilla_refresh_' . md5($ip);
+    if (!isset($_SESSION[$refreshKey]) || (time() - $_SESSION[$refreshKey]) > 300) {
+        $forceRefresh = true;
+        $_SESSION[$refreshKey] = time();
+    } else {
+        error_log("[SAPO-Security] Refresh abuse blocked from IP: $ip");
+    }
+}
 $cacheTTL = $forceRefresh ? 0 : 600;
 
 $schedule = getAzuracastSchedule($station, $cacheTTL);
 if ($schedule === false) $schedule = [];
 
-// Debug: mostrar info de caché si se solicita
-if (isset($_GET['debug_cache'])) {
+// SEGURIDAD: Debug solo en desarrollo, no en producción
+$isDevelopment = (getenv('ENVIRONMENT') === 'development');
+
+if (isset($_GET['debug_cache']) && $isDevelopment) {
     header('Content-Type: application/json');
     $cacheInfo = [
         'force_refresh' => $forceRefresh,
@@ -99,10 +137,16 @@ if (isset($_GET['debug_cache'])) {
         'sample_events' => array_slice($schedule, 0, 3)
     ];
     die(json_encode($cacheInfo, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+} elseif (isset($_GET['debug_cache']) && !$isDevelopment) {
+    http_response_code(403);
+    die('Forbidden: Debug mode disabled in production');
 }
 
-// Debug: rastrear un programa específico
-$traceProgram = $_GET['trace'] ?? '';
+// Debug: rastrear un programa específico (solo en desarrollo)
+$traceProgram = '';
+if ($isDevelopment && isset($_GET['trace'])) {
+    $traceProgram = $_GET['trace'];
+}
 $traceLog = [];
 
 $programsDB = loadProgramsDB($station);
