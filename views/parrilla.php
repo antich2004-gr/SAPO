@@ -321,6 +321,9 @@ if ($hasStationId) {
                 }
 
                 // Segundo: Añadir eventos de Radiobot
+                // DEBUG: Log de eventos recibidos
+                error_log("SAPO DEBUG: Total eventos de Radiobot: " . count($schedule));
+
                 foreach ($schedule as $event) {
                     $title = $event['name'] ?? $event['playlist'] ?? 'Sin nombre';
                     $start = $event['start_timestamp'] ?? $event['start'] ?? null;
@@ -331,6 +334,11 @@ if ($hasStationId) {
                     $startDateTime->setTimezone($timezone);
 
                     $dayOfWeek = (int)$startDateTime->format('w');
+
+                    // DEBUG: Log para programas específicos
+                    if (stripos($title, 'Gesto') !== false || stripos($title, 'Radical') !== false) {
+                        error_log("SAPO DEBUG: Evento '$title' - Día: $dayOfWeek - Hora: " . $startDateTime->format('H:i') . " - Fecha: " . $startDateTime->format('Y-m-d'));
+                    }
 
                     $programInfo = $programsData[$title] ?? null;
                     $playlistType = $programInfo['playlist_type'] ?? 'program';
