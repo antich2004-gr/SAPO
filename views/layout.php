@@ -47,7 +47,7 @@
         unset($_SESSION['error']);
     }
 
-    // Mostrar recordatorio de AzuraCast si es necesario
+    // Mostrar recordatorio de Radiobot si es necesario
     if (isset($_SESSION['show_azuracast_reminder']) && $_SESSION['show_azuracast_reminder']) {
         $azuracastAction = $_SESSION['azuracast_action'] ?? '';
         $config = getConfig();
@@ -55,7 +55,7 @@
 
         echo '<div class="alert alert-warning" style="border-left: 4px solid #ffc107;">';
         echo '<strong>⚠️ RECORDATORIO IMPORTANTE:</strong><br>';
-        echo 'No olvides actualizar las playlists en AzuraCast para que apunten a las nuevas rutas.';
+        echo 'No olvides actualizar las playlists en Radiobot para que apunten a las nuevas rutas.';
         echo '</div>';
 
         unset($_SESSION['show_azuracast_reminder']);

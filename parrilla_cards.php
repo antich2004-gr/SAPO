@@ -151,7 +151,7 @@ foreach ($programsData as $programName => $programInfo) {
     }
 }
 
-// SEGUNDO: Añadir eventos de AzuraCast
+// SEGUNDO: Añadir eventos de Radiobot
 foreach ($schedule as $event) {
     $title = $event['name'] ?? $event['playlist'] ?? 'Sin nombre';
     $start = $event['start_timestamp'] ?? $event['start'] ?? null;

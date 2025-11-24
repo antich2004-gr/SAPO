@@ -51,7 +51,7 @@ if (!$user) {
     die('Error: Estación no encontrada');
 }
 
-// Obtener configuración de AzuraCast
+// Obtener configuración de Radiobot
 $azConfig = getAzuracastConfig($station);
 $stationName = $user['station_name'] ?? $station;
 $widgetColor = $azConfig['widget_color'] ?? '#10b981';
@@ -60,7 +60,7 @@ $widgetFontSize = $azConfig['widget_font_size'] ?? 'medium';
 $stationId = $azConfig['station_id'] ?? null;
 
 if (!$stationId) {
-    die('Error: Esta estación no tiene configurado el Station ID de AzuraCast');
+    die('Error: Esta estación no tiene configurado el Station ID de Radiobot');
 }
 
 // Obtener programación
@@ -95,7 +95,7 @@ $daysOfWeek = [
     0 => 'Domingo'
 ];
 
-// Procesar eventos de AzuraCast y organizarlos por día
+// Procesar eventos de Radiobot y organizarlos por día
 foreach ($schedule as $event) {
     $title = $event['name'] ?? $event['playlist'] ?? 'Sin nombre';
     $start = $event['start_timestamp'] ?? $event['start'] ?? null;
@@ -162,7 +162,7 @@ foreach ($schedule as $event) {
 }
 
 // Añadir programas creados manualmente con horario definido
-// Solo si NO están ya en el schedule de AzuraCast (evitar duplicados)
+// Solo si NO están ya en el schedule de Radiobot (evitar duplicados)
 foreach ($programsData as $programName => $programInfo) {
     // Solo procesar programas con horario definido
     if (empty($programInfo['schedule_days']) || empty($programInfo['schedule_start_time'])) {
@@ -176,7 +176,7 @@ foreach ($programsData as $programName => $programInfo) {
         continue;
     }
 
-    // Verificar si este programa ya existe en el schedule de AzuraCast
+    // Verificar si este programa ya existe en el schedule de Radiobot
     // Normalizar nombre para comparación más robusta (eliminar espacios extra, normalizar mayúsculas)
     $normalizedProgramName = trim(mb_strtolower($programName));
     $existsInSchedule = false;
@@ -191,7 +191,7 @@ foreach ($programsData as $programName => $programInfo) {
         }
     }
 
-    // Si ya está en AzuraCast, no lo añadimos manualmente
+    // Si ya está en Radiobot, no lo añadimos manualmente
     if ($existsInSchedule) {
         continue;
     }

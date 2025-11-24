@@ -20,7 +20,7 @@
         <h3 style="margin-top: 0;">📑 Contenido</h3>
         <ul style="line-height: 1.8;">
             <li><a href="#introduccion">¿Qué es SAPO?</a></li>
-            <li><a href="#como-funciona">¿Cómo funciona con AzuraCast?</a></li>
+            <li><a href="#como-funciona">¿Cómo funciona con Radiobot?</a></li>
             <li><a href="#primeros-pasos">Primeros pasos</a></li>
             <li><a href="#gestionar-podcasts">Gestionar podcasts</a></li>
             <li><a href="#buscar-podcasts">Buscar podcasts</a></li>
@@ -37,7 +37,7 @@
     <!-- Sección: Introducción -->
     <div id="introduccion" style="margin-bottom: 40px;">
         <h3>🐸 ¿Qué es SAPO?</h3>
-        <p>SAPO (Sistema de Automatización de Podcasts) es una aplicación web que facilita la gestión de suscripciones de podcasts para <strong>AzuraCast</strong>.</p>
+        <p>SAPO (Sistema de Automatización de Podcasts) es una aplicación web que facilita la gestión de suscripciones de podcasts para <strong>Radiobot</strong>.</p>
 
         <div style="background: #edf2f7; padding: 15px; border-radius: 8px; margin: 15px 0;">
             <strong>🎯 Objetivo:</strong> Simplificar la administración de tus podcasts mediante una interfaz web intuitiva, sin necesidad de editar archivos de configuración manualmente.
@@ -58,20 +58,20 @@
 
     <!-- Sección: Cómo funciona -->
     <div id="como-funciona" style="margin-bottom: 40px;">
-        <h3>⚙️ ¿Cómo funciona con AzuraCast?</h3>
+        <h3>⚙️ ¿Cómo funciona con Radiobot?</h3>
 
         <h4>Flujo de trabajo</h4>
         <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <ol style="line-height: 2;">
                 <li>📝 <strong>Configuras tus podcasts en SAPO</strong> - Defines qué podcasts quieres, en qué categorías y por cuántos días</li>
-                <li>🔄 <strong>SAPO sincroniza con AzuraCast</strong> - Tu configuración se comunica automáticamente con el sistema de descargas</li>
-                <li>⬇️ <strong>AzuraCast descarga episodios</strong> - El sistema consulta los feeds RSS y descarga nuevos episodios</li>
+                <li>🔄 <strong>SAPO sincroniza con Radiobot</strong> - Tu configuración se comunica automáticamente con el sistema de descargas</li>
+                <li>⬇️ <strong>Radiobot descarga episodios</strong> - El sistema consulta los feeds RSS y descarga nuevos episodios</li>
                 <li>📁 <strong>Organización automática</strong> - Los episodios se guardan en las carpetas de cada categoría</li>
                 <li>🗑️ <strong>Limpieza automática</strong> - Los episodios antiguos se eliminan según la caducidad configurada</li>
             </ol>
         </div>
 
-        <h4>Estructura de archivos en AzuraCast</h4>
+        <h4>Estructura de archivos en Radiobot</h4>
         <p>SAPO organiza tus descargas en la siguiente estructura:</p>
         <pre style="background: #2d3748; color: #e2e8f0; padding: 15px; border-radius: 6px; overflow-x: auto;">
 /tu-emisora/
@@ -88,7 +88,7 @@
                 └── episodio1.mp3</pre>
 
         <div style="background: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 15px 0;">
-            <strong>✨ Ventaja:</strong> No necesitas preocuparte por la estructura de archivos. SAPO y AzuraCast se encargan automáticamente de mantener todo organizado.
+            <strong>✨ Ventaja:</strong> No necesitas preocuparte por la estructura de archivos. SAPO y Radiobot se encargan automáticamente de mantener todo organizado.
         </div>
     </div>
 
@@ -229,7 +229,7 @@
         </div>
 
         <div style="background: #fffaf0; border-left: 4px solid #f6ad55; padding: 15px; margin: 15px 0;">
-            <strong>⚠️ Importante:</strong> Después de renombrar una categoría, recuerda actualizar las playlists en AzuraCast para que apunten a la nueva ruta.
+            <strong>⚠️ Importante:</strong> Después de renombrar una categoría, recuerda actualizar las playlists en Radiobot para que apunten a la nueva ruta.
         </div>
 
         <h4>🗑️ Eliminar una categoría</h4>
@@ -249,7 +249,7 @@
         <ul>
             <li>✅ El podcast y todos sus archivos se mueven automáticamente a la nueva categoría</li>
             <li>✅ Se mantiene la estructura de directorios (un directorio por podcast)</li>
-            <li>✅ Recibirás un recordatorio para actualizar las playlists en AzuraCast</li>
+            <li>✅ Recibirás un recordatorio para actualizar las playlists en Radiobot</li>
         </ul>
 
         <h4>📊 Estadísticas de categorías</h4>
@@ -282,7 +282,7 @@
         <h4>¿Cómo funciona el proceso?</h4>
         <p>Cuando ejecutas las descargas desde SAPO:</p>
         <ol>
-            <li>🔍 <strong>AzuraCast consulta los feeds RSS</strong> de todos tus podcasts</li>
+            <li>🔍 <strong>Radiobot consulta los feeds RSS</strong> de todos tus podcasts</li>
             <li>🆕 <strong>Identifica episodios nuevos</strong> que aún no has descargado</li>
             <li>⬇️ <strong>Descarga los archivos de audio</strong> en las carpetas correspondientes</li>
             <li>📂 <strong>Organiza por categoría y podcast</strong> automáticamente</li>
@@ -298,7 +298,7 @@
         </ol>
 
         <div style="background: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 15px 0;">
-            <strong>⏱️ Tiempo estimado:</strong> Los nuevos episodios estarán disponibles en AzuraCast en aproximadamente 5-10 minutos, dependiendo del número de podcasts y el tamaño de los archivos.
+            <strong>⏱️ Tiempo estimado:</strong> Los nuevos episodios estarán disponibles en Radiobot en aproximadamente 5-10 minutos, dependiendo del número de podcasts y el tamaño de los archivos.
         </div>
 
         <h4>Configuración de caducidad</h4>
@@ -323,7 +323,7 @@
             <p style="margin: 0 0 15px 0;">La documentación completa de la parrilla de programación está disponible en una página dedicada con información detallada sobre:</p>
             <ul style="margin: 0 0 15px 0;">
                 <li>Configuración y estilos visuales</li>
-                <li>Integración con AzuraCast</li>
+                <li>Integración con Radiobot</li>
                 <li>Programas en directo y feeds RSS</li>
                 <li>URLs para embeber la parrilla</li>
                 <li>Personalización de programas</li>
@@ -432,17 +432,17 @@
 
         <div style="margin-bottom: 20px;">
             <h4>¿Qué pasa si cambio el nombre de un podcast?</h4>
-            <p>El nombre se actualizará en SAPO y la carpeta de archivos se renombrará automáticamente para mantener todos los episodios ya descargados. Deberás actualizar la vinculación de las carpetas con sus playlist correspondientes de AzuraCast.</p>
+            <p>El nombre se actualizará en SAPO y la carpeta de archivos se renombrará automáticamente para mantener todos los episodios ya descargados. Deberás actualizar la vinculación de las carpetas con sus playlist correspondientes de Radiobot.</p>
         </div>
 
         <div style="margin-bottom: 20px;">
             <h4>¿Qué pasa si cambio la categoría de un podcast?</h4>
-            <p>SAPO moverá automáticamente el directorio completo del podcast (con todos sus archivos) a la nueva categoría. Recibirás un recordatorio para actualizar las playlists en AzuraCast.</p>
+            <p>SAPO moverá automáticamente el directorio completo del podcast (con todos sus archivos) a la nueva categoría. Recibirás un recordatorio para actualizar las playlists en Radiobot.</p>
         </div>
 
         <div style="margin-bottom: 20px;">
             <h4>¿Puedo renombrar una categoría que tiene podcasts?</h4>
-            <p>Sí, SAPO moverá automáticamente todos los podcasts y archivos de esa categoría a la nueva carpeta. Solo necesitarás actualizar la vinculación entre las playlists y las nuevas carpetas en AzuraCast después del cambio.</p>
+            <p>Sí, SAPO moverá automáticamente todos los podcasts y archivos de esa categoría a la nueva carpeta. Solo necesitarás actualizar la vinculación entre las playlists y las nuevas carpetas en Radiobot después del cambio.</p>
         </div>
 
         <div style="margin-bottom: 20px;">
@@ -456,8 +456,8 @@
         </div>
 
         <div style="margin-bottom: 20px;">
-            <h4>¿Los cambios se aplican inmediatamente en AzuraCast?</h4>
-            <p>Sí, los cambios en SAPO se sincronizan inmediatamente. AzuraCast aplicará los cambios en la siguiente ejecución de descargas.</p>
+            <h4>¿Los cambios se aplican inmediatamente en Radiobot?</h4>
+            <p>Sí, los cambios en SAPO se sincronizan inmediatamente. Radiobot aplicará los cambios en la siguiente ejecución de descargas.</p>
         </div>
 
         <div style="margin-bottom: 20px;">
@@ -472,7 +472,7 @@
 
         <div style="margin-bottom: 20px;">
             <h4>¿SAPO elimina archivos de audio?</h4>
-            <p>No, SAPO solo gestiona la configuración. AzuraCast es quien descarga y elimina archivos según las reglas de caducidad configuradas en SAPO.</p>
+            <p>No, SAPO solo gestiona la configuración. Radiobot es quien descarga y elimina archivos según las reglas de caducidad configuradas en SAPO.</p>
         </div>
 
         <div style="margin-bottom: 20px;">
@@ -507,7 +507,7 @@
 
         <div style="margin-bottom: 20px;">
             <h4>¿Qué formato tiene el archivo serverlist.txt?</h4>
-            <p>Es un archivo de texto plano que contiene la configuración de tus podcasts en el formato que usa AzuraCast/podget. Puedes exportarlo desde SAPO para hacer respaldos o compartir tu lista de podcasts.</p>
+            <p>Es un archivo de texto plano que contiene la configuración de tus podcasts en el formato que usa Radiobot/podget. Puedes exportarlo desde SAPO para hacer respaldos o compartir tu lista de podcasts.</p>
         </div>
 
         <div style="margin-bottom: 20px;">
@@ -518,7 +518,7 @@
 
     <!-- Pie de página -->
     <div style="border-top: 2px solid #e2e8f0; padding-top: 20px; margin-top: 40px; text-align: center; color: #718096;">
-        <p><strong>🐸 SAPO</strong> - Sistema de Automatización de Podcasts para AzuraCast</p>
+        <p><strong>🐸 SAPO</strong> - Sistema de Automatización de Podcasts para Radiobot</p>
         <p style="font-size: 14px;">¿Necesitas más ayuda? Contacta al administrador del sistema.</p>
     </div>
 </div>

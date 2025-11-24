@@ -43,14 +43,14 @@ $users = getAllUsers();
                 <input type="text" name="subscriptions_folder" value="<?php echo htmlEsc($config['subscriptions_folder']); ?>" required placeholder="Suscripciones" maxlength="100">
             </div>
             <div class="form-group">
-                <label>URL API de AzuraCast: <small>(para parrilla de programación)</small></label>
+                <label>URL API de Radiobot: <small>(para parrilla de programación)</small></label>
                 <input type="text" name="azuracast_api_url" value="<?php echo htmlEsc($config['azuracast_api_url'] ?? ''); ?>" placeholder="https://tu-servidor.com/api" maxlength="255">
             </div>
             <div class="form-group">
-                <label>API Key de AzuraCast: <small>(opcional - para detectar playlists deshabilitadas)</small></label>
-                <input type="password" name="azuracast_api_key" value="<?php echo htmlEsc($config['azuracast_api_key'] ?? ''); ?>" placeholder="Clave API de AzuraCast" maxlength="255" autocomplete="new-password">
+                <label>API Key de Radiobot: <small>(opcional - para detectar playlists deshabilitadas)</small></label>
+                <input type="password" name="azuracast_api_key" value="<?php echo htmlEsc($config['azuracast_api_key'] ?? ''); ?>" placeholder="Clave API de Radiobot" maxlength="255" autocomplete="new-password">
                 <small style="color: #718096; display: block; margin-top: 5px;">
-                    Obtén la API Key en AzuraCast → Admin → API Keys. Permite consultar estado de playlists (habilitada/deshabilitada).
+                    Obtén la API Key en Radiobot → Admin → API Keys. Permite consultar estado de playlists (habilitada/deshabilitada).
                 </small>
             </div>
             <button type="submit" class="btn btn-warning"><span class="btn-icon">💾</span> Guardar Configuracion</button>
@@ -58,9 +58,9 @@ $users = getAllUsers();
     </div>
 
     <div class="section" style="background: #f0f9ff; border: 1px solid #bae6fd;">
-        <h3>🧪 Probar Conexión a AzuraCast</h3>
+        <h3>🧪 Probar Conexión a Radiobot</h3>
         <p style="color: #0c4a6e; margin-bottom: 15px;">
-            Verifica que SAPO puede conectarse correctamente a la API de AzuraCast configurada.
+            Verifica que SAPO puede conectarse correctamente a la API de Radiobot configurada.
         </p>
         <a href="test_azuracast.php" target="_blank" class="btn btn-primary">
             🧪 Ejecutar Test de Conexión
@@ -116,7 +116,7 @@ $users = getAllUsers();
 
                             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: end;">
                                 <div class="form-group" style="margin: 0;">
-                                    <label style="font-size: 12px; margin-bottom: 5px;">Station ID AzuraCast:</label>
+                                    <label style="font-size: 12px; margin-bottom: 5px;">Station ID Radiobot:</label>
                                     <input type="number" name="station_id" value="<?php echo htmlEsc($azuracastConfig['station_id'] ?? ''); ?>" placeholder="34" style="padding: 6px;">
                                 </div>
                                 <div class="form-group" style="margin: 0;">
