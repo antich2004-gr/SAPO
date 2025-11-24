@@ -341,6 +341,11 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
 
                     <?php endif; ?>
 
+                    <?php
+                    // Ocultar campo de duración para bloques musicales (usan duración de Radiobot)
+                    $isMusicBlock = ($programInfo['playlist_type'] ?? 'program') === 'music_block';
+                    if (!$isMusicBlock):
+                    ?>
                     <div class="form-group">
                         <label>Duración en parrilla:</label>
                         <?php $currentDuration = intval($programInfo['schedule_duration'] ?? 60); ?>
@@ -354,6 +359,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                             <option value="180" <?php echo $currentDuration === 180 ? 'selected' : ''; ?>>3 horas</option>
                         </select>
                     </div>
+                    <?php endif; ?>
 
                     <div class="form-group">
                         <label>Temática:</label>

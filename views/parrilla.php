@@ -339,15 +339,10 @@ if ($hasStationId) {
                     if ($playlistType === 'jingles') continue;
                     if (!empty($programInfo['hidden_from_schedule'])) continue;
 
-                    // Usar duración configurada en SAPO si existe, sino la de Radiobot
-                    $customDuration = isset($programInfo['schedule_duration']) ? (int)$programInfo['schedule_duration'] : 0;
-
-                    if ($customDuration > 0) {
-                        // Usar duración configurada en SAPO
-                        $endDateTime = clone $startDateTime;
-                        $endDateTime->modify("+{$customDuration} minutes");
-                    } else {
-                        // Usar duración de Radiobot
+                    // Bloques musicales siempre usan la duración de Radiobot (tienen hora inicio/fin)
+                    // Programas y directos pueden usar duración personalizada de SAPO
+                    if ($playlistType === 'music_block') {
+                        // Siempre usar duración de Radiobot para bloques musicales
                         $end = $event['end_timestamp'] ?? $event['end'] ?? null;
                         $endDateTime = $end ? (is_numeric($end) ? new DateTime('@' . $end) : new DateTime($end)) : null;
 
@@ -358,6 +353,27 @@ if ($hasStationId) {
                         if (!$endDateTime || $endDateTime->getTimestamp() <= $startDateTime->getTimestamp()) {
                             $endDateTime = clone $startDateTime;
                             $endDateTime->modify('+1 hour');
+                        }
+                    } else {
+                        // Programas y directos: usar duración configurada en SAPO si existe
+                        $customDuration = isset($programInfo['schedule_duration']) ? (int)$programInfo['schedule_duration'] : 0;
+
+                        if ($customDuration > 0) {
+                            $endDateTime = clone $startDateTime;
+                            $endDateTime->modify("+{$customDuration} minutes");
+                        } else {
+                            // Usar duración de Radiobot
+                            $end = $event['end_timestamp'] ?? $event['end'] ?? null;
+                            $endDateTime = $end ? (is_numeric($end) ? new DateTime('@' . $end) : new DateTime($end)) : null;
+
+                            if ($endDateTime) {
+                                $endDateTime->setTimezone($timezone);
+                            }
+
+                            if (!$endDateTime || $endDateTime->getTimestamp() <= $startDateTime->getTimestamp()) {
+                                $endDateTime = clone $startDateTime;
+                                $endDateTime->modify('+1 hour');
+                            }
                         }
                     }
 
