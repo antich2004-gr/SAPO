@@ -1007,8 +1007,6 @@ if ($hasStationId) {
                 <!-- Resumen semanal -->
                 <?php
                 $totalWeekMinutes = array_sum($weekTotals);
-                $totalWeekAvailable = 7 * 24 * 60; // 10080 minutos
-                $uncoveredMinutes = max(0, $totalWeekAvailable - $totalWeekMinutes);
 
                 // Formatear tiempos
                 $formatWeekTime = function($minutes) {
@@ -1035,10 +1033,6 @@ if ($hasStationId) {
                         <div class="summary-item">
                             <div class="summary-value total"><?php echo $formatWeekTime($totalWeekMinutes); ?></div>
                             <div class="summary-label">Total Semanal</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-value <?php echo $uncoveredMinutes > 0 ? 'live' : 'total'; ?>"><?php echo $formatWeekTime($uncoveredMinutes); ?></div>
-                            <div class="summary-label">Por cubrir</div>
                         </div>
                     </div>
                 </div>
