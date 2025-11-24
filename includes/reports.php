@@ -4,8 +4,13 @@
 function getReportsPath($username) {
     $config = getConfig();
     $basePath = $config['base_path'];
-    
+
     if (empty($basePath)) {
+        return false;
+    }
+
+    // Validar username contra path traversal
+    if (strpos($username, '..') !== false || strpos($username, DIRECTORY_SEPARATOR) !== false || strpos($username, '/') !== false) {
         return false;
     }
 
