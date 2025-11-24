@@ -573,15 +573,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // DELETE CATEGORY
     if ($action == 'delete_category' && isLoggedIn()) {
         if (isAdmin()) {
-            $error = 'Los administradores no pueden eliminar categorías. Inicia sesión con un usuario de emisora.';
+            $_SESSION['error'] = 'Los administradores no pueden eliminar categorías. Inicia sesión con un usuario de emisora.';
         } else {
-            $categoryName = $_POST['category_name'] ?? '';
-            if (deleteUserCategory($_SESSION['username'], $categoryName)) {
-                $message = 'Categoría eliminada correctamente';
+            // Aceptar ambos nombres de campo (category_name o category)
+            $categoryName = $_POST['category_name'] ?? $_POST['category'] ?? '';
+
+            if (empty($categoryName)) {
+                $_SESSION['error'] = 'Categoría inválida';
             } else {
-                $error = 'Error al eliminar la categoría. Puede estar en uso por un podcast.';
+                // Verificar que esté vacía antes de eliminar
+                $stats = getCategoryStats($_SESSION['username'], $categoryName);
+                if ($stats['files'] > 0 || $stats['podcasts'] > 0) {
+                    $_SESSION['error'] = 'No se puede eliminar una categoría con archivos o podcasts asignados';
+                } else {
+                    if (deleteUserCategory($_SESSION['username'], $categoryName)) {
+                        $_SESSION['message'] = 'Categoría eliminada correctamente';
+                    } else {
+                        $_SESSION['error'] = 'Error al eliminar la categoría';
+                    }
+                }
             }
         }
+        header('Location: index.php');
+        exit;
     }
 
     // SET DEFAULT CADUCIDAD
@@ -825,29 +839,6 @@ if ($action == 'rename_category' && isLoggedIn() && !isAdmin()) {
             $_SESSION['azuracast_new_name'] = $result['new_name'];
         } else {
             $_SESSION['error'] = $result['error'];
-        }
-    }
-    header('Location: index.php');
-    exit;
-}
-
-// DELETE CATEGORY (POST) - para categorías vacías
-if ($action == 'delete_category' && isLoggedIn() && !isAdmin()) {
-    $categoryName = $_POST['category'] ?? '';
-
-    if (empty($categoryName)) {
-        $_SESSION['error'] = 'Categoría inválida';
-    } else {
-        // Verificar que esté vacía
-        $stats = getCategoryStats($_SESSION['username'], $categoryName);
-        if ($stats['files'] > 0 || $stats['podcasts'] > 0) {
-            $_SESSION['error'] = 'No se puede eliminar una categoría con archivos o podcasts asignados';
-        } else {
-            if (deleteUserCategory($_SESSION['username'], $categoryName)) {
-                $_SESSION['message'] = 'Categoría eliminada correctamente';
-            } else {
-                $_SESSION['error'] = 'Error al eliminar la categoría';
-            }
         }
     }
     header('Location: index.php');
