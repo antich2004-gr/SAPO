@@ -5,6 +5,7 @@
     <h2>Iniciar Sesión</h2>
     <form method="POST">
         <input type="hidden" name="action" value="login">
+        <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
         <div class="form-group">
             <label>Usuario:</label>
             <input type="text" name="username" required maxlength="50" pattern="[a-zA-Z0-9_]+" title="Solo letras, numeros y guiones bajos">

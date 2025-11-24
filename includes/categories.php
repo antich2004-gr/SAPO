@@ -171,10 +171,17 @@ function movePodcastFiles($username, $podcastName, $oldCategory, $newCategory) {
     }
 
     // VALIDACIÓN 2: Seguridad - path traversal
-    if (strpos($username, '..') !== false ||
-        strpos($username, '/') !== false ||
-        strpos($username, '\\') !== false) {
-        return ['success' => false, 'error' => 'Username contiene caracteres inválidos'];
+    // Validar username, oldCategory Y newCategory contra path traversal
+    foreach ([$username, $oldCategory, $newCategory] as $path) {
+        if (empty($path)) continue; // Las categorías pueden estar vacías
+
+        if (strpos($path, '..') !== false ||
+            strpos($path, '/') !== false ||
+            strpos($path, '\\') !== false ||
+            strpos($path, "\0") !== false) {
+            error_log("[SAPO-Security] Path traversal attempt blocked in movePodcastFiles: " . var_export($path, true));
+            return ['success' => false, 'error' => 'Path contiene caracteres peligrosos'];
+        }
     }
 
     // VALIDACIÓN 3: Nombres vacíos (solo el podcast es obligatorio)

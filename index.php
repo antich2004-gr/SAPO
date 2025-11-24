@@ -117,9 +117,10 @@ initSession();
         header('Content-Type: application/json');
 
         // SEGURIDAD: Rate limiting más restrictivo para operaciones costosas
-        if (!checkRateLimit('refresh_feeds', 30, 60)) {
+        // Límite: 5 peticiones cada 5 minutos (300 segundos)
+        if (!checkRateLimit('refresh_feeds', 5, 300)) {
             http_response_code(429); // Too Many Requests
-            echo json_encode(['success' => false, 'error' => ERROR_RATE_LIMIT]);
+            echo json_encode(['success' => false, 'error' => 'Límite excedido. Espera 5 minutos antes de refrescar feeds nuevamente.']);
             exit;
         }
 
@@ -166,6 +167,7 @@ initSession();
 
 $message = '';
 $error = '';
+$action = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $action = $_POST['action'] ?? '';
@@ -189,12 +191,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     // LOGIN
     if ($action == 'login') {
-        $username = $_POST['username'] ?? '';
-        $password = $_POST['password'] ?? '';
-        
-        if (!validateInput($username, 'username')) {
-            $error = 'Nombre de usuario inválido';
+        // Validar CSRF token
+        $token = $_POST['csrf_token'] ?? '';
+        if (!validateCSRFToken($token)) {
+            $error = ERROR_INVALID_TOKEN;
         } else {
+            $username = $_POST['username'] ?? '';
+            $password = $_POST['password'] ?? '';
+
+            if (!validateInput($username, 'username')) {
+                $error = 'Nombre de usuario inválido';
+            } else {
             $result = authenticateUser($username, $password);
             if ($result['success']) {
                 loginUser($result['user']);
@@ -223,6 +230,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             } else {
                 $error = $result['error'];
             }
+            }
+        }
         }
     }
     
@@ -855,7 +864,8 @@ if ($action == 'rename_category' && isLoggedIn() && !isAdmin()) {
 // GET CATEGORY FILES (AJAX)
 if (isset($_GET['action']) && $_GET['action'] == 'get_category_files' && isLoggedIn() && !isAdmin()) {
     // SEGURIDAD: Rate limiting (operación costosa - lectura de disco)
-    if (!checkRateLimit('get_category_files', 20, 60)) {
+    // Límite: 10 peticiones por minuto
+    if (!checkRateLimit('get_category_files', 10, 60)) {
         http_response_code(429);
         header('Content-Type: application/json');
         echo json_encode(['success' => false, 'error' => ERROR_RATE_LIMIT]);

@@ -12,7 +12,14 @@ function validateInput($input, $type = 'text', $maxLength = 255) {
         case 'username':
             return preg_match('/^[a-z0-9_]{3,50}$/i', $input);
         case 'url':
-            return filter_var($input, FILTER_VALIDATE_URL) !== false;
+            // Validar formato básico
+            if (filter_var($input, FILTER_VALIDATE_URL) === false) {
+                return false;
+            }
+            // Validar esquema permitido (solo http/https)
+            $parsed = parse_url($input);
+            $allowedSchemes = ['http', 'https'];
+            return isset($parsed['scheme']) && in_array(strtolower($parsed['scheme']), $allowedSchemes);
         case 'path':
             return preg_match('/^[a-zA-Z0-9\/_\-.: \\\\]+$/', $input);
         default:
