@@ -24,7 +24,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                 <input type="hidden" name="action" value="sync_programs">
                 <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                 <button type="submit" class="btn btn-primary">
-                    <span class="btn-icon">🔄</span> Sincronizar con AzuraCast
+                    <span class="btn-icon">🔄</span> Sincronizar con Radiobot
                 </button>
             </form>
         </div>
@@ -76,7 +76,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                            placeholder="Ej: El Despertador Matinal"
                            maxlength="100">
                     <small style="color: #6b7280; display: block; margin-top: 5px;">
-                        💡 Este título aparecerá en las cards. Si lo dejas vacío, se mostrará el nombre de la playlist de AzuraCast.
+                        💡 Este título aparecerá en las cards. Si lo dejas vacío, se mostrará el nombre de la playlist de Radiobot.
                     </small>
                 </div>
 
@@ -109,7 +109,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                         <?php endforeach; ?>
                     </div>
                     <small style="color: #6b7280;">
-                        Si no seleccionas ningún día, el programa solo aparecerá cuando AzuraCast lo programe
+                        Si no seleccionas ningún día, el programa solo aparecerá cuando Radiobot lo programe
                     </small>
                 </div>
 
@@ -442,7 +442,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
 
         <?php if (empty($programsData['programs'])): ?>
             <div class="alert alert-info">
-                No hay programas. Haz click en "🔄 Sincronizar con AzuraCast" para detectar tus programas o añade programas en directo manualmente.
+                No hay programas. Haz click en "🔄 Sincronizar con Radiobot" para detectar tus programas o añade programas en directo manualmente.
             </div>
         <?php else: ?>
             <div style="display: grid; gap: 15px;">
@@ -478,11 +478,11 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                                 if ($isOrphaned):
                                     if ($orphanReason === 'playlist_deshabilitada'):
                                 ?>
-                                    <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;" title="La playlist existe pero está deshabilitada en AzuraCast">
+                                    <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;" title="La playlist existe pero está deshabilitada en Radiobot">
                                         ⏸️ DESHABILITADA EN AZURACAST
                                     </span>
                                 <?php elseif ($orphanReason === 'no_en_azuracast'): ?>
-                                    <span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;" title="Esta playlist no existe en AzuraCast">
+                                    <span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;" title="Esta playlist no existe en Radiobot">
                                         ❌ NO EN AZURACAST
                                     </span>
                                 <?php else: ?>
@@ -517,7 +517,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                             <?php
                             // Mostrar botón de eliminar para:
                             // 1. Programas creados manualmente (tipo 'live')
-                            // 2. Programas que no existen en AzuraCast (orphan_reason = 'no_en_azuracast')
+                            // 2. Programas que no existen en Radiobot (orphan_reason = 'no_en_azuracast')
                             $isManualProgram = isset($program['info']['created_at']) && ($program['info']['playlist_type'] ?? '') === 'live';
                             $isNotInAzuracast = !empty($program['info']['orphaned']) && ($program['info']['orphan_reason'] ?? '') === 'no_en_azuracast';
 
@@ -532,7 +532,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                                     </button>
                                 </form>
                             <?php elseif ($isNotInAzuracast): ?>
-                                <form method="POST" style="display: inline;" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este programa? Ya no existe en AzuraCast.');">
+                                <form method="POST" style="display: inline;" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este programa? Ya no existe en Radiobot.');">
                                     <input type="hidden" name="action" value="delete_program">
                                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                                     <input type="hidden" name="program_name" value="<?php echo htmlEsc($program['name']); ?>">
