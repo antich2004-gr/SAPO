@@ -202,36 +202,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             if (!validateInput($username, 'username')) {
                 $error = 'Nombre de usuario inválido';
             } else {
-            $result = authenticateUser($username, $password);
-            if ($result['success']) {
-                loginUser($result['user']);
+                $result = authenticateUser($username, $password);
+                if ($result['success']) {
+                    loginUser($result['user']);
 
-                // Verificar si han pasado más de 8 horas desde la última actualización de feeds
-                $redirect_url = basename($_SERVER['PHP_SELF']);
+                    // Verificar si han pasado más de 8 horas desde la última actualización de feeds
+                    $redirect_url = basename($_SERVER['PHP_SELF']);
 
-                // Solo verificar para usuarios no-admin
-                if (!isAdmin()) {
-                    $userData = getUserDB($username);
-                    $lastUpdate = $userData['last_feeds_update'] ?? 0;
+                    // Solo verificar para usuarios no-admin
+                    if (!isAdmin()) {
+                        $userData = getUserDB($username);
+                        $lastUpdate = $userData['last_feeds_update'] ?? 0;
 
-                    if ($lastUpdate > 0) {
-                        $hours_passed = (time() - $lastUpdate) / 3600;
-                        if ($hours_passed >= 8) {
+                        if ($lastUpdate > 0) {
+                            $hours_passed = (time() - $lastUpdate) / 3600;
+                            if ($hours_passed >= 8) {
+                                $redirect_url .= '?auto_refresh_feeds=1';
+                            }
+                        } else {
+                            // Primera vez: forzar actualización
                             $redirect_url .= '?auto_refresh_feeds=1';
                         }
-                    } else {
-                        // Primera vez: forzar actualización
-                        $redirect_url .= '?auto_refresh_feeds=1';
                     }
-                }
 
-                header('Location: ' . $redirect_url);
-                exit;
-            } else {
-                $error = $result['error'];
+                    header('Location: ' . $redirect_url);
+                    exit;
+                } else {
+                    $error = $result['error'];
+                }
             }
-            }
-        }
         }
     }
     
