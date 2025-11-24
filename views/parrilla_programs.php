@@ -123,14 +123,16 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                 </div>
 
                 <div class="form-group">
-                    <label>Duración (minutos):</label>
-                    <input type="number" name="schedule_duration"
-                           placeholder="60"
-                           min="1"
-                           max="1440">
-                    <small style="color: #6b7280;">
-                        Duración del programa en minutos (ej: 60 para 1 hora, 120 para 2 horas)
-                    </small>
+                    <label>Duración:</label>
+                    <select name="schedule_duration">
+                        <option value="15">15 minutos</option>
+                        <option value="30">30 minutos</option>
+                        <option value="45">45 minutos</option>
+                        <option value="60" selected>1 hora</option>
+                        <option value="90">1h 30m</option>
+                        <option value="120">2 horas</option>
+                        <option value="180">3 horas</option>
+                    </select>
                 </div>
 
                 <div class="form-group">
@@ -338,15 +340,17 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                         </div>
 
                         <div class="form-group">
-                            <label>Duración (minutos):</label>
-                            <input type="number" name="schedule_duration"
-                                   value="<?php echo htmlEsc($programInfo['schedule_duration'] ?? '60'); ?>"
-                                   placeholder="60"
-                                   min="1"
-                                   max="1440">
-                            <small style="color: #6b7280;">
-                                Duración del programa en minutos (ej: 60 para 1 hora, 120 para 2 horas)
-                            </small>
+                            <label>Duración:</label>
+                            <?php $currentDuration = intval($programInfo['schedule_duration'] ?? 60); ?>
+                            <select name="schedule_duration">
+                                <option value="15" <?php echo $currentDuration === 15 ? 'selected' : ''; ?>>15 minutos</option>
+                                <option value="30" <?php echo $currentDuration === 30 ? 'selected' : ''; ?>>30 minutos</option>
+                                <option value="45" <?php echo $currentDuration === 45 ? 'selected' : ''; ?>>45 minutos</option>
+                                <option value="60" <?php echo $currentDuration === 60 ? 'selected' : ''; ?>>1 hora</option>
+                                <option value="90" <?php echo $currentDuration === 90 ? 'selected' : ''; ?>>1h 30m</option>
+                                <option value="120" <?php echo $currentDuration === 120 ? 'selected' : ''; ?>>2 horas</option>
+                                <option value="180" <?php echo $currentDuration === 180 ? 'selected' : ''; ?>>3 horas</option>
+                            </select>
                         </div>
                     <?php endif; ?>
 
