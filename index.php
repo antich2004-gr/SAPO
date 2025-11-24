@@ -530,21 +530,45 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             } elseif ($fileSize == 0) {
                 $error = 'El archivo está vacío';
             } else {
-                // Validar que sea un archivo de texto
+                // SEGURIDAD: Validar extensión Y MIME type real
                 $fileName = $_FILES['serverlist_file']['name'];
                 $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
 
                 if ($fileExt !== 'txt') {
                     $error = 'Solo se permiten archivos .txt';
                 } else {
-                    // Todo validado, proceder a leer
-                    $fileContent = file_get_contents($_FILES['serverlist_file']['tmp_name']);
-                    $result = importPodcasts($_SESSION['username'], $fileContent);
+                    // Validar MIME type real del archivo
+                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                    $mimeType = finfo_file($finfo, $_FILES['serverlist_file']['tmp_name']);
+                    finfo_close($finfo);
 
-                    if ($result['success']) {
-                        $message = "Se importaron {$result['count']} podcasts correctamente";
+                    // Tipos MIME permitidos para archivos de texto
+                    $allowedMimeTypes = [
+                        'text/plain',
+                        'application/octet-stream',  // Algunos sistemas reportan esto para .txt
+                        'text/x-Algol68'  // Algunos servidores reportan esto
+                    ];
+
+                    if (!in_array($mimeType, $allowedMimeTypes)) {
+                        error_log("[SAPO-Security] Upload blocked - Invalid MIME type: $mimeType for file: $fileName from IP: " . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+                        $error = "Tipo de archivo no permitido. Detectado: $mimeType. Solo se permiten archivos de texto plano.";
                     } else {
-                        $message = 'No se encontraron podcasts nuevos para importar';
+                        // Validar contenido (debe ser texto válido UTF-8 o ASCII)
+                        $fileContent = file_get_contents($_FILES['serverlist_file']['tmp_name']);
+
+                        if (!mb_check_encoding($fileContent, 'UTF-8') && !mb_check_encoding($fileContent, 'ASCII')) {
+                            error_log("[SAPO-Security] Upload blocked - Binary content detected in file: $fileName from IP: " . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+                            $error = 'El archivo contiene datos binarios no permitidos. Solo se permiten archivos de texto plano.';
+                        } else {
+                            // Todo validado, proceder a importar
+                            $result = importPodcasts($_SESSION['username'], $fileContent);
+
+                            if ($result['success']) {
+                                $message = "Se importaron {$result['count']} podcasts correctamente";
+                            } else {
+                                $message = 'No se encontraron podcasts nuevos para importar';
+                            }
+                        }
                     }
                 }
             }
