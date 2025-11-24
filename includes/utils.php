@@ -69,8 +69,9 @@ function validateUsernameStrict($username) {
         return false;
     }
 
-    // Bloquear usernames peligrosos (path traversal, comandos)
-    $blacklist = ['..', './', '\\', '/', 'root', 'admin', 'sudo', 'bin', 'etc', 'var', 'tmp'];
+    // Bloquear usernames peligrosos (path traversal, comandos del sistema)
+    // Nota: 'admin' no está en la blacklist porque es un usuario válido del sistema
+    $blacklist = ['..', './', '\\', '/', 'root', 'sudo', 'bin', 'etc', 'var', 'tmp'];
     $usernameLower = strtolower($username);
     foreach ($blacklist as $blocked) {
         if (strpos($usernameLower, $blocked) !== false) {
