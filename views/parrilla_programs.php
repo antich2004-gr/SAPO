@@ -339,20 +339,21 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                             </small>
                         </div>
 
-                        <div class="form-group">
-                            <label>Duración:</label>
-                            <?php $currentDuration = intval($programInfo['schedule_duration'] ?? 60); ?>
-                            <select name="schedule_duration">
-                                <option value="15" <?php echo $currentDuration === 15 ? 'selected' : ''; ?>>15 minutos</option>
-                                <option value="30" <?php echo $currentDuration === 30 ? 'selected' : ''; ?>>30 minutos</option>
-                                <option value="45" <?php echo $currentDuration === 45 ? 'selected' : ''; ?>>45 minutos</option>
-                                <option value="60" <?php echo $currentDuration === 60 ? 'selected' : ''; ?>>1 hora</option>
-                                <option value="90" <?php echo $currentDuration === 90 ? 'selected' : ''; ?>>1h 30m</option>
-                                <option value="120" <?php echo $currentDuration === 120 ? 'selected' : ''; ?>>2 horas</option>
-                                <option value="180" <?php echo $currentDuration === 180 ? 'selected' : ''; ?>>3 horas</option>
-                            </select>
-                        </div>
                     <?php endif; ?>
+
+                    <div class="form-group">
+                        <label>Duración en parrilla:</label>
+                        <?php $currentDuration = intval($programInfo['schedule_duration'] ?? 60); ?>
+                        <select name="schedule_duration">
+                            <option value="15" <?php echo $currentDuration === 15 ? 'selected' : ''; ?>>15 minutos</option>
+                            <option value="30" <?php echo $currentDuration === 30 ? 'selected' : ''; ?>>30 minutos</option>
+                            <option value="45" <?php echo $currentDuration === 45 ? 'selected' : ''; ?>>45 minutos</option>
+                            <option value="60" <?php echo $currentDuration === 60 ? 'selected' : ''; ?>>1 hora</option>
+                            <option value="90" <?php echo $currentDuration === 90 ? 'selected' : ''; ?>>1h 30m</option>
+                            <option value="120" <?php echo $currentDuration === 120 ? 'selected' : ''; ?>>2 horas</option>
+                            <option value="180" <?php echo $currentDuration === 180 ? 'selected' : ''; ?>>3 horas</option>
+                        </select>
+                    </div>
 
                     <div class="form-group">
                         <label>Temática:</label>

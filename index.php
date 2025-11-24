@@ -456,10 +456,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'social_twitter' => trim($_POST['social_twitter'] ?? ''),
                 'social_instagram' => trim($_POST['social_instagram'] ?? ''),
                 'rss_feed' => trim($_POST['rss_feed'] ?? ''),
-                'hidden_from_schedule' => isset($_POST['hidden_from_schedule']) ? true : false
+                'hidden_from_schedule' => isset($_POST['hidden_from_schedule']) ? true : false,
+                'schedule_duration' => (int)($_POST['schedule_duration'] ?? 60)
             ];
 
-            // Solo guardar campos de horario si es programa en directo
+            // Solo guardar campos de horario de días/hora si es programa en directo
             if ($playlistType === 'live') {
                 $scheduleDays = $_POST['schedule_days'] ?? [];
                 if (!is_array($scheduleDays)) {
@@ -468,7 +469,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                 $programInfo['schedule_days'] = $scheduleDays;
                 $programInfo['schedule_start_time'] = trim($_POST['schedule_start_time'] ?? '');
-                $programInfo['schedule_duration'] = (int)($_POST['schedule_duration'] ?? 60);
             }
 
             if (saveProgramInfo($username, $programName, $programInfo)) {
