@@ -373,15 +373,25 @@ function deleteProgram($username, $programName) {
  */
 function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
     if (empty($rssUrl)) {
+        error_log("DEBUG RSS: URL vacía");
         return null;
     }
+
+    error_log("DEBUG RSS: Procesando $rssUrl");
 
     // Verificar caché primero (ANTES de validaciones para evitar DNS lookups lentos)
     $cachedData = getRSSFromCache($rssUrl, $cacheTTL);
     // Si hay caché (incluso null), retornar inmediatamente sin validaciones
     if ($cachedData !== false) {
+        if ($cachedData === null) {
+            error_log("DEBUG RSS: Retornando NULL desde caché para $rssUrl");
+        } else {
+            error_log("DEBUG RSS: Retornando datos desde caché para $rssUrl - Título: " . ($cachedData['title'] ?? 'sin título'));
+        }
         return $cachedData;
     }
+
+    error_log("DEBUG RSS: No hay caché, consultando feed...");
 
     // SEGURIDAD: Validar que es una URL válida
     if (!filter_var($rssUrl, FILTER_VALIDATE_URL)) {
@@ -427,11 +437,13 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
     $rssContent = @file_get_contents($rssUrl, false, $context);
 
     if ($rssContent === false) {
-        error_log("Error al obtener RSS: $rssUrl");
+        error_log("DEBUG RSS: ERROR - No se pudo descargar el feed: $rssUrl");
         // Cachear el fallo por 1 hora para no reintentar constantemente
         saveRSSToCache($rssUrl, null);
         return null;
     }
+
+    error_log("DEBUG RSS: Feed descargado correctamente, tamaño: " . strlen($rssContent) . " bytes");
 
     // Parsear XML
     // SEGURIDAD: Deshabilitar entidades externas para prevenir XXE
@@ -451,6 +463,7 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
             $errorMessages = array_map(function($error) {
                 return trim($error->message);
             }, $errors);
+            error_log("DEBUG RSS: ERROR - Fallo al parsear XML: " . implode('; ', $errorMessages));
             error_log("[SAPO-Security] XML parsing failed for $rssUrl - Errors: " . implode('; ', $errorMessages));
 
             // Detectar posibles intentos XXE
@@ -459,6 +472,7 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
                 error_log("[SAPO-Security] POSSIBLE XXE ATTEMPT BLOCKED - Feed contains suspicious entities: $rssUrl");
             }
         } else {
+            error_log("DEBUG RSS: ERROR - Error desconocido al parsear XML: $rssUrl");
             error_log("[SAPO-Security] Error al parsear XML del RSS: $rssUrl");
         }
 
@@ -467,25 +481,32 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
         return null;
     }
 
+    error_log("DEBUG RSS: XML parseado correctamente");
+
     // Intentar obtener el primer item (último episodio)
     $item = null;
 
     // Formato RSS 2.0
     if (isset($xml->channel->item[0])) {
         $item = $xml->channel->item[0];
+        error_log("DEBUG RSS: Encontrado item en formato RSS 2.0");
     }
     // Formato Atom
     elseif (isset($xml->entry[0])) {
         $item = $xml->entry[0];
+        error_log("DEBUG RSS: Encontrado item en formato Atom");
     }
 
     if (!$item) {
+        error_log("DEBUG RSS: ERROR - No se encontró ningún item/entry en el feed");
         return null;
     }
 
     // Extraer datos del episodio
     $title = (string)($item->title ?? '');
     $description = (string)($item->description ?? $item->summary ?? '');
+
+    error_log("DEBUG RSS: Título del episodio: " . $title);
 
     // Extraer link (compatible con RSS 2.0 y Atom)
     $link = '';
@@ -524,6 +545,8 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
     // Extraer fecha de publicación (RSS 2.0: pubDate, Atom: published o updated)
     $pubDate = (string)($item->pubDate ?? $item->published ?? $item->updated ?? '');
 
+    error_log("DEBUG RSS: Fecha de publicación (raw): " . $pubDate);
+
     // Buscar URL del audio (enclosure)
     $audioUrl = '';
     if (isset($item->enclosure['url'])) {
@@ -550,11 +573,16 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
     // No mostrar episodios con más de 30 días
     if ($timestamp) {
         $daysSincePublished = (time() - $timestamp) / (60 * 60 * 24);
+        error_log("DEBUG RSS: Días desde publicación: " . round($daysSincePublished, 1));
+
         if ($daysSincePublished > 30) {
+            error_log("DEBUG RSS: ERROR - Episodio demasiado antiguo (>" . round($daysSincePublished) . " días), retornando NULL");
             // Episodio demasiado antiguo, cachear null para no volver a consultar
             saveRSSToCache($rssUrl, null);
             return null;
         }
+    } else {
+        error_log("DEBUG RSS: ADVERTENCIA - No se pudo parsear la fecha de publicación");
     }
 
     $result = [
@@ -565,6 +593,10 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
         'pub_date' => $pubDate,
         'formatted_date' => $formattedDate
     ];
+
+    error_log("DEBUG RSS: ✅ SUCCESS - Episodio procesado correctamente: " . $title);
+    error_log("DEBUG RSS: Link: " . $link);
+    error_log("DEBUG RSS: Audio URL: " . $audioUrl);
 
     // Guardar en caché
     saveRSSToCache($rssUrl, $result);
