@@ -570,16 +570,15 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
         }
     }
 
-    // No mostrar episodios con más de 30 días
+    // Verificar antigüedad del episodio
+    $isTooOld = false;
     if ($timestamp) {
         $daysSincePublished = (time() - $timestamp) / (60 * 60 * 24);
         error_log("DEBUG RSS: Días desde publicación: " . round($daysSincePublished, 1));
 
         if ($daysSincePublished > 30) {
-            error_log("DEBUG RSS: ERROR - Episodio demasiado antiguo (>" . round($daysSincePublished) . " días), retornando NULL");
-            // Episodio demasiado antiguo, cachear null para no volver a consultar
-            saveRSSToCache($rssUrl, null);
-            return null;
+            error_log("DEBUG RSS: ADVERTENCIA - Episodio demasiado antiguo (>" . round($daysSincePublished) . " días)");
+            $isTooOld = true;
         }
     } else {
         error_log("DEBUG RSS: ADVERTENCIA - No se pudo parsear la fecha de publicación");
@@ -591,10 +590,16 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
         'link' => $link,
         'audio_url' => $audioUrl,
         'pub_date' => $pubDate,
-        'formatted_date' => $formattedDate
+        'formatted_date' => $formattedDate,
+        'too_old' => $isTooOld,  // Flag para indicar si el episodio tiene >30 días
+        'days_since_published' => isset($daysSincePublished) ? round($daysSincePublished) : null
     ];
 
-    error_log("DEBUG RSS: ✅ SUCCESS - Episodio procesado correctamente: " . $title);
+    if ($isTooOld) {
+        error_log("DEBUG RSS: ⚠️ EPISODIO ANTIGUO - " . $title . " (>" . round($daysSincePublished) . " días)");
+    } else {
+        error_log("DEBUG RSS: ✅ SUCCESS - Episodio procesado correctamente: " . $title);
+    }
     error_log("DEBUG RSS: Link: " . $link);
     error_log("DEBUG RSS: Audio URL: " . $audioUrl);
 

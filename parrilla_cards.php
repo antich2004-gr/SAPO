@@ -956,9 +956,13 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                         if (!empty($event['rss_feed'])) {
                             $latestEpisode = $rssCache[$event['rss_feed']] ?? null;
 
-                            // ELIMINADO: Ya no ocultamos programas si el RSS falla
-                            // Los programas se muestran siempre, con o sin RSS
-                            // Si el RSS falla, simplemente no se muestra el bloque "Último episodio"
+                            // Si el RSS funciona pero el episodio tiene >30 días, ocultar el programa
+                            if ($latestEpisode !== null && isset($latestEpisode['too_old']) && $latestEpisode['too_old'] === true) {
+                                continue; // Ocultar programa - episodio demasiado antiguo
+                            }
+
+                            // Si el RSS falla (null), se muestra el programa sin bloque de episodio
+                            // Si el RSS funciona con episodio reciente, se muestra todo
                         }
 
                         // Solo este programa está en vivo (el más reciente si hay solapamiento)

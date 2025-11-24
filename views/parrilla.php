@@ -291,31 +291,21 @@ if ($hasStationId) {
                         $lastEpisode = getLatestEpisodeFromRSS($rssUrl, 3600); // 1 hora de caché
 
                         if ($lastEpisode === null) {
-                            // RSS configurado pero sin episodios recientes o error
+                            // RSS falló - error de red, XML inválido, etc.
+                            // Estos programas NO se marcan como stale (se muestran sin episodio)
+                            continue;
+                        }
+
+                        // Verificar si el episodio tiene el flag too_old
+                        if (isset($lastEpisode['too_old']) && $lastEpisode['too_old'] === true) {
+                            $daysSincePublished = $lastEpisode['days_since_published'] ?? 0;
                             $stalePrograms[$programName] = [
                                 'title' => $programInfo['display_title'] ?: $programName,
                                 'rss_url' => $rssUrl,
-                                'status' => 'no_episodes',
-                                'message' => 'Sin episodios recientes (>30 días) o RSS no accesible'
+                                'status' => 'old_episode',
+                                'days_ago' => $daysSincePublished,
+                                'message' => 'Último episodio hace ' . $daysSincePublished . ' días'
                             ];
-                        } else {
-                            // Verificar antigüedad del último episodio
-                            $pubDate = $lastEpisode['pub_date'] ?? '';
-                            if (!empty($pubDate)) {
-                                $timestamp = strtotime($pubDate);
-                                if ($timestamp) {
-                                    $daysSincePublished = (time() - $timestamp) / (60 * 60 * 24);
-                                    if ($daysSincePublished > 30) {
-                                        $stalePrograms[$programName] = [
-                                            'title' => $programInfo['display_title'] ?: $programName,
-                                            'rss_url' => $rssUrl,
-                                            'status' => 'old_episode',
-                                            'days_ago' => round($daysSincePublished),
-                                            'message' => 'Último episodio hace ' . round($daysSincePublished) . ' días'
-                                        ];
-                                    }
-                                }
-                            }
                         }
                     }
                 }
