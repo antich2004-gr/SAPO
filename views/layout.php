@@ -18,11 +18,11 @@
         <div class="subtitle">Sistema de Automatización de Podcasts</div>
     </div>
 
-    <?php if ($message): ?>
+    <?php if (!empty($message)): ?>
         <div class="alert alert-success"><?php echo htmlEsc($message); ?></div>
     <?php endif; ?>
 
-    <?php if ($error): ?>
+    <?php if (!empty($error)): ?>
         <div class="alert alert-error"><?php echo htmlEsc($error); ?></div>
     <?php endif; ?>
 
