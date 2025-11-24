@@ -339,16 +339,26 @@ if ($hasStationId) {
                     if ($playlistType === 'jingles') continue;
                     if (!empty($programInfo['hidden_from_schedule'])) continue;
 
-                    $end = $event['end_timestamp'] ?? $event['end'] ?? null;
-                    $endDateTime = $end ? (is_numeric($end) ? new DateTime('@' . $end) : new DateTime($end)) : null;
+                    // Usar duración configurada en SAPO si existe, sino la de AzuraCast
+                    $customDuration = isset($programInfo['schedule_duration']) ? (int)$programInfo['schedule_duration'] : 0;
 
-                    if ($endDateTime) {
-                        $endDateTime->setTimezone($timezone);
-                    }
-
-                    if (!$endDateTime || $endDateTime->getTimestamp() <= $startDateTime->getTimestamp()) {
+                    if ($customDuration > 0) {
+                        // Usar duración configurada en SAPO
                         $endDateTime = clone $startDateTime;
-                        $endDateTime->modify('+1 hour');
+                        $endDateTime->modify("+{$customDuration} minutes");
+                    } else {
+                        // Usar duración de AzuraCast
+                        $end = $event['end_timestamp'] ?? $event['end'] ?? null;
+                        $endDateTime = $end ? (is_numeric($end) ? new DateTime('@' . $end) : new DateTime($end)) : null;
+
+                        if ($endDateTime) {
+                            $endDateTime->setTimezone($timezone);
+                        }
+
+                        if (!$endDateTime || $endDateTime->getTimestamp() <= $startDateTime->getTimestamp()) {
+                            $endDateTime = clone $startDateTime;
+                            $endDateTime->modify('+1 hour');
+                        }
                     }
 
                     $eventData = [
