@@ -282,6 +282,44 @@ if ($hasStationId) {
                 $programsDB = loadProgramsDB($username);
                 $programsData = $programsDB['programs'] ?? [];
 
+                // FEATURE: Detectar programas con RSS sin episodios recientes (>30 días)
+                $stalePrograms = [];
+                foreach ($programsData as $programName => $programInfo) {
+                    $rssUrl = $programInfo['rss_feed'] ?? '';
+                    if (!empty($rssUrl)) {
+                        // Intentar obtener último episodio desde RSS
+                        $lastEpisode = getLatestEpisodeFromRSS($rssUrl, 3600); // 1 hora de caché
+
+                        if ($lastEpisode === null) {
+                            // RSS configurado pero sin episodios recientes o error
+                            $stalePrograms[$programName] = [
+                                'title' => $programInfo['display_title'] ?: $programName,
+                                'rss_url' => $rssUrl,
+                                'status' => 'no_episodes',
+                                'message' => 'Sin episodios recientes (>30 días) o RSS no accesible'
+                            ];
+                        } else {
+                            // Verificar antigüedad del último episodio
+                            $pubDate = $lastEpisode['pub_date'] ?? '';
+                            if (!empty($pubDate)) {
+                                $timestamp = strtotime($pubDate);
+                                if ($timestamp) {
+                                    $daysSincePublished = (time() - $timestamp) / (60 * 60 * 24);
+                                    if ($daysSincePublished > 30) {
+                                        $stalePrograms[$programName] = [
+                                            'title' => $programInfo['display_title'] ?: $programName,
+                                            'rss_url' => $rssUrl,
+                                            'status' => 'old_episode',
+                                            'days_ago' => round($daysSincePublished),
+                                            'message' => 'Último episodio hace ' . round($daysSincePublished) . ' días'
+                                        ];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Organizar contenido por día y tipo
                 $contentByDay = [
                     1 => ['music_block' => [], 'program' => [], 'live' => []],
@@ -321,9 +359,6 @@ if ($hasStationId) {
                 }
 
                 // Segundo: Añadir eventos de Radiobot
-                // DEBUG: Log de eventos recibidos
-                error_log("SAPO DEBUG: Total eventos de Radiobot: " . count($schedule));
-
                 foreach ($schedule as $event) {
                     $title = $event['name'] ?? $event['playlist'] ?? 'Sin nombre';
                     $start = $event['start_timestamp'] ?? $event['start'] ?? null;
@@ -334,11 +369,6 @@ if ($hasStationId) {
                     $startDateTime->setTimezone($timezone);
 
                     $dayOfWeek = (int)$startDateTime->format('w');
-
-                    // DEBUG: Log para programas específicos
-                    if (stripos($title, 'Gesto') !== false || stripos($title, 'Radical') !== false) {
-                        error_log("SAPO DEBUG: Evento '$title' - Día: $dayOfWeek - Hora: " . $startDateTime->format('H:i') . " - Fecha: " . $startDateTime->format('Y-m-d'));
-                    }
 
                     $programInfo = $programsData[$title] ?? null;
                     $playlistType = $programInfo['playlist_type'] ?? 'program';
@@ -509,6 +539,27 @@ if ($hasStationId) {
                     .coverage-timeline-segment.live {
                         background: #ef4444;
                     }
+                    /* Programas inactivos (sin episodios >30 días) */
+                    .coverage-timeline-segment.program.stale {
+                        background: repeating-linear-gradient(
+                            135deg,
+                            #f59e0b,
+                            #f59e0b 4px,
+                            #fbbf24 4px,
+                            #fbbf24 8px
+                        );
+                        opacity: 0.7;
+                    }
+                    .coverage-timeline-segment.live.stale {
+                        background: repeating-linear-gradient(
+                            135deg,
+                            #f59e0b,
+                            #f59e0b 4px,
+                            #fbbf24 4px,
+                            #fbbf24 8px
+                        );
+                        opacity: 0.7;
+                    }
                     .coverage-timeline-segment:hover {
                         opacity: 0.8;
                     }
@@ -645,6 +696,46 @@ if ($hasStationId) {
                         background: #fee2e2;
                         color: #dc2626;
                     }
+                    .coverage-item.stale {
+                        background: #fef3c7;
+                        color: #d97706;
+                        text-decoration: line-through;
+                        opacity: 0.7;
+                    }
+                    /* Panel de programas sin RSS reciente */
+                    .stale-programs-panel {
+                        background: #fffbeb;
+                        border: 2px solid #f59e0b;
+                        border-radius: 8px;
+                        padding: 16px;
+                        margin-bottom: 20px;
+                    }
+                    .stale-programs-title {
+                        font-weight: 600;
+                        color: #92400e;
+                        margin-bottom: 12px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-size: 14px;
+                    }
+                    .stale-program-item {
+                        background: white;
+                        border: 1px solid #fcd34d;
+                        border-radius: 6px;
+                        padding: 10px 12px;
+                        margin-bottom: 8px;
+                        font-size: 12px;
+                    }
+                    .stale-program-name {
+                        font-weight: 600;
+                        color: #78350f;
+                        margin-bottom: 4px;
+                    }
+                    .stale-program-message {
+                        color: #92400e;
+                        font-size: 11px;
+                    }
                     .no-content-message {
                         color: #9ca3af;
                         font-style: italic;
@@ -708,6 +799,29 @@ if ($hasStationId) {
                     .legend-color.live { background: #ef4444; }
                 </style>
 
+                <!-- Panel de avisos: Programas sin episodios recientes -->
+                <?php if (!empty($stalePrograms)): ?>
+                <div class="stale-programs-panel">
+                    <div class="stale-programs-title">
+                        ⚠️ Programas con RSS sin episodios recientes (><?php echo count($stalePrograms); ?>)
+                    </div>
+                    <p style="font-size: 12px; color: #92400e; margin-bottom: 12px;">
+                        Los siguientes programas tienen configurado un feed RSS pero no han publicado episodios en los últimos 30 días.
+                        Aparecen marcados con rayas diagonales amarillas en el timeline.
+                    </p>
+                    <?php foreach ($stalePrograms as $programName => $staleProgramInfo): ?>
+                    <div class="stale-program-item">
+                        <div class="stale-program-name">
+                            📻 <?php echo htmlspecialchars($staleProgramInfo['title']); ?>
+                        </div>
+                        <div class="stale-program-message">
+                            <?php echo htmlspecialchars($staleProgramInfo['message']); ?>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+
                 <!-- Leyenda -->
                 <div class="coverage-legend">
                     <div class="legend-item">
@@ -721,6 +835,10 @@ if ($hasStationId) {
                     <div class="legend-item">
                         <div class="legend-color live"></div>
                         <span>En Directo</span>
+                    </div>
+                    <div class="legend-item">
+                        <div style="width: 20px; height: 20px; border-radius: 3px; background: repeating-linear-gradient(135deg, #f59e0b, #f59e0b 4px, #fbbf24 4px, #fbbf24 8px);"></div>
+                        <span>Sin episodios >30 días</span>
                     </div>
                 </div>
 
@@ -980,7 +1098,7 @@ if ($hasStationId) {
                                     $widthPct = (($seg['end'] - $seg['start']) / 1440) * 100;
                                     $zIndex = $seg['type'] === 'live' ? 3 : ($seg['type'] === 'program' ? 2 : 1);
                                     ?>
-                                    <div class="coverage-timeline-segment <?php echo $seg['type']; ?>"
+                                    <div class="coverage-timeline-segment <?php echo $seg['type'] . (isset($stalePrograms[$seg['title']]) ? ' stale' : ''); ?>"
                                          style="left: <?php echo $leftPct; ?>%; width: <?php echo $widthPct; ?>%; z-index: <?php echo $zIndex; ?>;"
                                          title="<?php echo htmlspecialchars($seg['title'] . ' (' . $seg['time'] . ')'); ?>">
                                     </div>
@@ -1016,8 +1134,9 @@ if ($hasStationId) {
                                 <?php if (!empty($dayContent['program'])): ?>
                                     <div class="coverage-content-title">📻 Programas (<?php echo count($dayContent['program']); ?>):</div>
                                     <?php foreach ($dayContent['program'] as $item): ?>
-                                        <span class="coverage-item program">
+                                        <span class="coverage-item program<?php echo isset($stalePrograms[$item['title']]) ? ' stale' : ''; ?>">
                                             <?php echo htmlspecialchars($item['title']); ?>
+                                            <?php if (isset($stalePrograms[$item['title']])): ?>⚠️<?php endif; ?>
                                             (<?php echo $item['start_time']; ?> - <?php echo $item['end_time']; ?>)
                                         </span>
                                     <?php endforeach; ?>
@@ -1026,8 +1145,9 @@ if ($hasStationId) {
                                 <?php if (!empty($dayContent['live'])): ?>
                                     <div class="coverage-content-title">🔴 En Directo (<?php echo count($dayContent['live']); ?>):</div>
                                     <?php foreach ($dayContent['live'] as $item): ?>
-                                        <span class="coverage-item live">
+                                        <span class="coverage-item live<?php echo isset($stalePrograms[$item['title']]) ? ' stale' : ''; ?>">
                                             <?php echo htmlspecialchars($item['title']); ?>
+                                            <?php if (isset($stalePrograms[$item['title']])): ?>⚠️<?php endif; ?>
                                             (<?php echo $item['start_time']; ?> - <?php echo $item['end_time']; ?>)
                                         </span>
                                     <?php endforeach; ?>
