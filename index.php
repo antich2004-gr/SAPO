@@ -33,6 +33,13 @@ initSession();
     if (isset($_POST['action']) && $_POST['action'] == 'save_liquidsoap_config' && isLoggedIn()) {
         header('Content-Type: application/json');
 
+        // Validar CSRF token
+        $token = $_POST['csrf_token'] ?? '';
+        if (!validateCSRFToken($token)) {
+            echo json_encode(['success' => false, 'message' => ERROR_INVALID_TOKEN]);
+            exit;
+        }
+
         $username = $_SESSION['username'];
         $section = $_POST['section'] ?? '';
         $code = $_POST['code'] ?? '';
