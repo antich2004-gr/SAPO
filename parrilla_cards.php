@@ -912,12 +912,9 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                         if (!empty($event['rss_feed'])) {
                             $latestEpisode = $rssCache[$event['rss_feed']] ?? null;
 
-                            // Si tiene RSS configurado pero no hay episodios recientes:
-                            // - Programas tipo 'program' (podcast): no mostrar
-                            // - Programas tipo 'live' (en directo): sí mostrar (el RSS es opcional)
-                            if ($latestEpisode === null && $event['playlist_type'] === 'program') {
-                                continue;
-                            }
+                            // ELIMINADO: Ya no ocultamos programas si el RSS falla
+                            // Los programas se muestran siempre, con o sin RSS
+                            // Si el RSS falla, simplemente no se muestra el bloque "Último episodio"
                         }
 
                         // Solo este programa está en vivo (el más reciente si hay solapamiento)
