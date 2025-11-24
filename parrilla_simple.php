@@ -1,7 +1,11 @@
 <?php
 // parrilla_simple.php - Versión simplificada sin CSS complejo
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+
+// Headers de seguridad (permiten embebido en otras webs)
+header("X-Content-Type-Options: nosniff");
+header("X-XSS-Protection: 1; mode=block");
+header("Referrer-Policy: strict-origin-when-cross-origin");
+header("Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-ancestors *");
 
 require_once 'config.php';
 require_once INCLUDES_DIR . '/database.php';
