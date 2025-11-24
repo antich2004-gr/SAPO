@@ -722,19 +722,38 @@ if ($hasStationId) {
                         $weekCounts[$type] += $countsByType[$type];
                     }
 
-                    // Calcular cobertura efectiva:
-                    // - Programas y directo tienen prioridad (tiempo real)
-                    // - Bloques musicales = tiempo disponible restante (máximo)
+                    // Calcular tiempo efectivo de bloques musicales
+                    // Restar el tiempo que coincide con programas/directos
                     $dayTotalMinutes = 24 * 60;
-                    $programLiveMinutes = $realMinutes['program'] + $realMinutes['live'];
+                    $effectiveMusicMinutes = 0;
 
-                    // Tiempo disponible para música = 24h - programas - directo
-                    $availableForMusic = max(0, $dayTotalMinutes - $programLiveMinutes);
+                    foreach ($dayContent['music_block'] as $musicItem) {
+                        $musicStart = $musicItem['start_minutes'];
+                        $musicEnd = $musicItem['end_minutes'];
+                        if ($musicEnd <= $musicStart) $musicEnd += 1440; // Cruza medianoche
 
-                    // Los bloques musicales efectivos son el mínimo entre:
-                    // - El tiempo real programado de música
-                    // - El tiempo disponible (para no exceder 100%)
-                    $effectiveMusicMinutes = min($realMinutes['music_block'], $availableForMusic);
+                        $musicDuration = $musicEnd - $musicStart;
+                        $overlappedMinutes = 0;
+
+                        // Calcular solapamiento con programas y directos
+                        foreach (['program', 'live'] as $type) {
+                            foreach ($dayContent[$type] as $item) {
+                                $itemStart = $item['start_minutes'];
+                                $itemEnd = $item['end_minutes'];
+                                if ($itemEnd <= $itemStart) $itemEnd += 1440;
+
+                                // Calcular solapamiento
+                                if ($musicStart < $itemEnd && $itemStart < $musicEnd) {
+                                    $overlapStart = max($musicStart, $itemStart);
+                                    $overlapEnd = min($musicEnd, $itemEnd);
+                                    $overlappedMinutes += ($overlapEnd - $overlapStart);
+                                }
+                            }
+                        }
+
+                        // Tiempo efectivo = duración - solapamientos
+                        $effectiveMusicMinutes += max(0, $musicDuration - $overlappedMinutes);
+                    }
 
                     // Para mostrar en stats usamos los valores efectivos
                     $minutesByType = [
