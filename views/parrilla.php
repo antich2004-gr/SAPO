@@ -787,6 +787,96 @@ if ($hasStationId) {
                     .legend-color.music { background: #8b5cf6; }
                     .legend-color.program { background: #3b82f6; }
                     .legend-color.live { background: #ef4444; }
+
+                    /* Botón colapsable para programación detallada */
+                    .toggle-schedule-btn {
+                        background: #f3f4f6;
+                        border: 1px solid #e5e7eb;
+                        border-radius: 6px;
+                        padding: 8px 12px;
+                        font-size: 12px;
+                        color: #374151;
+                        cursor: pointer;
+                        width: 100%;
+                        text-align: left;
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        transition: all 0.2s;
+                        margin-top: 10px;
+                    }
+                    .toggle-schedule-btn:hover {
+                        background: #e5e7eb;
+                    }
+                    .toggle-schedule-btn .toggle-icon {
+                        transition: transform 0.2s;
+                        font-size: 10px;
+                    }
+                    .toggle-schedule-btn.expanded .toggle-icon {
+                        transform: rotate(180deg);
+                    }
+
+                    /* Listado cronológico de programación */
+                    .schedule-list-container {
+                        margin-top: 10px;
+                    }
+                    .schedule-list {
+                        background: white;
+                        border: 1px solid #e5e7eb;
+                        border-radius: 6px;
+                        overflow: hidden;
+                    }
+                    .schedule-list-item {
+                        display: flex;
+                        padding: 10px 12px;
+                        border-bottom: 1px solid #f3f4f6;
+                        transition: background 0.2s;
+                    }
+                    .schedule-list-item:last-child {
+                        border-bottom: none;
+                    }
+                    .schedule-list-item:hover {
+                        background: #f9fafb;
+                    }
+                    .schedule-list-item.stale {
+                        background: #fffbeb;
+                        opacity: 0.8;
+                    }
+                    .schedule-time {
+                        font-family: 'Courier New', monospace;
+                        font-size: 11px;
+                        font-weight: 600;
+                        color: #6b7280;
+                        min-width: 100px;
+                        padding-right: 12px;
+                        border-right: 2px solid #e5e7eb;
+                    }
+                    .schedule-list-item.program .schedule-time { border-right-color: #3b82f6; }
+                    .schedule-list-item.live .schedule-time { border-right-color: #ef4444; }
+                    .schedule-list-item.music .schedule-time { border-right-color: #8b5cf6; }
+                    .schedule-info {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        padding-left: 12px;
+                        flex: 1;
+                    }
+                    .schedule-icon {
+                        font-size: 16px;
+                    }
+                    .schedule-title {
+                        font-size: 13px;
+                        color: #1f2937;
+                        font-weight: 500;
+                    }
+                    .schedule-list-item.stale .schedule-title {
+                        text-decoration: line-through;
+                        color: #92400e;
+                    }
+                    .stale-badge {
+                        font-size: 11px;
+                        margin-left: 4px;
+                    }
                 </style>
 
                 <!-- Panel de avisos: Programas sin episodios recientes -->
@@ -1120,38 +1210,50 @@ if ($hasStationId) {
                         <?php if (!$hasContent): ?>
                             <p class="no-content-message">No hay contenido programado para este día.</p>
                         <?php else: ?>
-                            <div class="coverage-content-list">
-                                <?php if (!empty($dayContent['program'])): ?>
-                                    <div class="coverage-content-title">📻 Programas (<?php echo count($dayContent['program']); ?>):</div>
-                                    <?php foreach ($dayContent['program'] as $item): ?>
-                                        <span class="coverage-item program<?php echo isset($stalePrograms[$item['title']]) ? ' stale' : ''; ?>">
-                                            <?php echo htmlspecialchars($item['title']); ?>
-                                            <?php if (isset($stalePrograms[$item['title']])): ?>⚠️<?php endif; ?>
-                                            (<?php echo $item['start_time']; ?> - <?php echo $item['end_time']; ?>)
-                                        </span>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
+                            <!-- Botón para mostrar/ocultar listado cronológico -->
+                            <button class="toggle-schedule-btn" onclick="toggleScheduleList(this)">
+                                <span class="toggle-icon">▼</span> Ver programación detallada
+                            </button>
 
-                                <?php if (!empty($dayContent['live'])): ?>
-                                    <div class="coverage-content-title">🔴 En Directo (<?php echo count($dayContent['live']); ?>):</div>
-                                    <?php foreach ($dayContent['live'] as $item): ?>
-                                        <span class="coverage-item live<?php echo isset($stalePrograms[$item['title']]) ? ' stale' : ''; ?>">
-                                            <?php echo htmlspecialchars($item['title']); ?>
-                                            <?php if (isset($stalePrograms[$item['title']])): ?>⚠️<?php endif; ?>
-                                            (<?php echo $item['start_time']; ?> - <?php echo $item['end_time']; ?>)
-                                        </span>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
+                            <div class="schedule-list-container" style="display: none;">
+                                <?php
+                                // Combinar todos los eventos en un solo array
+                                $allDayEvents = [];
 
-                                <?php if (!empty($dayContent['music_block'])): ?>
-                                    <div class="coverage-content-title">🎵 Bloques Musicales (<?php echo count($dayContent['music_block']); ?>):</div>
-                                    <?php foreach ($dayContent['music_block'] as $item): ?>
-                                        <span class="coverage-item music">
-                                            <?php echo htmlspecialchars($item['title']); ?>
-                                            (<?php echo $item['start_time']; ?> - <?php echo $item['end_time']; ?>)
-                                        </span>
+                                foreach ($dayContent['program'] as $item) {
+                                    $allDayEvents[] = array_merge($item, ['type' => 'program', 'icon' => '📻']);
+                                }
+                                foreach ($dayContent['live'] as $item) {
+                                    $allDayEvents[] = array_merge($item, ['type' => 'live', 'icon' => '🔴']);
+                                }
+                                foreach ($dayContent['music_block'] as $item) {
+                                    $allDayEvents[] = array_merge($item, ['type' => 'music', 'icon' => '🎵']);
+                                }
+
+                                // Ordenar por hora de inicio
+                                usort($allDayEvents, function($a, $b) {
+                                    return $a['start_minutes'] - $b['start_minutes'];
+                                });
+                                ?>
+
+                                <div class="schedule-list">
+                                    <?php foreach ($allDayEvents as $event): ?>
+                                        <div class="schedule-list-item <?php echo $event['type'] . (isset($stalePrograms[$event['title']]) ? ' stale' : ''); ?>">
+                                            <div class="schedule-time">
+                                                <?php echo $event['start_time']; ?> - <?php echo $event['end_time']; ?>
+                                            </div>
+                                            <div class="schedule-info">
+                                                <span class="schedule-icon"><?php echo $event['icon']; ?></span>
+                                                <span class="schedule-title">
+                                                    <?php echo htmlspecialchars($event['title']); ?>
+                                                    <?php if (isset($stalePrograms[$event['title']])): ?>
+                                                        <span class="stale-badge" title="Sin episodios recientes">⚠️</span>
+                                                    <?php endif; ?>
+                                                </span>
+                                            </div>
+                                        </div>
                                     <?php endforeach; ?>
-                                <?php endif; ?>
+                                </div>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -1681,6 +1783,24 @@ if ($hasStationId) {
                         }).catch(() => {
                             alert('❌ Error al copiar');
                         });
+                    }
+                </script>
+
+                <script>
+                    // Toggle para mostrar/ocultar listado de programación
+                    function toggleScheduleList(button) {
+                        const container = button.nextElementSibling;
+                        const isExpanded = container.style.display !== 'none';
+
+                        if (isExpanded) {
+                            container.style.display = 'none';
+                            button.classList.remove('expanded');
+                            button.innerHTML = '<span class="toggle-icon">▼</span> Ver programación detallada';
+                        } else {
+                            container.style.display = 'block';
+                            button.classList.add('expanded');
+                            button.innerHTML = '<span class="toggle-icon">▼</span> Ocultar programación detallada';
+                        }
                     }
                 </script>
             <?php endif; ?>
