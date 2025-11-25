@@ -117,8 +117,9 @@ initSession();
         header('Content-Type: application/json');
 
         // SEGURIDAD: Rate limiting más restrictivo para operaciones costosas
-        // Límite: 5 peticiones cada 5 minutos (300 segundos)
-        if (!checkRateLimit('refresh_feeds', 5, 300)) {
+        // Límite: 150 peticiones cada 5 minutos (300 segundos)
+        // Necesario para emisoras con 50-100+ suscripciones
+        if (!checkRateLimit('refresh_feeds', 150, 300)) {
             http_response_code(429); // Too Many Requests
             echo json_encode(['success' => false, 'error' => 'Límite excedido. Espera 5 minutos antes de refrescar feeds nuevamente.']);
             exit;
