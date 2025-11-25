@@ -1785,28 +1785,28 @@ if ($hasStationId) {
                         });
                     }
                 </script>
-
-                <script>
-                    // Toggle para mostrar/ocultar listado de programación
-                    function toggleScheduleList(button) {
-                        const container = button.nextElementSibling;
-                        const isExpanded = container.style.display !== 'none';
-
-                        if (isExpanded) {
-                            container.style.display = 'none';
-                            button.classList.remove('expanded');
-                            button.innerHTML = '<span class="toggle-icon">▼</span> Ver programación detallada';
-                        } else {
-                            container.style.display = 'block';
-                            button.classList.add('expanded');
-                            button.innerHTML = '<span class="toggle-icon">▼</span> Ocultar programación detallada';
-                        }
-                    }
-                </script>
             <?php endif; ?>
         </div>
     <?php endif; ?>
 </div>
+
+<script>
+    // Toggle para mostrar/ocultar listado de programación
+    function toggleScheduleList(button) {
+        const container = button.nextElementSibling;
+        const isExpanded = container.style.display !== 'none';
+
+        if (isExpanded) {
+            container.style.display = 'none';
+            button.classList.remove('expanded');
+            button.innerHTML = '<span class="toggle-icon">▼</span> Ver programación detallada';
+        } else {
+            container.style.display = 'block';
+            button.classList.add('expanded');
+            button.innerHTML = '<span class="toggle-icon">▼</span> Ocultar programación detallada';
+        }
+    }
+</script>
 
 <style>
 .tab-active:hover, .tab-inactive:hover {
