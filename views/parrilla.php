@@ -1053,11 +1053,12 @@ if ($hasStationId) {
                         }
                     }
 
-                    // Todos los eventos para cálculo de huecos (incluye bloques musicales)
-                    $allEvents = [];
-                    foreach (['program', 'live', 'music_block'] as $type) {
+                    // Eventos prioritarios para cálculo de huecos (solo programas y directos)
+                    // Los bloques musicales NO se cuentan ya que son relleno automático
+                    $priorityEventsForGaps = [];
+                    foreach (['program', 'live'] as $type) {
                         foreach ($dayContent[$type] as $item) {
-                            $allEvents[] = [
+                            $priorityEventsForGaps[] = [
                                 'title' => $item['title'],
                                 'start' => $item['start_minutes'],
                                 'end' => $item['end_minutes'],
@@ -1068,17 +1069,17 @@ if ($hasStationId) {
                         }
                     }
 
-                    // Calcular tiempo total sin asignar
+                    // Calcular tiempo sin programas/directos (huecos de contenido original)
                     $totalGapMinutes = 0;
-                    if (!empty($allEvents)) {
+                    if (!empty($priorityEventsForGaps)) {
                         // Ordenar eventos por inicio
-                        usort($allEvents, function($a, $b) {
+                        usort($priorityEventsForGaps, function($a, $b) {
                             return $a['start'] - $b['start'];
                         });
 
                         // Sumar huecos
                         $lastEnd = 0;
-                        foreach ($allEvents as $event) {
+                        foreach ($priorityEventsForGaps as $event) {
                             $eventEnd = $event['end'] <= $event['start'] ? $event['end'] + 1440 : $event['end'];
                             if ($event['start'] > $lastEnd) {
                                 $totalGapMinutes += $event['start'] - $lastEnd;
@@ -1090,7 +1091,7 @@ if ($hasStationId) {
                             $totalGapMinutes += 1440 - $lastEnd;
                         }
                     } else {
-                        $totalGapMinutes = 1440; // Todo el día sin asignar
+                        $totalGapMinutes = 1440; // Todo el día sin programas/directos
                     }
                 ?>
                     <div class="coverage-day">
@@ -1117,7 +1118,7 @@ if ($hasStationId) {
                                 <?php endif; ?>
                                 <div class="coverage-stat <?php echo $totalGapMinutes > 0 ? 'error' : 'ok'; ?>">
                                     <span class="coverage-stat-value"><?php echo $formatTime($totalGapMinutes); ?></span>
-                                    <span class="coverage-stat-label">huecos</span>
+                                    <span class="coverage-stat-label">sin programas</span>
                                 </div>
                                 <div class="coverage-stat <?php echo $totalOverlapMinutes > 0 ? 'error' : 'ok'; ?>">
                                     <span class="coverage-stat-value"><?php echo $formatTime($totalOverlapMinutes); ?></span>
