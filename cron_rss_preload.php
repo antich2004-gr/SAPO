@@ -71,7 +71,7 @@ foreach ($programFiles as $programsFile) {
         }
 
         // Pequeña pausa para no sobrecargar
-        usleep(100000); // 0.1 segundos
+        usleep(50000); // 0.05 segundos (~20 req/s)
     }
 }
 
