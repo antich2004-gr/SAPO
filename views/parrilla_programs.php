@@ -169,15 +169,27 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                 </div>
 
                 <div class="form-group">
-                    <label>Twitter: <small>(sin @)</small></label>
+                    <label>X (Twitter): <small>(handle sin @ o URL completa)</small></label>
                     <input type="text" name="social_twitter"
-                           placeholder="alternativa90">
+                           placeholder="alternativa90 o https://x.com/alternativa90">
                 </div>
 
                 <div class="form-group">
-                    <label>Instagram: <small>(sin @)</small></label>
+                    <label>Instagram: <small>(handle sin @ o URL completa)</small></label>
                     <input type="text" name="social_instagram"
-                           placeholder="alternativa90">
+                           placeholder="alternativa90 o https://instagram.com/alternativa90">
+                </div>
+
+                <div class="form-group">
+                    <label>Mastodon: <small>(usuario completo @usuario@servidor o URL)</small></label>
+                    <input type="text" name="social_mastodon"
+                           placeholder="@programa@mastodon.social o https://mastodon.social/@programa">
+                </div>
+
+                <div class="form-group">
+                    <label>Bluesky: <small>(handle completo o URL)</small></label>
+                    <input type="text" name="social_bluesky"
+                           placeholder="programa.bsky.social o https://bsky.app/profile/programa.bsky.social">
                 </div>
 
                 <div class="form-group">
@@ -406,17 +418,31 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                     </div>
 
                     <div class="form-group">
-                        <label>Twitter: <small>(sin @)</small></label>
+                        <label>X (Twitter): <small>(handle sin @ o URL completa)</small></label>
                         <input type="text" name="social_twitter"
                                value="<?php echo htmlEsc($programInfo['social_twitter'] ?? ''); ?>"
-                               placeholder="alternativa90">
+                               placeholder="alternativa90 o https://x.com/alternativa90">
                     </div>
 
                     <div class="form-group">
-                        <label>Instagram: <small>(sin @)</small></label>
+                        <label>Instagram: <small>(handle sin @ o URL completa)</small></label>
                         <input type="text" name="social_instagram"
                                value="<?php echo htmlEsc($programInfo['social_instagram'] ?? ''); ?>"
-                               placeholder="alternativa90">
+                               placeholder="alternativa90 o https://instagram.com/alternativa90">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Mastodon: <small>(usuario completo @usuario@servidor o URL)</small></label>
+                        <input type="text" name="social_mastodon"
+                               value="<?php echo htmlEsc($programInfo['social_mastodon'] ?? ''); ?>"
+                               placeholder="@programa@mastodon.social o https://mastodon.social/@programa">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Bluesky: <small>(handle completo o URL)</small></label>
+                        <input type="text" name="social_bluesky"
+                               value="<?php echo htmlEsc($programInfo['social_bluesky'] ?? ''); ?>"
+                               placeholder="programa.bsky.social o https://bsky.app/profile/programa.bsky.social">
                     </div>
 
                     <div class="form-group">

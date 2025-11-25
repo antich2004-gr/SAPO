@@ -397,6 +397,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     'presenters' => trim($_POST['presenters'] ?? ''),
                     'social_twitter' => trim($_POST['social_twitter'] ?? ''),
                     'social_instagram' => trim($_POST['social_instagram'] ?? ''),
+                    'social_mastodon' => trim($_POST['social_mastodon'] ?? ''),
+                    'social_bluesky' => trim($_POST['social_bluesky'] ?? ''),
                     'rss_feed' => trim($_POST['rss_feed'] ?? ''),
                     'schedule_days' => $scheduleDays,
                     'schedule_start_time' => trim($_POST['schedule_start_time'] ?? ''),
@@ -471,6 +473,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'presenters' => trim($_POST['presenters'] ?? ''),
                 'social_twitter' => trim($_POST['social_twitter'] ?? ''),
                 'social_instagram' => trim($_POST['social_instagram'] ?? ''),
+                'social_mastodon' => trim($_POST['social_mastodon'] ?? ''),
+                'social_bluesky' => trim($_POST['social_bluesky'] ?? ''),
                 'rss_feed' => trim($_POST['rss_feed'] ?? ''),
                 'hidden_from_schedule' => isset($_POST['hidden_from_schedule']) ? true : false,
                 'schedule_duration' => (int)($_POST['schedule_duration'] ?? 60)

@@ -188,6 +188,8 @@ foreach ($programsData as $programName => $programInfo) {
                     'rss_feed' => $programInfo['rss_feed'] ?? '',
                     'social_twitter' => $programInfo['social_twitter'] ?? '',
                     'social_instagram' => $programInfo['social_instagram'] ?? '',
+                    'social_mastodon' => $programInfo['social_mastodon'] ?? '',
+                    'social_bluesky' => $programInfo['social_bluesky'] ?? '',
                     'playlist_type' => 'live'
                 ];
             }
@@ -269,6 +271,8 @@ foreach ($schedule as $event) {
         'rss_feed' => $programInfo['rss_feed'] ?? '',
         'social_twitter' => $programInfo['social_twitter'] ?? '',
         'social_instagram' => $programInfo['social_instagram'] ?? '',
+        'social_mastodon' => $programInfo['social_mastodon'] ?? '',
+        'social_bluesky' => $programInfo['social_bluesky'] ?? '',
         'playlist_type' => $playlistType
     ];
 
@@ -744,6 +748,28 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
             box-shadow: 0 4px 8px rgba(188, 24, 136, 0.3);
         }
 
+        .social-link.mastodon {
+            background: #6364FF;
+            color: white;
+        }
+
+        .social-link.mastodon:hover {
+            background: #563acc;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(99, 100, 255, 0.3);
+        }
+
+        .social-link.bluesky {
+            background: #1185fe;
+            color: white;
+        }
+
+        .social-link.bluesky:hover {
+            background: #0d6ecd;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(17, 133, 254, 0.3);
+        }
+
         .rss-episode-link {
             text-decoration: none;
             display: block;
@@ -1023,12 +1049,10 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                                     </div>
                                 <?php endif; ?>
 
-                                <?php if (!empty($event['social_twitter']) || !empty($event['social_instagram'])): ?>
+                                <?php if (!empty($event['social_twitter']) || !empty($event['social_instagram']) || !empty($event['social_mastodon']) || !empty($event['social_bluesky'])): ?>
                                     <div class="program-social">
                                         <?php if (!empty($event['social_twitter'])):
-                                            // Construir URL de Twitter/X a partir del handle
                                             $twitter = $event['social_twitter'];
-                                            // Si es solo el handle (@usuario o usuario), construir URL completa
                                             if (!str_starts_with($twitter, 'http')) {
                                                 $twitter = ltrim($twitter, '@');
                                                 $twitter = 'https://x.com/' . $twitter;
@@ -1036,16 +1060,14 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                                         ?>
                                             <a href="<?php echo htmlspecialchars($twitter); ?>"
                                                target="_blank" rel="noopener" class="social-link twitter"
-                                               title="Seguir en Twitter/X">
+                                               title="Seguir en X">
                                                 <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                                     <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.6.75Zm-.86 13.028h1.36L4.323 2.145H2.865l8.875 11.633Z"/>
                                                 </svg>
                                             </a>
                                         <?php endif; ?>
                                         <?php if (!empty($event['social_instagram'])):
-                                            // Construir URL de Instagram a partir del handle
                                             $instagram = $event['social_instagram'];
-                                            // Si es solo el handle (@usuario o usuario), construir URL completa
                                             if (!str_starts_with($instagram, 'http')) {
                                                 $instagram = ltrim($instagram, '@');
                                                 $instagram = 'https://instagram.com/' . $instagram;
@@ -1056,6 +1078,39 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                                                title="Seguir en Instagram">
                                                 <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                                     <path d="M8 0C5.829 0 5.556.01 4.703.048 3.85.088 3.269.222 2.76.42a3.917 3.917 0 0 0-1.417.923A3.927 3.927 0 0 0 .42 2.76C.222 3.268.087 3.85.048 4.7.01 5.555 0 5.827 0 8.001c0 2.172.01 2.444.048 3.297.04.852.174 1.433.372 1.942.205.526.478.972.923 1.417.444.445.89.719 1.416.923.51.198 1.09.333 1.942.372C5.555 15.99 5.827 16 8 16s2.444-.01 3.298-.048c.851-.04 1.434-.174 1.943-.372a3.916 3.916 0 0 0 1.416-.923c.445-.445.718-.891.923-1.417.197-.509.332-1.09.372-1.942C15.99 10.445 16 10.173 16 8s-.01-2.445-.048-3.299c-.04-.851-.175-1.433-.372-1.941a3.926 3.926 0 0 0-.923-1.417A3.911 3.911 0 0 0 13.24.42c-.51-.198-1.092-.333-1.943-.372C10.443.01 10.172 0 7.998 0h.003zm-.717 1.442h.718c2.136 0 2.389.007 3.232.046.78.035 1.204.166 1.486.275.373.145.64.319.92.599.28.28.453.546.598.92.11.281.24.705.275 1.485.039.843.047 1.096.047 3.231s-.008 2.389-.047 3.232c-.035.78-.166 1.203-.275 1.485a2.47 2.47 0 0 1-.599.919c-.28.28-.546.453-.92.598-.28.11-.704.24-1.485.276-.843.038-1.096.047-3.232.047s-2.39-.009-3.233-.047c-.78-.036-1.203-.166-1.485-.276a2.478 2.478 0 0 1-.92-.598 2.48 2.48 0 0 1-.6-.92c-.109-.281-.24-.705-.275-1.485-.038-.843-.046-1.096-.046-3.233 0-2.136.008-2.388.046-3.231.036-.78.166-1.204.276-1.486.145-.373.319-.64.599-.92.28-.28.546-.453.92-.598.282-.11.705-.24 1.485-.276.738-.034 1.024-.044 2.515-.045v.002zm4.988 1.328a.96.96 0 1 0 0 1.92.96.96 0 0 0 0-1.92zm-4.27 1.122a4.109 4.109 0 1 0 0 8.217 4.109 4.109 0 0 0 0-8.217zm0 1.441a2.667 2.667 0 1 1 0 5.334 2.667 2.667 0 0 1 0-5.334z"/>
+                                                </svg>
+                                            </a>
+                                        <?php endif; ?>
+                                        <?php if (!empty($event['social_mastodon'])):
+                                            $mastodon = $event['social_mastodon'];
+                                            // Si no es URL completa, intentar construirla desde el handle @usuario@servidor
+                                            if (!str_starts_with($mastodon, 'http')) {
+                                                // Si es @usuario@servidor.tld, convertir a URL
+                                                if (preg_match('/@?([^@]+)@(.+)/', $mastodon, $matches)) {
+                                                    $mastodon = 'https://' . $matches[2] . '/@' . $matches[1];
+                                                }
+                                            }
+                                        ?>
+                                            <a href="<?php echo htmlspecialchars($mastodon); ?>"
+                                               target="_blank" rel="noopener" class="social-link mastodon"
+                                               title="Seguir en Mastodon">
+                                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                    <path d="M11.19 12.195c2.016-.24 3.77-1.475 3.99-2.603.348-1.778.32-4.339.32-4.339 0-3.47-2.286-4.488-2.286-4.488C12.062.238 10.083.017 8.027 0h-.05C5.92.017 3.942.238 2.79.765c0 0-2.285 1.017-2.285 4.488l-.002.662c-.004.64-.007 1.35.011 2.091.083 3.394.626 6.74 3.78 7.57 1.454.383 2.703.463 3.709.408 1.823-.1 2.847-.647 2.847-.647l-.06-1.317s-1.303.41-2.767.36c-1.45-.05-2.98-.156-3.215-1.928a3.614 3.614 0 0 1-.033-.496s1.424.346 3.228.428c1.103.05 2.137-.064 3.188-.189zm1.613-2.47H11.13v-4.08c0-.859-.364-1.295-1.091-1.295-.804 0-1.207.517-1.207 1.541v2.233H7.168V5.89c0-1.024-.403-1.541-1.207-1.541-.727 0-1.091.436-1.091 1.296v4.079H3.197V5.522c0-.859.22-1.541.66-2.046.456-.505 1.052-.764 1.793-.764.856 0 1.504.328 1.933.983L8 4.39l.417-.695c.429-.655 1.077-.983 1.934-.983.74 0 1.336.259 1.791.764.442.505.661 1.187.661 2.046v4.203z"/>
+                                                </svg>
+                                            </a>
+                                        <?php endif; ?>
+                                        <?php if (!empty($event['social_bluesky'])):
+                                            $bluesky = $event['social_bluesky'];
+                                            // Si no es URL completa y parece un handle (usuario.bsky.social), construir URL
+                                            if (!str_starts_with($bluesky, 'http')) {
+                                                $bluesky = 'https://bsky.app/profile/' . $bluesky;
+                                            }
+                                        ?>
+                                            <a href="<?php echo htmlspecialchars($bluesky); ?>"
+                                               target="_blank" rel="noopener" class="social-link bluesky"
+                                               title="Seguir en Bluesky">
+                                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                    <path d="M3.291 3.969c1.516 1.679 3.49 4.087 4.709 5.605 1.219-1.518 3.193-3.926 4.709-5.605C13.684 2.74 15.5 1.5 15.5 3.5c0 .677-.383 2.506-.572 3.213-.22.818-.804 1.596-1.745 1.931-1.214.433-3.065.353-4.183.119V11c0 2.5-1.5 5-3 5-1.5 0-3-2.5-3-5V8.763c-1.118.234-2.969.314-4.183-.119-.941-.335-1.525-1.113-1.745-1.931C2.883 6.006 2.5 4.177 2.5 3.5c0-2 1.816-.74 2.791.469z"/>
                                                 </svg>
                                             </a>
                                         <?php endif; ?>
