@@ -193,6 +193,12 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                 </div>
 
                 <div class="form-group">
+                    <label>Facebook: <small>(nombre de página o URL completa)</small></label>
+                    <input type="text" name="social_facebook"
+                           placeholder="alternativa90 o https://facebook.com/alternativa90">
+                </div>
+
+                <div class="form-group">
                     <label>Feed RSS del podcast: <small>(opcional)</small></label>
                     <input type="url" name="rss_feed"
                            placeholder="https://feeds.feedburner.com/mipodcast">
@@ -443,6 +449,13 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                         <input type="text" name="social_bluesky"
                                value="<?php echo htmlEsc($programInfo['social_bluesky'] ?? ''); ?>"
                                placeholder="programa.bsky.social o https://bsky.app/profile/programa.bsky.social">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Facebook: <small>(nombre de página o URL completa)</small></label>
+                        <input type="text" name="social_facebook"
+                               value="<?php echo htmlEsc($programInfo['social_facebook'] ?? ''); ?>"
+                               placeholder="alternativa90 o https://facebook.com/alternativa90">
                     </div>
 
                     <div class="form-group">

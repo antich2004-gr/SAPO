@@ -190,6 +190,7 @@ foreach ($programsData as $programName => $programInfo) {
                     'social_instagram' => $programInfo['social_instagram'] ?? '',
                     'social_mastodon' => $programInfo['social_mastodon'] ?? '',
                     'social_bluesky' => $programInfo['social_bluesky'] ?? '',
+                    'social_facebook' => $programInfo['social_facebook'] ?? '',
                     'playlist_type' => 'live'
                 ];
             }
@@ -273,6 +274,7 @@ foreach ($schedule as $event) {
         'social_instagram' => $programInfo['social_instagram'] ?? '',
         'social_mastodon' => $programInfo['social_mastodon'] ?? '',
         'social_bluesky' => $programInfo['social_bluesky'] ?? '',
+        'social_facebook' => $programInfo['social_facebook'] ?? '',
         'playlist_type' => $playlistType
     ];
 
@@ -770,6 +772,17 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
             box-shadow: 0 4px 8px rgba(17, 133, 254, 0.3);
         }
 
+        .social-link.facebook {
+            background: #1877F2;
+            color: white;
+        }
+
+        .social-link.facebook:hover {
+            background: #145dbf;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(24, 119, 242, 0.3);
+        }
+
         .rss-episode-link {
             text-decoration: none;
             display: block;
@@ -1049,7 +1062,7 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                                     </div>
                                 <?php endif; ?>
 
-                                <?php if (!empty($event['social_twitter']) || !empty($event['social_instagram']) || !empty($event['social_mastodon']) || !empty($event['social_bluesky'])): ?>
+                                <?php if (!empty($event['social_twitter']) || !empty($event['social_instagram']) || !empty($event['social_mastodon']) || !empty($event['social_bluesky']) || !empty($event['social_facebook'])): ?>
                                     <div class="program-social">
                                         <?php if (!empty($event['social_twitter'])):
                                             $twitter = $event['social_twitter'];
@@ -1111,6 +1124,21 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                                                title="Seguir en Bluesky">
                                                 <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                                     <path d="M3.291 3.969c1.516 1.679 3.49 4.087 4.709 5.605 1.219-1.518 3.193-3.926 4.709-5.605C13.684 2.74 15.5 1.5 15.5 3.5c0 .677-.383 2.506-.572 3.213-.22.818-.804 1.596-1.745 1.931-1.214.433-3.065.353-4.183.119V11c0 2.5-1.5 5-3 5-1.5 0-3-2.5-3-5V8.763c-1.118.234-2.969.314-4.183-.119-.941-.335-1.525-1.113-1.745-1.931C2.883 6.006 2.5 4.177 2.5 3.5c0-2 1.816-.74 2.791.469z"/>
+                                                </svg>
+                                            </a>
+                                        <?php endif; ?>
+                                        <?php if (!empty($event['social_facebook'])):
+                                            $facebook = $event['social_facebook'];
+                                            // Si no es URL completa, construir desde nombre de página
+                                            if (!str_starts_with($facebook, 'http')) {
+                                                $facebook = 'https://facebook.com/' . $facebook;
+                                            }
+                                        ?>
+                                            <a href="<?php echo htmlspecialchars($facebook); ?>"
+                                               target="_blank" rel="noopener" class="social-link facebook"
+                                               title="Seguir en Facebook">
+                                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                    <path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951z"/>
                                                 </svg>
                                             </a>
                                         <?php endif; ?>
