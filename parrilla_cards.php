@@ -77,6 +77,7 @@ if (!$user) {
 $azConfig = getAzuracastConfig($station);
 $stationName = $user['station_name'] ?? $station;
 $widgetColor = $azConfig['widget_color'] ?? '#10b981';
+$widgetBackgroundColor = $azConfig['widget_background_color'] ?? '#ffffff';
 $widgetStyle = $azConfig['widget_style'] ?? 'modern';
 $widgetFontSize = $azConfig['widget_font_size'] ?? 'medium';
 $streamUrl = $azConfig['stream_url'] ?? '';
@@ -435,7 +436,7 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #ffffff;
+            background: <?php echo htmlspecialchars($widgetBackgroundColor); ?>;
             padding: 20px;
             font-size: <?php echo $baseFontSize; ?>;
             min-height: 100vh;

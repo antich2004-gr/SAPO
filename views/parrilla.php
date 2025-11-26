@@ -146,6 +146,25 @@ if ($hasStationId) {
                 </div>
 
                 <div class="form-group">
+                    <label>Color de fondo de la parrilla:</label>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <input type="color"
+                               name="widget_background_color"
+                               value="<?php echo htmlEsc($azConfig['widget_background_color'] ?? '#ffffff'); ?>"
+                               style="width: 80px; height: 40px; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer;"
+                               onchange="document.querySelector('input[name=widget_background_color_text]').value = this.value">
+                        <input type="text"
+                               name="widget_background_color_text"
+                               value="<?php echo htmlEsc($azConfig['widget_background_color'] ?? '#ffffff'); ?>"
+                               pattern="^#[0-9A-Fa-f]{6}$"
+                               placeholder="#ffffff"
+                               style="width: 120px; font-family: monospace;"
+                               onchange="document.querySelector('input[name=widget_background_color]').value = this.value">
+                        <small style="color: #6b7280;">Color de fondo de toda la parrilla</small>
+                    </div>
+                </div>
+
+                <div class="form-group">
                     <label>Estilo de las cards:</label>
                     <select name="widget_style">
                         <?php

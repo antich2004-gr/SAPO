@@ -514,11 +514,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         // Los usuarios solo pueden actualizar personalización y stream URL
         $widgetColor = $_POST['widget_color'] ?? $_POST['widget_color_text'] ?? '#3b82f6';
+        $widgetBackgroundColor = $_POST['widget_background_color'] ?? $_POST['widget_background_color_text'] ?? '#ffffff';
         $widgetStyle = $_POST['widget_style'] ?? 'modern';
         $widgetFontSize = $_POST['widget_font_size'] ?? 'medium';
         $streamUrl = $_POST['stream_url'] ?? '';
 
-        if (updateAzuracastConfig($username, $stationId, $widgetColor, false, '', $widgetStyle, $widgetFontSize, $streamUrl)) {
+        if (updateAzuracastConfig($username, $stationId, $widgetColor, false, '', $widgetStyle, $widgetFontSize, $streamUrl, $widgetBackgroundColor)) {
             $message = "Configuración de AzuraCast actualizada correctamente";
         } else {
             $error = 'Error al actualizar la configuración';
