@@ -921,6 +921,83 @@ if ($hasStationId) {
                 </div>
                 <?php endif; ?>
 
+                <!-- Resumen semanal -->
+                <?php
+                // Calcular totales semanales ANTES de iterar
+                $weekTotals = ['music_block' => 0, 'program' => 0, 'live' => 0];
+                $weekCounts = ['music_block' => 0, 'program' => 0, 'live' => 0];
+
+                foreach ([1, 2, 3, 4, 5, 6, 0] as $preDay) {
+                    $preDayContent = $contentByDay[$preDay];
+
+                    foreach (['music_block', 'program', 'live'] as $type) {
+                        foreach ($preDayContent[$type] as $item) {
+                            $duration = $item['end_minutes'] - $item['start_minutes'];
+                            if ($duration < 0) $duration += 24 * 60;
+
+                            if ($type === 'music_block') {
+                                // Calcular tiempo efectivo de música (sin solapar con programas/directos)
+                                $musicStart = $item['start_minutes'];
+                                $musicEnd = $item['end_minutes'];
+                                if ($musicEnd <= $musicStart) $musicEnd += 1440;
+
+                                $musicDuration = $musicEnd - $musicStart;
+                                $overlappedMinutes = 0;
+
+                                foreach (['program', 'live'] as $priorityType) {
+                                    foreach ($preDayContent[$priorityType] as $priorityItem) {
+                                        $itemStart = $priorityItem['start_minutes'];
+                                        $itemEnd = $priorityItem['end_minutes'];
+                                        if ($itemEnd <= $itemStart) $itemEnd += 1440;
+
+                                        if ($musicStart < $itemEnd && $itemStart < $musicEnd) {
+                                            $overlapStart = max($musicStart, $itemStart);
+                                            $overlapEnd = min($musicEnd, $itemEnd);
+                                            $overlappedMinutes += ($overlapEnd - $overlapStart);
+                                        }
+                                    }
+                                }
+
+                                $weekTotals['music_block'] += max(0, $musicDuration - $overlappedMinutes);
+                            } else {
+                                $weekTotals[$type] += $duration;
+                            }
+
+                            $weekCounts[$type]++;
+                        }
+                    }
+                }
+
+                $totalWeekMinutes = array_sum($weekTotals);
+
+                $formatWeekTime = function($minutes) {
+                    $h = floor($minutes / 60);
+                    $m = $minutes % 60;
+                    return $h . 'h ' . $m . 'm';
+                };
+                ?>
+                <div class="summary-totals">
+                    <h4>📈 Resumen Semanal</h4>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <div class="summary-value music"><?php echo $formatWeekTime($weekTotals['music_block']); ?></div>
+                            <div class="summary-label">🎵 Bloques Musicales (<?php echo $weekCounts['music_block']; ?>)</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-value program"><?php echo $formatWeekTime($weekTotals['program']); ?></div>
+                            <div class="summary-label">📻 Programas (<?php echo $weekCounts['program']; ?>)</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-value live"><?php echo $formatWeekTime($weekTotals['live']); ?></div>
+                            <div class="summary-label">🔴 En Directo (<?php echo $weekCounts['live']; ?>)</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-value total"><?php echo $formatWeekTime($totalWeekMinutes); ?></div>
+                            <div class="summary-label">Total Semanal</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Leyenda -->
                 <div class="coverage-legend">
                     <div class="legend-item">
@@ -1278,39 +1355,6 @@ if ($hasStationId) {
                         <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
-
-                <!-- Resumen semanal -->
-                <?php
-                $totalWeekMinutes = array_sum($weekTotals);
-
-                // Formatear tiempos
-                $formatWeekTime = function($minutes) {
-                    $h = floor($minutes / 60);
-                    $m = $minutes % 60;
-                    return $h . 'h ' . $m . 'm';
-                };
-                ?>
-                <div class="summary-totals">
-                    <h4>📈 Resumen Semanal</h4>
-                    <div class="summary-grid">
-                        <div class="summary-item">
-                            <div class="summary-value music"><?php echo $formatWeekTime($weekTotals['music_block']); ?></div>
-                            <div class="summary-label">🎵 Bloques Musicales (<?php echo $weekCounts['music_block']; ?>)</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-value program"><?php echo $formatWeekTime($weekTotals['program']); ?></div>
-                            <div class="summary-label">📻 Programas (<?php echo $weekCounts['program']; ?>)</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-value live"><?php echo $formatWeekTime($weekTotals['live']); ?></div>
-                            <div class="summary-label">🔴 En Directo (<?php echo $weekCounts['live']; ?>)</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-value total"><?php echo $formatWeekTime($totalWeekMinutes); ?></div>
-                            <div class="summary-label">Total Semanal</div>
-                        </div>
-                    </div>
-                </div>
             <?php endif; ?>
         </div>
 
