@@ -185,6 +185,7 @@ foreach ($programsData as $programName => $programInfo) {
                     'long_description' => $programInfo['long_description'] ?? '',
                     'image' => $programInfo['image'] ?? '',
                     'presenters' => $programInfo['presenters'] ?? '',
+                    'url' => $programInfo['url'] ?? '',
                     'rss_feed' => $programInfo['rss_feed'] ?? '',
                     'social_twitter' => $programInfo['social_twitter'] ?? '',
                     'social_instagram' => $programInfo['social_instagram'] ?? '',
@@ -269,6 +270,7 @@ foreach ($schedule as $event) {
         'long_description' => $programInfo['long_description'] ?? '',
         'image' => $programInfo['image'] ?? '',
         'presenters' => $programInfo['presenters'] ?? '',
+        'url' => $programInfo['url'] ?? '',
         'rss_feed' => $programInfo['rss_feed'] ?? '',
         'social_twitter' => $programInfo['social_twitter'] ?? '',
         'social_instagram' => $programInfo['social_instagram'] ?? '',
@@ -729,6 +731,17 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
             text-decoration: none;
         }
 
+        .social-link.website {
+            background: #6b7280;
+            color: white;
+        }
+
+        .social-link.website:hover {
+            background: #4b5563;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
+        }
+
         .social-link.twitter {
             background: #1DA1F2;
             color: white;
@@ -1058,8 +1071,17 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                                     </div>
                                 <?php endif; ?>
 
-                                <?php if (!empty($event['social_twitter']) || !empty($event['social_instagram']) || !empty($event['social_mastodon']) || !empty($event['social_bluesky']) || !empty($event['social_facebook'])): ?>
+                                <?php if (!empty($event['url']) || !empty($event['social_twitter']) || !empty($event['social_instagram']) || !empty($event['social_mastodon']) || !empty($event['social_bluesky']) || !empty($event['social_facebook'])): ?>
                                     <div class="program-social">
+                                        <?php if (!empty($event['url'])): ?>
+                                            <a href="<?php echo htmlspecialchars($event['url']); ?>"
+                                               target="_blank" rel="noopener" class="social-link website"
+                                               title="Sitio web del programa">
+                                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                    <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0ZM4.5 7.5a.5.5 0 0 1 0-1h5.793l-2.147-2.146a.5.5 0 0 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 7.5H4.5Z"/>
+                                                </svg>
+                                            </a>
+                                        <?php endif; ?>
                                         <?php if (!empty($event['social_twitter'])):
                                             $twitter = $event['social_twitter'];
                                             if (!str_starts_with($twitter, 'http')) {
