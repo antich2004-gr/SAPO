@@ -54,7 +54,7 @@ if ($hasStationId) {
             <a href="?page=parrilla&section=embed"
                class="<?php echo $section === 'embed' ? 'tab-active' : 'tab-inactive'; ?>"
                style="padding: 12px 24px; text-decoration: none; border-bottom: 3px solid <?php echo $section === 'embed' ? '#10b981' : 'transparent'; ?>; color: <?php echo $section === 'embed' ? '#10b981' : '#6b7280'; ?>; font-weight: <?php echo $section === 'embed' ? '600' : '400'; ?>; transition: all 0.2s;">
-                🔗 Código de Embebido
+                🔗 Código para Incrustar
             </a>
             <a href="?page=parrilla&section=preview"
                class="<?php echo $section === 'preview' ? 'tab-active' : 'tab-inactive'; ?>"
@@ -217,7 +217,7 @@ if ($hasStationId) {
     <?php elseif ($section === 'embed'): ?>
         <!-- CÓDIGO DE EMBEBIDO -->
         <div class="section">
-            <h3>Código para Embedar en tu Web</h3>
+            <h3>Código para Incrustar en tu Web</h3>
 
             <?php if (!$hasStationId): ?>
                 <div class="alert alert-warning">
