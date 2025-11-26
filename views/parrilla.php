@@ -6,7 +6,7 @@ $stationId = $azConfig['station_id'] ?? null;
 $widgetColor = $azConfig['widget_color'] ?? '#3b82f6';
 
 // Determinar subsección activa
-$section = $_GET['section'] ?? 'preview';
+$section = $_GET['section'] ?? 'coverage';
 
 // Generar URL del widget
 $widgetUrl = '';
@@ -36,10 +36,10 @@ if ($hasStationId) {
     <!-- Navegación por pestañas -->
     <div style="border-bottom: 2px solid #e0e0e0; margin-bottom: 20px;">
         <div style="display: flex; gap: 0; flex-wrap: wrap;">
-            <a href="?page=parrilla&section=preview"
-               class="<?php echo $section === 'preview' ? 'tab-active' : 'tab-inactive'; ?>"
-               style="padding: 12px 24px; text-decoration: none; border-bottom: 3px solid <?php echo $section === 'preview' ? '#10b981' : 'transparent'; ?>; color: <?php echo $section === 'preview' ? '#10b981' : '#6b7280'; ?>; font-weight: <?php echo $section === 'preview' ? '600' : '400'; ?>; transition: all 0.2s;">
-                👁️ Vista Previa
+            <a href="?page=parrilla&section=coverage"
+               class="<?php echo $section === 'coverage' ? 'tab-active' : 'tab-inactive'; ?>"
+               style="padding: 12px 24px; text-decoration: none; border-bottom: 3px solid <?php echo $section === 'coverage' ? '#10b981' : 'transparent'; ?>; color: <?php echo $section === 'coverage' ? '#10b981' : '#6b7280'; ?>; font-weight: <?php echo $section === 'coverage' ? '600' : '400'; ?>; transition: all 0.2s;">
+                📊 Cobertura Semanal
             </a>
             <a href="?page=parrilla&section=programs"
                class="<?php echo $section === 'programs' ? 'tab-active' : 'tab-inactive'; ?>"
@@ -56,10 +56,10 @@ if ($hasStationId) {
                style="padding: 12px 24px; text-decoration: none; border-bottom: 3px solid <?php echo $section === 'embed' ? '#10b981' : 'transparent'; ?>; color: <?php echo $section === 'embed' ? '#10b981' : '#6b7280'; ?>; font-weight: <?php echo $section === 'embed' ? '600' : '400'; ?>; transition: all 0.2s;">
                 🔗 Código de Embebido
             </a>
-            <a href="?page=parrilla&section=coverage"
-               class="<?php echo $section === 'coverage' ? 'tab-active' : 'tab-inactive'; ?>"
-               style="padding: 12px 24px; text-decoration: none; border-bottom: 3px solid <?php echo $section === 'coverage' ? '#10b981' : 'transparent'; ?>; color: <?php echo $section === 'coverage' ? '#10b981' : '#6b7280'; ?>; font-weight: <?php echo $section === 'coverage' ? '600' : '400'; ?>; transition: all 0.2s;">
-                📊 Cobertura Semanal
+            <a href="?page=parrilla&section=preview"
+               class="<?php echo $section === 'preview' ? 'tab-active' : 'tab-inactive'; ?>"
+               style="padding: 12px 24px; text-decoration: none; border-bottom: 3px solid <?php echo $section === 'preview' ? '#10b981' : 'transparent'; ?>; color: <?php echo $section === 'preview' ? '#10b981' : '#6b7280'; ?>; font-weight: <?php echo $section === 'preview' ? '600' : '400'; ?>; transition: all 0.2s;">
+                👁️ Vista Previa
             </a>
         </div>
     </div>
