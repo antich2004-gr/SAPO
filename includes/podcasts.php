@@ -198,7 +198,7 @@ function readServerList($username) {
         if (count($parts) == 2) {
             $podcasts[] = [
                 'url' => $parts[0],
-                'category' => 'Sin_categoria',
+                'category' => '',  // Mantener categoría vacía para podcasts sin categoría
                 'name' => $parts[1],
                 'paused' => $paused
             ];
