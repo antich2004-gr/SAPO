@@ -61,9 +61,11 @@ return function ($dispatcher) {
         const refLink = referenceItem.querySelector('a');
         if (refLink) sapoLink.className = refLink.className;
 
-        const icon = document.createElement('i');
-        icon.className = 'fa fa-calendar';
+        // Añadir emoji del sapo
+        const icon = document.createElement('span');
+        icon.textContent = '🐸';
         icon.style.marginRight = '8px';
+        icon.style.fontSize = '1.2em';
         sapoLink.appendChild(icon);
         sapoLink.appendChild(document.createTextNode('SAPO'));
 
