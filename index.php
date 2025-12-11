@@ -343,12 +343,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $username = $_POST['username'] ?? '';
         $stationId = $_POST['station_id'] ?? '';
         $widgetColor = $_POST['widget_color'] ?? '#3b82f6';
+        $podcastsFolder = $_POST['podcasts_folder'] ?? 'Podcasts';
 
         if (empty($username)) {
             $error = 'Usuario no especificado';
         } else {
-            if (updateAzuracastConfig($username, $stationId, $widgetColor)) {
-                $message = "Configuración de AzuraCast actualizada para $username";
+            $success = true;
+
+            // Actualizar configuración de AzuraCast
+            if (!updateAzuracastConfig($username, $stationId, $widgetColor)) {
+                $success = false;
+            }
+
+            // Actualizar carpeta de podcasts
+            if (!setPodcastsFolder($username, $podcastsFolder)) {
+                $success = false;
+            }
+
+            if ($success) {
+                $message = "Configuración actualizada para $username";
             } else {
                 $error = 'Error al actualizar la configuración';
             }

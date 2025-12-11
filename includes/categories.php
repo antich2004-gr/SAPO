@@ -91,8 +91,9 @@ function syncCategoriesFromDisk($username) {
         return ['success' => false, 'error' => 'Base path no configurado'];
     }
 
+    $podcastsFolder = getPodcastsFolder($username);
     $userMediaPath = $basePath . DIRECTORY_SEPARATOR . $username .
-                     DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . 'Podcasts';
+                     DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . $podcastsFolder;
 
     if (!is_dir($userMediaPath)) {
         return ['success' => false, 'error' => 'Directorio de podcasts no existe'];
@@ -196,8 +197,9 @@ function movePodcastFiles($username, $podcastName, $oldCategory, $newCategory) {
 
     // Construir rutas
     $basePath = $config['base_path'];
+    $podcastsFolder = getPodcastsFolder($username);
     $podcastsBasePath = $basePath . DIRECTORY_SEPARATOR . $username .
-                        DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . 'Podcasts';
+                        DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . $podcastsFolder;
 
     // Si la categoría está vacía, usar la carpeta Podcasts directamente
     $oldCategoryPath = empty($oldCategory) ? $podcastsBasePath :
@@ -310,9 +312,10 @@ function getCategoryStats($username, $category) {
     $basePath = $config['base_path'];
 
     // Ruta física de la categoría
+    $podcastsFolder = getPodcastsFolder($username);
     $categoryPath = $basePath . DIRECTORY_SEPARATOR . $username .
                     DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR .
-                    'Podcasts' . DIRECTORY_SEPARATOR . $category;
+                    $podcastsFolder . DIRECTORY_SEPARATOR . $category;
 
     $stats = [
         'podcasts' => 0,
@@ -509,13 +512,14 @@ function renameCategory($username, $oldName, $newName) {
     }
 
     // Rutas
+    $podcastsFolder = getPodcastsFolder($username);
     $oldPath = $basePath . DIRECTORY_SEPARATOR . $username .
                DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR .
-               'Podcasts' . DIRECTORY_SEPARATOR . $oldName;
+               $podcastsFolder . DIRECTORY_SEPARATOR . $oldName;
 
     $newPath = $basePath . DIRECTORY_SEPARATOR . $username .
                DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR .
-               'Podcasts' . DIRECTORY_SEPARATOR . $newNameSanitized;
+               $podcastsFolder . DIRECTORY_SEPARATOR . $newNameSanitized;
 
     // VALIDACIÓN 4: Carpeta origen debe existir
     if (!is_dir($oldPath)) {
@@ -631,8 +635,9 @@ function renamePodcastDirectory($username, $oldPodcastName, $newPodcastName, $ca
 
     // Construir ruta de la categoría
     $basePath = $config['base_path'];
+    $podcastsFolder = getPodcastsFolder($username);
     $podcastsBasePath = $basePath . DIRECTORY_SEPARATOR . $username .
-                        DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . 'Podcasts';
+                        DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . $podcastsFolder;
 
     // Si la categoría está vacía, usar la carpeta Podcasts directamente
     $categoryPath = empty($category) ? $podcastsBasePath :
