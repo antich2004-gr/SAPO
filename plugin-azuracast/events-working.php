@@ -22,26 +22,29 @@ return function ($dispatcher) {
     function addSAPOToMenu() {
         if (document.getElementById('sapo-menu-link')) return;
 
-        // Selectores específicos para el sidebar principal de AzuraCast
-        const selectors = [
-            '#sidebar nav ul.nav',
-            'aside.main-sidebar nav ul',
-            '.main-sidebar .sidebar-menu',
-            '#sidebar .sidebar-menu',
-            'aside[role="complementary"] nav ul'
-        ];
-        let menu = null;
+        // Buscar específicamente el sidebar principal
+        let sidebar = document.querySelector('aside.main-sidebar') ||
+                     document.querySelector('#sidebar') ||
+                     document.querySelector('aside[role="complementary"]');
 
-        for (const selector of selectors) {
-            const element = document.querySelector(selector);
-            if (element && element.querySelector('li a[href*="/admin"], li a[href*="/profile"], li a[href*="/dashboard"]')) {
-                // Verificar que es realmente el sidebar principal buscando enlaces típicos
-                menu = element;
-                break;
-            }
-        }
+        if (!sidebar) return;
+
+        // Buscar el menú de navegación DENTRO del sidebar
+        let menu = sidebar.querySelector('nav ul') ||
+                  sidebar.querySelector('.sidebar-menu') ||
+                  sidebar.querySelector('ul.nav');
 
         if (!menu) return;
+
+        // Verificación adicional: el menú debe tener elementos típicos del sidebar
+        const hasAdminLinks = menu.querySelector('li a[href*="/admin"]') ||
+                             menu.querySelector('li a[href*="/profile"]') ||
+                             menu.querySelector('li a[href*="/stations"]');
+
+        if (!hasAdminLinks) return;
+
+        // Verificación adicional: NO debe ser una lista numerada
+        if (menu.tagName === 'OL' || menu.closest('ol')) return;
 
         const referenceItem = menu.querySelector('li');
         if (!referenceItem) return;
