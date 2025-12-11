@@ -65,3 +65,18 @@ Ambos se conservan con un máximo de 365 días de antigüedad.
 ./cliente_rrll.sh --emisora radiotopo
 ```
 
+## Integración con AzuraCast
+
+SAPO puede integrarse fácilmente en el menú lateral de AzuraCast para acceso rápido desde la interfaz de administración.
+
+📖 **Ver guía completa**: [INTEGRACION_AZURACAST.md](INTEGRACION_AZURACAST.md)
+
+### Instalación rápida:
+
+1. Accede a `/admin/branding` en tu instalación de AzuraCast
+2. En "Custom JS for Internal Pages", copia el contenido de: `assets/azuracast-sapo-menu.js`
+3. (Opcional) En "Custom CSS for Internal Pages", copia: `assets/azuracast-sapo-menu.css`
+4. Guarda los cambios
+
+Aparecerá un nuevo elemento "SAPO" en el menú lateral con un enlace a `https://sapo.radioslibres.info`
+
