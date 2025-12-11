@@ -117,6 +117,7 @@ function getUserDB($username) {
         $initialData = [
             'categories' => [],
             'last_feeds_update' => 0,  // Timestamp de última actualización de feeds
+            'podcasts_folder' => 'Podcasts',  // Nombre de carpeta de podcasts (configurable por emisora)
             'azuracast' => [
                 'station_id' => null,
                 'widget_color' => '#3b82f6',  // Color azul por defecto
@@ -128,8 +129,10 @@ function getUserDB($username) {
         chmod($userFile, 0640);
     }
 
-    // Asegurar que existe la estructura azuracast en datos existentes
+    // Asegurar que existe la estructura azuracast y podcasts_folder en datos existentes
     $data = json_decode(file_get_contents($userFile), true);
+    $needsUpdate = false;
+
     if (!isset($data['azuracast'])) {
         $data['azuracast'] = [
             'station_id' => null,
@@ -137,6 +140,15 @@ function getUserDB($username) {
             'show_logo' => false,
             'logo_url' => ''
         ];
+        $needsUpdate = true;
+    }
+
+    if (!isset($data['podcasts_folder'])) {
+        $data['podcasts_folder'] = 'Podcasts';  // Valor por defecto para compatibilidad
+        $needsUpdate = true;
+    }
+
+    if ($needsUpdate) {
         file_put_contents($userFile, json_encode($data, JSON_PRETTY_PRINT));
     }
 
@@ -293,6 +305,28 @@ function saveConfig($basePath, $subscriptionsFolder, $azuracastApiUrl = null, $a
         'azuracast_api_key' => $azuracastApiKey !== null ? trim($azuracastApiKey) : ($db['config']['azuracast_api_key'] ?? '')
     ];
     return saveGlobalDB($db);
+}
+
+/**
+ * Obtener nombre de carpeta de podcasts para un usuario
+ * @param string $username Usuario
+ * @return string Nombre de la carpeta (ej: "Podcasts" o "Podcast")
+ */
+function getPodcastsFolder($username) {
+    $userData = getUserDB($username);
+    return $userData['podcasts_folder'] ?? 'Podcasts';  // Valor por defecto si no existe
+}
+
+/**
+ * Actualizar nombre de carpeta de podcasts para un usuario
+ * @param string $username Usuario
+ * @param string $folderName Nombre de la carpeta
+ * @return bool True si se guardó correctamente
+ */
+function setPodcastsFolder($username, $folderName) {
+    $userData = getUserDB($username);
+    $userData['podcasts_folder'] = trim($folderName);
+    return saveUserDB($username, $userData);
 }
 
 function findUserByUsername($username) {
