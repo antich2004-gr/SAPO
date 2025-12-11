@@ -67,16 +67,27 @@ Ambos se conservan con un máximo de 365 días de antigüedad.
 
 ## Integración con AzuraCast
 
-SAPO puede integrarse fácilmente en el menú lateral de AzuraCast para acceso rápido desde la interfaz de administración.
+✅ **SAPO está integrado y funcionando** en el menú lateral de AzuraCast.
 
-📖 **Ver guía completa**: [INTEGRACION_AZURACAST.md](INTEGRACION_AZURACAST.md)
+### 📖 Documentación Completa
 
-### Instalación rápida:
+- **[SOLUCIÓN FINAL FUNCIONANDO](plugin-azuracast/SOLUCION_FINAL.md)** ⭐ - Plugin funcionando con GlobalSections
+- [Guía completa de integración](INTEGRACION_AZURACAST.md)
+- [Solución alternativa con Tampermonkey](plugin-azuracast/SOLUCION_TAMPERMONKEY.md)
 
-1. Accede a `/admin/branding` en tu instalación de AzuraCast
-2. En "Custom JS for Internal Pages", copia el contenido de: `assets/azuracast-sapo-menu.js`
-3. (Opcional) En "Custom CSS for Internal Pages", copia: `assets/azuracast-sapo-menu.css`
-4. Guarda los cambios
+### 🚀 Instalación Rápida (Plugin para Servidor)
 
-Aparecerá un nuevo elemento "SAPO" en el menú lateral con un enlace a `https://sapo.radioslibres.info`
+El plugin añade un enlace "SAPO" ✅ con icono verde 📅 en el menú lateral.
+
+**Requiere**: Acceso SSH al servidor con Docker
+
+Ver: [SOLUCION_FINAL.md](plugin-azuracast/SOLUCION_FINAL.md) para instrucciones completas.
+
+### 🎯 Características
+
+- ✅ Enlace clickeable en el menú lateral
+- ✅ Icono verde de calendario
+- ✅ Abre en nueva pestaña
+- ✅ Persiste con reinicios y actualizaciones
+- ✅ Compatible con AzuraCast stable branch
 
