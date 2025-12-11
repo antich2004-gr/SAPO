@@ -2,9 +2,51 @@
 
 Este documento explica cómo añadir un enlace a SAPO en el menú lateral de AzuraCast.
 
-## Opción 1: JavaScript Personalizado (Recomendado)
+## ⚠️ Nota Importante
 
-Esta es la solución más sencilla y no requiere modificar el código fuente de AzuraCast.
+La página `/admin/branding` de AzuraCast **solo permite personalizar las páginas públicas** (reproductor de radio), NO las páginas internas del panel de administración.
+
+Para añadir SAPO al menú lateral de administración, usa una de estas opciones:
+
+---
+
+## Opción 1: Plugin de AzuraCast (Recomendado para administradores)
+
+Si tienes acceso SSH al servidor, instala el plugin oficial de SAPO.
+
+### 📋 [Ver guía completa de instalación del plugin](plugin-azuracast/INSTALACION.md)
+
+**Ventajas:**
+- ✅ Funciona para todos los usuarios
+- ✅ Se mantiene con actualizaciones
+- ✅ Solución oficial y limpia
+
+**Desventajas:**
+- ❌ Requiere acceso SSH al servidor
+- ❌ Requiere conocimientos básicos de Linux
+
+---
+
+## Opción 2: Tampermonkey (Recomendado para usuarios)
+
+Si NO tienes acceso al servidor, usa la extensión Tampermonkey.
+
+### 📋 [Ver guía completa de Tampermonkey](plugin-azuracast/SOLUCION_TAMPERMONKEY.md)
+
+**Ventajas:**
+- ✅ No requiere acceso al servidor
+- ✅ Instalación en 5 minutos
+- ✅ Fácil de usar
+
+**Desventajas:**
+- ❌ Solo funciona en tu navegador
+- ❌ No funciona para otros usuarios
+
+---
+
+## Opción 3: JavaScript Personalizado (Solo para páginas públicas)
+
+⚠️ **Esta opción NO funciona para el menú de administración**, solo para páginas públicas.
 
 ### Pasos:
 

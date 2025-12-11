@@ -1,0 +1,7 @@
+{
+    "name": "SAPO Menu Integration",
+    "description": "Añade un enlace a SAPO en el menú lateral de AzuraCast",
+    "author": "Radios Libres",
+    "version": "1.0.0",
+    "url": "https://sapo.radioslibres.info"
+}
