@@ -14,7 +14,7 @@ return function ($dispatcher) {
             $view = $event->getView();
             $sections = $view->getSections();
 
-            // JavaScript para inyectar el elemento SAPO en el menú
+            // JavaScript para inyectar el elemento SAPO en el menú lateral principal
             $sapoScript = <<<'JAVASCRIPT'
 <script>
 (function() {
@@ -22,12 +22,20 @@ return function ($dispatcher) {
     function addSAPOToMenu() {
         if (document.getElementById('sapo-menu-link')) return;
 
-        const selectors = ['nav.navbar-nav', '.sidebar-menu', 'nav ul', '#sidebar ul', 'aside nav ul', 'nav[role="navigation"] ul'];
+        // Selectores específicos para el sidebar principal de AzuraCast
+        const selectors = [
+            '#sidebar nav ul.nav',
+            'aside.main-sidebar nav ul',
+            '.main-sidebar .sidebar-menu',
+            '#sidebar .sidebar-menu',
+            'aside[role="complementary"] nav ul'
+        ];
         let menu = null;
 
         for (const selector of selectors) {
             const element = document.querySelector(selector);
-            if (element && element.querySelector('li')) {
+            if (element && element.querySelector('li a[href*="/admin"], li a[href*="/profile"], li a[href*="/dashboard"]')) {
+                // Verificar que es realmente el sidebar principal buscando enlaces típicos
                 menu = element;
                 break;
             }
