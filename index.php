@@ -246,6 +246,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($action == 'save_config' && isAdmin()) {
         $basePath = trim($_POST['base_path'] ?? '');
         $subsFolder = trim($_POST['subscriptions_folder'] ?? 'Suscripciones');
+        $podcastsFolder = trim($_POST['podcasts_folder'] ?? 'Podcasts');
         $azuracastApiUrl = trim($_POST['azuracast_api_url'] ?? '');
         $azuracastApiKey = trim($_POST['azuracast_api_key'] ?? '');
 
@@ -254,7 +255,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } elseif (!is_dir($basePath)) {
             $error = 'La ruta base no existe o no es accesible';
         } else {
-            if (saveConfig($basePath, $subsFolder, $azuracastApiUrl, $azuracastApiKey)) {
+            if (saveConfig($basePath, $subsFolder, $podcastsFolder, $azuracastApiUrl, $azuracastApiKey)) {
                 $message = 'Configuracion guardada correctamente';
             } else {
                 $error = 'Error al guardar la configuracion';
@@ -343,25 +344,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $username = $_POST['username'] ?? '';
         $stationId = $_POST['station_id'] ?? '';
         $widgetColor = $_POST['widget_color'] ?? '#3b82f6';
-        $podcastsFolder = $_POST['podcasts_folder'] ?? 'Podcasts';
 
         if (empty($username)) {
             $error = 'Usuario no especificado';
         } else {
-            $success = true;
-
-            // Actualizar configuración de AzuraCast
-            if (!updateAzuracastConfig($username, $stationId, $widgetColor)) {
-                $success = false;
-            }
-
-            // Actualizar carpeta de podcasts
-            if (!setPodcastsFolder($username, $podcastsFolder)) {
-                $success = false;
-            }
-
-            if ($success) {
-                $message = "Configuración actualizada para $username";
+            if (updateAzuracastConfig($username, $stationId, $widgetColor)) {
+                $message = "Configuración de AzuraCast actualizada para $username";
             } else {
                 $error = 'Error al actualizar la configuración';
             }

@@ -23,6 +23,7 @@ $users = getAllUsers();
             <div class="config-info">
                 <strong>Ruta Base:</strong> <?php echo htmlEsc($config['base_path']); ?><br>
                 <strong>Carpeta Suscripciones:</strong> <?php echo htmlEsc($config['subscriptions_folder']); ?><br>
+                <strong>Carpeta Podcasts:</strong> <?php echo htmlEsc($config['podcasts_folder'] ?? 'Podcasts'); ?><br>
                 <strong>Formato:</strong> [Ruta Base]/[usuario]/media/<?php echo htmlEsc($config['subscriptions_folder']); ?>/serverlist.txt
             </div>
         <?php else: ?>
@@ -41,6 +42,13 @@ $users = getAllUsers();
             <div class="form-group">
                 <label>Carpeta de Suscripciones: <small>(donde estara serverlist.txt)</small></label>
                 <input type="text" name="subscriptions_folder" value="<?php echo htmlEsc($config['subscriptions_folder']); ?>" required placeholder="Suscripciones" maxlength="100">
+            </div>
+            <div class="form-group">
+                <label>Carpeta de Podcasts: <small>(donde se descargan los podcasts)</small></label>
+                <input type="text" name="podcasts_folder" value="<?php echo htmlEsc($config['podcasts_folder'] ?? 'Podcasts'); ?>" required placeholder="Podcasts" pattern="[a-zA-Z0-9_-]+" title="Solo letras, números, guiones y guiones bajos" maxlength="100">
+                <small style="color: #718096; display: block; margin-top: 5px;">
+                    Nombre de la carpeta de podcasts para todas las emisoras (ej: "Podcasts" o "Podcast")
+                </small>
             </div>
             <div class="form-group">
                 <label>URL API de Radiobot: <small>(para parrilla de programación)</small></label>
@@ -107,7 +115,6 @@ $users = getAllUsers();
                     <?php if (!$isAdminUser): ?>
                     <?php
                     $azuracastConfig = getAzuracastConfig($user['username']);
-                    $podcastsFolder = getPodcastsFolder($user['username']);
                     ?>
                     <div style="margin-top: 15px; padding: 10px; background: #f7fafc; border-radius: 4px;">
                         <form method="POST" style="margin: 0;">
@@ -115,7 +122,7 @@ $users = getAllUsers();
                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                             <input type="hidden" name="username" value="<?php echo htmlEsc($user['username']); ?>">
 
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; align-items: end;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: end;">
                                 <div class="form-group" style="margin: 0;">
                                     <label style="font-size: 12px; margin-bottom: 5px;">Station ID Radiobot:</label>
                                     <input type="number" name="station_id" value="<?php echo htmlEsc($azuracastConfig['station_id'] ?? ''); ?>" placeholder="34" style="padding: 6px;">
@@ -124,17 +131,10 @@ $users = getAllUsers();
                                     <label style="font-size: 12px; margin-bottom: 5px;">Color del widget:</label>
                                     <input type="color" name="widget_color" value="<?php echo htmlEsc($azuracastConfig['widget_color'] ?? '#3b82f6'); ?>" style="padding: 2px; height: 34px;">
                                 </div>
-                                <div class="form-group" style="margin: 0;">
-                                    <label style="font-size: 12px; margin-bottom: 5px;">Carpeta de Podcasts:</label>
-                                    <input type="text" name="podcasts_folder" value="<?php echo htmlEsc($podcastsFolder); ?>" placeholder="Podcasts" pattern="[a-zA-Z0-9_-]+" title="Solo letras, números, guiones y guiones bajos" style="padding: 6px;" required>
-                                </div>
                                 <button type="submit" class="btn btn-primary" style="padding: 6px 12px; font-size: 14px;">
                                     <span class="btn-icon">💾</span> Guardar
                                 </button>
                             </div>
-                            <small style="color: #718096; display: block; margin-top: 5px;">
-                                Nombre de la carpeta donde se guardan los podcasts (ej: "Podcasts" o "Podcast")
-                            </small>
                         </form>
                     </div>
                     <?php endif; ?>
