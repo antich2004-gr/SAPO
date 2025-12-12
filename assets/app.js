@@ -323,7 +323,20 @@ function applyFilters() {
 
     // Si no hay filtros activos, restaurar vista original
     if (selectedCategory === '' && selectedActivity === '') {
-        window.location.reload();
+        window.location = window.location.pathname;
+        return;
+    }
+
+    // Si hay filtro de actividad, añadir a URL y recargar para cargar datos completos
+    if (selectedActivity !== '') {
+        const url = new URL(window.location);
+        url.searchParams.set('filter_activity', selectedActivity);
+        if (selectedCategory !== '') {
+            url.searchParams.set('filter_category', selectedCategory);
+        } else {
+            url.searchParams.delete('filter_category');
+        }
+        window.location = url.toString();
         return;
     }
 
