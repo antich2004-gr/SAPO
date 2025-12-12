@@ -232,10 +232,13 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             const activityFilter = urlParams.get('filter_activity');
                             const categoryFilter = urlParams.get('filter_category');
 
+                            let shouldApplyFilter = false;
+
                             if (activityFilter) {
                                 const activitySelect = document.getElementById('filter_activity');
                                 if (activitySelect) {
                                     activitySelect.value = activityFilter;
+                                    shouldApplyFilter = true;
                                 }
                             }
 
@@ -243,7 +246,14 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 const categorySelect = document.getElementById('filter_category');
                                 if (categorySelect) {
                                     categorySelect.value = categoryFilter;
+                                    shouldApplyFilter = true;
                                 }
+                            }
+
+                            // Aplicar filtro inmediatamente después de restaurar valores
+                            if (shouldApplyFilter && typeof applyFiltersWithoutReload === 'function') {
+                                // Usar versión que no recarga para evitar loop infinito
+                                setTimeout(() => applyFiltersWithoutReload(), 100);
                             }
                         });
                         </script>
