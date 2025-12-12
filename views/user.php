@@ -102,14 +102,18 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
     <?php
     // Preparar datos de todos los podcasts en JSON para JavaScript
     // OPTIMIZACIÓN: Solo cargar feedInfo para podcasts de la página actual (lazy loading)
-    // Esto reduce drásticamente el tiempo de carga cuando hay muchos podcasts
+    // EXCEPCIÓN: Si hay filtro de actividad en URL, cargar TODOS para que el filtro funcione
+    $hasActivityFilter = isset($_GET['filter_activity']) && !empty($_GET['filter_activity']);
+
     $podcastsData = [];
     foreach ($podcasts as $index => $podcast) {
-        // Solo cargar feed info si el podcast está en la página actual
-        // Esto evita hacer HTTP requests innecesarios para podcasts fuera de la vista
+        // Cargar feed info si:
+        // 1. Está en la página actual, O
+        // 2. Hay filtro de actividad activo (necesita info de todos)
         $isInCurrentPage = ($index >= $offset && $index < $offset + $itemsPerPage);
+        $shouldLoadFeedInfo = $isInCurrentPage || $hasActivityFilter;
 
-        if ($isInCurrentPage) {
+        if ($shouldLoadFeedInfo) {
             $feedInfo = getCachedFeedInfo($podcast['url']);
             $statusInfo = formatFeedStatus($feedInfo['timestamp']);
         } else {
@@ -185,9 +189,9 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         </form>
 
                         <?php if (!empty($userCategories)): ?>
-                            <div style="display: flex; gap: 10px; align-items: center; flex: 1; flex-wrap: wrap;">
-                                <label for="filter_category" style="margin: 0; white-space: nowrap;">Filtrar por:</label>
-                                <select id="filter_category" onchange="applyFilters()" style="max-width: 200px;">
+                            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; width: 100%;">
+                                <label for="filter_category" style="margin: 0; white-space: nowrap; font-size: 14px;">Filtrar por:</label>
+                                <select id="filter_category" onchange="applyFilters()" style="min-width: 150px; max-width: 200px; padding: 8px;">
                                     <option value="">Todas las categorías</option>
                                     <?php foreach ($userCategories as $cat):
                                         $countInCategory = count(array_filter($podcasts, function($p) use ($cat) {
@@ -198,7 +202,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     <?php endforeach; ?>
                                 </select>
 
-                                <select id="filter_activity" onchange="applyFilters()" style="max-width: 200px;">
+                                <select id="filter_activity" onchange="applyFilters()" style="min-width: 150px; max-width: 220px; padding: 8px;">
                                     <option value="">Todas las actividades</option>
                                     <option value="recent">✅ Activo (≤30 días)</option>
                                     <option value="old">⚠️ Poco activo (31-90 días)</option>
@@ -206,14 +210,39 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     <option value="unknown">❓ No responde</option>
                                 </select>
 
-                                <button type="button" class="btn btn-secondary" onclick="toggleGroupView()" id="toggleViewBtn">
-                                    <span id="viewModeText">Agrupar por categoría</span>
-                                </button>
+                                <div style="display: flex; gap: 10px; margin-left: auto;">
+                                    <button type="button" class="btn btn-secondary" onclick="toggleGroupView()" id="toggleViewBtn">
+                                        <span id="viewModeText">Agrupar por categoría</span>
+                                    </button>
 
-                                <button type="button" class="btn btn-primary" onclick="openCategoryManager()" style="white-space: nowrap;">
-                                    🗂️ Gestionar Categorías
-                                </button>
+                                    <button type="button" class="btn btn-primary" onclick="openCategoryManager()" style="white-space: nowrap;">
+                                        🗂️ Gestionar Categorías
+                                    </button>
+                                </div>
                             </div>
+
+                            <script>
+                            // Restaurar filtro desde URL al cargar la página
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const urlParams = new URLSearchParams(window.location.search);
+                                const activityFilter = urlParams.get('filter_activity');
+                                const categoryFilter = urlParams.get('filter_category');
+
+                                if (activityFilter) {
+                                    const activitySelect = document.getElementById('filter_activity');
+                                    if (activitySelect) {
+                                        activitySelect.value = activityFilter;
+                                    }
+                                }
+
+                                if (categoryFilter) {
+                                    const categorySelect = document.getElementById('filter_category');
+                                    if (categorySelect) {
+                                        categorySelect.value = categoryFilter;
+                                    }
+                                }
+                            });
+                            </script>
                         <?php endif; ?>
                     </div>
                     
