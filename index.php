@@ -621,7 +621,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         }
     }
-    
+
+    // SYNC CATEGORIES FROM SERVERLIST
+    if ($action == 'sync_categories_from_serverlist' && isLoggedIn() && !isAdmin()) {
+        $imported = importCategoriesFromServerList($_SESSION['username']);
+        if (!empty($imported)) {
+            $_SESSION['message'] = 'Se importaron ' . count($imported) . ' categoría(s) desde serverlist.txt: ' . implode(', ', array_map('displayName', $imported));
+        } else {
+            $_SESSION['message'] = 'No se encontraron categorías nuevas para importar desde serverlist.txt';
+        }
+        header('Location: index.php');
+        exit;
+    }
+
     // DELETE CATEGORY
     if ($action == 'delete_category' && isLoggedIn()) {
         if (isAdmin()) {

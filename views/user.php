@@ -23,12 +23,31 @@ if (!empty($podcasts)) {
     }
 }
 
-// Auto-detectar categorías de los podcasts existentes si no hay categorías guardadas
+// SINCRONIZACIÓN AUTOMÁTICA: Importar categorías desde serverlist.txt si no hay categorías guardadas
+// pero sí hay podcasts con categorías asignadas
+if (empty($userCategories) && !empty($podcasts)) {
+    // Verificar si hay podcasts con categorías en el serverlist
+    $categoriesInPodcasts = array_filter(array_unique(array_column($podcasts, 'category')), function($cat) {
+        return !empty($cat) && $cat !== 'Sin_categoria';
+    });
+
+    if (!empty($categoriesInPodcasts)) {
+        // Intentar importar categorías desde serverlist.txt
+        $imported = importCategoriesFromServerList($_SESSION['username']);
+        if (!empty($imported)) {
+            // Recargar categorías después de la importación
+            $userCategories = getUserCategories($_SESSION['username']);
+            $_SESSION['message'] = 'Se importaron automáticamente ' . count($imported) . ' categoría(s) desde serverlist.txt';
+        }
+    }
+}
+
+// Fallback: Auto-detectar categorías de los podcasts existentes si aún no hay categorías guardadas
 if (empty($userCategories) && !empty($podcasts)) {
     $categoriesFromPodcasts = array_unique(array_column($podcasts, 'category'));
-    // Filtrar "Sin_categoria" si hay otras categorías
+    // Filtrar "Sin_categoria" y categorías vacías
     $categoriesFromPodcasts = array_filter($categoriesFromPodcasts, function($cat) {
-        return $cat !== 'Sin_categoria';
+        return !empty($cat) && $cat !== 'Sin_categoria';
     });
     if (!empty($categoriesFromPodcasts)) {
         $userCategories = array_values($categoriesFromPodcasts);
@@ -697,6 +716,20 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     </div>
                 </div>
             </form>
+
+            <!-- Botón de sincronización desde serverlist.txt -->
+            <div style="margin-top: 20px; padding: 15px; background: #f7fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <p style="margin: 0 0 10px 0; color: #4a5568; font-size: 14px;">
+                    <strong>💡 Sugerencia:</strong> Si tus categorías no aparecen, puedes importarlas automáticamente desde el archivo serverlist.txt
+                </p>
+                <form method="POST" style="margin: 0;">
+                    <input type="hidden" name="action" value="sync_categories_from_serverlist">
+                    <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <span class="btn-icon">🔄</span> Sincronizar categorías desde serverlist.txt
+                    </button>
+                </form>
+            </div>
 
             <div style="margin-top: 30px;">
                 <h4>Categorías Existentes:</h4>
