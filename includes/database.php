@@ -131,6 +131,25 @@ function getUserDB($username) {
 
     // Asegurar que existe la estructura azuracast en datos existentes
     $data = json_decode(file_get_contents($userFile), true);
+
+    // IMPORTANTE: Validar que json_decode fue exitoso
+    if ($data === null || !is_array($data)) {
+        error_log("[SAPO-Error] getUserDB: JSON corrupto para usuario $username. Reinicializando con datos vacíos.");
+        $data = [
+            'categories' => [],
+            'last_feeds_update' => 0,
+            'azuracast' => [
+                'station_id' => null,
+                'widget_color' => '#3b82f6',
+                'show_logo' => false,
+                'logo_url' => ''
+            ]
+        ];
+        // Usar saveUserDB para garantizar escritura segura con flock
+        saveUserDB($username, $data);
+        return $data;
+    }
+
     if (!isset($data['azuracast'])) {
         $data['azuracast'] = [
             'station_id' => null,
@@ -138,7 +157,8 @@ function getUserDB($username) {
             'show_logo' => false,
             'logo_url' => ''
         ];
-        file_put_contents($userFile, json_encode($data, JSON_PRETTY_PRINT));
+        // Usar saveUserDB en lugar de file_put_contents para evitar race conditions
+        saveUserDB($username, $data);
     }
 
     return $data;

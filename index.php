@@ -610,9 +610,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             } else {
                 $result = saveUserCategory($_SESSION['username'], $categoryName);
                 if ($result) {
-                    $message = 'Categoría agregada: ' . $result;
+                    $_SESSION['message'] = 'Categoría agregada: ' . $result;
+                    header('Location: index.php');
+                    exit;
                 } else {
-                    $error = 'La categoría ya existe';
+                    $_SESSION['error'] = 'La categoría ya existe';
+                    header('Location: index.php');
+                    exit;
                 }
             }
         }

@@ -8,7 +8,14 @@ function getUserCategories($username) {
 
 function saveUserCategory($username, $category) {
     $userData = getUserDB($username);
-    if (!isset($userData['categories'])) {
+
+    // Validar que getUserDB devolvió datos válidos
+    if (!is_array($userData)) {
+        error_log("[SAPO-Error] saveUserCategory: getUserDB devolvió datos inválidos para usuario $username");
+        return false;
+    }
+
+    if (!isset($userData['categories']) || !is_array($userData['categories'])) {
         $userData['categories'] = [];
     }
 
@@ -16,7 +23,10 @@ function saveUserCategory($username, $category) {
     if (!in_array($sanitized, $userData['categories'])) {
         $userData['categories'][] = $sanitized;
         sort($userData['categories']);
-        saveUserDB($username, $userData);
+        if (!saveUserDB($username, $userData)) {
+            error_log("[SAPO-Error] saveUserCategory: Error al guardar categoría $sanitized para usuario $username");
+            return false;
+        }
         return $sanitized;
     }
     return false;
