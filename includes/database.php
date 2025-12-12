@@ -47,7 +47,7 @@ function getGlobalDB() {
                 'base_path' => '',
                 'subscriptions_folder' => 'Suscripciones',
                 'podcasts_folder' => 'Podcasts',
-                'cache_duration' => 43200,
+                'cache_duration' => 86400,  // 24 horas (optimizado desde 12h para reducir HTTP requests)
                 'azuracast_api_url' => '',
                 'azuracast_api_key' => ''
             ],
@@ -257,7 +257,7 @@ function getDB() {
                 'base_path' => '',
                 'subscriptions_folder' => 'Suscripciones',
                 'podcasts_folder' => 'Podcasts',
-                'cache_duration' => 43200
+                'cache_duration' => 86400  // 24 horas (optimizado desde 12h para reducir HTTP requests)
             ]
         ];
         file_put_contents(DB_FILE, json_encode($initialData, JSON_PRETTY_PRINT));
@@ -300,7 +300,7 @@ function getConfig() {
         'base_path' => '',
         'subscriptions_folder' => 'Suscripciones',
         'podcasts_folder' => 'Podcasts',
-        'cache_duration' => 43200,
+        'cache_duration' => 86400,  // 24 horas (optimizado desde 12h para reducir HTTP requests)
         'azuracast_api_url' => '',
         'azuracast_api_key' => ''
     ];
@@ -319,7 +319,7 @@ function saveConfig($basePath, $subscriptionsFolder, $podcastsFolder = null, $az
         'base_path' => rtrim($basePath, '/\\'),
         'subscriptions_folder' => trim($subscriptionsFolder, '/\\'),
         'podcasts_folder' => $podcastsFolder !== null ? trim($podcastsFolder) : ($db['config']['podcasts_folder'] ?? 'Podcasts'),
-        'cache_duration' => $db['config']['cache_duration'] ?? 43200,
+        'cache_duration' => $db['config']['cache_duration'] ?? 86400,  // 24 horas por defecto
         'azuracast_api_url' => $azuracastApiUrl !== null ? rtrim($azuracastApiUrl, '/') : ($db['config']['azuracast_api_url'] ?? ''),
         'azuracast_api_key' => $azuracastApiKey !== null ? trim($azuracastApiKey) : ($db['config']['azuracast_api_key'] ?? '')
     ];
