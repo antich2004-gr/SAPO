@@ -206,9 +206,9 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
                             <select id="filter_activity" onchange="applyFilters()" style="min-width: 150px; max-width: 220px; padding: 8px;">
                                 <option value="">Todas las actividades</option>
-                                <option value="recent">✅ Activo (≤30 días)</option>
-                                <option value="old">⚠️ Poco activo (31-90 días)</option>
-                                <option value="inactive">❌ Inactivo (>90 días)</option>
+                                <option value="recent">✅ Activo (<30 días)</option>
+                                <option value="old">⚠️ Poco activo (30-60 días)</option>
+                                <option value="inactive">❌ Inactivo (>60 días)</option>
                                 <option value="unknown">❓ No responde</option>
                             </select>
 
