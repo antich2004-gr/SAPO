@@ -23,21 +23,30 @@ if (!empty($podcasts)) {
     }
 }
 
-// SINCRONIZACIÓN AUTOMÁTICA: Importar categorías desde serverlist.txt si no hay categorías guardadas
-// pero sí hay podcasts con categorías asignadas
-if (empty($userCategories) && !empty($podcasts)) {
-    // Verificar si hay podcasts con categorías en el serverlist
-    $categoriesInPodcasts = array_filter(array_unique(array_column($podcasts, 'category')), function($cat) {
+// SINCRONIZACIÓN INTELIGENTE: Solo importar si hay categorías nuevas en serverlist.txt
+// que no estén ya registradas en SAPO
+if (!empty($podcasts)) {
+    // Extraer categorías del serverlist.txt (filtrar vacías y "Sin_categoria")
+    $categoriesInServerList = array_filter(array_unique(array_column($podcasts, 'category')), function($cat) {
         return !empty($cat) && $cat !== 'Sin_categoria';
     });
 
-    if (!empty($categoriesInPodcasts)) {
-        // Intentar importar categorías desde serverlist.txt
-        $imported = importCategoriesFromServerList($_SESSION['username']);
-        if (!empty($imported)) {
-            // Recargar categorías después de la importación
-            $userCategories = getUserCategories($_SESSION['username']);
-            $_SESSION['message'] = 'Se importaron automáticamente ' . count($imported) . ' categoría(s) desde serverlist.txt';
+    // Solo proceder si hay categorías en el serverlist
+    if (!empty($categoriesInServerList)) {
+        // Verificar si hay diferencias (categorías en serverlist que NO están en SAPO)
+        $missingCategories = array_diff($categoriesInServerList, $userCategories);
+
+        // Solo importar si realmente hay categorías nuevas
+        if (!empty($missingCategories)) {
+            $imported = importCategoriesFromServerList($_SESSION['username']);
+            if (!empty($imported)) {
+                // Recargar categorías después de la importación
+                $userCategories = getUserCategories($_SESSION['username']);
+                // Solo mostrar mensaje si es el primer login o si se importaron varias
+                if (count($imported) > 1 || empty($userCategories)) {
+                    $_SESSION['message'] = 'Se sincronizaron ' . count($imported) . ' categoría(s) desde serverlist.txt';
+                }
+            }
         }
     }
 }
