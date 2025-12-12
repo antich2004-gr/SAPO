@@ -192,11 +192,11 @@ function formatFeedStatus($timestamp) {
     $daysSince = floor((time() - $timestamp) / (60 * 60 * 24));
     $dateFormatted = date('d/m/Y', $timestamp);
 
-    if ($daysSince <= 30) {
+    if ($daysSince < 30) {
         $class = 'recent';
         $status = 'Activo';
         $icon = 'OK';
-    } elseif ($daysSince <= 90) {
+    } elseif ($daysSince <= 60) {
         $class = 'old';
         $status = 'Poco activo';
         $icon = 'WARNING';
