@@ -62,7 +62,13 @@ function importCategoriesFromServerList($username) {
     $podcasts = readServerList($username);
     $userData = getUserDB($username);
 
-    if (!isset($userData['categories'])) {
+    // Validar datos
+    if (!is_array($userData)) {
+        error_log("[SAPO-Error] importCategoriesFromServerList: getUserDB devolvió datos inválidos para usuario $username");
+        return [];
+    }
+
+    if (!isset($userData['categories']) || !is_array($userData['categories'])) {
         $userData['categories'] = [];
     }
 
@@ -71,7 +77,8 @@ function importCategoriesFromServerList($username) {
 
     foreach ($podcasts as $podcast) {
         $category = $podcast['category'];
-        if (!in_array($category, $existingCategories)) {
+        // Solo importar categorías que no estén vacías
+        if (!empty($category) && $category !== 'Sin_categoria' && !in_array($category, $existingCategories)) {
             $userData['categories'][] = $category;
             $categoriesFound[] = $category;
         }
@@ -80,7 +87,10 @@ function importCategoriesFromServerList($username) {
     if (!empty($categoriesFound)) {
         $userData['categories'] = array_unique($userData['categories']);
         sort($userData['categories']);
-        saveUserDB($username, $userData);
+        if (!saveUserDB($username, $userData)) {
+            error_log("[SAPO-Error] importCategoriesFromServerList: Error al guardar categorías para usuario $username");
+            return [];
+        }
     }
 
     return $categoriesFound;
