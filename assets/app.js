@@ -313,9 +313,11 @@ function deleteCategoryConfirm(categoryName) {
 function applyFilters() {
     const categorySelect = document.getElementById('filter_category');
     const activitySelect = document.getElementById('filter_activity');
-    if (!categorySelect) return;
 
-    const selectedCategory = categorySelect.value;
+    // Si no hay ningún selector, no hacer nada
+    if (!categorySelect && !activitySelect) return;
+
+    const selectedCategory = categorySelect ? categorySelect.value : '';
     const selectedActivity = activitySelect ? activitySelect.value : '';
     const normalView = document.getElementById('normal-view');
     const groupedView = document.getElementById('grouped-view');
