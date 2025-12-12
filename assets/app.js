@@ -308,24 +308,36 @@ function deleteCategoryConfirm(categoryName) {
 }
 
 /**
- * Filtrar podcasts por categoría
+ * Aplicar filtros combinados (categoría + actividad)
  */
-function filterByCategory() {
-    const select = document.getElementById('filter_category');
-    if (!select) return;
+function applyFilters() {
+    const categorySelect = document.getElementById('filter_category');
+    const activitySelect = document.getElementById('filter_activity');
+    if (!categorySelect) return;
 
-    const selectedCategory = select.value;
+    const selectedCategory = categorySelect.value;
+    const selectedActivity = activitySelect ? activitySelect.value : '';
     const normalView = document.getElementById('normal-view');
     const groupedView = document.getElementById('grouped-view');
-    // Obtener TODAS las paginaciones (vista normal y agrupada)
     const allPaginationControls = document.querySelectorAll('.pagination-controls');
 
-    if (selectedCategory === '') {
-        // Restaurar vista original: recargar la página para volver al estado inicial
+    // Si no hay filtros activos, restaurar vista original
+    if (selectedCategory === '' && selectedActivity === '') {
         window.location.reload();
-    } else if (typeof podcastsData !== 'undefined') {
-        // Filtrar TODOS los podcasts por categoría usando podcastsData
-        const filteredPodcasts = podcastsData.filter(podcast => podcast.category === selectedCategory);
+        return;
+    }
+
+    if (typeof podcastsData !== 'undefined') {
+        // Filtrar podcasts por categoría Y actividad
+        const filteredPodcasts = podcastsData.filter(podcast => {
+            // Filtro por categoría
+            const matchesCategory = selectedCategory === '' || podcast.category === selectedCategory;
+
+            // Filtro por actividad
+            const matchesActivity = selectedActivity === '' || podcast.statusInfo.class === selectedActivity;
+
+            return matchesCategory && matchesActivity;
+        });
 
         // Renderizar en vista normal
         if (normalView) {
@@ -496,6 +508,13 @@ function filterByCategory() {
             pagination.style.display = 'none';
         });
     }
+}
+
+/**
+ * Función de compatibilidad: redirige a applyFilters()
+ */
+function filterByCategory() {
+    applyFilters();
 }
 
 /**

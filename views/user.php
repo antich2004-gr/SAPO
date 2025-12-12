@@ -185,9 +185,9 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         </form>
 
                         <?php if (!empty($userCategories)): ?>
-                            <div style="display: flex; gap: 10px; align-items: center; flex: 1;">
+                            <div style="display: flex; gap: 10px; align-items: center; flex: 1; flex-wrap: wrap;">
                                 <label for="filter_category" style="margin: 0; white-space: nowrap;">Filtrar por:</label>
-                                <select id="filter_category" onchange="filterByCategory()" style="max-width: 200px;">
+                                <select id="filter_category" onchange="applyFilters()" style="max-width: 200px;">
                                     <option value="">Todas las categorías</option>
                                     <?php foreach ($userCategories as $cat):
                                         $countInCategory = count(array_filter($podcasts, function($p) use ($cat) {
@@ -196,6 +196,14 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     ?>
                                         <option value="<?php echo htmlEsc($cat); ?>"><?php echo htmlEsc(displayName($cat)); ?> (<?php echo htmlEsc($countInCategory); ?>)</option>
                                     <?php endforeach; ?>
+                                </select>
+
+                                <select id="filter_activity" onchange="applyFilters()" style="max-width: 200px;">
+                                    <option value="">Todas las actividades</option>
+                                    <option value="recent">✅ Activo (≤30 días)</option>
+                                    <option value="old">⚠️ Poco activo (31-90 días)</option>
+                                    <option value="inactive">❌ Inactivo (>90 días)</option>
+                                    <option value="unknown">❓ No responde</option>
                                 </select>
 
                                 <button type="button" class="btn btn-secondary" onclick="toggleGroupView()" id="toggleViewBtn">
