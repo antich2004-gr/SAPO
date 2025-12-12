@@ -92,12 +92,23 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
     
     <?php
     // Preparar datos de todos los podcasts en JSON para JavaScript
-    // IMPORTANTE: Reutilizar $podcasts ordenado para mantener consistencia con los índices del HTML
-    // Esto elimina la doble lectura del archivo y asegura que los índices coincidan
+    // OPTIMIZACIÓN: Solo cargar feedInfo para podcasts de la página actual (lazy loading)
+    // Esto reduce drásticamente el tiempo de carga cuando hay muchos podcasts
     $podcastsData = [];
     foreach ($podcasts as $index => $podcast) {
-        $feedInfo = getCachedFeedInfo($podcast['url']);
-        $statusInfo = formatFeedStatus($feedInfo['timestamp']);
+        // Solo cargar feed info si el podcast está en la página actual
+        // Esto evita hacer HTTP requests innecesarios para podcasts fuera de la vista
+        $isInCurrentPage = ($index >= $offset && $index < $offset + $itemsPerPage);
+
+        if ($isInCurrentPage) {
+            $feedInfo = getCachedFeedInfo($podcast['url']);
+            $statusInfo = formatFeedStatus($feedInfo['timestamp']);
+        } else {
+            // Para podcasts fuera de la página actual, usar datos vacíos
+            // Se cargarán bajo demanda si el usuario navega a esa página
+            $feedInfo = ['timestamp' => null, 'cached' => false, 'cache_age' => 0];
+            $statusInfo = ['class' => 'unknown', 'status' => 'No cargado', 'icon' => '⏳', 'date' => '', 'days' => 0];
+        }
 
         $podcastsData[] = [
             'index' => $index,
