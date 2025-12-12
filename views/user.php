@@ -188,9 +188,10 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             <button type="submit" class="btn btn-primary" style="padding: 8px 16px;">💾 Guardar</button>
                         </form>
 
-                        <?php if (!empty($userCategories)): ?>
-                            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; width: 100%;">
-                                <label for="filter_category" style="margin: 0; white-space: nowrap; font-size: 14px;">Filtrar por:</label>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; width: 100%;">
+                            <label for="filter_activity" style="margin: 0; white-space: nowrap; font-size: 14px;">Filtrar por:</label>
+
+                            <?php if (!empty($userCategories)): ?>
                                 <select id="filter_category" onchange="applyFilters()" style="min-width: 150px; max-width: 200px; padding: 8px;">
                                     <option value="">Todas las categorías</option>
                                     <?php foreach ($userCategories as $cat):
@@ -201,16 +202,18 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         <option value="<?php echo htmlEsc($cat); ?>"><?php echo htmlEsc(displayName($cat)); ?> (<?php echo htmlEsc($countInCategory); ?>)</option>
                                     <?php endforeach; ?>
                                 </select>
+                            <?php endif; ?>
 
-                                <select id="filter_activity" onchange="applyFilters()" style="min-width: 150px; max-width: 220px; padding: 8px;">
-                                    <option value="">Todas las actividades</option>
-                                    <option value="recent">✅ Activo (≤30 días)</option>
-                                    <option value="old">⚠️ Poco activo (31-90 días)</option>
-                                    <option value="inactive">❌ Inactivo (>90 días)</option>
-                                    <option value="unknown">❓ No responde</option>
-                                </select>
+                            <select id="filter_activity" onchange="applyFilters()" style="min-width: 150px; max-width: 220px; padding: 8px;">
+                                <option value="">Todas las actividades</option>
+                                <option value="recent">✅ Activo (≤30 días)</option>
+                                <option value="old">⚠️ Poco activo (31-90 días)</option>
+                                <option value="inactive">❌ Inactivo (>90 días)</option>
+                                <option value="unknown">❓ No responde</option>
+                            </select>
 
-                                <div style="display: flex; gap: 10px; margin-left: auto;">
+                            <div style="display: flex; gap: 10px; margin-left: auto;">
+                                <?php if (!empty($userCategories)): ?>
                                     <button type="button" class="btn btn-secondary" onclick="toggleGroupView()" id="toggleViewBtn">
                                         <span id="viewModeText">Agrupar por categoría</span>
                                     </button>
@@ -218,32 +221,32 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     <button type="button" class="btn btn-primary" onclick="openCategoryManager()" style="white-space: nowrap;">
                                         🗂️ Gestionar Categorías
                                     </button>
-                                </div>
+                                <?php endif; ?>
                             </div>
+                        </div>
 
-                            <script>
-                            // Restaurar filtro desde URL al cargar la página
-                            document.addEventListener('DOMContentLoaded', function() {
-                                const urlParams = new URLSearchParams(window.location.search);
-                                const activityFilter = urlParams.get('filter_activity');
-                                const categoryFilter = urlParams.get('filter_category');
+                        <script>
+                        // Restaurar filtro desde URL al cargar la página
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const urlParams = new URLSearchParams(window.location.search);
+                            const activityFilter = urlParams.get('filter_activity');
+                            const categoryFilter = urlParams.get('filter_category');
 
-                                if (activityFilter) {
-                                    const activitySelect = document.getElementById('filter_activity');
-                                    if (activitySelect) {
-                                        activitySelect.value = activityFilter;
-                                    }
+                            if (activityFilter) {
+                                const activitySelect = document.getElementById('filter_activity');
+                                if (activitySelect) {
+                                    activitySelect.value = activityFilter;
                                 }
+                            }
 
-                                if (categoryFilter) {
-                                    const categorySelect = document.getElementById('filter_category');
-                                    if (categorySelect) {
-                                        categorySelect.value = categoryFilter;
-                                    }
+                            if (categoryFilter) {
+                                const categorySelect = document.getElementById('filter_category');
+                                if (categorySelect) {
+                                    categorySelect.value = categoryFilter;
                                 }
-                            });
-                            </script>
-                        <?php endif; ?>
+                            }
+                        });
+                        </script>
                     </div>
                     
                     <?php if (empty($podcasts)): ?>
