@@ -1016,14 +1016,43 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                             $startSec = ((int)$startH * 3600) + ((int)$startM * 60);
                             $endSec = ((int)$endH * 3600) + ((int)$endM * 60);
 
+                            // DEBUG: Log para detectar programas
+                            if ($isDevelopment) {
+                                error_log(sprintf(
+                                    "DEBUG Live Check - Program: '%s' | Start: %s (%ds) | End: %s (%ds) | Current: %ds | Match: %s",
+                                    substr($event['title'], 0, 30),
+                                    $event['start_time'],
+                                    $startSec,
+                                    $event['end_time'],
+                                    $endSec,
+                                    $currentSeconds,
+                                    ($currentSeconds >= $startSec && $currentSeconds < $endSec) ? 'YES' : 'no'
+                                ));
+                            }
+
                             // Si está en vivo y empezó más recientemente que el anterior
                             if ($currentSeconds >= $startSec && $currentSeconds < $endSec) {
                                 if ($startSec > $liveEventStartSec) {
                                     $liveEventIndex = $index;
                                     $liveEventStartSec = $startSec;
+                                    if ($isDevelopment) {
+                                        error_log("DEBUG: ✓ LIVE PROGRAM SET: " . $event['title']);
+                                    }
                                 }
                             }
                         }
+                    }
+
+                    if ($isDevelopment && $day === $currentDay) {
+                        error_log(sprintf(
+                            "DEBUG Summary - Day: %d | Time: %02d:%02d (%ds) | Live Index: %s | Total programs: %d",
+                            $day,
+                            $currentHour,
+                            $currentMinute,
+                            $currentSeconds,
+                            $liveEventIndex !== null ? $liveEventIndex : 'NONE',
+                            count($eventsByDay[$day])
+                        ));
                     }
                     ?>
                     <?php foreach ($eventsByDay[$day] as $index => $event):
