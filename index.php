@@ -376,10 +376,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (empty($programName)) {
             $error = 'El nombre del programa es requerido';
         } else {
-            // Verificar que el programa no exista ya
-            $existingProgram = getProgramInfo($username, $programName);
+            $playlistType = trim($_POST['playlist_type'] ?? 'live');
+
+            // Generar clave interna según el tipo (los programas live usan sufijo ::live)
+            $programKey = getProgramKey($programName, $playlistType);
+
+            // Verificar que no exista ya un programa con el mismo nombre Y tipo
+            $existingProgram = getProgramInfo($username, $programKey);
             if ($existingProgram !== null) {
-                $error = 'Ya existe un programa con ese nombre';
+                $typeName = $playlistType === 'live' ? 'en directo' : 'enlatado';
+                $error = "Ya existe un programa $typeName con ese nombre";
             } else {
                 // Procesar días de emisión
                 $scheduleDays = $_POST['schedule_days'] ?? [];
@@ -388,8 +394,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 }
 
                 $programInfo = [
+                    'original_name' => $programName,  // Guardar nombre original
                     'display_title' => trim($_POST['display_title'] ?? ''),
-                    'playlist_type' => trim($_POST['playlist_type'] ?? 'live'),
+                    'playlist_type' => $playlistType,
                     'short_description' => trim($_POST['short_description'] ?? ''),
                     'long_description' => trim($_POST['long_description'] ?? ''),
                     'type' => trim($_POST['type'] ?? ''),
@@ -408,7 +415,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     'created_at' => date('Y-m-d H:i:s')
                 ];
 
-                if (saveProgramInfo($username, $programName, $programInfo)) {
+                // Usar la clave interna para guardar
+                if (saveProgramInfo($username, $programKey, $programInfo)) {
                     $message = "Programa \"$programName\" creado correctamente";
                     // Redirigir para que no se quede en modo creación
                     header('Location: ?page=parrilla&section=programs');

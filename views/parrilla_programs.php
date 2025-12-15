@@ -495,7 +495,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                     <div style="background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
                         <div style="flex: 1;">
                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
-                                <strong style="font-size: 16px;"><?php echo htmlEsc($program['name']); ?></strong>
+                                <strong style="font-size: 16px;"><?php echo htmlEsc($program['display_name'] ?? $program['name']); ?></strong>
                                 <?php
                                 $playlistType = $program['info']['playlist_type'] ?? 'program';
 

@@ -60,11 +60,14 @@ $programsData = $programsDB['programs'] ?? [];
 $eventsByDay = [1 => [], 2 => [], 3 => [], 4 => [], 5 => [], 6 => [], 0 => []];
 
 // PRIMERO: Añadir programas en directo (live) manuales de SAPO
-foreach ($programsData as $programName => $programInfo) {
+foreach ($programsData as $programKey => $programInfo) {
     if (($programInfo['playlist_type'] ?? '') === 'live') {
         $scheduleDays = $programInfo['schedule_days'] ?? [];
         $startTime = $programInfo['schedule_start_time'] ?? '';
         $duration = (int)($programInfo['schedule_duration'] ?? 60);
+
+        // Obtener nombre original del programa (sin sufijo ::live)
+        $programName = $programInfo['original_name'] ?? getProgramNameFromKey($programKey);
 
         // Solo añadir si tiene horario configurado
         if (!empty($scheduleDays) && !empty($startTime)) {
@@ -74,6 +77,13 @@ foreach ($programsData as $programName => $programInfo) {
 
                 // Calcular hora de fin
                 $startDateTime = DateTime::createFromFormat('H:i', $startTime);
+
+                // Validar que el parsing fue exitoso
+                if ($startDateTime === false) {
+                    error_log("SAPO: Error parsing time '$startTime' for program '$programName'");
+                    continue; // Saltar este día si la hora es inválida
+                }
+
                 $endDateTime = clone $startDateTime;
                 $endDateTime->modify("+{$duration} minutes");
 
