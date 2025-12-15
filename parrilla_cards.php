@@ -1281,13 +1281,73 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
             });
         });
 
-        // Auto-scroll al programa en vivo cuando carga la página
+        // Auto-scroll al programa en vivo o al siguiente programa
         window.addEventListener('load', function() {
             const liveCard = document.querySelector('.program-card.live');
+
             if (liveCard) {
+                // Si hay programa en vivo, hacer scroll a él
                 setTimeout(function() {
                     liveCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }, 500);
+            } else {
+                // Si no hay programa en vivo, buscar el siguiente programa
+                const now = new Date();
+                const currentHour = now.getHours();
+                const currentMinute = now.getMinutes();
+                const currentTimeInMinutes = currentHour * 60 + currentMinute;
+
+                // Obtener día actual (0=domingo, 1=lunes, etc.)
+                const currentDay = now.getDay();
+
+                // Array de días en orden (hoy primero, luego los siguientes)
+                const daysOrder = [];
+                for (let i = 0; i < 7; i++) {
+                    daysOrder.push((currentDay + i) % 7);
+                }
+
+                let nextProgramCard = null;
+
+                // Buscar el siguiente programa
+                for (const day of daysOrder) {
+                    const dayContent = document.querySelector(`#day-${day}`);
+                    if (!dayContent) continue;
+
+                    const programCards = dayContent.querySelectorAll('.program-card');
+
+                    for (const card of programCards) {
+                        const cardId = card.id;
+                        // Extraer hora del ID (formato: program-0-1800 -> 18:00)
+                        const timeMatch = cardId.match(/program-\d+-(\d{2})(\d{2})/);
+
+                        if (timeMatch) {
+                            const programHour = parseInt(timeMatch[1]);
+                            const programMinute = parseInt(timeMatch[2]);
+                            const programTimeInMinutes = programHour * 60 + programMinute;
+
+                            // Si es el día actual, solo considerar programas futuros
+                            if (day === currentDay) {
+                                if (programTimeInMinutes > currentTimeInMinutes) {
+                                    nextProgramCard = card;
+                                    break;
+                                }
+                            } else {
+                                // Si es un día futuro, tomar el primer programa
+                                nextProgramCard = card;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (nextProgramCard) break;
+                }
+
+                // Si se encontró siguiente programa, hacer scroll a él
+                if (nextProgramCard) {
+                    setTimeout(function() {
+                        nextProgramCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 500);
+                }
             }
         });
     </script>
