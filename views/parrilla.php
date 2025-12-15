@@ -301,31 +301,66 @@ if ($hasStationId) {
                 $programsDB = loadProgramsDB($username);
                 $programsData = $programsDB['programs'] ?? [];
 
-                // FEATURE: Detectar programas con RSS sin episodios recientes (>30 días)
+                // FEATURE: Detectar programas sin contenido (RSS antiguo O carpeta vacía)
                 $stalePrograms = [];
-                foreach ($programsData as $programName => $programInfo) {
+
+                // Obtener conteo de archivos de cada playlist desde Azuracast
+                $playlistFileCounts = getPlaylistFileCounts($username);
+                if ($playlistFileCounts === false) {
+                    $playlistFileCounts = []; // Si falla la API, continuar sin esta info
+                }
+
+                foreach ($programsData as $programKey => $programInfo) {
+                    // Obtener nombre original del programa
+                    $programName = $programInfo['original_name'] ?? getProgramNameFromKey($programKey);
+
+                    // Solo verificar programas que no sean en directo
+                    $playlistType = $programInfo['playlist_type'] ?? 'program';
+                    if ($playlistType === 'live') {
+                        continue; // Los programas en directo no tienen archivos en Azuracast
+                    }
+
+                    // Verificar si la carpeta del programa está vacía (sin archivos)
+                    $numFiles = $playlistFileCounts[$programName] ?? null;
+                    $hasNoFiles = $numFiles !== null && $numFiles === 0;
+
+                    // Verificar RSS si está configurado
                     $rssUrl = $programInfo['rss_feed'] ?? '';
+                    $hasOldRSS = false;
+                    $daysSincePublished = 0;
+
                     if (!empty($rssUrl)) {
-                        // Intentar obtener último episodio desde RSS
                         $lastEpisode = getLatestEpisodeFromRSS($rssUrl, 3600); // 1 hora de caché
 
-                        if ($lastEpisode === null) {
-                            // RSS falló - error de red, XML inválido, etc.
-                            // Estos programas NO se marcan como stale (se muestran sin episodio)
-                            continue;
-                        }
-
-                        // Verificar si el episodio tiene el flag too_old
-                        if (isset($lastEpisode['too_old']) && $lastEpisode['too_old'] === true) {
+                        if ($lastEpisode !== null && isset($lastEpisode['too_old']) && $lastEpisode['too_old'] === true) {
+                            $hasOldRSS = true;
                             $daysSincePublished = $lastEpisode['days_since_published'] ?? 0;
-                            $stalePrograms[$programName] = [
-                                'title' => $programInfo['display_title'] ?: $programName,
-                                'rss_url' => $rssUrl,
-                                'status' => 'old_episode',
-                                'days_ago' => $daysSincePublished,
-                                'message' => 'Último episodio hace ' . $daysSincePublished . ' días'
-                            ];
                         }
+                    }
+
+                    // Determinar estado del programa
+                    if ($hasNoFiles) {
+                        // CRÍTICO: Carpeta vacía - no hay archivos para emitir
+                        $stalePrograms[$programKey] = [
+                            'title' => $programInfo['display_title'] ?: $programName,
+                            'rss_url' => $rssUrl,
+                            'status' => 'no_files',
+                            'num_files' => 0,
+                            'message' => '❌ Carpeta vacía - sin archivos',
+                            'severity' => 'critical'
+                        ];
+                    } elseif ($hasOldRSS) {
+                        // ADVERTENCIA: Tiene archivos pero el RSS no se actualiza
+                        $fileInfo = $numFiles !== null ? " ($numFiles archivos)" : "";
+                        $stalePrograms[$programKey] = [
+                            'title' => $programInfo['display_title'] ?: $programName,
+                            'rss_url' => $rssUrl,
+                            'status' => 'old_episode',
+                            'days_ago' => $daysSincePublished,
+                            'num_files' => $numFiles,
+                            'message' => "⚠️ RSS sin actualizar ({$daysSincePublished} días){$fileInfo}",
+                            'severity' => 'warning'
+                        ];
                     }
                 }
 
@@ -910,27 +945,57 @@ if ($hasStationId) {
                     }
                 </style>
 
-                <!-- Panel de avisos: Programas sin episodios recientes -->
+                <!-- Panel de avisos: Programas sin contenido -->
                 <?php if (!empty($stalePrograms)): ?>
-                <div class="stale-programs-panel">
-                    <div class="stale-programs-title">
-                        ⚠️ Programas con RSS sin episodios recientes (><?php echo count($stalePrograms); ?>)
-                    </div>
-                    <p style="font-size: 12px; color: #92400e; margin-bottom: 12px;">
-                        Los siguientes programas tienen configurado un feed RSS pero no han publicado episodios en los últimos 30 días.
-                        Aparecen marcados con rayas diagonales amarillas en el timeline.
-                    </p>
-                    <?php foreach ($stalePrograms as $programName => $staleProgramInfo): ?>
-                    <div class="stale-program-item">
-                        <div class="stale-program-name">
-                            📻 <?php echo htmlspecialchars($staleProgramInfo['title']); ?>
+                    <?php
+                    // Separar por severidad
+                    $criticalPrograms = array_filter($stalePrograms, fn($p) => ($p['severity'] ?? '') === 'critical');
+                    $warningPrograms = array_filter($stalePrograms, fn($p) => ($p['severity'] ?? '') === 'warning');
+                    ?>
+
+                    <!-- Programas críticos: Sin archivos -->
+                    <?php if (!empty($criticalPrograms)): ?>
+                    <div class="stale-programs-panel" style="border-color: #dc2626; background: #fee2e2;">
+                        <div class="stale-programs-title" style="color: #991b1b;">
+                            ❌ Programas sin contenido - Carpeta vacía (><?php echo count($criticalPrograms); ?>)
                         </div>
-                        <div class="stale-program-message">
-                            <?php echo htmlspecialchars($staleProgramInfo['message']); ?>
+                        <p style="font-size: 12px; color: #991b1b; margin-bottom: 12px;">
+                            <strong>Estos programas NO tienen archivos en Azuracast y no podrán emitir.</strong>
+                            La carpeta de la playlist está vacía. Necesitan que se les añadan archivos.
+                        </p>
+                        <?php foreach ($criticalPrograms as $programKey => $programInfo): ?>
+                        <div style="background: white; padding: 10px; border-radius: 4px; margin-bottom: 8px; border-left: 4px solid #dc2626;">
+                            <strong style="color: #1f2937;"><?php echo htmlEsc($programInfo['title']); ?></strong>
+                            <div style="font-size: 11px; color: #dc2626; margin-top: 4px;">
+                                <?php echo htmlEsc($programInfo['message']); ?>
+                            </div>
                         </div>
+                        <?php endforeach; ?>
                     </div>
-                    <?php endforeach; ?>
-                </div>
+                    <?php endif; ?>
+
+                    <!-- Programas advertencia: RSS antiguo pero con archivos -->
+                    <?php if (!empty($warningPrograms)): ?>
+                    <div class="stale-programs-panel">
+                        <div class="stale-programs-title">
+                            ⚠️ Programas con RSS sin actualizar (><?php echo count($warningPrograms); ?>)
+                        </div>
+                        <p style="font-size: 12px; color: #92400e; margin-bottom: 12px;">
+                            Estos programas tienen archivos en Azuracast pero su RSS lleva más de 30 días sin publicar episodios nuevos.
+                            Aparecen marcados con rayas diagonales amarillas en el timeline.
+                        </p>
+                        <?php foreach ($warningPrograms as $programKey => $programInfo): ?>
+                        <div class="stale-program-item">
+                            <div class="stale-program-name">
+                                📻 <?php echo htmlspecialchars($programInfo['title']); ?>
+                            </div>
+                            <div class="stale-program-message">
+                                <?php echo htmlspecialchars($programInfo['message']); ?>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
                 <?php endif; ?>
 
                 <!-- Resumen semanal -->

@@ -159,6 +159,36 @@ function getAzuracastPlaylists($username) {
 }
 
 /**
+ * Obtener número de archivos de cada playlist desde Azuracast
+ * Útil para detectar programas sin contenido (carpetas vacías)
+ *
+ * @param string $username Nombre de usuario
+ * @return array Array asociativo [playlist_name => num_songs] o false si hay error
+ */
+function getPlaylistFileCounts($username) {
+    $playlists = getAzuracastPlaylists($username);
+
+    if ($playlists === false) {
+        return false;
+    }
+
+    $fileCounts = [];
+
+    foreach ($playlists as $playlist) {
+        $playlistName = $playlist['name'] ?? '';
+        $numSongs = $playlist['num_songs'] ?? 0;
+
+        if (!empty($playlistName)) {
+            $fileCounts[$playlistName] = (int)$numSongs;
+        }
+    }
+
+    error_log("AzuraCast: Obtenido conteo de archivos para " . count($fileCounts) . " playlists");
+
+    return $fileCounts;
+}
+
+/**
  * Obtener schedule desde caché si existe y es válida
  *
  * @param string $username Nombre de usuario
