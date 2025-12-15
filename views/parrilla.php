@@ -317,7 +317,7 @@ if ($hasStationId) {
                     // Solo verificar programas que no sean en directo
                     $playlistType = $programInfo['playlist_type'] ?? 'program';
                     if ($playlistType === 'live') {
-                        continue; // Los programas en directo no tienen archivos en Azuracast
+                        continue; // Los programas en directo no tienen archivos en Radiobot
                     }
 
                     // Verificar si la carpeta del programa está vacía (sin archivos)
@@ -960,7 +960,7 @@ if ($hasStationId) {
                             ❌ Programas sin contenido - Carpeta vacía (><?php echo count($criticalPrograms); ?>)
                         </div>
                         <p style="font-size: 12px; color: #991b1b; margin-bottom: 12px;">
-                            <strong>Estos programas NO tienen archivos en Azuracast y no podrán emitir.</strong>
+                            <strong>Estos programas NO tienen archivos en Radiobot y no podrán emitir.</strong>
                             La carpeta de la playlist está vacía. Necesitan que se les añadan archivos.
                         </p>
                         <?php foreach ($criticalPrograms as $programKey => $programInfo): ?>
@@ -981,7 +981,7 @@ if ($hasStationId) {
                             ⚠️ Programas con RSS sin actualizar (><?php echo count($warningPrograms); ?>)
                         </div>
                         <p style="font-size: 12px; color: #92400e; margin-bottom: 12px;">
-                            Estos programas tienen archivos en Azuracast pero su RSS lleva más de 30 días sin publicar episodios nuevos.
+                            Estos programas tienen archivos en Radiobot pero su RSS lleva más de 30 días sin publicar episodios nuevos.
                             Aparecen marcados con rayas diagonales amarillas en el timeline.
                         </p>
                         <?php foreach ($warningPrograms as $programKey => $programInfo): ?>
