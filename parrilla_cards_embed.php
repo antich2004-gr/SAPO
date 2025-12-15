@@ -69,6 +69,9 @@ foreach ($programsData as $programName => $programInfo) {
         // Solo añadir si tiene horario configurado
         if (!empty($scheduleDays) && !empty($startTime)) {
             foreach ($scheduleDays as $day) {
+                // Convertir día a integer para evitar problemas con el valor '0' (domingo)
+                $day = (int)$day;
+
                 // Calcular hora de fin
                 $startDateTime = DateTime::createFromFormat('H:i', $startTime);
                 $endDateTime = clone $startDateTime;

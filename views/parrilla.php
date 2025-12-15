@@ -351,6 +351,9 @@ if ($hasStationId) {
 
                         if (!empty($scheduleDays) && !empty($startTime)) {
                             foreach ($scheduleDays as $day) {
+                                // Convertir día a integer para evitar problemas con el valor '0' (domingo)
+                                $day = (int)$day;
+
                                 $startDateTime = DateTime::createFromFormat('H:i', $startTime);
                                 $endDateTime = clone $startDateTime;
                                 $endDateTime->modify("+{$duration} minutes");
