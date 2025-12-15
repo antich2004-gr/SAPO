@@ -289,6 +289,36 @@ function getProgramInfo($username, $programName) {
 }
 
 /**
+ * Obtener clave interna del programa basada en nombre y tipo
+ * Los programas en directo usan un sufijo ::live para poder coexistir con programas enlatados
+ *
+ * @param string $programName Nombre del programa
+ * @param string $playlistType Tipo de playlist ('live', 'program', etc.)
+ * @return string Clave interna del programa
+ */
+function getProgramKey($programName, $playlistType) {
+    // Los programas en directo usan sufijo ::live para diferenciarse
+    if ($playlistType === 'live') {
+        return $programName . '::live';
+    }
+    return $programName;
+}
+
+/**
+ * Extraer nombre original del programa desde la clave interna
+ *
+ * @param string $programKey Clave interna del programa
+ * @return string Nombre original del programa
+ */
+function getProgramNameFromKey($programKey) {
+    // Eliminar sufijo ::live si existe
+    if (str_ends_with($programKey, '::live')) {
+        return substr($programKey, 0, -6);
+    }
+    return $programKey;
+}
+
+/**
  * Guardar información de un programa
  *
  * @param string $username Nombre de usuario
@@ -324,16 +354,27 @@ function getAllProgramsWithStats($username) {
     $data = loadProgramsDB($username);
     $programs = [];
 
-    foreach ($data['programs'] as $name => $info) {
+    foreach ($data['programs'] as $programKey => $info) {
+        // Obtener nombre original (sin sufijo ::live)
+        $displayName = $info['original_name'] ?? getProgramNameFromKey($programKey);
+
         $programs[] = [
-            'name' => $name,
+            'name' => $programKey,  // Clave interna para edición/eliminación
+            'display_name' => $displayName,  // Nombre a mostrar al usuario
             'info' => $info
         ];
     }
 
-    // Ordenar por nombre
+    // Ordenar por nombre de visualización, luego por tipo (live después de regulares)
     usort($programs, function($a, $b) {
-        return strcmp($a['name'], $b['name']);
+        $cmp = strcmp($a['display_name'], $b['display_name']);
+        if ($cmp === 0) {
+            // Mismo nombre: mostrar primero los regulares, luego los live
+            $aIsLive = ($a['info']['playlist_type'] ?? '') === 'live';
+            $bIsLive = ($b['info']['playlist_type'] ?? '') === 'live';
+            return $aIsLive <=> $bIsLive;
+        }
+        return $cmp;
     });
 
     return [

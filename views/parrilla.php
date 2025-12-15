@@ -341,7 +341,7 @@ if ($hasStationId) {
                 ];
 
                 // Primero: Añadir programas en directo (live) manuales
-                foreach ($programsData as $programName => $programInfo) {
+                foreach ($programsData as $programKey => $programInfo) {
                     if (($programInfo['playlist_type'] ?? '') === 'live') {
                         if (!empty($programInfo['hidden_from_schedule'])) continue;
 
@@ -349,12 +349,21 @@ if ($hasStationId) {
                         $startTime = $programInfo['schedule_start_time'] ?? '';
                         $duration = (int)($programInfo['schedule_duration'] ?? 60);
 
+                        // Obtener nombre original del programa (sin sufijo ::live)
+                        $programName = $programInfo['original_name'] ?? getProgramNameFromKey($programKey);
+
                         if (!empty($scheduleDays) && !empty($startTime)) {
                             foreach ($scheduleDays as $day) {
                                 // Convertir día a integer para evitar problemas con el valor '0' (domingo)
                                 $day = (int)$day;
 
                                 $startDateTime = DateTime::createFromFormat('H:i', $startTime);
+
+                                // Validar que el parsing fue exitoso
+                                if ($startDateTime === false) {
+                                    continue; // Saltar este día si la hora es inválida
+                                }
+
                                 $endDateTime = clone $startDateTime;
                                 $endDateTime->modify("+{$duration} minutes");
 
