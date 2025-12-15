@@ -167,6 +167,9 @@ foreach ($programsData as $programName => $programInfo) {
         // Solo añadir si tiene horario configurado
         if (!empty($scheduleDays) && !empty($startTime)) {
             foreach ($scheduleDays as $day) {
+                // Convertir día a integer para evitar problemas con el valor '0' (domingo)
+                $day = (int)$day;
+
                 // Calcular hora de fin
                 $startDateTime = DateTime::createFromFormat('H:i', $startTime);
                 $endDateTime = clone $startDateTime;
@@ -241,16 +244,26 @@ foreach ($schedule as $event) {
         continue;
     }
 
-    $end = $event['end_timestamp'] ?? $event['end'] ?? null;
-    $endDateTime = $end ? (is_numeric($end) ? new DateTime('@' . $end) : new DateTime($end)) : null;
+    // Verificar si hay duración personalizada configurada
+    $customDuration = isset($programInfo['schedule_duration']) ? (int)$programInfo['schedule_duration'] : 0;
 
-    if ($endDateTime) {
-        $endDateTime->setTimezone($timezone);
-    }
-
-    if (!$endDateTime || $endDateTime->getTimestamp() <= $startDateTime->getTimestamp()) {
+    if ($customDuration > 0) {
+        // Usar duración personalizada del gestor de programas
         $endDateTime = clone $startDateTime;
-        $endDateTime->modify('+1 hour');
+        $endDateTime->modify("+{$customDuration} minutes");
+    } else {
+        // Usar duración de Radiobot o defecto 1 hora
+        $end = $event['end_timestamp'] ?? $event['end'] ?? null;
+        $endDateTime = $end ? (is_numeric($end) ? new DateTime('@' . $end) : new DateTime($end)) : null;
+
+        if ($endDateTime) {
+            $endDateTime->setTimezone($timezone);
+        }
+
+        if (!$endDateTime || $endDateTime->getTimestamp() <= $startDateTime->getTimestamp()) {
+            $endDateTime = clone $startDateTime;
+            $endDateTime->modify('+1 hour');
+        }
     }
 
     $hour = (int)$startDateTime->format('H');
