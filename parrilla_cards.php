@@ -1285,12 +1285,17 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
         window.addEventListener('load', function() {
             const liveCard = document.querySelector('.program-card.live');
 
+            console.log('Auto-scroll iniciado');
+            console.log('Programa en vivo encontrado:', liveCard);
+
             if (liveCard) {
                 // Si hay programa en vivo, hacer scroll a él
+                console.log('Haciendo scroll al programa en vivo');
                 setTimeout(function() {
                     liveCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }, 500);
             } else {
+                console.log('No hay programa en vivo, buscando siguiente programa');
                 // Si no hay programa en vivo, buscar el siguiente programa
                 const now = new Date();
                 const currentHour = now.getHours();
@@ -1299,6 +1304,8 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
 
                 // Obtener día actual (0=domingo, 1=lunes, etc.)
                 const currentDay = now.getDay();
+
+                console.log('Día actual:', currentDay, 'Hora:', currentHour + ':' + currentMinute);
 
                 // Array de días en orden (hoy primero, luego los siguientes)
                 const daysOrder = [];
@@ -1344,9 +1351,12 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
 
                 // Si se encontró siguiente programa, hacer scroll a él
                 if (nextProgramCard) {
+                    console.log('Siguiente programa encontrado:', nextProgramCard.id);
                     setTimeout(function() {
                         nextProgramCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }, 500);
+                } else {
+                    console.log('No se encontró siguiente programa');
                 }
             }
         });
