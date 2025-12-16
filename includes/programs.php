@@ -64,9 +64,10 @@ function saveProgramsDB($username, $data) {
 
     $result = file_put_contents($filePath, $json) !== false;
 
-    // Borrar caché del schedule para que se actualice con los nuevos datos
+    // Borrar caché del schedule y playlists para que se actualice con los nuevos datos
     if ($result) {
         clearScheduleCache($username);
+        clearPlaylistsCache($username);
     }
 
     return $result;
