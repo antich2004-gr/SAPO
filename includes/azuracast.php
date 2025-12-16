@@ -173,16 +173,18 @@ function getAzuracastPlaylists($username, $cacheTTL = 600) {
  * Útil para detectar programas sin contenido (carpetas vacías)
  *
  * @param string $username Nombre de usuario
- * @return array Array asociativo [playlist_name => num_songs] o false si hay error
+ * @return array Array con 'counts' (conteos) y 'reliable' (si los datos son confiables)
  */
 function getPlaylistFileCounts($username) {
     $playlists = getAzuracastPlaylists($username);
 
     if ($playlists === false) {
-        return false;
+        return ['counts' => [], 'reliable' => false];
     }
 
     $fileCounts = [];
+    $totalPlaylists = 0;
+    $emptyPlaylists = 0;
 
     foreach ($playlists as $playlist) {
         $playlistName = $playlist['name'] ?? '';
@@ -190,12 +192,30 @@ function getPlaylistFileCounts($username) {
 
         if (!empty($playlistName)) {
             $fileCounts[$playlistName] = (int)$numSongs;
+            $totalPlaylists++;
+            if ($numSongs == 0) {
+                $emptyPlaylists++;
+            }
         }
     }
 
-    error_log("AzuraCast: Obtenido conteo de archivos para " . count($fileCounts) . " playlists");
+    // Determinar si los datos son confiables
+    // Si más del 80% de las playlists están vacías, probablemente Radiobot no ha escaneado
+    $reliable = true;
+    if ($totalPlaylists > 0) {
+        $emptyPercentage = ($emptyPlaylists / $totalPlaylists) * 100;
+        if ($emptyPercentage > 80) {
+            $reliable = false;
+            error_log("AzuraCast: Datos de playlists NO confiables - {$emptyPercentage}% vacías ({$emptyPlaylists}/{$totalPlaylists}). Radiobot probablemente no ha escaneado las carpetas.");
+        } else {
+            error_log("AzuraCast: Obtenido conteo de archivos para {$totalPlaylists} playlists - {$emptyPlaylists} vacías ({$emptyPercentage}%)");
+        }
+    }
 
-    return $fileCounts;
+    return [
+        'counts' => $fileCounts,
+        'reliable' => $reliable
+    ];
 }
 
 /**

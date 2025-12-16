@@ -305,10 +305,9 @@ if ($hasStationId) {
                 $stalePrograms = [];
 
                 // Obtener conteo de archivos de cada playlist desde Azuracast
-                $playlistFileCounts = getPlaylistFileCounts($username);
-                if ($playlistFileCounts === false) {
-                    $playlistFileCounts = []; // Si falla la API, continuar sin esta info
-                }
+                $playlistFileData = getPlaylistFileCounts($username);
+                $playlistFileCounts = $playlistFileData['counts'] ?? [];
+                $dataIsReliable = $playlistFileData['reliable'] ?? false;
 
                 foreach ($programsData as $programKey => $programInfo) {
                     // Obtener nombre original del programa
@@ -321,8 +320,9 @@ if ($hasStationId) {
                     }
 
                     // Verificar si la carpeta del programa está vacía (sin archivos)
+                    // Solo si los datos de la API son confiables
                     $numFiles = $playlistFileCounts[$programName] ?? null;
-                    $hasNoFiles = $numFiles !== null && $numFiles === 0;
+                    $hasNoFiles = $dataIsReliable && $numFiles !== null && $numFiles === 0;
 
                     // Verificar RSS si está configurado
                     $rssUrl = $programInfo['rss_feed'] ?? '';
@@ -944,6 +944,18 @@ if ($hasStationId) {
                         margin-left: 4px;
                     }
                 </style>
+
+                <!-- Aviso: Datos no confiables -->
+                <?php if (!$dataIsReliable): ?>
+                <div class="stale-programs-panel" style="border-color: #3b82f6; background: #dbeafe;">
+                    <div class="stale-programs-title" style="color: #1e40af;">
+                        ℹ️ Sincroniza para actualizar el estado de las carpetas
+                    </div>
+                    <p style="font-size: 12px; color: #1e40af; margin-bottom: 0;">
+                        Radiobot aún no ha escaneado las carpetas de archivos. Ve a <strong>Gestión de Programas → Sincronizar con Radiobot</strong> para actualizar el estado de todas las playlists.
+                    </p>
+                </div>
+                <?php endif; ?>
 
                 <!-- Panel de avisos: Programas sin contenido -->
                 <?php if (!empty($stalePrograms)): ?>
