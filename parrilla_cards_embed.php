@@ -595,13 +595,36 @@ $baseFontSize = $fontSizes[$widgetFontSize] ?? '16px';
 
                 foreach ($eventsByDay[$day] as $index => $event) {
                     if ($day === $currentDay) {
-                        list($startH, $startM) = explode(':', $event['start_time']);
-                        list($endH, $endM) = explode(':', $event['end_time']);
+                        // Validar que los horarios existen y tienen formato correcto
+                        if (empty($event['start_time']) || empty($event['end_time'])) {
+                            continue;
+                        }
+
+                        $timeParts = explode(':', $event['start_time']);
+                        if (count($timeParts) < 2) continue;
+                        list($startH, $startM) = $timeParts;
+
+                        $timeParts = explode(':', $event['end_time']);
+                        if (count($timeParts) < 2) continue;
+                        list($endH, $endM) = $timeParts;
+
                         $startSec = ((int)$startH * 3600) + ((int)$startM * 60);
                         $endSec = ((int)$endH * 3600) + ((int)$endM * 60);
 
+                        // Manejar programas que cruzan medianoche
+                        $crossesMidnight = ($endSec <= $startSec);
+                        if ($crossesMidnight) {
+                            $endSec += 86400; // Añadir 24 horas
+                        }
+
+                        $checkSeconds = $currentSeconds;
+                        // Si cruzamos medianoche y estamos en las primeras horas, ajustar
+                        if ($crossesMidnight && $checkSeconds < $startSec) {
+                            $checkSeconds += 86400;
+                        }
+
                         // Si está en vivo y empezó más recientemente que el anterior
-                        if ($currentSeconds >= $startSec && $currentSeconds < $endSec) {
+                        if ($checkSeconds >= $startSec && $checkSeconds < $endSec) {
                             if ($startSec > $liveEventStartSec) {
                                 $liveEventIndex = $index;
                                 $liveEventStartSec = $startSec;
