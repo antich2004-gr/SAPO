@@ -86,9 +86,16 @@ function getAzuracastSchedule($username, $cacheTTL = 600) {
  * Requiere API Key para autenticación
  *
  * @param string $username Nombre de usuario
+ * @param int $cacheTTL Tiempo de vida de la caché en segundos (por defecto 600 = 10 minutos)
  * @return array|false Array de playlists o false si hay error
  */
-function getAzuracastPlaylists($username) {
+function getAzuracastPlaylists($username, $cacheTTL = 600) {
+    // Verificar si hay caché válida
+    $cachedData = getPlaylistsFromCache($username, $cacheTTL);
+    if ($cachedData !== null) {
+        return $cachedData;
+    }
+
     // Obtener configuración global
     $config = getConfig();
     $apiUrl = $config['azuracast_api_url'] ?? '';
@@ -149,6 +156,9 @@ function getAzuracastPlaylists($username) {
         } else {
             error_log("AzuraCast Playlists: Respuesta vacía o no es array");
         }
+
+        // Guardar en caché
+        savePlaylistsToCache($username, $data);
 
         return $data;
 
@@ -258,6 +268,93 @@ function clearScheduleCache($username) {
  */
 function saveScheduleToCache($username, $data) {
     $cacheDir = DATA_DIR . '/cache/schedule';
+
+    if (!file_exists($cacheDir)) {
+        if (!file_exists(DATA_DIR . '/cache')) {
+            if (!file_exists(DATA_DIR)) {
+                mkdir(DATA_DIR, 0755, true);
+            }
+            mkdir(DATA_DIR . '/cache', 0755, true);
+        }
+        mkdir($cacheDir, 0755, true);
+    }
+
+    $cacheFile = $cacheDir . '/' . md5($username) . '.json';
+    $jsonContent = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+    return @file_put_contents($cacheFile, $jsonContent, LOCK_EX) !== false;
+}
+
+/**
+ * Obtener playlists desde caché si existe y es válida
+ *
+ * @param string $username Nombre de usuario
+ * @param int $ttl Tiempo de vida en segundos
+ * @return array|null Datos de las playlists o null si no hay caché válida
+ */
+function getPlaylistsFromCache($username, $ttl = 600) {
+    $cacheDir = DATA_DIR . '/cache/playlists';
+    if (!file_exists($cacheDir)) {
+        return null;
+    }
+
+    $cacheFile = $cacheDir . '/' . md5($username) . '.json';
+
+    if (!file_exists($cacheFile)) {
+        return null;
+    }
+
+    $cacheAge = time() - filemtime($cacheFile);
+    if ($cacheAge > $ttl) {
+        // Caché expirada
+        @unlink($cacheFile);
+        return null;
+    }
+
+    $cacheContent = @file_get_contents($cacheFile);
+    if ($cacheContent === false) {
+        return null;
+    }
+
+    $data = json_decode($cacheContent, true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        return null;
+    }
+
+    error_log("AzuraCast: Playlists cargadas desde caché para $username (edad: {$cacheAge}s)");
+    return $data;
+}
+
+/**
+ * Borrar caché de playlists
+ *
+ * @param string $username Nombre de usuario
+ * @return bool True si se borró correctamente o no existía
+ */
+function clearPlaylistsCache($username) {
+    $cacheDir = DATA_DIR . '/cache/playlists';
+    $cacheFile = $cacheDir . '/' . md5($username) . '.json';
+
+    if (file_exists($cacheFile)) {
+        $result = @unlink($cacheFile);
+        if ($result) {
+            error_log("AzuraCast: Caché de playlists borrada para $username");
+        }
+        return $result;
+    }
+
+    return true; // No existía, consideramos éxito
+}
+
+/**
+ * Guardar playlists en caché
+ *
+ * @param string $username Nombre de usuario
+ * @param array $data Datos de las playlists
+ * @return bool True si se guardó correctamente
+ */
+function savePlaylistsToCache($username, $data) {
+    $cacheDir = DATA_DIR . '/cache/playlists';
 
     if (!file_exists($cacheDir)) {
         if (!file_exists(DATA_DIR . '/cache')) {
