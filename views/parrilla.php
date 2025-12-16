@@ -305,9 +305,9 @@ if ($hasStationId) {
                 $stalePrograms = [];
 
                 // Obtener conteo de archivos de cada playlist desde Azuracast
-                $playlistFileData = getPlaylistFileCounts($username);
-                $playlistFileCounts = $playlistFileData['counts'] ?? [];
-                $dataIsReliable = $playlistFileData['reliable'] ?? false;
+                // NOTA: Funcionalidad deshabilitada - getPlaylistFileCounts() devuelve false
+                $playlistFileCounts = [];
+                $dataIsReliable = false;
 
                 foreach ($programsData as $programKey => $programInfo) {
                     // Obtener nombre original del programa
@@ -944,18 +944,6 @@ if ($hasStationId) {
                         margin-left: 4px;
                     }
                 </style>
-
-                <!-- Aviso: Datos no confiables -->
-                <?php if (!$dataIsReliable): ?>
-                <div class="stale-programs-panel" style="border-color: #3b82f6; background: #dbeafe;">
-                    <div class="stale-programs-title" style="color: #1e40af;">
-                        ℹ️ Sincroniza para actualizar el estado de las carpetas
-                    </div>
-                    <p style="font-size: 12px; color: #1e40af; margin-bottom: 0;">
-                        Radiobot aún no ha escaneado las carpetas de archivos. Ve a <strong>Gestión de Programas → Sincronizar con Radiobot</strong> para actualizar el estado de todas las playlists.
-                    </p>
-                </div>
-                <?php endif; ?>
 
                 <!-- Panel de avisos: Programas sin contenido -->
                 <?php if (!empty($stalePrograms)): ?>

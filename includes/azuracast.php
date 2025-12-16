@@ -172,50 +172,14 @@ function getAzuracastPlaylists($username, $cacheTTL = 600) {
  * Obtener número de archivos de cada playlist desde Azuracast
  * Útil para detectar programas sin contenido (carpetas vacías)
  *
+ * NOTA: Función deshabilitada - devuelve false para no mostrar errores de carpetas vacías
+ *
  * @param string $username Nombre de usuario
- * @return array Array con 'counts' (conteos) y 'reliable' (si los datos son confiables)
+ * @return false Siempre devuelve false (funcionalidad deshabilitada)
  */
 function getPlaylistFileCounts($username) {
-    $playlists = getAzuracastPlaylists($username);
-
-    if ($playlists === false) {
-        return ['counts' => [], 'reliable' => false];
-    }
-
-    $fileCounts = [];
-    $totalPlaylists = 0;
-    $emptyPlaylists = 0;
-
-    foreach ($playlists as $playlist) {
-        $playlistName = $playlist['name'] ?? '';
-        $numSongs = $playlist['num_songs'] ?? 0;
-
-        if (!empty($playlistName)) {
-            $fileCounts[$playlistName] = (int)$numSongs;
-            $totalPlaylists++;
-            if ($numSongs == 0) {
-                $emptyPlaylists++;
-            }
-        }
-    }
-
-    // Determinar si los datos son confiables
-    // Si más del 80% de las playlists están vacías, probablemente Radiobot no ha escaneado
-    $reliable = true;
-    if ($totalPlaylists > 0) {
-        $emptyPercentage = ($emptyPlaylists / $totalPlaylists) * 100;
-        if ($emptyPercentage > 80) {
-            $reliable = false;
-            error_log("AzuraCast: Datos de playlists NO confiables - {$emptyPercentage}% vacías ({$emptyPlaylists}/{$totalPlaylists}). Radiobot probablemente no ha escaneado las carpetas.");
-        } else {
-            error_log("AzuraCast: Obtenido conteo de archivos para {$totalPlaylists} playlists - {$emptyPlaylists} vacías ({$emptyPercentage}%)");
-        }
-    }
-
-    return [
-        'counts' => $fileCounts,
-        'reliable' => $reliable
-    ];
+    // Funcionalidad deshabilitada - no detectar carpetas vacías
+    return false;
 }
 
 /**
