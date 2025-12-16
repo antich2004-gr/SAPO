@@ -1013,9 +1013,6 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                         if ($day === $currentDay) {
                             // Validar que los horarios existen y tienen formato correcto
                             if (empty($event['start_time']) || empty($event['end_time'])) {
-                                if ($isDevelopment) {
-                                    error_log("DEBUG: Programa sin horario válido: " . ($event['title'] ?? 'sin título'));
-                                }
                                 continue;
                             }
 
@@ -1042,49 +1039,14 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                                 $checkSeconds += 86400;
                             }
 
-                            // DEBUG: Log para detectar programas
-                            if ($isDevelopment) {
-                                error_log(sprintf(
-                                    "DEBUG Live Check - Program: '%s' | Start: %s (%ds) | End: %s (%ds) | Current: %ds | Midnight: %s | Match: %s",
-                                    substr($event['title'], 0, 30),
-                                    $event['start_time'],
-                                    $startSec,
-                                    $event['end_time'],
-                                    $crossesMidnight ? ($endSec - 86400) : $endSec,
-                                    $checkSeconds >= 86400 ? ($checkSeconds - 86400) : $checkSeconds,
-                                    $crossesMidnight ? 'YES' : 'no',
-                                    ($checkSeconds >= $startSec && $checkSeconds < $endSec) ? 'YES' : 'no'
-                                ));
-                            }
-
                             // Si está en vivo y empezó más recientemente que el anterior
                             if ($checkSeconds >= $startSec && $checkSeconds < $endSec) {
                                 if ($startSec > $liveEventStartSec) {
                                     $liveEventIndex = $index;
                                     $liveEventStartSec = $startSec;
-                                    if ($isDevelopment) {
-                                        error_log("DEBUG: ✓ LIVE PROGRAM SET: " . $event['title'] . " (index: $index)");
-                                    }
                                 }
                             }
                         }
-                    }
-
-                    if ($isDevelopment && $day === $currentDay) {
-                        $liveTitle = '';
-                        if ($liveEventIndex !== null && isset($eventsByDay[$day][$liveEventIndex])) {
-                            $liveTitle = $eventsByDay[$day][$liveEventIndex]['title'] ?? '';
-                        }
-                        error_log(sprintf(
-                            "DEBUG Summary - Day: %d | Time: %02d:%02d (%ds) | Live Index: %s | Live Program: '%s' | Total programs: %d",
-                            $day,
-                            $currentHour,
-                            $currentMinute,
-                            $currentSeconds,
-                            $liveEventIndex !== null ? $liveEventIndex : 'NONE',
-                            $liveTitle,
-                            count($eventsByDay[$day])
-                        ));
                     }
                     ?>
                     <?php foreach ($eventsByDay[$day] as $index => $event):
@@ -1101,18 +1063,6 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
                         // Solo este programa está en vivo (el más reciente si hay solapamiento)
                         $isLive = ($index === $liveEventIndex);
                         $isLiveProgram = ($event['playlist_type'] === 'live');
-
-                        // DEBUG: Log cuando se marca un programa como live
-                        if ($isLive && $isDevelopment) {
-                            error_log(sprintf(
-                                "DEBUG: Rendering LIVE card - Index: %d | Program: '%s' | ID: program-%d-%s | Day: %s",
-                                $index,
-                                substr($event['title'], 0, 40),
-                                $day,
-                                str_replace(':', '', $event['start_time']),
-                                $day === $currentDay ? 'CURRENT' : 'other'
-                            ));
-                        }
                     ?>
                         <div class="program-card<?php echo $isLive ? ' live' : ''; ?><?php echo $isLiveProgram ? ' live-program' : ''; ?><?php echo empty($event['image']) ? ' no-image' : ''; ?>"
                              id="program-<?php echo $day; ?>-<?php echo str_replace(':', '', $event['start_time']); ?>">
