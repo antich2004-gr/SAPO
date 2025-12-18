@@ -4,23 +4,84 @@ declare(strict_types=1);
 
 /**
  * Plugin SAPO Menu Integration para AzuraCast
+ * Sistema de permisos integrado - Solo emisoras autorizadas verán el enlace SAPO
  * Compatible con stable branch (agosto 2024)
  */
 
 return function ($dispatcher) {
+
+    // PASO 1: Registrar permiso personalizado para SAPO
+    $dispatcher->addListener(
+        \App\Event\BuildPermissions::class,
+        function (\App\Event\BuildPermissions $event) {
+            // Permiso por emisora para acceder a SAPO
+            $event->addPermission(
+                'station',
+                'sapo:access',
+                'Acceso a SAPO (Sistema de Automatización de Podcasts)'
+            );
+        },
+        -5  // Prioridad: ejecutar antes que listeners por defecto
+    );
+
+    // PASO 2: Inyectar enlace SAPO solo si el usuario tiene permisos
     $dispatcher->addListener(
         \App\Event\BuildView::class,
         function (\App\Event\BuildView $event) {
             $view = $event->getView();
             $sections = $view->getSections();
 
-            // JavaScript para inyectar el elemento SAPO en el menú lateral principal
+            // JavaScript con verificación de permisos para SAPO
             $sapoScript = <<<'JAVASCRIPT'
 <script>
 (function() {
     'use strict';
+
+    // VERIFICAR PERMISOS DEL USUARIO
+    function hasPermission(permission) {
+        // Intentar obtener permisos del usuario desde diferentes fuentes
+        // que AzuraCast expone en el frontend
+
+        // Método 1: Desde el objeto global AzuraCast
+        if (window.azuracast && window.azuracast.permissions) {
+            const perms = window.azuracast.permissions;
+            if (perms.station && typeof perms.station === 'object') {
+                for (let stationId in perms.station) {
+                    if (perms.station[stationId].includes(permission)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        // Método 2: Desde meta tags inyectados en la página
+        const permMeta = document.querySelector('meta[name="user-permissions"]');
+        if (permMeta) {
+            const perms = JSON.parse(permMeta.getAttribute('content') || '{}');
+            if (perms.station) {
+                for (let stationId in perms.station) {
+                    if (perms.station[stationId].includes(permission)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        // Método 3: Si es admin global, tiene todos los permisos
+        const isAdmin = document.body.classList.contains('admin') ||
+                       (window.azuracast && window.azuracast.isAdmin);
+
+        return isAdmin;
+    }
+
     function addSAPOToMenu() {
         if (document.getElementById('sapo-menu-link')) return;
+
+        // VERIFICAR PERMISO SAPO:ACCESS
+        if (!hasPermission('sapo:access')) {
+            console.log('[SAPO Plugin] Usuario no tiene permiso sapo:access');
+            return;
+        }
 
         // Buscar específicamente el sidebar principal
         let sidebar = document.querySelector('aside.main-sidebar') ||

@@ -1,7 +1,14 @@
 {
     "name": "SAPO Menu Integration",
-    "description": "Añade un enlace a SAPO en el menú lateral de AzuraCast",
+    "description": "Integra SAPO (Sistema de Automatización de Podcasts) en AzuraCast con sistema de permisos por emisora. Solo las emisoras autorizadas verán el enlace SAPO en el menú lateral.",
     "author": "Radios Libres",
-    "version": "1.0.0",
-    "url": "https://sapo.radioslibres.info"
+    "version": "2.0.0",
+    "url": "https://sapo.radioslibres.info",
+    "permissions": [
+        {
+            "name": "sapo:access",
+            "type": "station",
+            "description": "Acceso a SAPO (Sistema de Automatización de Podcasts)"
+        }
+    ]
 }
