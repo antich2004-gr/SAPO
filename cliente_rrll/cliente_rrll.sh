@@ -114,6 +114,13 @@ _dir_podcast_rc=$(_leer_dir_podcast)
 PODCASTS_DIR="${_dir_podcast_rc:-$BASE_DIR/Podcasts}"
 echo "📂 Directorio de podcasts: $PODCASTS_DIR"
 
+if [[ ! -d "$PODCASTS_DIR" ]]; then
+    echo "❌ ERROR: El directorio de podcasts no existe: $PODCASTS_DIR"
+    echo "   Configura DIR_PODCAST en $CONFIG_DIR/podgetrc.$EMISORA"
+    echo "   Ejemplo:  DIR_PODCAST=/mnt/emisoras/$EMISORA/media/Suscripciones"
+    exit 1
+fi
+
 mkdir -p "$INFORMES_DIR"
 
 RENOMBRADOS_HISTORICO="$INFORMES_DIR/historico_renombrados.txt"
