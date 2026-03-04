@@ -106,11 +106,11 @@ else
             ((archivos_encontrados++))
 
             if (( ts < umbral_segundos )); then
-                echo "     🗑️  BORRARÍA  [$edad_dias días] $fecha_archivo — $(basename "$archivo")"
+                echo "     🗑️  BORRARÍA  [$edad_dias días > umbral $dias_caducidad días] $fecha_archivo — $(basename "$archivo")"
                 ((archivos_borrar++))
                 ((total_a_borrar++))
             else
-                echo "     ✅  Conservar [$edad_dias días] $fecha_archivo — $(basename "$archivo")"
+                echo "     ✅  Conservar [$edad_dias días de $dias_caducidad días] $fecha_archivo — $(basename "$archivo")"
                 ((archivos_ok++))
                 ((total_a_conservar++))
             fi
