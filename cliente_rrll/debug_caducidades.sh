@@ -22,7 +22,7 @@ BASE_DIR="/mnt/emisoras/$EMISORA/media"
 CONFIG_DIR="$BASE_DIR/Suscripciones"
 CADUCIDADES_FILE="$CONFIG_DIR/caducidades.txt"
 
-# Leer DIR_PODCAST del podgetrc si existe, si no usar el valor por defecto
+# Leer DIR_PODCAST o DIR_LIBRARY del podgetrc si existe, si no usar el valor por defecto
 _leer_dir_podcast() {
     local rcfile="$CONFIG_DIR/podgetrc.$EMISORA"
     [[ -f "$rcfile" ]] || { echo ""; return 0; }
@@ -30,9 +30,13 @@ _leer_dir_podcast() {
         /^[[:space:]]*#/ {next}
         $1 ~ /^[[:space:]]*DIR_PODCAST[[:space:]]*$/ {
             gsub(/[[:space:]]/,"",$2);
-            val=$2
+            podcast=$2
         }
-        END { if (val != "") print val }
+        $1 ~ /^[[:space:]]*DIR_LIBRARY[[:space:]]*$/ {
+            gsub(/[[:space:]]/,"",$2);
+            library=$2
+        }
+        END { if (podcast != "") print podcast; else if (library != "") print library }
     ' "$rcfile"
 }
 _dir_podcast_rc=$(_leer_dir_podcast)
