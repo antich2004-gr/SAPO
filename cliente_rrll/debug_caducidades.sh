@@ -20,8 +20,23 @@ fi
 
 BASE_DIR="/mnt/emisoras/$EMISORA/media"
 CONFIG_DIR="$BASE_DIR/Suscripciones"
-PODCASTS_DIR="$BASE_DIR/Podcasts"
 CADUCIDADES_FILE="$CONFIG_DIR/caducidades.txt"
+
+# Leer DIR_PODCAST del podgetrc si existe, si no usar el valor por defecto
+_leer_dir_podcast() {
+    local rcfile="$CONFIG_DIR/podgetrc.$EMISORA"
+    [[ -f "$rcfile" ]] || { echo ""; return 0; }
+    awk -F= '
+        /^[[:space:]]*#/ {next}
+        $1 ~ /^[[:space:]]*DIR_PODCAST[[:space:]]*$/ {
+            gsub(/[[:space:]]/,"",$2);
+            val=$2
+        }
+        END { if (val != "") print val }
+    ' "$rcfile"
+}
+_dir_podcast_rc=$(_leer_dir_podcast)
+PODCASTS_DIR="${_dir_podcast_rc:-$BASE_DIR/Podcasts}"
 DEFAULT_DIAS=30
 
 echo "=========================================="
