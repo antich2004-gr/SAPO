@@ -303,8 +303,8 @@ if [[ -f "$CADUCIDADES_FILE" ]]; then
     done < "$CADUCIDADES_FILE"
 fi
 
-find "$PODCASTS_DIR" -mindepth 1 -maxdepth 1 -type d | while read -r subdir; do
-    find "$subdir" -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) -printf "%T@|%p\n" | while IFS='|' read -r timestamp archivo; do
+while IFS= read -r subdir; do
+    while IFS='|' read -r timestamp archivo; do
         ts=${timestamp%.*}
         # Extraer nombre del podcast quitando el sufijo de fecha (8 dígitos DDMMYYYY)
         nombre_base=$(basename "${archivo%.*}")
@@ -317,8 +317,8 @@ find "$PODCASTS_DIR" -mindepth 1 -maxdepth 1 -type d | while read -r subdir; do
             fecha_actual=$(date +"%Y-%m-%d %H:%M:%S")
             echo "$fecha_actual|$archivo|CADUCIDAD" >> "$ELIMINADOS_HISTORICO"
         fi
-    done
-done
+    done < <(find "$subdir" -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) -printf "%T@|%p\n" 2>/dev/null)
+done < <(find "$PODCASTS_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
 # --- ELIMINAR ARCHIVOS ANTIGUOS, CONSERVANDO SOLO EL MÁS RECIENTE POR CARPETA ---
 echo "🧹 Manteniendo solo el archivo más reciente por carpeta..."
 
