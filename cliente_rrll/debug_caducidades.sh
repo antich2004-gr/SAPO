@@ -87,13 +87,7 @@ if [[ ! -d "$PODCASTS_DIR" ]]; then
 else
     while IFS= read -r subdir; do
         nombre_carpeta=$(basename "$subdir")
-        dias_caducidad=${CADUCIDADES["$nombre_carpeta"]:-$DEFAULT_DIAS}
-        umbral_segundos=$(( now - dias_caducidad * 86400 ))
-        umbral_fecha=$(date -d @$umbral_segundos '+%Y-%m-%d %H:%M:%S' 2>/dev/null || echo "fecha inválida")
-
         echo "  📁 $nombre_carpeta"
-        echo "     Días configurados : $dias_caducidad${CADUCIDADES["$nombre_carpeta"]+""} ${CADUCIDADES["$nombre_carpeta"]:-(DEFAULT)}"
-        echo "     Umbral de borrado  : $umbral_segundos ($umbral_fecha)"
 
         archivos_encontrados=0
         archivos_borrar=0
@@ -101,16 +95,22 @@ else
 
         while IFS='|' read -r timestamp archivo; do
             ts=${timestamp%.*}
+            nombre_base=$(basename "${archivo%.*}")
+            nombre_podcast="${nombre_base%[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]}"
+            dias_caducidad=${CADUCIDADES["$nombre_podcast"]:-$DEFAULT_DIAS}
+            origen="${CADUCIDADES["$nombre_podcast"]+configurado}"
+            origen="${origen:-DEFAULT}"
+            umbral_segundos=$(( now - dias_caducidad * 86400 ))
             fecha_archivo=$(date -d @$ts '+%Y-%m-%d %H:%M:%S' 2>/dev/null || echo "?")
             edad_dias=$(( (now - ts) / 86400 ))
             ((archivos_encontrados++))
 
             if (( ts < umbral_segundos )); then
-                echo "     🗑️  BORRARÍA  [$edad_dias días > umbral $dias_caducidad días] $fecha_archivo — $(basename "$archivo")"
+                echo "     🗑️  BORRARÍA  [$edad_dias días > $dias_caducidad días ($origen)] $fecha_archivo — $(basename "$archivo")"
                 ((archivos_borrar++))
                 ((total_a_borrar++))
             else
-                echo "     ✅  Conservar [$edad_dias días de $dias_caducidad días] $fecha_archivo — $(basename "$archivo")"
+                echo "     ✅  Conservar [$edad_dias días de $dias_caducidad días ($origen)] $fecha_archivo — $(basename "$archivo")"
                 ((archivos_ok++))
                 ((total_a_conservar++))
             fi

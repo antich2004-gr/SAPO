@@ -288,14 +288,15 @@ if [[ -f "$CADUCIDADES_FILE" ]]; then
 fi
 
 find "$PODCASTS_DIR" -mindepth 1 -maxdepth 1 -type d | while read -r subdir; do
-    nombre_carpeta=$(basename "$subdir")
-    dias_caducidad=${CADUCIDADES["$nombre_carpeta"]:-$DEFAULT_DIAS}
-    umbral_segundos=$(( $(date +%s) - dias_caducidad * 86400 ))
-
     find "$subdir" -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) -printf "%T@|%p\n" | while IFS='|' read -r timestamp archivo; do
         ts=${timestamp%.*}
+        # Extraer nombre del podcast quitando el sufijo de fecha (8 dígitos DDMMYYYY)
+        nombre_base=$(basename "${archivo%.*}")
+        nombre_podcast="${nombre_base%[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]}"
+        dias_caducidad=${CADUCIDADES["$nombre_podcast"]:-$DEFAULT_DIAS}
+        umbral_segundos=$(( $(date +%s) - dias_caducidad * 86400 ))
         if (( ts < umbral_segundos )); then
-            echo "  🗑️ Eliminando por caducidad: $(basename "$archivo")"
+            echo "  🗑️ Eliminando por caducidad ($dias_caducidad días): $(basename "$archivo")"
             rm -f "$archivo"
             fecha_actual=$(date +"%Y-%m-%d %H:%M:%S")
             echo "$fecha_actual|$archivo|CADUCIDAD" >> "$ELIMINADOS_HISTORICO"
