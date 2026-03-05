@@ -1173,8 +1173,9 @@ function initializeTimeSignalsDropzone() {
         });
     }
 
-    // Actualizar info inicial
-    setTimeout(() => updateDayInfo(), 100);
+    // Cargar archivos y configuración inicial
+    loadTimeSignalsFiles();
+    loadTimeSignalsConfig();
 }
 
 /**
