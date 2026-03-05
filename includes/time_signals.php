@@ -760,7 +760,8 @@ function applyTimeSignalsToAzuraCast($username) {
 
     // PASO 2: Generar código Liquidsoap con valores personalizados
     error_log("APPLY DEBUG - Generando código Liquidsoap...");
-    $liquidsoapCode = generateLiquidsoapTimeSignals($liquidsoapPath, $days, $frequency, $duration, $attenuation);
+    $musicVolume = 1.0 - $attenuation; # Convertir atenuación a volumen
+    $liquidsoapCode = generateTimeSignalsSmooth($liquidsoapPath, $days, $frequency, $musicVolume, $duration);
 
     if (empty($liquidsoapCode)) {
         error_log("APPLY DEBUG - ERROR: Código Liquidsoap vacío");
@@ -1082,8 +1083,8 @@ function applyTimeSignalsViaAPI($username) {
     $attenuation = $attenuationPercent / 100; // Convertir porcentaje a decimal
 
     // Generar código Liquidsoap con valores personalizados
-    $liquidsoapPath = "/var/azuracast/stations/{$username}/media/senales_horarias/{$config['signal_file']}";
-    $liquidsoapCode = generateLiquidsoapTimeSignals($liquidsoapPath, $days, $frequency, $duration, $attenuation);
+    $musicVolume = 1.0 - $attenuation; # Convertir atenuación a volumen
+    $liquidsoapCode = generateTimeSignalsSmooth($liquidsoapPath, $days, $frequency, $musicVolume, $duration);
 
     if (empty($liquidsoapCode)) {
         error_log("API APPLY - ERROR: No se pudo generar código");
@@ -1096,4 +1097,59 @@ function applyTimeSignalsViaAPI($username) {
     $result = updateAzuraCastCustomConfig($username, $liquidsoapCode);
 
     return $result;
+}
+
+/**
+ * Generar código Liquidsoap para señales horarias usando smooth_add
+ * Formato moderno y simple de Liquidsoap 2.x
+ *
+ * @param string $audioPath Ruta completa al archivo de audio
+ * @param array $days Array de días (mantiene compatibilidad)
+ * @param string $frequency Frecuencia de las señales
+ * @param float $musicVolume Volumen de música durante señal (0.0-1.0)
+ * @param float $transitionDuration Duración de la transición en segundos
+ * @return string Código Liquidsoap generado
+ */
+function generateTimeSignalsSmooth($audioPath, $days, $frequency, $musicVolume = 0.5, $transitionDuration = 0.8) {
+    // Convertir frecuencia en minutos
+    $minutes = [];
+    switch ($frequency) {
+        case 'hourly':
+            $minutes = [0];
+            break;
+        case 'half-hourly':
+            $minutes = [0, 30];
+            break;
+        case 'quarter-hourly':
+            $minutes = [0, 15, 30, 45];
+            break;
+        case 'every-5-min':
+            for ($i = 0; $i < 60; $i += 5) {
+                $minutes[] = $i;
+            }
+            break;
+        default:
+            $minutes = [0];
+    }
+
+    $code = "# Señales Horarias - SAPO (smooth_add)\n";
+    $code .= "# Señal horaria con smooth_add\n";
+    $code .= "señal_horaria = single(\"$audioPath\")\n";
+    $code .= "horarias = switch(id=\"time_signal_switch\", [\n";
+    
+    foreach ($minutes as $minute) {
+        $code .= "  (predicate.once({ {$minute}m }), señal_horaria),\n";
+    }
+    
+    $code .= "])\n\n";
+    $code .= "# smooth_add mezcla suavemente sin cortar\n";
+    $code .= "radio = smooth_add(\n";
+    $code .= "  duration={$transitionDuration},      # Duración de la transición\n";
+    $musicPercent = (int)($musicVolume * 100);
+    $code .= "  p={$musicVolume},                    # Música baja al {$musicPercent}%\n";
+    $code .= "  normal=radio,                        # Fuente principal\n";
+    $code .= "  special=horarias                     # Señales horarias\n";
+    $code .= ")\n";
+
+    return $code;
 }
