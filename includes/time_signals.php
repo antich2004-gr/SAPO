@@ -469,7 +469,12 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency, $duration 
 
     // Generar código liquidsoap con sintaxis de Liquidsoap 2.x
     $code = "# Señales Horarias - SAPO\n";
-    $code .= "señal_horaria = single(\"$audioPath\")\n\n";
+    $code .= "# Crear fuente de señal con logging\n";
+    $code .= "señal_base = single(\"$audioPath\")\n";
+    $code .= "señal_horaria = map_metadata(fun (m) -> begin\n";
+    $code .= "  log(\"SEÑAL HORARIA DISPARADA: #{time()}\")\n";
+    $code .= "  m\n";
+    $code .= "end, señal_base)\n\n";
 
     // Generar predicados de tiempo con ventanas precisas (solo primeros 5 segundos)
     if ($allDays) {
@@ -508,11 +513,15 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency, $duration 
 
     // Convertir atenuación a porcentaje para el comentario
     $attenuationPercent = (int)($attenuation * 100);
+    $musicVolume = 1.0 - $attenuation; // Volumen de música durante señal
+
+    $code .= "# Asegurar que horarias siempre tenga una fuente (blank cuando no hay señal)\n";
+    $code .= "horarias = fallback(track_sensitive=false, [horarias, blank()])\n\n";
 
     $code .= "# add con normalize=false para inserción inmediata sin esperar\n";
     $code .= "radio = add(\n";
     $code .= "  normalize=false,           # No esperar a puntos de corte\n";
-    $code .= "  weights=[1, " . (1.0 - $attenuation) . "],  # Radio al 100%, señal al " . ((1.0 - $attenuation) * 100) . "%\n";
+    $code .= "  weights=[1.0, $musicVolume],  # Radio al 100%, música baja a " . ($musicVolume * 100) . "% durante señal\n";
     $code .= "  [radio, horarias]          # Mezclar ambas fuentes\n";
     $code .= ")\n";
 
