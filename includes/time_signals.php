@@ -339,18 +339,18 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency) {
     $code = "# Señales Horarias - SAPO\n";
     $code .= "time_signal_source = single(\"$audioPath\")\n\n";
 
-    // Combinar minutos y días
-    $conditions = [];
+    // Combinar minutos y días - cada condición con su fuente
+    $switchCases = [];
     foreach ($minuteConditions as $minute) {
         foreach ($activeDays as $dayNum) {
-            // Formato: {1w and 0m0s} = lunes a las :00
-            $conditions[] = sprintf("{%dw and %s0s}", $dayNum, $minute);
+            // Formato: ({1w and 0m0s}, time_signal_source) = lunes a las :00
+            $condition = sprintf("{%dw and %s0s}", $dayNum, $minute);
+            $switchCases[] = "  ($condition, time_signal_source)";
         }
     }
 
-    $conditionsStr = implode(', ', $conditions);
     $code .= "time_signal = switch([\n";
-    $code .= "  ($conditionsStr, time_signal_source)\n";
+    $code .= implode(",\n", $switchCases) . "\n";
     $code .= "])\n\n";
 
     $code .= "# Integrar señales horarias en la radio\n";
@@ -417,7 +417,8 @@ function applyTimeSignalsToAzuraCast($username) {
 
     // Buscar y eliminar código antiguo de señales horarias
     if (strpos($customConfig, $marker_start) !== false) {
-        $pattern = '/' . preg_quote($marker_start, '/') . '.*?' . preg_quote($marker_end, '/') . '.*?\n/s';
+        // Eliminar desde el marcador inicial hasta la línea que incluye "radio = fallback"
+        $pattern = '/' . preg_quote($marker_start, '/') . '.*?radio = fallback\(track_sensitive=false, \[time_signal, radio\]\)\n?/s';
         $customConfig = preg_replace($pattern, '', $customConfig);
     }
 
