@@ -469,17 +469,24 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency, $duration 
 
     // Generar código liquidsoap con sintaxis de Liquidsoap 2.x
     $code = "# Señales Horarias - SAPO\n";
-    $code .= "señal_horaria = single(\"$audioPath\")\n\n";
+    $code .= "# Crear fuente de señal con logging\n";
+    $code .= "señal_base = single(\"$audioPath\")\n";
+    $code .= "señal_horaria = map_metadata(fun (m) -> begin\n";
+    $code .= "  log(\"SEÑAL HORARIA DISPARADA: #{time()}\")\n";
+    $code .= "  m\n";
+    $code .= "end, señal_base)\n\n";
 
-    // Generar predicados de tiempo con ventanas precisas (solo primeros 5 segundos)
+    // Generar predicados de tiempo con ventanas ultra-precisas (solo primer segundo)
     if ($allDays) {
         // Definir predicados para cada momento
         $predicates = [];
         foreach ($minuteConditions as $idx => $minute) {
             $predName = "time_pred_" . str_replace('m', '', $minute);
-            $timeSpec = $minute . "0s-" . $minute . "5s";  // Ventana de 5 segundos: 0m0s-0m5s, 30m0s-30m5s
-            $code .= "# Predicado para minuto $minute (ventana precisa)\n";
-            $code .= "$predName = predicate.once(time.predicate(\"$timeSpec\"))\n";
+            // Ventana de 1 segundo exacto: 0m0s, 30m0s, etc.
+            $timeSpec = $minute . "0s";
+            $code .= "# Predicado para minuto $minute (disparo exacto)\n";
+            $code .= "$predName = time.predicate(\"$timeSpec\")\n";
+            $code .= "log(\"DEBUG: Evaluando predicado $predName = #{$predName()}\")\n";
             $predicates[] = "($predName, señal_horaria)";
         }
         $code .= "\n";
@@ -493,9 +500,10 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency, $duration 
         foreach ($minuteConditions as $minute) {
             foreach ($activeDays as $dayNum) {
                 $predName = "time_pred_" . $predIdx;
-                $timeSpec = sprintf("%dw and (%s0s-%s5s)", $dayNum, $minute, $minute);
-                $code .= "# Predicado para día $dayNum, minuto $minute (ventana precisa)\n";
-                $code .= "$predName = predicate.once(time.predicate(\"$timeSpec\"))\n";
+                $timeSpec = sprintf("%dw and %s0s", $dayNum, $minute);
+                $code .= "# Predicado para día $dayNum, minuto $minute (disparo exacto)\n";
+                $code .= "$predName = time.predicate(\"$timeSpec\")\n";
+                $code .= "log(\"DEBUG: Evaluando predicado $predName = #{$predName()}\")\n";
                 $predicates[] = "($predName, señal_horaria)";
                 $predIdx++;
             }
@@ -508,11 +516,15 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency, $duration 
 
     // Convertir atenuación a porcentaje para el comentario
     $attenuationPercent = (int)($attenuation * 100);
+    $musicVolume = 1.0 - $attenuation; // Volumen de música durante señal
+
+    $code .= "# Asegurar que horarias siempre tenga una fuente (blank cuando no hay señal)\n";
+    $code .= "horarias = fallback(track_sensitive=false, [horarias, blank()])\n\n";
 
     $code .= "# add con normalize=false para inserción inmediata sin esperar\n";
     $code .= "radio = add(\n";
     $code .= "  normalize=false,           # No esperar a puntos de corte\n";
-    $code .= "  weights=[1, " . (1.0 - $attenuation) . "],  # Radio al 100%, señal al " . ((1.0 - $attenuation) * 100) . "%\n";
+    $code .= "  weights=[1.0, $musicVolume],  # Radio al 100%, música baja a " . ($musicVolume * 100) . "% durante señal\n";
     $code .= "  [radio, horarias]          # Mezclar ambas fuentes\n";
     $code .= ")\n";
 
