@@ -95,8 +95,37 @@ mostrar_playlists_vacias() {
 # --- VARIABLES DE DIRECTORIO ---
 BASE_DIR="/mnt/emisoras/$EMISORA/media"
 CONFIG_DIR="$BASE_DIR/Suscripciones"
-PODCASTS_DIR="$BASE_DIR/Podcasts"
 INFORMES_DIR="$BASE_DIR/Informes"
+
+# Leer DIR_PODCAST o DIR_LIBRARY del podgetrc si existe, si no usar el valor por defecto
+_leer_dir_podcast() {
+    local rcfile="$CONFIG_DIR/podgetrc.$EMISORA"
+    [[ -f "$rcfile" ]] || { echo ""; return 0; }
+    awk -F= '
+        /^[[:space:]]*#/ {next}
+        $1 ~ /^[[:space:]]*DIR_PODCAST[[:space:]]*$/ {
+            gsub(/[[:space:]]/,"",$2);
+            podcast=$2
+        }
+        $1 ~ /^[[:space:]]*DIR_LIBRARY[[:space:]]*$/ {
+            gsub(/[[:space:]]/,"",$2);
+            library=$2
+        }
+        END { if (podcast != "") print podcast; else if (library != "") print library }
+    ' "$rcfile"
+}
+
+_dir_podcast_rc=$(_leer_dir_podcast)
+PODCASTS_DIR="${_dir_podcast_rc:-$BASE_DIR/Podcasts}"
+
+echo "📂 Directorio de podcasts: $PODCASTS_DIR"
+
+if [[ ! -d "$PODCASTS_DIR" ]]; then
+    echo "❌ ERROR: El directorio de podcasts no existe: $PODCASTS_DIR"
+    echo "   Configura DIR_PODCAST en $CONFIG_DIR/podgetrc.$EMISORA"
+    echo "   Ejemplo:  DIR_PODCAST=/mnt/emisoras/$EMISORA/media/Suscripciones"
+    exit 1
+fi
 
 mkdir -p "$INFORMES_DIR"
 
@@ -287,21 +316,22 @@ if [[ -f "$CADUCIDADES_FILE" ]]; then
     done < "$CADUCIDADES_FILE"
 fi
 
-find "$PODCASTS_DIR" -mindepth 1 -maxdepth 1 -type d | while read -r subdir; do
-    nombre_carpeta=$(basename "$subdir")
-    dias_caducidad=${CADUCIDADES["$nombre_carpeta"]:-$DEFAULT_DIAS}
-    umbral_segundos=$(( $(date +%s) - dias_caducidad * 86400 ))
-
-    find "$subdir" -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) -printf "%T@|%p\n" | while IFS='|' read -r timestamp archivo; do
+while IFS= read -r subdir; do
+    while IFS='|' read -r timestamp archivo; do
         ts=${timestamp%.*}
+        # Extraer nombre del podcast quitando el sufijo de fecha (8 dígitos DDMMYYYY)
+        nombre_base=$(basename "${archivo%.*}")
+        nombre_podcast="${nombre_base%[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]}"
+        dias_caducidad=${CADUCIDADES["$nombre_podcast"]:-$DEFAULT_DIAS}
+        umbral_segundos=$(( $(date +%s) - dias_caducidad * 86400 ))
         if (( ts < umbral_segundos )); then
-            echo "  🗑️ Eliminando por caducidad: $(basename "$archivo")"
+            echo "  🗑️ Eliminando por caducidad ($dias_caducidad días): $(basename "$archivo")"
             rm -f "$archivo"
             fecha_actual=$(date +"%Y-%m-%d %H:%M:%S")
             echo "$fecha_actual|$archivo|CADUCIDAD" >> "$ELIMINADOS_HISTORICO"
         fi
-    done
-done
+    done < <(find "$subdir" -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) -printf "%T@|%p\n" 2>/dev/null)
+done < <(find "$PODCASTS_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
 # --- ELIMINAR ARCHIVOS ANTIGUOS, CONSERVANDO SOLO EL MÁS RECIENTE POR CARPETA ---
 echo "🧹 Manteniendo solo el archivo más reciente por carpeta..."
 
