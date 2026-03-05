@@ -1220,7 +1220,7 @@ function handleFileUpload(files) {
 function uploadFilesSequentially(files, index, progressFill, statusText, progressDiv) {
     if (index >= files.length) {
         progressFill.style.width = '100%';
-        statusText.innerHTML = '<span style="color: #10b981;">✅ Todos los archivos subidos correctamente</span>';
+        statusText.innerHTML = '<span style="color: #10b981;">✅ Archivo subido correctamente (reemplazó al anterior)</span>';
         setTimeout(() => {
             progressDiv.style.display = 'none';
             loadTimeSignalsFiles();
@@ -1236,7 +1236,13 @@ function uploadFilesSequentially(files, index, progressFill, statusText, progres
 
     const progress = ((index) / files.length) * 100;
     progressFill.style.width = progress + '%';
-    statusText.textContent = `Subiendo ${file.name} (${index + 1}/${files.length})...`;
+
+    // Si hay múltiples archivos, avisar que solo se usará el último
+    if (files.length > 1) {
+        statusText.textContent = `Subiendo ${file.name} (${index + 1}/${files.length}) - Solo se guardará el último`;
+    } else {
+        statusText.textContent = `Subiendo ${file.name}...`;
+    }
 
     fetch('index.php', {
         method: 'POST',
@@ -1273,30 +1279,25 @@ function loadTimeSignalsFiles() {
         .then(response => response.json())
         .then(data => {
             if (data.success && data.files && data.files.length > 0) {
-                let html = '';
-                data.files.forEach(file => {
-                    html += `
-                        <div class="file-item">
-                            <div class="file-item-info">
-                                <span class="file-item-icon">🎵</span>
-                                <div>
-                                    <div class="file-item-name">${file.name}</div>
-                                    <div class="file-item-size">${file.size}</div>
-                                </div>
-                            </div>
-                            <div class="file-item-actions">
-                                <button class="btn btn-danger" onclick="deleteTimeSignalFile('${file.name}')" style="padding: 6px 12px; font-size: 13px;">
-                                    🗑️ Eliminar
-                                </button>
+                const file = data.files[0]; // Solo hay un archivo
+                filesList.innerHTML = `
+                    <div class="file-item" style="background: #f7fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <div class="file-item-info">
+                            <span class="file-item-icon" style="font-size: 32px;">🎵</span>
+                            <div>
+                                <div class="file-item-name" style="font-weight: 500; color: #2d3748;">${file.name}</div>
+                                <div class="file-item-size" style="color: #718096; font-size: 13px;">${file.size}</div>
                             </div>
                         </div>
-                    `;
-                });
-                filesList.innerHTML = html;
+                    </div>
+                    <p style="color: #718096; font-size: 13px; margin-top: 10px; text-align: center;">
+                        💡 Para cambiar el archivo, simplemente sube uno nuevo y reemplazará al anterior.
+                    </p>
+                `;
 
-                // Mostrar archivo activo (el primero)
+                // Mostrar archivo activo
                 if (currentFileSpan) {
-                    currentFileSpan.textContent = data.files[0].name;
+                    currentFileSpan.textContent = file.name;
                 }
             } else {
                 filesList.innerHTML = '<p style="color: #718096; text-align: center;">No hay archivos subidos. Sube uno para activar las señales horarias.</p>';
@@ -1309,36 +1310,6 @@ function loadTimeSignalsFiles() {
             console.error('Error:', error);
             filesList.innerHTML = '<p style="color: #ef4444; text-align: center;">Error al cargar archivos</p>';
         });
-}
-
-/**
- * Eliminar archivo de señal horaria
- */
-function deleteTimeSignalFile(filename) {
-    if (!confirm(`¿Estás seguro de eliminar ${filename}?`)) return;
-
-    const formData = new FormData();
-    formData.append('action', 'delete_time_signal');
-    formData.append('filename', filename);
-    formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
-
-    fetch('index.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Archivo eliminado correctamente');
-            loadTimeSignalsFiles();
-        } else {
-            alert('Error: ' + (data.message || 'Error desconocido'));
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error al eliminar archivo');
-    });
 }
 
 /**

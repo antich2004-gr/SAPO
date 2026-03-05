@@ -184,16 +184,17 @@ function uploadTimeSignal($username, $file) {
     // Sanitizar nombre de archivo
     $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', $filename);
 
-    $destination = $dir . '/' . $filename;
-
-    // Si el archivo ya existe, agregar número
-    $counter = 1;
-    $nameWithoutExt = pathinfo($filename, PATHINFO_FILENAME);
-    while (file_exists($destination)) {
-        $filename = $nameWithoutExt . '_' . $counter . '.' . $ext;
-        $destination = $dir . '/' . $filename;
-        $counter++;
+    // ELIMINAR TODOS LOS ARCHIVOS EXISTENTES (solo permitir uno)
+    $existingFiles = listTimeSignals($username);
+    foreach ($existingFiles as $existingFile) {
+        $existingPath = $dir . '/' . $existingFile['name'];
+        if (file_exists($existingPath)) {
+            @unlink($existingPath);
+            error_log("Archivo anterior eliminado: " . $existingFile['name']);
+        }
     }
+
+    $destination = $dir . '/' . $filename;
 
     // Verificar que el directorio sea escribible
     if (!is_writable($dir)) {

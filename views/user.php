@@ -653,9 +653,12 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         </div>
                     </div>
 
-                    <!-- LISTADO DE ARCHIVOS SUBIDOS -->
+                    <!-- ARCHIVO ACTIVO -->
                     <div class="time-signals-files" style="margin-top: 40px;">
-                        <h5>Archivos Disponibles</h5>
+                        <h5>Archivo Activo</h5>
+                        <p style="color: #718096; margin-bottom: 15px; font-size: 13px;">
+                            Solo puede haber un archivo de señal horaria. Al subir uno nuevo, reemplazará al anterior.
+                        </p>
                         <div id="files-list" style="background: #f7fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 100px;">
                             <p style="color: #718096; text-align: center;">Cargando...</p>
                         </div>
