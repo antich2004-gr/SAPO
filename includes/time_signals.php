@@ -349,12 +349,17 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency) {
         }
     }
 
-    $code .= "time_signal = switch([\n";
+    $code .= "time_signal = switch(id=\"time_signal_switch\", [\n";
     $code .= implode(",\n", $switchCases) . "\n";
     $code .= "])\n\n";
 
-    $code .= "# Integrar señales horarias en la radio\n";
-    $code .= "radio = fallback(track_sensitive=false, [time_signal, radio])\n";
+    $code .= "# Integrar señales horarias en la radio con mezcla suave\n";
+    $code .= "radio = smooth_add(\n";
+    $code .= "  duration=1.5,      # Duración de la transición (1.5 segundos)\n";
+    $code .= "  p=0.3,             # Música baja al 30%\n";
+    $code .= "  normal=radio,      # Fuente principal\n";
+    $code .= "  special=time_signal   # Señales horarias\n";
+    $code .= ")\n";
 
     return $code;
 }
@@ -413,12 +418,12 @@ function applyTimeSignalsToAzuraCast($username) {
 
     // PASO 4: Reemplazar o añadir código de señales horarias
     $marker_start = '# Señales Horarias - SAPO';
-    $marker_end = '# Integrar señales horarias en la radio';
 
     // Buscar y eliminar código antiguo de señales horarias
     if (strpos($customConfig, $marker_start) !== false) {
-        // Eliminar desde el marcador inicial hasta la línea que incluye "radio = fallback"
-        $pattern = '/' . preg_quote($marker_start, '/') . '.*?radio = fallback\(track_sensitive=false, \[time_signal, radio\]\)\n?/s';
+        // Eliminar desde el marcador inicial hasta el cierre de smooth_add o fallback
+        // Soporta tanto el formato antiguo (fallback) como el nuevo (smooth_add)
+        $pattern = '/' . preg_quote($marker_start, '/') . '.*?(?:radio = fallback\(track_sensitive=false, \[time_signal, radio\]\)|radio = smooth_add\([^)]*\))\s*\n?/s';
         $customConfig = preg_replace($pattern, '', $customConfig);
     }
 
