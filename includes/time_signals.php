@@ -476,17 +476,16 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency, $duration 
     $code .= "  m\n";
     $code .= "end, señal_base)\n\n";
 
-    // Generar predicados de tiempo con ventanas ultra-precisas (solo primer segundo)
+    // Generar predicados de tiempo con ventanas precisas
     if ($allDays) {
         // Definir predicados para cada momento
         $predicates = [];
         foreach ($minuteConditions as $idx => $minute) {
             $predName = "time_pred_" . str_replace('m', '', $minute);
-            // Ventana de 1 segundo exacto: 0m0s, 30m0s, etc.
-            $timeSpec = $minute . "0s";
-            $code .= "# Predicado para minuto $minute (disparo exacto)\n";
-            $code .= "$predName = time.predicate(\"$timeSpec\")\n";
-            $code .= "log(\"DEBUG: Evaluando predicado $predName = #{$predName()}\")\n";
+            // Usar sintaxis de bloque de tiempo: { 0m0s }, { 30m0s }, etc.
+            $timeSpec = "{ " . $minute . "0s }";
+            $code .= "# Predicado para minuto $minute (disparo exacto en segundo 0)\n";
+            $code .= "$predName = $timeSpec\n";
             $predicates[] = "($predName, señal_horaria)";
         }
         $code .= "\n";
@@ -500,10 +499,9 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency, $duration 
         foreach ($minuteConditions as $minute) {
             foreach ($activeDays as $dayNum) {
                 $predName = "time_pred_" . $predIdx;
-                $timeSpec = sprintf("%dw and %s0s", $dayNum, $minute);
-                $code .= "# Predicado para día $dayNum, minuto $minute (disparo exacto)\n";
-                $code .= "$predName = time.predicate(\"$timeSpec\")\n";
-                $code .= "log(\"DEBUG: Evaluando predicado $predName = #{$predName()}\")\n";
+                $timeSpec = sprintf("{ %dw and %s0s }", $dayNum, $minute);
+                $code .= "# Predicado para día $dayNum, minuto $minute (disparo exacto en segundo 0)\n";
+                $code .= "$predName = $timeSpec\n";
                 $predicates[] = "($predName, señal_horaria)";
                 $predIdx++;
             }
