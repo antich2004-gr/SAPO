@@ -471,16 +471,18 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency, $duration 
     $code = "# Señales Horarias - SAPO\n";
     $code .= "señal_horaria = single(\"$audioPath\")\n\n";
 
-    // Generar predicados de tiempo precisos
+    // Generar predicados de tiempo con activación en flanco ascendente
     if ($allDays) {
         // Definir predicados para cada momento
         $predicates = [];
         foreach ($minuteConditions as $idx => $minute) {
             $predName = "time_pred_" . str_replace('m', '', $minute);
+            $predActivates = $predName . "_activates";
             $timeSpec = $minute . "0s";  // 0m0s, 30m0s, etc.
             $code .= "# Predicado para minuto $minute\n";
             $code .= "$predName = time.predicate(\"$timeSpec\")\n";
-            $predicates[] = "({once($predName)}, señal_horaria)";
+            $code .= "$predActivates = predicate.activates($predName)\n";
+            $predicates[] = "($predActivates, señal_horaria)";
         }
         $code .= "\n";
         $code .= "horarias = switch(id=\"time_signal_switch\", [\n";
@@ -493,10 +495,12 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency, $duration 
         foreach ($minuteConditions as $minute) {
             foreach ($activeDays as $dayNum) {
                 $predName = "time_pred_" . $predIdx;
+                $predActivates = $predName . "_activates";
                 $timeSpec = sprintf("%dw and %s0s", $dayNum, $minute);
                 $code .= "# Predicado para día $dayNum, minuto $minute\n";
                 $code .= "$predName = time.predicate(\"$timeSpec\")\n";
-                $predicates[] = "({once($predName)}, señal_horaria)";
+                $code .= "$predActivates = predicate.activates($predName)\n";
+                $predicates[] = "($predActivates, señal_horaria)";
                 $predIdx++;
             }
         }
