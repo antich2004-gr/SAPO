@@ -26,6 +26,7 @@ require_once INCLUDES_DIR . '/podcasts.php';
 require_once INCLUDES_DIR . '/feed.php';
 require_once INCLUDES_DIR . '/reports.php';
 require_once INCLUDES_DIR . '/azuracast.php';
+require_once INCLUDES_DIR . '/time_signals.php';
 
 initSession();
 
@@ -162,6 +163,83 @@ initSession();
                 'podcasts' => array_map(function($p) { return $p['name']; }, $podcasts)
             ]);
         }
+        exit;
+    }
+
+    // AJAX: Subir archivo de señal horaria
+    if (isset($_POST['action']) && $_POST['action'] == 'upload_time_signal' && isLoggedIn() && !isAdmin()) {
+        header('Content-Type: application/json');
+
+        // Validar CSRF token
+        $token = $_POST['csrf_token'] ?? '';
+        if (!validateCSRFToken($token)) {
+            echo json_encode(['success' => false, 'message' => ERROR_INVALID_TOKEN]);
+            exit;
+        }
+
+        if (!isset($_FILES['file'])) {
+            echo json_encode(['success' => false, 'message' => 'No se recibió ningún archivo']);
+            exit;
+        }
+
+        $result = uploadTimeSignal($_SESSION['username'], $_FILES['file']);
+        echo json_encode($result);
+        exit;
+    }
+
+    // AJAX: Listar archivos de señales horarias
+    if (isset($_GET['action']) && $_GET['action'] == 'list_time_signals' && isLoggedIn() && !isAdmin()) {
+        header('Content-Type: application/json');
+
+        $files = listTimeSignals($_SESSION['username']);
+        echo json_encode(['success' => true, 'files' => $files]);
+        exit;
+    }
+
+    // AJAX: Eliminar archivo de señal horaria
+    if (isset($_POST['action']) && $_POST['action'] == 'delete_time_signal' && isLoggedIn() && !isAdmin()) {
+        header('Content-Type: application/json');
+
+        // Validar CSRF token
+        $token = $_POST['csrf_token'] ?? '';
+        if (!validateCSRFToken($token)) {
+            echo json_encode(['success' => false, 'message' => ERROR_INVALID_TOKEN]);
+            exit;
+        }
+
+        $filename = $_POST['filename'] ?? '';
+        if (empty($filename)) {
+            echo json_encode(['success' => false, 'message' => 'Nombre de archivo no especificado']);
+            exit;
+        }
+
+        $result = deleteTimeSignal($_SESSION['username'], $filename);
+        echo json_encode($result);
+        exit;
+    }
+
+    // AJAX: Obtener configuración de señales horarias
+    if (isset($_GET['action']) && $_GET['action'] == 'get_time_signals_config' && isLoggedIn() && !isAdmin()) {
+        header('Content-Type: application/json');
+
+        $config = getTimeSignalsConfig($_SESSION['username']);
+        echo json_encode(['success' => true, 'config' => $config]);
+        exit;
+    }
+
+    // AJAX: Guardar configuración de señales horarias
+    if (isset($_POST['action']) && $_POST['action'] == 'save_time_signals_config' && isLoggedIn() && !isAdmin()) {
+        header('Content-Type: application/json');
+
+        // Validar CSRF token
+        $token = $_POST['csrf_token'] ?? '';
+        if (!validateCSRFToken($token)) {
+            echo json_encode(['success' => false, 'message' => ERROR_INVALID_TOKEN]);
+            exit;
+        }
+
+        $result = processTimeSignalsForm($_SESSION['username'], $_POST);
+        echo json_encode($result);
         exit;
     }
 

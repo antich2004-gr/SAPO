@@ -9,23 +9,29 @@ function switchTab(tabName) {
     panels.forEach(panel => {
         panel.classList.remove('active');
     });
-    
+
     // Desactivar todos los botones
     const buttons = document.querySelectorAll('.tab-button');
     buttons.forEach(button => {
         button.classList.remove('active');
     });
-    
+
     // Mostrar la pestaña seleccionada
     const selectedPanel = document.getElementById('tab-' + tabName);
     if (selectedPanel) {
         selectedPanel.classList.add('active');
     }
-    
+
     // Activar el botón seleccionado
     const selectedButton = document.querySelector('[data-tab="' + tabName + '"]');
     if (selectedButton) {
         selectedButton.classList.add('active');
+    }
+
+    // Si es la pestaña de configuración, cargar datos
+    if (tabName === 'config') {
+        loadTimeSignalsFiles();
+        loadTimeSignalsConfig();
     }
 }
 
@@ -1112,4 +1118,333 @@ document.addEventListener('DOMContentLoaded', function() {
         // Limpiar el parámetro de la URL sin recargar
         window.history.replaceState({}, document.title, window.location.pathname);
     }
+
+    // Inicializar dropzone si existe
+    initializeTimeSignalsDropzone();
 });
+
+// ============================================================================
+// FUNCIONES PARA SEÑALES HORARIAS
+// ============================================================================
+
+/**
+ * Inicializar Dropzone para subir archivos
+ */
+function initializeTimeSignalsDropzone() {
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+
+    if (!dropzone || !fileInput) return;
+
+    // Click en dropzone abre selector de archivos
+    dropzone.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    // Drag & Drop
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('drag-over');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.classList.remove('drag-over');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('drag-over');
+        const files = e.dataTransfer.files;
+        handleFileUpload(files);
+    });
+
+    // Selección de archivos
+    fileInput.addEventListener('change', (e) => {
+        const files = e.target.files;
+        handleFileUpload(files);
+    });
+
+    // Habilitar/deshabilitar campos de horario según checkbox
+    document.querySelectorAll('.day-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const day = this.value;
+            const startInput = document.querySelector(`input[name="${day}_start"]`);
+            const endInput = document.querySelector(`input[name="${day}_end"]`);
+
+            if (startInput && endInput) {
+                startInput.disabled = !this.checked;
+                endInput.disabled = !this.checked;
+
+                if (!this.checked) {
+                    startInput.value = '';
+                    endInput.value = '';
+                }
+            }
+        });
+    });
+
+    // Submit del formulario
+    const form = document.getElementById('time-signals-form');
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            saveTimeSignalsConfig();
+        });
+    }
+}
+
+/**
+ * Manejar subida de archivos
+ */
+function handleFileUpload(files) {
+    if (!files || files.length === 0) return;
+
+    const progressDiv = document.getElementById('upload-progress');
+    const progressFill = document.getElementById('progress-fill');
+    const statusText = document.getElementById('upload-status');
+
+    progressDiv.style.display = 'block';
+    progressFill.style.width = '0%';
+    statusText.textContent = 'Preparando archivos...';
+
+    // Validar archivos
+    const validFiles = [];
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a'];
+
+    for (let file of files) {
+        if (file.size > maxSize) {
+            alert(`El archivo ${file.name} excede el tamaño máximo de 10MB`);
+            continue;
+        }
+        validFiles.push(file);
+    }
+
+    if (validFiles.length === 0) {
+        progressDiv.style.display = 'none';
+        return;
+    }
+
+    // Subir archivos uno por uno
+    uploadFilesSequentially(validFiles, 0, progressFill, statusText, progressDiv);
+}
+
+/**
+ * Subir archivos de forma secuencial
+ */
+function uploadFilesSequentially(files, index, progressFill, statusText, progressDiv) {
+    if (index >= files.length) {
+        progressFill.style.width = '100%';
+        statusText.innerHTML = '<span style="color: #10b981;">✅ Todos los archivos subidos correctamente</span>';
+        setTimeout(() => {
+            progressDiv.style.display = 'none';
+            loadTimeSignalsFiles();
+        }, 2000);
+        return;
+    }
+
+    const file = files[index];
+    const formData = new FormData();
+    formData.append('action', 'upload_time_signal');
+    formData.append('file', file);
+    formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+
+    const progress = ((index) / files.length) * 100;
+    progressFill.style.width = progress + '%';
+    statusText.textContent = `Subiendo ${file.name} (${index + 1}/${files.length})...`;
+
+    fetch('index.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            uploadFilesSequentially(files, index + 1, progressFill, statusText, progressDiv);
+        } else {
+            statusText.innerHTML = `<span style="color: #ef4444;">❌ Error: ${data.message || 'Error desconocido'}</span>`;
+            setTimeout(() => progressDiv.style.display = 'none', 3000);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        statusText.innerHTML = '<span style="color: #ef4444;">❌ Error al subir archivo</span>';
+        setTimeout(() => progressDiv.style.display = 'none', 3000);
+    });
+}
+
+/**
+ * Cargar lista de archivos subidos
+ */
+function loadTimeSignalsFiles() {
+    const filesList = document.getElementById('files-list');
+    const selectFile = document.getElementById('signal-file-select');
+
+    if (!filesList) return;
+
+    filesList.innerHTML = '<p style="color: #718096; text-align: center;">Cargando...</p>';
+
+    fetch('index.php?action=list_time_signals')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.files && data.files.length > 0) {
+                let html = '';
+                data.files.forEach(file => {
+                    html += `
+                        <div class="file-item">
+                            <div class="file-item-info">
+                                <span class="file-item-icon">🎵</span>
+                                <div>
+                                    <div class="file-item-name">${file.name}</div>
+                                    <div class="file-item-size">${file.size}</div>
+                                </div>
+                            </div>
+                            <div class="file-item-actions">
+                                <button class="btn btn-primary" onclick="playAudio('${file.name}')" style="padding: 6px 12px; font-size: 13px;">
+                                    ▶️ Reproducir
+                                </button>
+                                <button class="btn btn-danger" onclick="deleteTimeSignalFile('${file.name}')" style="padding: 6px 12px; font-size: 13px;">
+                                    🗑️ Eliminar
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                filesList.innerHTML = html;
+
+                // Actualizar selector
+                if (selectFile) {
+                    selectFile.innerHTML = '<option value="">-- Selecciona un archivo --</option>';
+                    data.files.forEach(file => {
+                        selectFile.innerHTML += `<option value="${file.name}">${file.name}</option>`;
+                    });
+                }
+            } else {
+                filesList.innerHTML = '<p style="color: #718096; text-align: center;">No hay archivos subidos</p>';
+                if (selectFile) {
+                    selectFile.innerHTML = '<option value="">-- No hay archivos disponibles --</option>';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            filesList.innerHTML = '<p style="color: #ef4444; text-align: center;">Error al cargar archivos</p>';
+        });
+}
+
+/**
+ * Reproducir archivo de audio
+ */
+function playAudio(filename) {
+    const audio = new Audio(`user_data/time_signals/${filename}`);
+    audio.play().catch(err => {
+        alert('Error al reproducir el audio: ' + err.message);
+    });
+}
+
+/**
+ * Eliminar archivo de señal horaria
+ */
+function deleteTimeSignalFile(filename) {
+    if (!confirm(`¿Estás seguro de eliminar ${filename}?`)) return;
+
+    const formData = new FormData();
+    formData.append('action', 'delete_time_signal');
+    formData.append('filename', filename);
+    formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+
+    fetch('index.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Archivo eliminado correctamente');
+            loadTimeSignalsFiles();
+        } else {
+            alert('Error: ' + (data.message || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al eliminar archivo');
+    });
+}
+
+/**
+ * Cargar configuración de señales horarias
+ */
+function loadTimeSignalsConfig() {
+    fetch('index.php?action=get_time_signals_config')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.config) {
+                const config = data.config;
+
+                // Seleccionar archivo
+                const selectFile = document.getElementById('signal-file-select');
+                if (selectFile && config.signal_file) {
+                    selectFile.value = config.signal_file;
+                }
+
+                // Configurar días y horarios
+                if (config.schedule) {
+                    Object.keys(config.schedule).forEach(day => {
+                        const checkbox = document.querySelector(`input[value="${day}"]`);
+                        const startInput = document.querySelector(`input[name="${day}_start"]`);
+                        const endInput = document.querySelector(`input[name="${day}_end"]`);
+
+                        if (checkbox && config.schedule[day]) {
+                            checkbox.checked = true;
+                            if (startInput) {
+                                startInput.disabled = false;
+                                startInput.value = config.schedule[day].start || '';
+                            }
+                            if (endInput) {
+                                endInput.disabled = false;
+                                endInput.value = config.schedule[day].end || '';
+                            }
+                        }
+                    });
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+}
+
+/**
+ * Guardar configuración de señales horarias
+ */
+function saveTimeSignalsConfig() {
+    const statusDiv = document.getElementById('config-status');
+    const form = document.getElementById('time-signals-form');
+    const formData = new FormData(form);
+
+    formData.append('action', 'save_time_signals_config');
+    formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+
+    statusDiv.innerHTML = '<p style="color: #718096;">Guardando configuración...</p>';
+
+    fetch('index.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            statusDiv.innerHTML = '<div class="alert alert-success">✅ Configuración guardada y aplicada correctamente</div>';
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 3000);
+        } else {
+            statusDiv.innerHTML = `<div class="alert alert-error">❌ Error: ${data.message || 'Error desconocido'}</div>`;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        statusDiv.innerHTML = '<div class="alert alert-error">❌ Error al guardar configuración</div>';
+    });
+}
