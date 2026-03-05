@@ -289,47 +289,10 @@ function uploadFileToAzuraCast($username, $filePath, $destinationPath = '') {
 }
 
 /**
- * Buscar playlist de señales horarias existente
+ * Generar código Liquidsoap para señales horarias
  */
-function findTimeSignalsPlaylist($username) {
-    $playlists = getAzuracastPlaylists($username, 0); // Sin caché
-
-    if ($playlists === false) {
-        return null;
-    }
-
-    // Buscar playlist con nombre específico
-    foreach ($playlists as $playlist) {
-        $name = $playlist['name'] ?? '';
-        if (stripos($name, 'Señales Horarias') !== false ||
-            stripos($name, 'Time Signals') !== false ||
-            stripos($name, 'SAPO - Señales') !== false) {
-            return $playlist;
-        }
-    }
-
-    return null;
-}
-
-/**
- * Crear o actualizar playlist de señales horarias
- */
-function createOrUpdateTimeSignalsPlaylist($username, $audioPath, $days, $frequency) {
-    $globalConfig = getConfig();
-    $apiUrl = $globalConfig['azuracast_api_url'] ?? '';
-    $apiKey = $globalConfig['azuracast_api_key'] ?? '';
-
-    $userData = getUserDB($username);
-    $stationId = $userData['azuracast']['station_id'] ?? null;
-
-    if (empty($stationId) || empty($apiUrl) || empty($apiKey)) {
-        return ['success' => false, 'message' => 'Configuración incompleta'];
-    }
-
-    // Buscar playlist existente
-    $existingPlaylist = findTimeSignalsPlaylist($username);
-
-    // Mapeo de días español -> AzuraCast (0=domingo, 1=lunes, ..., 6=sábado)
+function generateLiquidsoapTimeSignals($audioPath, $days, $frequency) {
+    // Mapeo de días español -> liquidsoap (1=lunes, 2=martes, ..., 7=domingo)
     $dayMap = [
         'lunes' => 1,
         'martes' => 2,
@@ -337,10 +300,10 @@ function createOrUpdateTimeSignalsPlaylist($username, $audioPath, $days, $freque
         'jueves' => 4,
         'viernes' => 5,
         'sabado' => 6,
-        'domingo' => 0
+        'domingo' => 7
     ];
 
-    // Convertir días seleccionados
+    // Convertir días seleccionados a números
     $activeDays = [];
     foreach ($days as $day) {
         if (isset($dayMap[$day])) {
@@ -349,166 +312,61 @@ function createOrUpdateTimeSignalsPlaylist($username, $audioPath, $days, $freque
     }
 
     if (empty($activeDays)) {
-        return ['success' => false, 'message' => 'Debe seleccionar al menos un día'];
+        return '';
     }
 
-    // Generar horarios según frecuencia
-    $scheduleRules = [];
-    $minutes = [];
-
+    // Generar condiciones de minutos según frecuencia
+    $minuteConditions = [];
     switch ($frequency) {
         case 'hourly':
-            $minutes = [0]; // Solo en punto
+            $minuteConditions[] = '0m';
             break;
         case 'half-hourly':
-            $minutes = [0, 30]; // Cada media hora
+            $minuteConditions[] = '0m';
+            $minuteConditions[] = '30m';
             break;
         case 'quarter-hourly':
-            $minutes = [0, 15, 30, 45]; // Cada 15 minutos
+            $minuteConditions[] = '0m';
+            $minuteConditions[] = '15m';
+            $minuteConditions[] = '30m';
+            $minuteConditions[] = '45m';
             break;
         default:
-            $minutes = [0];
+            $minuteConditions[] = '0m';
     }
 
-    // Crear reglas para cada minuto y cada día
-    foreach ($minutes as $minute) {
-        $scheduleRules[] = [
-            'start_time' => sprintf('%02d:%02d:00', 0, $minute),  // Desde las 00:XX
-            'end_time' => '23:59:59',  // Hasta las 23:59
-            'start_date' => null,
-            'end_date' => null,
-            'days' => $activeDays,
-            'loop_once_per_hour' => true  // Importante: solo una vez por hora en el minuto especificado
-        ];
-    }
+    // Generar código liquidsoap
+    $code = "# Señales Horarias - SAPO\n";
+    $code .= "time_signal_source = single(\"$audioPath\")\n\n";
 
-    $playlistData = [
-        'name' => 'SAPO - Señales Horarias',
-        'type' => 'scheduled', // Playlist programada
-        'source' => 'songs',
-        'order' => 'sequential',
-        'include_in_automation' => true,
-        'is_enabled' => true,
-        'weight' => 10,
-        'schedule_items' => $scheduleRules,
-        'avoid_duplicates' => true
-    ];
-
-    if ($existingPlaylist) {
-        // Actualizar playlist existente
-        $playlistId = $existingPlaylist['id'];
-        $updateUrl = rtrim($apiUrl, '/') . '/station/' . $stationId . '/playlist/' . $playlistId;
-
-        $result = makeAzuraCastRequest($updateUrl, 'PUT', $playlistData, $apiKey);
-
-        if (!$result['success']) {
-            return ['success' => false, 'message' => 'Error al actualizar playlist: ' . $result['message']];
+    // Combinar minutos y días
+    $conditions = [];
+    foreach ($minuteConditions as $minute) {
+        foreach ($activeDays as $dayNum) {
+            // Formato: {1w and 0m0s} = lunes a las :00
+            $conditions[] = sprintf("{%dw and %s0s}", $dayNum, $minute);
         }
-
-        return [
-            'success' => true,
-            'message' => 'Playlist de señales horarias actualizada',
-            'playlist_id' => $playlistId,
-            'updated' => true
-        ];
-
-    } else {
-        // Crear nueva playlist
-        $createUrl = rtrim($apiUrl, '/') . '/station/' . $stationId . '/playlists';
-
-        $result = makeAzuraCastRequest($createUrl, 'POST', $playlistData, $apiKey);
-
-        if (!$result['success']) {
-            return ['success' => false, 'message' => 'Error al crear playlist: ' . $result['message']];
-        }
-
-        $responseData = $result['data'] ?? [];
-        $playlistId = $responseData['id'] ?? null;
-
-        return [
-            'success' => true,
-            'message' => 'Playlist de señales horarias creada',
-            'playlist_id' => $playlistId,
-            'updated' => false
-        ];
     }
+
+    $conditionsStr = implode(', ', $conditions);
+    $code .= "time_signal = switch([\n";
+    $code .= "  ($conditionsStr, time_signal_source)\n";
+    $code .= "])\n\n";
+
+    $code .= "# Integrar señales horarias en la radio\n";
+    $code .= "radio = fallback(track_sensitive=false, [time_signal, radio])\n";
+
+    return $code;
 }
 
 /**
- * Hacer petición a la API de AzuraCast
- */
-function makeAzuraCastRequest($url, $method = 'GET', $data = null, $apiKey = null) {
-    $headers = ['User-Agent: SAPO/1.0'];
-
-    if ($apiKey) {
-        $headers[] = 'X-API-Key: ' . $apiKey;
-    }
-
-    $options = [
-        'http' => [
-            'method' => $method,
-            'header' => implode("\r\n", $headers),
-            'timeout' => 20,
-            'ignore_errors' => true
-        ]
-    ];
-
-    if ($data !== null && in_array($method, ['POST', 'PUT', 'PATCH'])) {
-        $jsonData = json_encode($data);
-        $options['http']['header'] .= "\r\nContent-Type: application/json\r\nContent-Length: " . strlen($jsonData);
-        $options['http']['content'] = $jsonData;
-    }
-
-    $context = stream_context_create($options);
-    $response = @file_get_contents($url, false, $context);
-
-    if ($response === false) {
-        return ['success' => false, 'message' => 'Error en la petición HTTP'];
-    }
-
-    $responseData = json_decode($response, true);
-
-    // Verificar código de respuesta HTTP
-    if (isset($http_response_header[0])) {
-        preg_match('/HTTP\/\d\.\d\s+(\d+)/', $http_response_header[0], $matches);
-        $statusCode = isset($matches[1]) ? (int)$matches[1] : 200;
-
-        if ($statusCode >= 200 && $statusCode < 300) {
-            return ['success' => true, 'data' => $responseData];
-        } else {
-            $errorMsg = $responseData['message'] ?? 'HTTP ' . $statusCode;
-            return ['success' => false, 'message' => $errorMsg];
-        }
-    }
-
-    return ['success' => true, 'data' => $responseData];
-}
-
-/**
- * Aplicar configuración de señales horarias a AzuraCast
+ * Aplicar configuración de señales horarias a AzuraCast via Liquidsoap
  */
 function applyTimeSignalsToAzuraCast($username) {
     $config = getTimeSignalsConfig($username);
 
     if (empty($config['signal_file']) || empty($config['days'])) {
         return ['success' => false, 'message' => 'Configuración incompleta'];
-    }
-
-    // Obtener configuración global de AzuraCast
-    $globalConfig = getConfig();
-    $apiUrl = $globalConfig['azuracast_api_url'] ?? '';
-    $apiKey = $globalConfig['azuracast_api_key'] ?? '';
-
-    if (empty($apiUrl) || empty($apiKey)) {
-        return ['success' => false, 'message' => 'API de AzuraCast no configurada'];
-    }
-
-    // Obtener station_id del usuario
-    $userData = getUserDB($username);
-    $stationId = $userData['azuracast']['station_id'] ?? null;
-
-    if (empty($stationId)) {
-        return ['success' => false, 'message' => 'Station ID no configurado'];
     }
 
     $audioPath = getTimeSignalsDir($username) . '/' . $config['signal_file'];
@@ -531,26 +389,60 @@ function applyTimeSignalsToAzuraCast($username) {
 
     $azuracastPath = $uploadResult['path'];
 
-    // PASO 2: Crear o actualizar playlist programada
-    $playlistResult = createOrUpdateTimeSignalsPlaylist($username, $azuracastPath, $days, $frequency);
+    // PASO 2: Generar código Liquidsoap
+    $liquidsoapCode = generateLiquidsoapTimeSignals($azuracastPath, $days, $frequency);
 
-    if (!$playlistResult['success']) {
+    if (empty($liquidsoapCode)) {
+        return ['success' => false, 'message' => 'Error al generar código Liquidsoap'];
+    }
+
+    // PASO 3: Obtener configuración actual de Liquidsoap
+    $currentConfig = getAzuracastLiquidsoapConfig($username);
+    if ($currentConfig === false) {
+        return ['success' => false, 'message' => 'Error al obtener configuración de Liquidsoap'];
+    }
+
+    // Buscar el campo custom_config
+    $customConfig = '';
+    foreach ($currentConfig as $field) {
+        if ($field['field'] === 'custom_config') {
+            $customConfig = $field['value'];
+            break;
+        }
+    }
+
+    // PASO 4: Reemplazar o añadir código de señales horarias
+    $marker_start = '# Señales Horarias - SAPO';
+    $marker_end = '# Integrar señales horarias en la radio';
+
+    // Buscar y eliminar código antiguo de señales horarias
+    if (strpos($customConfig, $marker_start) !== false) {
+        $pattern = '/' . preg_quote($marker_start, '/') . '.*?' . preg_quote($marker_end, '/') . '.*?\n/s';
+        $customConfig = preg_replace($pattern, '', $customConfig);
+    }
+
+    // Añadir nuevo código al final
+    $customConfig = trim($customConfig);
+    if (!empty($customConfig)) {
+        $customConfig .= "\n\n";
+    }
+    $customConfig .= $liquidsoapCode;
+
+    // PASO 5: Actualizar configuración en AzuraCast
+    $updateResult = updateAzuracastLiquidsoapConfig($username, [
+        'custom_config' => $customConfig
+    ]);
+
+    if (!$updateResult['success']) {
         return [
             'success' => false,
-            'message' => $playlistResult['message']
+            'message' => 'Error al actualizar Liquidsoap: ' . $updateResult['message']
         ];
     }
 
-    // PASO 3: Mensaje de éxito
-    $message = $playlistResult['updated']
-        ? 'Configuración actualizada en AzuraCast. La playlist existente "SAPO - Señales Horarias" ha sido modificada con los nuevos horarios.'
-        : 'Configuración aplicada a AzuraCast. Se creó la playlist "SAPO - Señales Horarias" con los horarios especificados.';
-
     return [
         'success' => true,
-        'message' => $message,
-        'playlist_id' => $playlistResult['playlist_id'],
-        'updated' => $playlistResult['updated']
+        'message' => 'Señales horarias aplicadas correctamente al Liquidsoap'
     ];
 }
 
