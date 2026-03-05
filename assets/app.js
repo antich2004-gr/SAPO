@@ -1285,9 +1285,6 @@ function loadTimeSignalsFiles() {
                                 </div>
                             </div>
                             <div class="file-item-actions">
-                                <button class="btn btn-primary" onclick="playAudio('${file.name}')" style="padding: 6px 12px; font-size: 13px;">
-                                    ▶️ Reproducir
-                                </button>
                                 <button class="btn btn-danger" onclick="deleteTimeSignalFile('${file.name}')" style="padding: 6px 12px; font-size: 13px;">
                                     🗑️ Eliminar
                                 </button>
@@ -1312,16 +1309,6 @@ function loadTimeSignalsFiles() {
             console.error('Error:', error);
             filesList.innerHTML = '<p style="color: #ef4444; text-align: center;">Error al cargar archivos</p>';
         });
-}
-
-/**
- * Reproducir archivo de audio
- */
-function playAudio(filename) {
-    const audio = new Audio(`user_data/time_signals/${filename}`);
-    audio.play().catch(err => {
-        alert('Error al reproducir el audio: ' + err.message);
-    });
 }
 
 /**
