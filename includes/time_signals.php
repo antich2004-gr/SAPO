@@ -692,6 +692,9 @@ function applyTimeSignalsToAzuraCast($username) {
     error_log("APPLY DEBUG - Archivo de audio existe: SÍ");
     $frequency = $config['frequency'] ?? 'hourly';
     $days = $config['days'] ?? [];
+    $duration = floatval($config['duration'] ?? 1.5);
+    $attenuationPercent = intval($config['attenuation'] ?? 30);
+    $attenuation = $attenuationPercent / 100; // Convertir porcentaje a decimal
 
     // PASO 1: Generar path para Liquidsoap
     // El archivo ya está en /var/azuracast/stations/{username}/media/senales_horarias/{filename}
@@ -699,10 +702,12 @@ function applyTimeSignalsToAzuraCast($username) {
     error_log("APPLY DEBUG - Path Liquidsoap: $liquidsoapPath");
     error_log("APPLY DEBUG - Frecuencia: $frequency");
     error_log("APPLY DEBUG - Días: " . json_encode($days));
+    error_log("APPLY DEBUG - Duración: $duration");
+    error_log("APPLY DEBUG - Atenuación: $attenuationPercent%");
 
-    // PASO 2: Generar código Liquidsoap
+    // PASO 2: Generar código Liquidsoap con valores personalizados
     error_log("APPLY DEBUG - Generando código Liquidsoap...");
-    $liquidsoapCode = generateLiquidsoapTimeSignals($liquidsoapPath, $days, $frequency);
+    $liquidsoapCode = generateLiquidsoapTimeSignals($liquidsoapPath, $days, $frequency, $duration, $attenuation);
 
     if (empty($liquidsoapCode)) {
         error_log("APPLY DEBUG - ERROR: Código Liquidsoap vacío");
@@ -1019,10 +1024,13 @@ function applyTimeSignalsViaAPI($username) {
 
     $frequency = $config['frequency'] ?? 'hourly';
     $days = $config['days'] ?? [];
+    $duration = floatval($config['duration'] ?? 1.5);
+    $attenuationPercent = intval($config['attenuation'] ?? 30);
+    $attenuation = $attenuationPercent / 100; // Convertir porcentaje a decimal
 
-    // Generar código Liquidsoap
+    // Generar código Liquidsoap con valores personalizados
     $liquidsoapPath = "/var/azuracast/stations/{$username}/media/senales_horarias/{$config['signal_file']}";
-    $liquidsoapCode = generateLiquidsoapTimeSignals($liquidsoapPath, $days, $frequency);
+    $liquidsoapCode = generateLiquidsoapTimeSignals($liquidsoapPath, $days, $frequency, $duration, $attenuation);
 
     if (empty($liquidsoapCode)) {
         error_log("API APPLY - ERROR: No se pudo generar código");
