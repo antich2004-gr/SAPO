@@ -1287,7 +1287,6 @@ function loadTimeSignalFiles() {
             let html = '<div style="display: flex; flex-direction: column; gap: 10px;">';
 
             data.files.forEach(file => {
-                const sizeKB = (file.size / 1024).toFixed(2);
                 html += `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 6px; border: 1px solid #e2e8f0;">
                         <div style="flex: 1;">
@@ -1295,7 +1294,7 @@ function loadTimeSignalFiles() {
                                 🎵 ${file.name}
                             </div>
                             <div style="font-size: 13px; color: #718096;">
-                                ${sizeKB} KB • ${file.modified}
+                                ${file.size} • ${file.modified}
                             </div>
                         </div>
                         <button

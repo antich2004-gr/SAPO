@@ -97,12 +97,14 @@ function listTimeSignals($username) {
 
         $size = filesize($path);
         $sizeFormatted = formatFileSize($size);
+        $modified = date('Y-m-d H:i:s', filemtime($path));
 
         $files[] = [
             'name' => $item,
             'path' => $path,
             'size' => $sizeFormatted,
             'size_bytes' => $size,
+            'modified' => $modified,
             'extension' => $ext
         ];
     }
@@ -172,11 +174,31 @@ function uploadTimeSignal($username, $file) {
         $counter++;
     }
 
+    // Verificar que el directorio sea escribible
+    if (!is_writable($dir)) {
+        error_log("Directorio no escribible: $dir");
+        return ['success' => false, 'message' => 'Directorio no tiene permisos de escritura'];
+    }
+
+    // Verificar que el archivo temporal exista
+    if (!file_exists($file['tmp_name'])) {
+        error_log("Archivo temporal no existe: " . $file['tmp_name']);
+        return ['success' => false, 'message' => 'Archivo temporal no encontrado'];
+    }
+
     if (move_uploaded_file($file['tmp_name'], $destination)) {
         chmod($destination, 0644);
-        return ['success' => true, 'filename' => $filename];
+        return [
+            'success' => true,
+            'filename' => $filename,
+            'message' => 'Archivo subido correctamente'
+        ];
     } else {
-        return ['success' => false, 'message' => 'Error al guardar el archivo'];
+        $error = error_get_last();
+        error_log("Error al mover archivo: " . json_encode($error));
+        error_log("Destino: $destination");
+        error_log("Permisos del directorio: " . substr(sprintf('%o', fileperms($dir)), -4));
+        return ['success' => false, 'message' => 'Error al guardar el archivo en: ' . basename($destination)];
     }
 }
 
