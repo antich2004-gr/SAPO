@@ -1607,12 +1607,29 @@ function applyTimeSignalsViaAPI() {
     const statusDiv = document.getElementById('config-status');
     const frequency = document.getElementById('signal-frequency').value;
 
+    // Mostrar diálogo de confirmación
+    const confirmMessage =
+        "⚠️ AVISO IMPORTANTE\n\n" +
+        "Esta acción reiniciará la emisora para aplicar los cambios.\n\n" +
+        "• Duración estimada: 3-5 segundos\n" +
+        "• Habrá un corte breve en la transmisión\n" +
+        "• Las señales horarias se activarán automáticamente\n\n" +
+        "¿Deseas continuar?";
+
+    if (!confirm(confirmMessage)) {
+        statusDiv.innerHTML = '<div class="alert alert-info">❌ Operación cancelada. Puedes copiar el código manualmente si lo prefieres.</div>';
+        setTimeout(() => {
+            statusDiv.innerHTML = '';
+        }, 4000);
+        return;
+    }
+
     const formData = new FormData();
     formData.append('action', 'apply_time_signals_via_api');
     formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
     formData.append('frequency', frequency);
 
-    statusDiv.innerHTML = '<p style="color: #3182ce;">Aplicando vía API de AzuraCast...</p>';
+    statusDiv.innerHTML = '<p style="color: #3182ce;">⏳ Aplicando vía API de AzuraCast y reiniciando emisora...</p>';
 
     fetch('', {
         method: 'POST',
