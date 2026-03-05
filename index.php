@@ -243,6 +243,22 @@ initSession();
         exit;
     }
 
+    // AJAX: Aplicar señales horarias (alias de save_time_signals_config)
+    if (isset($_POST['action']) && $_POST['action'] == 'apply_time_signals' && isLoggedIn() && !isAdmin()) {
+        header('Content-Type: application/json');
+
+        // Validar CSRF token
+        $token = $_POST['csrf_token'] ?? '';
+        if (!validateCSRFToken($token)) {
+            echo json_encode(['success' => false, 'message' => ERROR_INVALID_TOKEN]);
+            exit;
+        }
+
+        $result = processTimeSignalsForm($_SESSION['username'], $_POST);
+        echo json_encode($result);
+        exit;
+    }
+
     // AJAX: Sincronizar configuración desde Liquidsoap
     if (isset($_POST['action']) && $_POST['action'] == 'sync_time_signals_from_liquidsoap' && isLoggedIn() && !isAdmin()) {
         header('Content-Type: application/json');
