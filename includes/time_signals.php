@@ -467,35 +467,42 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency, $duration 
             $minuteConditions[] = '0m';
     }
 
-    // Generar código liquidsoap
+    // Generar código liquidsoap con sintaxis de Liquidsoap 2.x
     $code = "# Señales Horarias - SAPO\n";
-    $code .= "señal_horaria = single(\"$audioPath\")\n";
+    $code .= "señal_horaria = single(\"$audioPath\")\n\n";
 
-    // Generar switch con condiciones de tiempo precisas
+    // Generar predicados de tiempo precisos
     if ($allDays) {
-        $code .= "horarias = switch(id=\"time_signal_switch\", [\n";
-        foreach ($minuteConditions as $minute) {
-            // Formato: {0m0s} para hora en punto, {30m0s} para media hora
-            $timeCondition = "{" . $minute . "0s}";
-            $code .= "  ($timeCondition, señal_horaria)";
-            if ($minute !== end($minuteConditions)) {
-                $code .= ",";
-            }
-            $code .= "\n";
+        // Definir predicados para cada momento
+        $predicates = [];
+        foreach ($minuteConditions as $idx => $minute) {
+            $predName = "time_pred_" . str_replace('m', '', $minute);
+            $timeSpec = $minute . "0s";  // 0m0s, 30m0s, etc.
+            $code .= "# Predicado para minuto $minute\n";
+            $code .= "$predName = time.predicate(\"$timeSpec\")\n";
+            $predicates[] = "({once($predName)}, señal_horaria)";
         }
+        $code .= "\n";
+        $code .= "horarias = switch(id=\"time_signal_switch\", [\n";
+        $code .= "  " . implode(",\n  ", $predicates) . "\n";
         $code .= "])\n\n";
     } else {
         // Formato completo con días específicos
-        $switchCases = [];
+        $predicates = [];
+        $predIdx = 0;
         foreach ($minuteConditions as $minute) {
             foreach ($activeDays as $dayNum) {
-                // Formato: {1w and 0m0s} para lunes a la hora en punto
-                $condition = sprintf("{%dw and %s0s}", $dayNum, $minute);
-                $switchCases[] = "  ($condition, señal_horaria)";
+                $predName = "time_pred_" . $predIdx;
+                $timeSpec = sprintf("%dw and %s0s", $dayNum, $minute);
+                $code .= "# Predicado para día $dayNum, minuto $minute\n";
+                $code .= "$predName = time.predicate(\"$timeSpec\")\n";
+                $predicates[] = "({once($predName)}, señal_horaria)";
+                $predIdx++;
             }
         }
+        $code .= "\n";
         $code .= "horarias = switch(id=\"time_signal_switch\", [\n";
-        $code .= implode(",\n", $switchCases) . "\n";
+        $code .= "  " . implode(",\n  ", $predicates) . "\n";
         $code .= "])\n\n";
     }
 
