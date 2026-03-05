@@ -516,14 +516,16 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency, $duration 
     $attenuationPercent = (int)($attenuation * 100);
     $musicVolume = 1.0 - $attenuation; // Volumen de música durante señal
 
-    $code .= "# Asegurar que horarias siempre tenga una fuente (blank cuando no hay señal)\n";
-    $code .= "horarias = fallback(track_sensitive=false, [horarias, blank()])\n\n";
+    $code .= "# Fallback con prioridad absoluta: cuando hay señal horaria, se reproduce de inmediato\n";
+    $code .= "# Atenuar música durante señal\n";
+    $code .= "radio_atenuado = amplify($musicVolume, radio)\n";
+    $code .= "horarias_con_fondo = add(normalize=false, [horarias, radio_atenuado])\n\n";
 
-    $code .= "# add con normalize=false para inserción inmediata sin esperar\n";
-    $code .= "radio = add(\n";
-    $code .= "  normalize=false,           # No esperar a puntos de corte\n";
-    $code .= "  weights=[1.0, $musicVolume],  # Radio al 100%, música baja a " . ($musicVolume * 100) . "% durante señal\n";
-    $code .= "  [radio, horarias]          # Mezclar ambas fuentes\n";
+    $code .= "# Prioridad: si hay señal horaria, se reproduce inmediatamente sobre música atenuada\n";
+    $code .= "radio = fallback(\n";
+    $code .= "  track_sensitive=false,     # No esperar fin de pista\n";
+    $code .= "  transitions=[fun(_,_)->0.0],  # Sin transiciones (inmediato)\n";
+    $code .= "  [horarias_con_fondo, radio]   # Prioridad a señales\n";
     $code .= ")\n";
 
     return $code;
