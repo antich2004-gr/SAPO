@@ -1266,5 +1266,279 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// ============================================
+// SEÑALES HORARIAS - Time Signals Functions
+// ============================================
+
+/**
+ * Cargar lista de archivos de señales horarias
+ */
+function loadTimeSignalFiles() {
+    fetch('?action=list_time_signals')
+        .then(response => response.json())
+        .then(data => {
+            const filesListDiv = document.getElementById('files-list');
+
+            if (!data.success || !data.files || data.files.length === 0) {
+                filesListDiv.innerHTML = '<p style="color: #718096; text-align: center;">No hay archivos subidos</p>';
+                return;
+            }
+
+            let html = '<div style="display: flex; flex-direction: column; gap: 10px;">';
+
+            data.files.forEach(file => {
+                const sizeKB = (file.size / 1024).toFixed(2);
+                html += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 6px; border: 1px solid #e2e8f0;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500; color: #2d3748; margin-bottom: 4px;">
+                                🎵 ${file.name}
+                            </div>
+                            <div style="font-size: 13px; color: #718096;">
+                                ${sizeKB} KB • ${file.modified}
+                            </div>
+                        </div>
+                        <button
+                            onclick="deleteTimeSignalFile('${file.name}')"
+                            class="btn btn-danger"
+                            style="font-size: 13px; padding: 6px 12px;">
+                            🗑️ Eliminar
+                        </button>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            filesListDiv.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error al cargar archivos:', error);
+            document.getElementById('files-list').innerHTML =
+                '<p style="color: #e53e3e;">Error al cargar archivos</p>';
+        });
+}
+
+/**
+ * Subir archivo de señal horaria
+ */
+document.getElementById('upload-time-signal-form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const fileInput = document.getElementById('time-signal-file');
+    const submitButton = this.querySelector('button[type="submit"]');
+    const uploadStatus = document.getElementById('upload-status');
+
+    if (!fileInput.files || fileInput.files.length === 0) {
+        uploadStatus.innerHTML = '<div class="alert alert-danger">Por favor selecciona un archivo</div>';
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('action', 'upload_time_signal');
+    formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
+    formData.append('file', fileInput.files[0]);
+
+    // Deshabilitar botón
+    submitButton.disabled = true;
+    submitButton.textContent = 'Subiendo...';
+    uploadStatus.innerHTML = '<p style="color: #3182ce;">Subiendo archivo...</p>';
+
+    fetch('', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            uploadStatus.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
+            fileInput.value = '';
+            loadTimeSignalFiles(); // Recargar lista
+
+            // Actualizar campo "Archivo activo"
+            document.getElementById('current-signal-file').textContent = data.filename || 'Archivo subido';
+
+            setTimeout(() => {
+                uploadStatus.innerHTML = '';
+            }, 3000);
+        } else {
+            uploadStatus.innerHTML = '<div class="alert alert-danger">' + data.message + '</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        uploadStatus.innerHTML = '<div class="alert alert-danger">Error al subir archivo</div>';
+    })
+    .finally(() => {
+        submitButton.disabled = false;
+        submitButton.textContent = '📤 Subir Archivo';
+    });
+});
+
+/**
+ * Eliminar archivo de señal horaria
+ */
+function deleteTimeSignalFile(filename) {
+    if (!confirm('¿Estás seguro de eliminar este archivo?\n\n' + filename)) {
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('action', 'delete_time_signal');
+    formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
+    formData.append('filename', filename);
+
+    fetch('', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ ' + data.message);
+            loadTimeSignalFiles();
+        } else {
+            alert('❌ ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('❌ Error al eliminar archivo');
+    });
+}
+
+/**
+ * Cargar configuración de señales horarias desde Liquidsoap
+ */
+function loadTimeSignalsConfig() {
+    const statusDiv = document.getElementById('config-status');
+    statusDiv.innerHTML = '<p style="color: #3182ce;">Cargando configuración...</p>';
+
+    fetch('?action=get_time_signals_config')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.config) {
+                const config = data.config;
+
+                // Actualizar frecuencia
+                if (config.frequency) {
+                    document.getElementById('signal-frequency').value = config.frequency;
+                }
+
+                // Actualizar archivo activo
+                if (config.signal_file) {
+                    document.getElementById('current-signal-file').textContent = config.signal_file;
+                }
+
+                statusDiv.innerHTML = '<div class="alert alert-success">Configuración cargada correctamente</div>';
+
+                setTimeout(() => {
+                    statusDiv.innerHTML = '';
+                }, 3000);
+            } else {
+                statusDiv.innerHTML = '<div class="alert alert-info">No hay configuración previa</div>';
+                setTimeout(() => {
+                    statusDiv.innerHTML = '';
+                }, 3000);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            statusDiv.innerHTML = '<div class="alert alert-danger">Error al cargar configuración</div>';
+        });
+}
+
+/**
+ * Sincronizar configuración desde Liquidsoap
+ */
+function syncFromLiquidsoap() {
+    const statusDiv = document.getElementById('config-status');
+    statusDiv.innerHTML = '<p style="color: #3182ce;">Sincronizando desde Liquidsoap...</p>';
+
+    fetch('?action=sync_from_liquidsoap', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'csrf_token=<?php echo generateCSRFToken(); ?>'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            statusDiv.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
+
+            // Actualizar formulario con la configuración sincronizada
+            if (data.config) {
+                if (data.config.frequency) {
+                    document.getElementById('signal-frequency').value = data.config.frequency;
+                }
+                if (data.config.signal_file) {
+                    document.getElementById('current-signal-file').textContent = data.config.signal_file;
+                }
+            }
+
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 5000);
+        } else {
+            statusDiv.innerHTML = '<div class="alert alert-danger">' + data.message + '</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        statusDiv.innerHTML = '<div class="alert alert-danger">Error al sincronizar</div>';
+    });
+}
+
+/**
+ * Activar señales horarias
+ */
+document.getElementById('time-signals-form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const statusDiv = document.getElementById('config-status');
+    const submitButton = this.querySelector('button[type="submit"]');
+
+    const formData = new FormData();
+    formData.append('action', 'apply_time_signals');
+    formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
+    formData.append('frequency', document.getElementById('signal-frequency').value);
+
+    submitButton.disabled = true;
+    submitButton.textContent = 'Aplicando...';
+    statusDiv.innerHTML = '<p style="color: #3182ce;">Aplicando configuración...</p>';
+
+    fetch('', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            statusDiv.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
+
+            // Recargar configuración para reflejar cambios
+            setTimeout(() => {
+                loadTimeSignalsConfig();
+            }, 1000);
+        } else {
+            statusDiv.innerHTML = '<div class="alert alert-danger">' + data.message + '</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        statusDiv.innerHTML = '<div class="alert alert-danger">Error al aplicar configuración</div>';
+    })
+    .finally(() => {
+        submitButton.disabled = false;
+        submitButton.textContent = '✅ Activar Señales Horarias';
+    });
+});
+
+// Cargar archivos al iniciar la página
+document.addEventListener('DOMContentLoaded', function() {
+    loadTimeSignalFiles();
+    loadTimeSignalsConfig();
+});
+
 
 </script>
