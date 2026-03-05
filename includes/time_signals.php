@@ -453,47 +453,40 @@ function applyTimeSignalsToAzuraCast($username) {
 }
 
 /**
- * Procesar formulario de configuración
+ * Procesar formulario de configuración (simplificado)
  */
 function processTimeSignalsForm($username, $postData) {
-    $signalFile = $postData['signal_file'] ?? '';
-    $days = $postData['days'] ?? [];
     $frequency = $postData['frequency'] ?? 'hourly';
 
-    if (empty($signalFile)) {
-        return ['success' => false, 'message' => 'Debe seleccionar un archivo de señal horaria'];
+    // Obtener el último archivo subido automáticamente
+    $files = listTimeSignals($username);
+
+    if (empty($files)) {
+        return ['success' => false, 'message' => 'Debe subir al menos un archivo de señal horaria'];
     }
 
-    if (empty($days)) {
-        return ['success' => false, 'message' => 'Debe seleccionar al menos un día'];
-    }
+    // Usar el primer archivo (o el único que haya)
+    $signalFile = $files[0]['name'];
 
     // Validar que el archivo existe
     $audioPath = getTimeSignalsDir($username) . '/' . $signalFile;
     if (!file_exists($audioPath)) {
-        return ['success' => false, 'message' => 'El archivo seleccionado no existe'];
+        return ['success' => false, 'message' => 'El archivo de audio no existe'];
     }
 
-    // Validar frecuencia
-    $validFrequencies = ['hourly', 'half-hourly', 'quarter-hourly'];
+    // Validar frecuencia (solo hourly o half-hourly)
+    $validFrequencies = ['hourly', 'half-hourly'];
     if (!in_array($frequency, $validFrequencies)) {
         $frequency = 'hourly';
     }
 
-    // Validar días
-    $validDays = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
-    $days = array_filter($days, function($day) use ($validDays) {
-        return in_array($day, $validDays);
-    });
-
-    if (empty($days)) {
-        return ['success' => false, 'message' => 'Debe seleccionar al menos un día válido'];
-    }
+    // Siempre usar todos los días
+    $days = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
 
     $config = [
         'signal_file' => $signalFile,
         'frequency' => $frequency,
-        'days' => array_values($days)
+        'days' => $days
     ];
 
     $result = saveTimeSignalsConfig($username, $config);

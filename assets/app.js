@@ -1258,11 +1258,11 @@ function uploadFilesSequentially(files, index, progressFill, statusText, progres
 }
 
 /**
- * Cargar lista de archivos subidos
+ * Cargar lista de archivos subidos (simplificado)
  */
 function loadTimeSignalsFiles() {
     const filesList = document.getElementById('files-list');
-    const selectFile = document.getElementById('signal-file-select');
+    const currentFileSpan = document.getElementById('current-signal-file');
 
     if (!filesList) return;
 
@@ -1296,17 +1296,14 @@ function loadTimeSignalsFiles() {
                 });
                 filesList.innerHTML = html;
 
-                // Actualizar selector
-                if (selectFile) {
-                    selectFile.innerHTML = '<option value="">-- Selecciona un archivo --</option>';
-                    data.files.forEach(file => {
-                        selectFile.innerHTML += `<option value="${file.name}">${file.name}</option>`;
-                    });
+                // Mostrar archivo activo (el primero)
+                if (currentFileSpan) {
+                    currentFileSpan.textContent = data.files[0].name;
                 }
             } else {
-                filesList.innerHTML = '<p style="color: #718096; text-align: center;">No hay archivos subidos</p>';
-                if (selectFile) {
-                    selectFile.innerHTML = '<option value="">-- No hay archivos disponibles --</option>';
+                filesList.innerHTML = '<p style="color: #718096; text-align: center;">No hay archivos subidos. Sube uno para activar las señales horarias.</p>';
+                if (currentFileSpan) {
+                    currentFileSpan.textContent = 'Ninguno - Sube un archivo primero';
                 }
             }
         })
@@ -1357,7 +1354,7 @@ function deleteTimeSignalFile(filename) {
 }
 
 /**
- * Cargar configuración de señales horarias
+ * Cargar configuración de señales horarias (simplificado)
  */
 function loadTimeSignalsConfig() {
     fetch('index.php?action=get_time_signals_config')
@@ -1366,30 +1363,17 @@ function loadTimeSignalsConfig() {
             if (data.success && data.config) {
                 const config = data.config;
 
-                // Seleccionar archivo
-                const selectFile = document.getElementById('signal-file-select');
-                if (selectFile && config.signal_file) {
-                    selectFile.value = config.signal_file;
-                }
-
                 // Seleccionar frecuencia
                 const frequencySelect = document.getElementById('signal-frequency');
                 if (frequencySelect && config.frequency) {
                     frequencySelect.value = config.frequency;
                 }
 
-                // Configurar días activos
-                if (config.days && Array.isArray(config.days)) {
-                    config.days.forEach(day => {
-                        const checkbox = document.querySelector(`input[value="${day}"]`);
-                        if (checkbox) {
-                            checkbox.checked = true;
-                        }
-                    });
+                // Actualizar nombre de archivo activo
+                const currentFileSpan = document.getElementById('current-signal-file');
+                if (currentFileSpan && config.signal_file) {
+                    currentFileSpan.textContent = config.signal_file;
                 }
-
-                // Actualizar info visual
-                updateDayInfo();
             }
         })
         .catch(error => {
@@ -1431,48 +1415,16 @@ function saveTimeSignalsConfig() {
     });
 }
 
-/**
- * Actualizar información de días según frecuencia
- */
+// ============================================================================
+// FUNCIONES OBSOLETAS (Ya no se usan en formulario simplificado)
+// ============================================================================
+
+/*
 function updateDayInfo() {
-    const frequency = document.getElementById('signal-frequency')?.value || 'hourly';
-    const dayInfos = document.querySelectorAll('.day-info');
-
-    let infoText = '';
-    switch (frequency) {
-        case 'hourly':
-            infoText = 'Sonará cada hora en punto (:00)';
-            break;
-        case 'half-hourly':
-            infoText = 'Sonará cada media hora (:00 y :30)';
-            break;
-        case 'quarter-hourly':
-            infoText = 'Sonará cada 15 minutos (:00, :15, :30, :45)';
-            break;
-    }
-
-    dayInfos.forEach(info => {
-        const checkbox = info.closest('.day-schedule').querySelector('.day-checkbox');
-        if (checkbox && checkbox.checked) {
-            info.textContent = infoText;
-            info.style.display = 'inline';
-        } else {
-            info.textContent = '';
-            info.style.display = 'none';
-        }
-    });
+    // Ya no se usa - formulario simplificado
 }
 
-/**
- * Seleccionar/deseleccionar todos los días
- */
 function toggleAllDays() {
-    const checkboxes = document.querySelectorAll('.day-checkbox');
-    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = !allChecked;
-    });
-
-    updateDayInfo();
+    // Ya no se usa - formulario simplificado
 }
+*/

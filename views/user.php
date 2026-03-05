@@ -665,79 +665,39 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     <div class="time-signals-config" style="margin-top: 40px;">
                         <h5>Configuracion de Senales Horarias</h5>
                         <p style="color: #718096; margin-bottom: 20px; font-size: 14px;">
-                            Las senales horarias sonaran automaticamente en la hora en punto (o con la frecuencia seleccionada) los dias que actives.
+                            Las senales horarias sonaran automaticamente <strong>todos los dias</strong> con la frecuencia que selecciones.
                         </p>
 
                         <form id="time-signals-form">
-                            <!-- Selector de archivo -->
-                            <div class="form-group">
-                                <label>Archivo de Senal Horaria:</label>
-                                <select name="signal_file" id="signal-file-select" required style="width: 100%; max-width: 400px;">
-                                    <option value="">-- Selecciona un archivo --</option>
-                                </select>
-                            </div>
-
                             <!-- Configuración de frecuencia -->
-                            <div style="margin-top: 30px;">
-                                <div class="form-group">
-                                    <label>Frecuencia de Reproduccion:</label>
-                                    <select name="frequency" id="signal-frequency" style="width: 100%; max-width: 400px;" onchange="updateDayInfo()">
-                                        <option value="hourly">Cada hora (en punto: :00)</option>
-                                        <option value="half-hourly">Cada media hora (:00 y :30)</option>
-                                        <option value="quarter-hourly">Cada 15 minutos (:00, :15, :30, :45)</option>
-                                    </select>
-                                    <small style="color: #718096; display: block; margin-top: 8px;">
-                                        La senal se reproducira automaticamente en los minutos especificados de cada hora.
-                                    </small>
-                                </div>
+                            <div class="form-group">
+                                <label style="font-size: 15px; font-weight: 500; margin-bottom: 10px; display: block;">Frecuencia de Reproduccion:</label>
+                                <select name="frequency" id="signal-frequency" required style="width: 100%; max-width: 400px; padding: 10px; font-size: 14px;">
+                                    <option value="hourly">Cada hora (en punto: :00)</option>
+                                    <option value="half-hourly">Cada media hora (:00 y :30)</option>
+                                </select>
+                                <small style="color: #718096; display: block; margin-top: 8px;">
+                                    La senal se mezclara suavemente con la musica todos los dias de la semana.
+                                </small>
                             </div>
 
-                            <!-- Selección de días activos -->
-                            <div style="margin-top: 30px;">
-                                <h6 style="margin-bottom: 15px;">Dias Activos:</h6>
-                                <p style="color: #718096; font-size: 14px; margin-bottom: 15px;">
-                                    Selecciona los dias en que deben sonar las senales horarias
+                            <!-- Info del archivo -->
+                            <div style="margin-top: 25px; padding: 15px; background: #e6fffa; border-left: 4px solid #38b2ac; border-radius: 4px;">
+                                <p style="margin: 0; color: #234e52; font-size: 14px;">
+                                    📢 <strong>Archivo activo:</strong> <span id="current-signal-file" style="font-family: monospace;">Ninguno</span>
                                 </p>
-
-                                <?php
-                                $dias = [
-                                    'lunes' => 'Lunes',
-                                    'martes' => 'Martes',
-                                    'miercoles' => 'Miercoles',
-                                    'jueves' => 'Jueves',
-                                    'viernes' => 'Viernes',
-                                    'sabado' => 'Sabado',
-                                    'domingo' => 'Domingo'
-                                ];
-
-                                foreach ($dias as $key => $label):
-                                ?>
-                                <div class="day-schedule" style="display: flex; gap: 15px; align-items: center; margin-bottom: 10px; padding: 12px; background: #f7fafc; border-radius: 6px;">
-                                    <label style="min-width: 120px; margin: 0; font-weight: 500; cursor: pointer;">
-                                        <input type="checkbox" name="days[]" value="<?php echo $key; ?>" class="day-checkbox" style="margin-right: 8px;">
-                                        <?php echo $label; ?>
-                                    </label>
-                                    <span class="day-info" style="color: #718096; font-size: 13px; font-style: italic;" data-day="<?php echo $key; ?>">
-                                        <!-- Se llenará con JS según frecuencia -->
-                                    </span>
-                                </div>
-                                <?php endforeach; ?>
-
-                                <!-- Botón para seleccionar/deseleccionar todos -->
-                                <div style="margin-top: 15px;">
-                                    <button type="button" class="btn btn-secondary" onclick="toggleAllDays()" style="padding: 8px 16px;">
-                                        Seleccionar/Deseleccionar todos
-                                    </button>
-                                </div>
+                                <p style="margin: 8px 0 0 0; color: #2c7a7b; font-size: 13px;">
+                                    El ultimo archivo que subas sera el que se use automaticamente.
+                                </p>
                             </div>
 
                             <!-- Botones de acción -->
                             <div style="margin-top: 30px; display: flex; gap: 15px;">
                                 <button type="submit" class="btn btn-success" style="font-size: 16px; padding: 12px 30px;">
-                                    <span class="btn-icon">✅</span> Guardar y Aplicar Configuracion
+                                    ✅ Activar Senales Horarias
                                 </button>
                                 <button type="button" class="btn btn-secondary" onclick="loadTimeSignalsConfig()" style="padding: 12px 30px;">
-                                    <span class="btn-icon">🔄</span> Recargar Configuracion
+                                    🔄 Recargar
                                 </button>
                             </div>
                         </form>
