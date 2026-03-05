@@ -3,13 +3,17 @@
 
 /**
  * Obtener directorio de señales horarias del usuario
+ * Guardamos directamente en el directorio media de la emisora
  */
 function getTimeSignalsDir($username) {
-    $baseDir = __DIR__ . '/../user_data/time_signals';
-    if (!is_dir($baseDir)) {
-        mkdir($baseDir, 0755, true);
+    $dir = "/mnt/emisoras/{$username}/media/senales_horarias";
+
+    // Crear directorio si no existe
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
     }
-    return $baseDir . '/' . $username;
+
+    return $dir;
 }
 
 /**
@@ -591,20 +595,12 @@ function applyTimeSignalsToAzuraCast($username) {
     $frequency = $config['frequency'] ?? 'hourly';
     $days = $config['days'] ?? [];
 
-    // PASO 1: Subir archivo a AzuraCast
-    $uploadResult = uploadFileToAzuraCast($username, $audioPath, 'senales_horarias');
-
-    if (!$uploadResult['success']) {
-        return [
-            'success' => false,
-            'message' => 'Error al subir archivo: ' . $uploadResult['message']
-        ];
-    }
-
-    $azuracastPath = $uploadResult['path'];
+    // PASO 1: Generar path para Liquidsoap
+    // El archivo ya está en /mnt/emisoras/{username}/media/senales_horarias/{filename}
+    $liquidsoapPath = "/mnt/emisoras/{$username}/media/senales_horarias/{$config['signal_file']}";
 
     // PASO 2: Generar código Liquidsoap
-    $liquidsoapCode = generateLiquidsoapTimeSignals($azuracastPath, $days, $frequency);
+    $liquidsoapCode = generateLiquidsoapTimeSignals($liquidsoapPath, $days, $frequency);
 
     if (empty($liquidsoapCode)) {
         return ['success' => false, 'message' => 'Error al generar código Liquidsoap'];
