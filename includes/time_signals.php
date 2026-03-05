@@ -471,21 +471,19 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency, $duration 
     $code = "# Señales Horarias - SAPO\n";
     $code .= "señal_horaria = single(\"$audioPath\")\n\n";
 
-    // Generar predicados de tiempo con activación en flanco ascendente
+    // Generar predicados de tiempo con ventanas precisas (solo primeros 5 segundos)
     if ($allDays) {
         // Definir predicados para cada momento
         $predicates = [];
         foreach ($minuteConditions as $idx => $minute) {
             $predName = "time_pred_" . str_replace('m', '', $minute);
-            $predActivates = $predName . "_activates";
-            $timeSpec = $minute . "0s";  // 0m0s, 30m0s, etc.
-            $code .= "# Predicado para minuto $minute\n";
-            $code .= "$predName = time.predicate(\"$timeSpec\")\n";
-            $code .= "$predActivates = predicate.activates($predName)\n";
-            $predicates[] = "($predActivates, señal_horaria)";
+            $timeSpec = $minute . "0s-" . $minute . "5s";  // Ventana de 5 segundos: 0m0s-0m5s, 30m0s-30m5s
+            $code .= "# Predicado para minuto $minute (ventana precisa)\n";
+            $code .= "$predName = predicate.once(time.predicate(\"$timeSpec\"))\n";
+            $predicates[] = "($predName, señal_horaria)";
         }
         $code .= "\n";
-        $code .= "horarias = switch(id=\"time_signal_switch\", [\n";
+        $code .= "horarias = switch(id=\"time_signal_switch\", track_sensitive=false, [\n";
         $code .= "  " . implode(",\n  ", $predicates) . "\n";
         $code .= "])\n\n";
     } else {
@@ -495,17 +493,15 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency, $duration 
         foreach ($minuteConditions as $minute) {
             foreach ($activeDays as $dayNum) {
                 $predName = "time_pred_" . $predIdx;
-                $predActivates = $predName . "_activates";
-                $timeSpec = sprintf("%dw and %s0s", $dayNum, $minute);
-                $code .= "# Predicado para día $dayNum, minuto $minute\n";
-                $code .= "$predName = time.predicate(\"$timeSpec\")\n";
-                $code .= "$predActivates = predicate.activates($predName)\n";
-                $predicates[] = "($predActivates, señal_horaria)";
+                $timeSpec = sprintf("%dw and (%s0s-%s5s)", $dayNum, $minute, $minute);
+                $code .= "# Predicado para día $dayNum, minuto $minute (ventana precisa)\n";
+                $code .= "$predName = predicate.once(time.predicate(\"$timeSpec\"))\n";
+                $predicates[] = "($predName, señal_horaria)";
                 $predIdx++;
             }
         }
         $code .= "\n";
-        $code .= "horarias = switch(id=\"time_signal_switch\", [\n";
+        $code .= "horarias = switch(id=\"time_signal_switch\", track_sensitive=false, [\n";
         $code .= "  " . implode(",\n  ", $predicates) . "\n";
         $code .= "])\n\n";
     }
@@ -513,12 +509,11 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency, $duration 
     // Convertir atenuación a porcentaje para el comentario
     $attenuationPercent = (int)($attenuation * 100);
 
-    $code .= "# smooth_add mezcla suavemente sin cortar\n";
-    $code .= "radio = smooth_add(\n";
-    $code .= "  duration=$duration,      # Duración de la transición ($duration segundos)\n";
-    $code .= "  p=$attenuation,             # Música baja al $attenuationPercent%\n";
-    $code .= "  normal=radio,      # Fuente principal\n";
-    $code .= "  special=horarias   # Señales horarias\n";
+    $code .= "# add con normalize=false para inserción inmediata sin esperar\n";
+    $code .= "radio = add(\n";
+    $code .= "  normalize=false,           # No esperar a puntos de corte\n";
+    $code .= "  weights=[1, " . (1.0 - $attenuation) . "],  # Radio al 100%, señal al " . ((1.0 - $attenuation) * 100) . "%\n";
+    $code .= "  [radio, horarias]          # Mezclar ambas fuentes\n";
     $code .= ")\n";
 
     return $code;
@@ -590,18 +585,41 @@ function parseTimeSignalsFromLiquidsoap($username) {
     $dayNums = [];
     $allDays = false;
 
-    // Formato A: predicate.once({ 0m }) - todos los días
-    error_log("PARSE DEBUG - Buscando predicate.once...");
-    if (preg_match_all('/predicate\.once\(\{\s*(\d+)m\s*\}\)/', $liquidsoapContent, $matches)) {
-        error_log("PARSE DEBUG - ¡Encontrado predicate.once! Minutos: " . json_encode($matches[1]));
+    // Formato A1: predicate.once(time.predicate("0m0s-0m5s")) - nuevo formato con ventanas
+    error_log("PARSE DEBUG - Buscando predicate.once con ventanas...");
+    if (preg_match_all('/predicate\.once\(time\.predicate\("(\d+)m\d+s-\d+m\d+s"\)\)/', $liquidsoapContent, $matches)) {
+        error_log("PARSE DEBUG - ¡Encontrado predicate.once con ventanas! Minutos: " . json_encode($matches[1]));
         $allDays = true;
         foreach ($matches[1] as $minute) {
             $minutes[] = (int)$minute;
         }
     }
-    // Formato B: {1w and 0m0s} - días específicos
+    // Formato A2: predicate.once({ 0m }) - formato antiguo
+    else if (preg_match_all('/predicate\.once\(\{\s*(\d+)m\s*\}\)/', $liquidsoapContent, $matches)) {
+        error_log("PARSE DEBUG - ¡Encontrado predicate.once antiguo! Minutos: " . json_encode($matches[1]));
+        $allDays = true;
+        foreach ($matches[1] as $minute) {
+            $minutes[] = (int)$minute;
+        }
+    }
+    // Formato B1: predicate.once(time.predicate("1w and (0m0s-0m5s)")) - días específicos con ventanas
+    else if (preg_match_all('/predicate\.once\(time\.predicate\("(\d+)w\s+and\s+\((\d+)m\d+s-\d+m\d+s\)"\)\)/', $liquidsoapContent, $matches, PREG_SET_ORDER)) {
+        error_log("PARSE DEBUG - Encontrado formato día+minuto con ventanas: " . json_encode($matches));
+        foreach ($matches as $match) {
+            $dayNum = (int)$match[1];
+            $minute = (int)$match[2];
+
+            if (!in_array($dayNum, $dayNums)) {
+                $dayNums[] = $dayNum;
+            }
+            if (!in_array($minute, $minutes)) {
+                $minutes[] = $minute;
+            }
+        }
+    }
+    // Formato B2: {1w and 0m0s} - días específicos antiguo
     else if (preg_match_all('/\{(\d+)w\s+and\s+(\d+)m0s\}/', $liquidsoapContent, $matches, PREG_SET_ORDER)) {
-        error_log("PARSE DEBUG - Encontrado formato día+minuto específico: " . json_encode($matches));
+        error_log("PARSE DEBUG - Encontrado formato día+minuto específico antiguo: " . json_encode($matches));
         foreach ($matches as $match) {
             $dayNum = (int)$match[1];
             $minute = (int)$match[2];
@@ -748,9 +766,9 @@ function applyTimeSignalsToAzuraCast($username) {
     error_log("APPLY DEBUG - Buscando código antiguo de señales horarias...");
     if (strpos($liquidsoapContent, $marker_start) !== false) {
         error_log("APPLY DEBUG - Encontrado código antiguo, eliminando...");
-        // Eliminar desde el marcador inicial hasta el cierre de smooth_add o fallback
-        // Soporta tanto el formato antiguo (fallback) como el nuevo (smooth_add)
-        $pattern = '/' . preg_quote($marker_start, '/') . '.*?(?:radio = fallback\(track_sensitive=false, \[time_signal, radio\]\)|radio = smooth_add\([^)]*\))\s*\n?/s';
+        // Eliminar desde el marcador inicial hasta el cierre de smooth_add, add o fallback
+        // Soporta múltiples formatos: fallback, smooth_add, add
+        $pattern = '/' . preg_quote($marker_start, '/') . '.*?(?:radio = (?:fallback\(track_sensitive=false, \[time_signal, radio\]\)|smooth_add\([^)]*\)|add\([^)]*\)))\s*\n?/s';
         $liquidsoapContent = preg_replace($pattern, '', $liquidsoapContent);
         error_log("APPLY DEBUG - Código antiguo eliminado");
     } else {
