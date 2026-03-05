@@ -153,6 +153,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 <button class="tab-button active" data-tab="podcasts" onclick="switchTab('podcasts')">Mis Podcasts</button>
                 <button class="tab-button" data-tab="importar" onclick="switchTab('importar')">Importar/Exportar</button>
                 <button class="tab-button" data-tab="descargas" onclick="switchTab('descargas')">Descargas</button>
+                <button class="tab-button" data-tab="config" onclick="switchTab('config')">Configuracion</button>
             </div>
             
             <div class="tabs-content">
@@ -622,6 +623,104 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 No hay episodios descargados en los últimos 7 días. Los informes se generan automáticamente cuando ejecutas las descargas.
                             </div>
                         <?php endif; ?>
+                    </div>
+                </div>
+
+                <!-- PESTAÑA 4: CONFIGURACIÓN -->
+                <div id="tab-config" class="tab-panel">
+                    <h4>Configuracion de Senales Horarias</h4>
+                    <p style="color: #718096; margin-bottom: 30px;">
+                        Sube tus senales horarias y configurales cuando deben reproducirse en tu estacion.
+                    </p>
+
+                    <!-- UPLOADER -->
+                    <div class="time-signals-uploader">
+                        <h5>Subir Archivos de Audio</h5>
+                        <div id="dropzone" class="dropzone">
+                            <div class="dropzone-content">
+                                <span class="dropzone-icon">📁</span>
+                                <p>Arrastra archivos aqui o haz clic para seleccionar</p>
+                                <p style="font-size: 12px; color: #718096;">Formatos: MP3, WAV, OGG, M4A (Max 10MB)</p>
+                            </div>
+                            <input type="file" id="file-input" accept=".mp3,.wav,.ogg,.m4a" multiple style="display: none;">
+                        </div>
+
+                        <div id="upload-progress" style="margin-top: 15px; display: none;">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-fill"></div>
+                            </div>
+                            <p id="upload-status" style="margin-top: 10px; color: #4a5568;"></p>
+                        </div>
+                    </div>
+
+                    <!-- LISTADO DE ARCHIVOS SUBIDOS -->
+                    <div class="time-signals-files" style="margin-top: 40px;">
+                        <h5>Archivos Disponibles</h5>
+                        <div id="files-list" style="background: #f7fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 100px;">
+                            <p style="color: #718096; text-align: center;">Cargando...</p>
+                        </div>
+                    </div>
+
+                    <!-- CONFIGURACIÓN DE HORARIOS -->
+                    <div class="time-signals-config" style="margin-top: 40px;">
+                        <h5>Configuracion de Horarios</h5>
+                        <p style="color: #718096; margin-bottom: 20px; font-size: 14px;">
+                            Selecciona el archivo de senal horaria y configura los horarios de reproduccion por dia de la semana.
+                        </p>
+
+                        <form id="time-signals-form">
+                            <!-- Selector de archivo -->
+                            <div class="form-group">
+                                <label>Archivo de Senal Horaria:</label>
+                                <select name="signal_file" id="signal-file-select" required style="width: 100%; max-width: 400px;">
+                                    <option value="">-- Selecciona un archivo --</option>
+                                </select>
+                            </div>
+
+                            <!-- Configuración de horarios por día -->
+                            <div style="margin-top: 30px;">
+                                <h6 style="margin-bottom: 15px;">Horarios de Reproduccion:</h6>
+
+                                <?php
+                                $dias = [
+                                    'lunes' => 'Lunes',
+                                    'martes' => 'Martes',
+                                    'miercoles' => 'Miercoles',
+                                    'jueves' => 'Jueves',
+                                    'viernes' => 'Viernes',
+                                    'sabado' => 'Sabado',
+                                    'domingo' => 'Domingo'
+                                ];
+
+                                foreach ($dias as $key => $label):
+                                ?>
+                                <div class="day-schedule" style="display: flex; gap: 15px; align-items: center; margin-bottom: 15px; padding: 12px; background: #f7fafc; border-radius: 6px;">
+                                    <label style="min-width: 100px; margin: 0; font-weight: 500;">
+                                        <input type="checkbox" name="days[]" value="<?php echo $key; ?>" class="day-checkbox" style="margin-right: 8px;">
+                                        <?php echo $label; ?>
+                                    </label>
+                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                        <label style="margin: 0; font-size: 14px;">Desde:</label>
+                                        <input type="time" name="<?php echo $key; ?>_start" class="time-input" style="padding: 6px;">
+                                        <label style="margin: 0; font-size: 14px;">Hasta:</label>
+                                        <input type="time" name="<?php echo $key; ?>_end" class="time-input" style="padding: 6px;">
+                                    </div>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+
+                            <!-- Botones de acción -->
+                            <div style="margin-top: 30px; display: flex; gap: 15px;">
+                                <button type="submit" class="btn btn-success" style="font-size: 16px; padding: 12px 30px;">
+                                    <span class="btn-icon">✅</span> Guardar y Aplicar Configuracion
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="loadTimeSignalsConfig()" style="padding: 12px 30px;">
+                                    <span class="btn-icon">🔄</span> Recargar Configuracion
+                                </button>
+                            </div>
+                        </form>
+
+                        <div id="config-status" style="margin-top: 20px;"></div>
                     </div>
                 </div>
             </div>
