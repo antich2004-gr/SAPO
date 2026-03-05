@@ -463,6 +463,12 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency, $duration 
             $minuteConditions[] = '30m';
             $minuteConditions[] = '45m';
             break;
+        case 'every-5-min':
+            // Cada 5 minutos: 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55
+            for ($i = 0; $i < 60; $i += 5) {
+                $minuteConditions[] = $i . 'm';
+            }
+            break;
         default:
             $minuteConditions[] = '0m';
     }
@@ -652,7 +658,10 @@ function parseTimeSignalsFromLiquidsoap($username) {
     error_log("PARSE DEBUG - Días detectados: " . json_encode($dayNums));
     error_log("PARSE DEBUG - Todos los días: " . ($allDays ? 'SÍ' : 'NO'));
     sort($minutes);
-    if (count($minutes) >= 4) {
+    if (count($minutes) >= 12) {
+        // Cada 5 minutos (12 veces por hora)
+        $config['frequency'] = 'every-5-min';
+    } else if (count($minutes) >= 4) {
         $config['frequency'] = 'quarter-hourly';
     } else if (count($minutes) >= 2 && in_array(0, $minutes) && in_array(30, $minutes)) {
         $config['frequency'] = 'half-hourly';
@@ -843,8 +852,8 @@ function processTimeSignalsForm($username, $postData) {
         return ['success' => false, 'message' => 'El archivo de audio no existe'];
     }
 
-    // Validar frecuencia (solo hourly o half-hourly)
-    $validFrequencies = ['hourly', 'half-hourly'];
+    // Validar frecuencia
+    $validFrequencies = ['hourly', 'half-hourly', 'quarter-hourly', 'every-5-min'];
     if (!in_array($frequency, $validFrequencies)) {
         $frequency = 'hourly';
     }

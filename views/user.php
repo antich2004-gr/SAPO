@@ -693,6 +693,8 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 <select name="frequency" id="signal-frequency" required style="width: 100%; max-width: 400px; padding: 10px; font-size: 14px; border: 1px solid #cbd5e0; border-radius: 4px;" onchange="onFrequencyChange()">
                                     <option value="hourly">Cada hora (en punto: :00)</option>
                                     <option value="half-hourly">Cada media hora (:00 y :30)</option>
+                                    <option value="quarter-hourly">Cada cuarto de hora (:00, :15, :30, :45)</option>
+                                    <option value="every-5-min">🧪 Testing: Cada 5 minutos</option>
                                 </select>
                                 <small style="color: #718096; display: block; margin-top: 8px;">
                                     La señal se mezclará suavemente con la música todos los días de la semana.
