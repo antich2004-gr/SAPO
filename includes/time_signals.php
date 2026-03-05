@@ -471,11 +471,13 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency, $duration 
     $code = "# Señales Horarias - SAPO\n";
     $code .= "señal_horaria = single(\"$audioPath\")\n";
 
-    // Usar formato simplificado con predicate.once si es todos los días
+    // Generar switch con condiciones de tiempo precisas
     if ($allDays) {
         $code .= "horarias = switch(id=\"time_signal_switch\", [\n";
         foreach ($minuteConditions as $minute) {
-            $code .= "  (predicate.once({ $minute }), señal_horaria)";
+            // Formato: {0m0s} para hora en punto, {30m0s} para media hora
+            $timeCondition = "{" . $minute . "0s}";
+            $code .= "  ($timeCondition, señal_horaria)";
             if ($minute !== end($minuteConditions)) {
                 $code .= ",";
             }
@@ -487,6 +489,7 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency, $duration 
         $switchCases = [];
         foreach ($minuteConditions as $minute) {
             foreach ($activeDays as $dayNum) {
+                // Formato: {1w and 0m0s} para lunes a la hora en punto
                 $condition = sprintf("{%dw and %s0s}", $dayNum, $minute);
                 $switchCases[] = "  ($condition, señal_horaria)";
             }
