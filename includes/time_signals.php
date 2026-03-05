@@ -506,6 +506,10 @@ function parseTimeSignalsFromLiquidsoap($username) {
         return null;
     }
 
+    // DEBUG: Log del contenido parcial para verificar qué estamos leyendo
+    error_log("PARSE DEBUG - Usuario: $username");
+    error_log("PARSE DEBUG - Primeros 500 caracteres: " . substr($liquidsoapContent, 0, 500));
+
     $config = [
         'signal_file' => null,
         'frequency' => 'hourly',
@@ -513,8 +517,13 @@ function parseTimeSignalsFromLiquidsoap($username) {
     ];
 
     // 1. Detectar archivo de audio (soporta múltiples nombres de variables)
-    // Buscar: señal_horaria = single("...") o time_signal_source = single("...")
-    if (preg_match('/(?:señal_horaria|time_signal_source|signal)\s*=\s*single\(["\']([^"\']+)["\']\)/', $liquidsoapContent, $matches)) {
+    // Buscar: señal_horaria = single("...") o señal_horaria = single(/...)
+    // Soporta RUTAS CON Y SIN COMILLAS
+    $audioPattern = '/(?:señal_horaria|time_signal_source|signal)\s*=\s*single\(["\']?([^"\')\s]+)["\']?\)/';
+    error_log("PARSE DEBUG - Patrón de búsqueda de audio: $audioPattern");
+
+    if (preg_match($audioPattern, $liquidsoapContent, $matches)) {
+        error_log("PARSE DEBUG - ¡Coincidencia encontrada! Matches: " . json_encode($matches));
         $fullPath = $matches[1];
         // Extraer solo el nombre del archivo
         $filename = basename($fullPath);
@@ -529,10 +538,18 @@ function parseTimeSignalsFromLiquidsoap($username) {
         } else {
             $config['signal_file'] = $filename;
         }
+        error_log("PARSE DEBUG - signal_file detectado: " . $config['signal_file']);
+    } else {
+        error_log("PARSE DEBUG - NO se encontró coincidencia de archivo de audio");
+        // Intentar detectar CUALQUIER single() en el contenido (con y sin comillas)
+        if (preg_match_all('/single\(["\']?([^"\')\s]+)["\']?\)/', $liquidsoapContent, $allMatches)) {
+            error_log("PARSE DEBUG - Se encontraron estos single(): " . json_encode($allMatches[1]));
+        }
     }
 
     // Si no se encuentra archivo, no hay señales horarias
     if (empty($config['signal_file'])) {
+        error_log("PARSE DEBUG - Config incompleto, signal_file vacío. Retornando null.");
         return null;
     }
 
@@ -542,7 +559,9 @@ function parseTimeSignalsFromLiquidsoap($username) {
     $allDays = false;
 
     // Formato A: predicate.once({ 0m }) - todos los días
+    error_log("PARSE DEBUG - Buscando predicate.once...");
     if (preg_match_all('/predicate\.once\(\{\s*(\d+)m\s*\}\)/', $liquidsoapContent, $matches)) {
+        error_log("PARSE DEBUG - ¡Encontrado predicate.once! Minutos: " . json_encode($matches[1]));
         $allDays = true;
         foreach ($matches[1] as $minute) {
             $minutes[] = (int)$minute;
@@ -550,6 +569,7 @@ function parseTimeSignalsFromLiquidsoap($username) {
     }
     // Formato B: {1w and 0m0s} - días específicos
     else if (preg_match_all('/\{(\d+)w\s+and\s+(\d+)m0s\}/', $liquidsoapContent, $matches, PREG_SET_ORDER)) {
+        error_log("PARSE DEBUG - Encontrado formato día+minuto específico: " . json_encode($matches));
         foreach ($matches as $match) {
             $dayNum = (int)$match[1];
             $minute = (int)$match[2];
@@ -561,9 +581,14 @@ function parseTimeSignalsFromLiquidsoap($username) {
                 $minutes[] = $minute;
             }
         }
+    } else {
+        error_log("PARSE DEBUG - NO se encontró ninguna condición de tiempo");
     }
 
     // 3. Determinar frecuencia basada en los minutos
+    error_log("PARSE DEBUG - Minutos detectados: " . json_encode($minutes));
+    error_log("PARSE DEBUG - Días detectados: " . json_encode($dayNums));
+    error_log("PARSE DEBUG - Todos los días: " . ($allDays ? 'SÍ' : 'NO'));
     sort($minutes);
     if (count($minutes) >= 4) {
         $config['frequency'] = 'quarter-hourly';
@@ -599,9 +624,11 @@ function parseTimeSignalsFromLiquidsoap($username) {
 
     // Si no hay días configurados, retornar null
     if (empty($config['days'])) {
+        error_log("PARSE DEBUG - Config incompleto, sin días configurados. Retornando null.");
         return null;
     }
 
+    error_log("PARSE DEBUG - ¡Configuración parseada exitosamente!: " . json_encode($config));
     return $config;
 }
 
