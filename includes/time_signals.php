@@ -839,3 +839,199 @@ function processTimeSignalsForm($username, $postData) {
     error_log("PROCESS FORM DEBUG - ERROR al guardar configuración");
     return $result;
 }
+
+/**
+ * Obtener configuración actual de la estación desde AzuraCast API
+ */
+function getAzuraCastStationConfig($username) {
+    $config = getConfig();
+    $apiUrl = $config['azuracast_api_url'] ?? '';
+    $apiKey = $config['azuracast_api_key'] ?? '';
+
+    if (empty($apiUrl) || empty($apiKey)) {
+        return ['success' => false, 'message' => 'API de AzuraCast no configurada'];
+    }
+
+    $userData = getUserDB($username);
+    $stationId = $userData['azuracast']['station_id'] ?? null;
+
+    if (empty($stationId)) {
+        return ['success' => false, 'message' => 'Station ID no configurado'];
+    }
+
+    $endpoint = rtrim($apiUrl, '/') . '/admin/station/' . $stationId;
+
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'GET',
+            'timeout' => 10,
+            'user_agent' => 'SAPO/1.0',
+            'header' => 'X-API-Key: ' . $apiKey,
+            'ignore_errors' => true
+        ]
+    ]);
+
+    $response = @file_get_contents($endpoint, false, $context);
+
+    if ($response === false) {
+        return ['success' => false, 'message' => 'Error al conectar con AzuraCast API'];
+    }
+
+    $data = json_decode($response, true);
+
+    if (!$data) {
+        return ['success' => false, 'message' => 'Respuesta inválida de la API'];
+    }
+
+    return ['success' => true, 'data' => $data];
+}
+
+/**
+ * Actualizar custom_config de la estación via API de AzuraCast
+ */
+function updateAzuraCastCustomConfig($username, $customConfig) {
+    error_log("API UPDATE - Iniciando actualización para usuario: $username");
+
+    $config = getConfig();
+    $apiUrl = $config['azuracast_api_url'] ?? '';
+    $apiKey = $config['azuracast_api_key'] ?? '';
+
+    if (empty($apiUrl) || empty($apiKey)) {
+        error_log("API UPDATE - ERROR: API no configurada");
+        return ['success' => false, 'message' => 'API de AzuraCast no configurada en SAPO'];
+    }
+
+    $userData = getUserDB($username);
+    $stationId = $userData['azuracast']['station_id'] ?? null;
+
+    if (empty($stationId)) {
+        error_log("API UPDATE - ERROR: Station ID no configurado");
+        return ['success' => false, 'message' => 'Station ID no configurado'];
+    }
+
+    error_log("API UPDATE - Station ID: $stationId");
+
+    // Primero obtener la configuración actual
+    $currentConfig = getAzuraCastStationConfig($username);
+
+    if (!$currentConfig['success']) {
+        return $currentConfig;
+    }
+
+    error_log("API UPDATE - Configuración actual obtenida");
+
+    // Actualizar solo el campo custom_config dentro de backend_config
+    $stationData = $currentConfig['data'];
+
+    if (!isset($stationData['backend_config'])) {
+        $stationData['backend_config'] = [];
+    }
+
+    $stationData['backend_config']['custom_config'] = $customConfig;
+
+    error_log("API UPDATE - Custom config a enviar (" . strlen($customConfig) . " bytes)");
+
+    // Enviar actualización
+    $endpoint = rtrim($apiUrl, '/') . '/admin/station/' . $stationId;
+
+    $payload = json_encode($stationData);
+
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'PUT',
+            'timeout' => 15,
+            'user_agent' => 'SAPO/1.0',
+            'header' => [
+                'X-API-Key: ' . $apiKey,
+                'Content-Type: application/json',
+                'Content-Length: ' . strlen($payload)
+            ],
+            'content' => $payload,
+            'ignore_errors' => true
+        ]
+    ]);
+
+    error_log("API UPDATE - Enviando PUT a: $endpoint");
+
+    $response = @file_get_contents($endpoint, false, $context);
+
+    // Obtener código de respuesta HTTP
+    $httpCode = 0;
+    if (isset($http_response_header)) {
+        preg_match('/HTTP\/\d\.\d\s+(\d+)/', $http_response_header[0], $matches);
+        $httpCode = isset($matches[1]) ? (int)$matches[1] : 0;
+    }
+
+    error_log("API UPDATE - Código HTTP: $httpCode");
+
+    if ($response === false || $httpCode < 200 || $httpCode >= 300) {
+        error_log("API UPDATE - ERROR: " . ($response ?: 'Sin respuesta'));
+        return [
+            'success' => false,
+            'message' => 'Error al actualizar AzuraCast (HTTP ' . $httpCode . ')'
+        ];
+    }
+
+    error_log("API UPDATE - ¡Actualización exitosa!");
+
+    // Reiniciar Liquidsoap para aplicar cambios
+    $restartEndpoint = rtrim($apiUrl, '/') . '/station/' . $stationId . '/restart';
+
+    $restartContext = stream_context_create([
+        'http' => [
+            'method' => 'POST',
+            'timeout' => 10,
+            'user_agent' => 'SAPO/1.0',
+            'header' => 'X-API-Key: ' . $apiKey,
+            'ignore_errors' => true
+        ]
+    ]);
+
+    error_log("API UPDATE - Reiniciando Liquidsoap...");
+    @file_get_contents($restartEndpoint, false, $restartContext);
+
+    return [
+        'success' => true,
+        'message' => 'Configuración aplicada correctamente. Liquidsoap se está reiniciando.'
+    ];
+}
+
+/**
+ * Aplicar señales horarias usando la API de AzuraCast (nuevo método)
+ */
+function applyTimeSignalsViaAPI($username) {
+    error_log("API APPLY - Iniciando aplicación para usuario: $username");
+
+    $config = getTimeSignalsConfig($username);
+    error_log("API APPLY - Configuración: " . json_encode($config));
+
+    if (empty($config['signal_file']) || empty($config['days'])) {
+        error_log("API APPLY - ERROR: Configuración incompleta");
+        return ['success' => false, 'message' => 'Configuración incompleta'];
+    }
+
+    $audioPath = getTimeSignalsDir($username) . '/' . $config['signal_file'];
+    if (!file_exists($audioPath)) {
+        error_log("API APPLY - ERROR: Archivo de audio no encontrado: $audioPath");
+        return ['success' => false, 'message' => 'Archivo de audio no encontrado'];
+    }
+
+    $frequency = $config['frequency'] ?? 'hourly';
+    $days = $config['days'] ?? [];
+
+    // Generar código Liquidsoap
+    $liquidsoapPath = "/var/azuracast/stations/{$username}/media/senales_horarias/{$config['signal_file']}";
+    $liquidsoapCode = generateLiquidsoapTimeSignals($liquidsoapPath, $days, $frequency);
+
+    if (empty($liquidsoapCode)) {
+        error_log("API APPLY - ERROR: No se pudo generar código");
+        return ['success' => false, 'message' => 'Error al generar código Liquidsoap'];
+    }
+
+    error_log("API APPLY - Código generado (" . strlen($liquidsoapCode) . " bytes)");
+
+    // Aplicar via API
+    $result = updateAzuraCastCustomConfig($username, $liquidsoapCode);
+
+    return $result;
+}

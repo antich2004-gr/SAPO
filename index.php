@@ -281,6 +281,72 @@ initSession();
         exit;
     }
 
+    // AJAX: Generar código de señales horarias (para mostrar en interfaz)
+    if (isset($_POST['action']) && $_POST['action'] == 'generate_time_signals_code' && isLoggedIn() && !isAdmin()) {
+        header('Content-Type: application/json');
+
+        // Validar CSRF token
+        $token = $_POST['csrf_token'] ?? '';
+        if (!validateCSRFToken($token)) {
+            echo json_encode(['success' => false, 'message' => ERROR_INVALID_TOKEN]);
+            exit;
+        }
+
+        $frequency = $_POST['frequency'] ?? 'hourly';
+        $username = $_SESSION['username'];
+
+        // Obtener el último archivo subido
+        $files = listTimeSignals($username);
+
+        if (empty($files)) {
+            echo json_encode(['success' => false, 'message' => 'Debe subir un archivo de señal horaria primero']);
+            exit;
+        }
+
+        $signalFile = $files[0]['name'];
+        $days = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+
+        // Generar código
+        $liquidsoapPath = "/var/azuracast/stations/{$username}/media/senales_horarias/{$signalFile}";
+        $liquidsoapCode = generateLiquidsoapTimeSignals($liquidsoapPath, $days, $frequency);
+
+        if (empty($liquidsoapCode)) {
+            echo json_encode(['success' => false, 'message' => 'Error al generar código']);
+            exit;
+        }
+
+        // Guardar configuración
+        $config = [
+            'signal_file' => $signalFile,
+            'frequency' => $frequency,
+            'days' => $days
+        ];
+        saveTimeSignalsConfig($username, $config);
+
+        echo json_encode([
+            'success' => true,
+            'code' => $liquidsoapCode,
+            'signal_file' => $signalFile
+        ]);
+        exit;
+    }
+
+    // AJAX: Aplicar señales horarias via API de AzuraCast
+    if (isset($_POST['action']) && $_POST['action'] == 'apply_time_signals_via_api' && isLoggedIn() && !isAdmin()) {
+        header('Content-Type: application/json');
+
+        // Validar CSRF token
+        $token = $_POST['csrf_token'] ?? '';
+        if (!validateCSRFToken($token)) {
+            echo json_encode(['success' => false, 'message' => ERROR_INVALID_TOKEN]);
+            exit;
+        }
+
+        $result = applyTimeSignalsViaAPI($_SESSION['username']);
+        echo json_encode($result);
+        exit;
+    }
+
 
 $message = '';
 $error = '';

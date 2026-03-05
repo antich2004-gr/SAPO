@@ -669,39 +669,67 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         </p>
 
                         <form id="time-signals-form">
-                            <!-- Configuración de frecuencia -->
-                            <div class="form-group">
-                                <label style="font-size: 15px; font-weight: 500; margin-bottom: 10px; display: block;">Frecuencia de Reproduccion:</label>
-                                <select name="frequency" id="signal-frequency" required style="width: 100%; max-width: 400px; padding: 10px; font-size: 14px;">
+                            <!-- Paso 1: Archivo -->
+                            <div style="padding: 15px; background: #f7fafc; border-radius: 8px; margin-bottom: 20px;">
+                                <p style="margin: 0 0 10px 0; font-weight: 500; color: #2d3748;">
+                                    1️⃣ Archivo de señal horaria:
+                                </p>
+                                <p style="margin: 0; color: #234e52; font-size: 14px;">
+                                    📢 <strong>Archivo actual:</strong> <span id="current-signal-file" style="font-family: monospace; color: #38b2ac;">Ninguno</span>
+                                </p>
+                                <p style="margin: 8px 0 0 0; color: #718096; font-size: 13px;">
+                                    Sube un archivo MP3 usando el formulario de arriba. El último archivo será el usado.
+                                </p>
+                            </div>
+
+                            <!-- Paso 2: Configuración -->
+                            <div style="padding: 15px; background: #f7fafc; border-radius: 8px; margin-bottom: 20px;">
+                                <p style="margin: 0 0 10px 0; font-weight: 500; color: #2d3748;">
+                                    2️⃣ Frecuencia de reproducción:
+                                </p>
+                                <select name="frequency" id="signal-frequency" required style="width: 100%; max-width: 400px; padding: 10px; font-size: 14px; border: 1px solid #cbd5e0; border-radius: 4px;">
                                     <option value="hourly">Cada hora (en punto: :00)</option>
                                     <option value="half-hourly">Cada media hora (:00 y :30)</option>
                                 </select>
                                 <small style="color: #718096; display: block; margin-top: 8px;">
-                                    La senal se mezclara suavemente con la musica todos los dias de la semana.
+                                    La señal se mezclará suavemente con la música todos los días de la semana.
                                 </small>
                             </div>
 
-                            <!-- Info del archivo -->
-                            <div style="margin-top: 25px; padding: 15px; background: #e6fffa; border-left: 4px solid #38b2ac; border-radius: 4px;">
-                                <p style="margin: 0; color: #234e52; font-size: 14px;">
-                                    📢 <strong>Archivo activo:</strong> <span id="current-signal-file" style="font-family: monospace;">Ninguno</span>
+                            <!-- Paso 3: Generar código -->
+                            <div style="padding: 15px; background: #f7fafc; border-radius: 8px; margin-bottom: 20px;">
+                                <p style="margin: 0 0 10px 0; font-weight: 500; color: #2d3748;">
+                                    3️⃣ Generar código Liquidsoap:
                                 </p>
-                                <p style="margin: 8px 0 0 0; color: #2c7a7b; font-size: 13px;">
-                                    El ultimo archivo que subas sera el que se use automaticamente.
-                                </p>
-                            </div>
+                                <button type="button" class="btn btn-primary" onclick="generateTimeSignalsCode()" style="padding: 10px 25px;">
+                                    🔨 Generar Código
+                                </button>
 
-                            <!-- Botones de acción -->
-                            <div style="margin-top: 30px; display: flex; gap: 15px; flex-wrap: wrap;">
-                                <button type="submit" class="btn btn-success" style="font-size: 16px; padding: 12px 30px;">
-                                    ✅ Activar Senales Horarias
-                                </button>
-                                <button type="button" class="btn btn-secondary" onclick="loadTimeSignalsConfig()" style="padding: 12px 30px;">
-                                    🔄 Recargar
-                                </button>
-                                <button type="button" class="btn btn-info" onclick="syncFromLiquidsoap()" style="padding: 12px 30px;">
-                                    🔍 Sincronizar desde Liquidsoap
-                                </button>
+                                <!-- Área de código generado -->
+                                <div id="generated-code-container" style="display: none; margin-top: 15px;">
+                                    <label style="font-weight: 500; color: #2d3748; display: block; margin-bottom: 8px;">
+                                        Código generado:
+                                    </label>
+                                    <textarea id="generated-code" readonly style="width: 100%; height: 300px; font-family: 'Courier New', monospace; font-size: 13px; padding: 15px; border: 1px solid #cbd5e0; border-radius: 4px; background: #1a202c; color: #48bb78; line-height: 1.5;"></textarea>
+
+                                    <div style="margin-top: 10px; display: flex; gap: 10px;">
+                                        <button type="button" class="btn btn-secondary" onclick="copyGeneratedCode()" style="padding: 8px 20px;">
+                                            📋 Copiar Código
+                                        </button>
+                                        <button type="button" class="btn btn-success" onclick="applyTimeSignalsViaAPI()" style="padding: 8px 20px;">
+                                            ✅ Aplicar Automáticamente
+                                        </button>
+                                    </div>
+
+                                    <div style="margin-top: 15px; padding: 12px; background: #edf2f7; border-left: 3px solid #4299e1; border-radius: 4px;">
+                                        <p style="margin: 0; color: #2d3748; font-size: 13px;">
+                                            <strong>💡 Opción manual:</strong> Si la aplicación automática falla, copia el código y pégalo en:
+                                        </p>
+                                        <p style="margin: 5px 0 0 0; color: #4a5568; font-size: 13px; font-family: monospace;">
+                                            AzuraCast → Estación → Editar → Avanzado → Custom Configuration
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </form>
 
@@ -1498,22 +1526,18 @@ function syncFromLiquidsoap() {
 }
 
 /**
- * Activar señales horarias
+ * Generar código Liquidsoap
  */
-document.getElementById('time-signals-form')?.addEventListener('submit', function(e) {
-    e.preventDefault();
-
+function generateTimeSignalsCode() {
     const statusDiv = document.getElementById('config-status');
-    const submitButton = this.querySelector('button[type="submit"]');
+    const frequency = document.getElementById('signal-frequency').value;
 
     const formData = new FormData();
-    formData.append('action', 'apply_time_signals');
+    formData.append('action', 'generate_time_signals_code');
     formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
-    formData.append('frequency', document.getElementById('signal-frequency').value);
+    formData.append('frequency', frequency);
 
-    submitButton.disabled = true;
-    submitButton.textContent = 'Aplicando...';
-    statusDiv.innerHTML = '<p style="color: #3182ce;">Aplicando configuración...</p>';
+    statusDiv.innerHTML = '<p style="color: #3182ce;">Generando código...</p>';
 
     fetch('', {
         method: 'POST',
@@ -1522,25 +1546,76 @@ document.getElementById('time-signals-form')?.addEventListener('submit', functio
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            statusDiv.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
+            // Mostrar el código generado
+            document.getElementById('generated-code').value = data.code;
+            document.getElementById('generated-code-container').style.display = 'block';
+            document.getElementById('current-signal-file').textContent = data.signal_file;
 
-            // Recargar configuración para reflejar cambios
+            statusDiv.innerHTML = '<div class="alert alert-success">Código generado correctamente. Puedes copiarlo o aplicarlo automáticamente.</div>';
+
             setTimeout(() => {
-                loadTimeSignalsConfig();
-            }, 1000);
+                statusDiv.innerHTML = '';
+            }, 5000);
         } else {
             statusDiv.innerHTML = '<div class="alert alert-danger">' + data.message + '</div>';
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        statusDiv.innerHTML = '<div class="alert alert-danger">Error al aplicar configuración</div>';
-    })
-    .finally(() => {
-        submitButton.disabled = false;
-        submitButton.textContent = '✅ Activar Señales Horarias';
+        statusDiv.innerHTML = '<div class="alert alert-danger">Error al generar código</div>';
     });
-});
+}
+
+/**
+ * Copiar código generado al portapapeles
+ */
+function copyGeneratedCode() {
+    const codeTextarea = document.getElementById('generated-code');
+    const statusDiv = document.getElementById('config-status');
+
+    codeTextarea.select();
+    document.execCommand('copy');
+
+    statusDiv.innerHTML = '<div class="alert alert-success">✅ Código copiado al portapapeles</div>';
+
+    setTimeout(() => {
+        statusDiv.innerHTML = '';
+    }, 3000);
+}
+
+/**
+ * Aplicar señales horarias vía API de AzuraCast
+ */
+function applyTimeSignalsViaAPI() {
+    const statusDiv = document.getElementById('config-status');
+
+    const formData = new FormData();
+    formData.append('action', 'apply_time_signals_via_api');
+    formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
+
+    statusDiv.innerHTML = '<p style="color: #3182ce;">Aplicando vía API de AzuraCast...</p>';
+
+    fetch('', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            statusDiv.innerHTML = '<div class="alert alert-success">✅ ' + data.message + '</div>';
+
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 5000);
+        } else {
+            statusDiv.innerHTML = '<div class="alert alert-danger">❌ ' + data.message + '<br><small>Puedes copiar el código manualmente y pegarlo en AzuraCast.</small></div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        statusDiv.innerHTML = '<div class="alert alert-danger">❌ Error al aplicar. Puedes copiar el código manualmente.</div>';
+    });
+}
 
 /**
  * Cargar configuración inicial: intenta desde Liquidsoap primero, luego desde JSON guardado
