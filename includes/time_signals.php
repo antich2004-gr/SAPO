@@ -56,23 +56,40 @@ function writeLiquidsoapFile($username, $content) {
     $filePath = getLiquidsoapFilePath($username);
     $dirPath = dirname($filePath);
 
+    error_log("WRITE DEBUG - Usuario: $username");
+    error_log("WRITE DEBUG - Ruta de archivo: $filePath");
+    error_log("WRITE DEBUG - Directorio: $dirPath");
+    error_log("WRITE DEBUG - Longitud de contenido: " . strlen($content) . " bytes");
+
     if (!is_dir($dirPath)) {
-        error_log("Liquidsoap config directory not found: $dirPath");
+        error_log("WRITE DEBUG - ERROR: Directorio no existe: $dirPath");
         return false;
     }
 
+    error_log("WRITE DEBUG - Directorio existe: SÍ");
+    error_log("WRITE DEBUG - Directorio es escribible: " . (is_writable($dirPath) ? 'SÍ' : 'NO'));
+    error_log("WRITE DEBUG - Archivo existe: " . (file_exists($filePath) ? 'SÍ' : 'NO'));
+    if (file_exists($filePath)) {
+        error_log("WRITE DEBUG - Archivo es escribible: " . (is_writable($filePath) ? 'SÍ' : 'NO'));
+    }
+
     if (!is_writable($dirPath)) {
-        error_log("Liquidsoap config directory not writable: $dirPath");
+        error_log("WRITE DEBUG - ERROR: Directorio no escribible: $dirPath");
         return false;
     }
+
+    error_log("WRITE DEBUG - Intentando escribir contenido...");
+    error_log("WRITE DEBUG - Primeros 500 caracteres a escribir: " . substr($content, -500));
 
     $result = file_put_contents($filePath, $content);
 
     if ($result === false) {
-        error_log("Failed to write liquidsoap file: $filePath");
+        error_log("WRITE DEBUG - ERROR: file_put_contents falló");
+        error_log("WRITE DEBUG - Error PHP: " . error_get_last()['message'] ?? 'desconocido');
         return false;
     }
 
+    error_log("WRITE DEBUG - ¡Escritura exitosa! Bytes escritos: $result");
     return true;
 }
 
@@ -653,65 +670,96 @@ function syncTimeSignalsFromLiquidsoap($username) {
  * Aplicar configuración de señales horarias a AzuraCast via Liquidsoap
  */
 function applyTimeSignalsToAzuraCast($username) {
+    error_log("APPLY DEBUG - Iniciando aplicación para usuario: $username");
+
     $config = getTimeSignalsConfig($username);
+    error_log("APPLY DEBUG - Configuración obtenida: " . json_encode($config));
 
     if (empty($config['signal_file']) || empty($config['days'])) {
+        error_log("APPLY DEBUG - ERROR: Configuración incompleta");
         return ['success' => false, 'message' => 'Configuración incompleta'];
     }
 
     $audioPath = getTimeSignalsDir($username) . '/' . $config['signal_file'];
+    error_log("APPLY DEBUG - Verificando archivo de audio: $audioPath");
+
     if (!file_exists($audioPath)) {
+        error_log("APPLY DEBUG - ERROR: Archivo de audio no encontrado");
         return ['success' => false, 'message' => 'Archivo de audio no encontrado'];
     }
 
+    error_log("APPLY DEBUG - Archivo de audio existe: SÍ");
     $frequency = $config['frequency'] ?? 'hourly';
     $days = $config['days'] ?? [];
 
     // PASO 1: Generar path para Liquidsoap
     // El archivo ya está en /var/azuracast/stations/{username}/media/senales_horarias/{filename}
     $liquidsoapPath = "/var/azuracast/stations/{$username}/media/senales_horarias/{$config['signal_file']}";
+    error_log("APPLY DEBUG - Path Liquidsoap: $liquidsoapPath");
+    error_log("APPLY DEBUG - Frecuencia: $frequency");
+    error_log("APPLY DEBUG - Días: " . json_encode($days));
 
     // PASO 2: Generar código Liquidsoap
+    error_log("APPLY DEBUG - Generando código Liquidsoap...");
     $liquidsoapCode = generateLiquidsoapTimeSignals($liquidsoapPath, $days, $frequency);
 
     if (empty($liquidsoapCode)) {
+        error_log("APPLY DEBUG - ERROR: Código Liquidsoap vacío");
         return ['success' => false, 'message' => 'Error al generar código Liquidsoap'];
     }
 
+    error_log("APPLY DEBUG - Código Liquidsoap generado (" . strlen($liquidsoapCode) . " bytes)");
+    error_log("APPLY DEBUG - Código generado (primeros 500 chars): " . substr($liquidsoapCode, 0, 500));
+
     // PASO 3: Leer archivo liquidsoap.liq actual
+    error_log("APPLY DEBUG - Leyendo archivo liquidsoap.liq...");
     $liquidsoapContent = readLiquidsoapFile($username);
     if ($liquidsoapContent === false) {
+        error_log("APPLY DEBUG - ERROR: No se pudo leer liquidsoap.liq");
         return ['success' => false, 'message' => 'Error al leer archivo liquidsoap.liq'];
     }
+
+    error_log("APPLY DEBUG - Archivo leído correctamente (" . strlen($liquidsoapContent) . " bytes)");
 
     // PASO 4: Reemplazar o añadir código de señales horarias
     $marker_start = '# Señales Horarias - SAPO';
 
     // Buscar y eliminar código antiguo de señales horarias
+    error_log("APPLY DEBUG - Buscando código antiguo de señales horarias...");
     if (strpos($liquidsoapContent, $marker_start) !== false) {
+        error_log("APPLY DEBUG - Encontrado código antiguo, eliminando...");
         // Eliminar desde el marcador inicial hasta el cierre de smooth_add o fallback
         // Soporta tanto el formato antiguo (fallback) como el nuevo (smooth_add)
         $pattern = '/' . preg_quote($marker_start, '/') . '.*?(?:radio = fallback\(track_sensitive=false, \[time_signal, radio\]\)|radio = smooth_add\([^)]*\))\s*\n?/s';
         $liquidsoapContent = preg_replace($pattern, '', $liquidsoapContent);
+        error_log("APPLY DEBUG - Código antiguo eliminado");
+    } else {
+        error_log("APPLY DEBUG - No se encontró código antiguo");
     }
 
     // Añadir nuevo código al final
+    error_log("APPLY DEBUG - Añadiendo nuevo código al final...");
     $liquidsoapContent = trim($liquidsoapContent);
     if (!empty($liquidsoapContent)) {
         $liquidsoapContent .= "\n\n";
     }
     $liquidsoapContent .= $liquidsoapCode;
+    error_log("APPLY DEBUG - Contenido final (" . strlen($liquidsoapContent) . " bytes)");
+    error_log("APPLY DEBUG - Últimos 500 caracteres: " . substr($liquidsoapContent, -500));
 
     // PASO 5: Escribir archivo liquidsoap.liq actualizado
+    error_log("APPLY DEBUG - Escribiendo archivo liquidsoap.liq...");
     $writeResult = writeLiquidsoapFile($username, $liquidsoapContent);
 
     if (!$writeResult) {
+        error_log("APPLY DEBUG - ERROR: writeLiquidsoapFile() retornó false");
         return [
             'success' => false,
             'message' => 'Error al escribir archivo liquidsoap.liq'
         ];
     }
 
+    error_log("APPLY DEBUG - ¡Éxito! Señales horarias aplicadas correctamente");
     return [
         'success' => true,
         'message' => 'Señales horarias aplicadas correctamente al Liquidsoap'
@@ -722,10 +770,15 @@ function applyTimeSignalsToAzuraCast($username) {
  * Procesar formulario de configuración (simplificado)
  */
 function processTimeSignalsForm($username, $postData) {
+    error_log("PROCESS FORM DEBUG - Usuario: $username");
+    error_log("PROCESS FORM DEBUG - POST data: " . json_encode($postData));
+
     $frequency = $postData['frequency'] ?? 'hourly';
+    error_log("PROCESS FORM DEBUG - Frecuencia: $frequency");
 
     // Obtener el último archivo subido automáticamente
     $files = listTimeSignals($username);
+    error_log("PROCESS FORM DEBUG - Archivos encontrados: " . count($files));
 
     if (empty($files)) {
         return ['success' => false, 'message' => 'Debe subir al menos un archivo de señal horaria'];
@@ -755,17 +808,34 @@ function processTimeSignalsForm($username, $postData) {
         'days' => $days
     ];
 
+    error_log("PROCESS FORM DEBUG - Config a guardar: " . json_encode($config));
+
     $result = saveTimeSignalsConfig($username, $config);
+    error_log("PROCESS FORM DEBUG - saveTimeSignalsConfig resultado: " . json_encode($result));
 
     if ($result['success']) {
         // Intentar aplicar a AzuraCast
+        error_log("PROCESS FORM DEBUG - Llamando a applyTimeSignalsToAzuraCast()...");
         $applyResult = applyTimeSignalsToAzuraCast($username);
+        error_log("PROCESS FORM DEBUG - applyTimeSignalsToAzuraCast resultado: " . json_encode($applyResult));
 
-        // No fallar si la aplicación falla, solo advertir
+        // IMPORTANTE: Si falla la aplicación, informar al usuario
         if (!$applyResult['success']) {
-            error_log("Advertencia: No se pudo aplicar a AzuraCast: " . $applyResult['message']);
+            error_log("PROCESS FORM DEBUG - ERROR en aplicación: " . $applyResult['message']);
+            // Retornar el error de aplicación al usuario
+            return [
+                'success' => false,
+                'message' => 'Configuración guardada pero error al aplicar: ' . $applyResult['message']
+            ];
         }
+
+        error_log("PROCESS FORM DEBUG - Todo completado exitosamente");
+        return [
+            'success' => true,
+            'message' => 'Señales horarias configuradas y aplicadas correctamente'
+        ];
     }
 
+    error_log("PROCESS FORM DEBUG - ERROR al guardar configuración");
     return $result;
 }
