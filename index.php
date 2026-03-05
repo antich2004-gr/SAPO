@@ -342,7 +342,31 @@ initSession();
             exit;
         }
 
-        $result = applyTimeSignalsViaAPI($_SESSION['username']);
+        // Recibir frecuencia del formulario
+        $frequency = $_POST['frequency'] ?? 'hourly';
+        $username = $_SESSION['username'];
+
+        // Obtener el último archivo subido
+        $files = listTimeSignals($username);
+
+        if (empty($files)) {
+            echo json_encode(['success' => false, 'message' => 'Debe subir un archivo de señal horaria primero']);
+            exit;
+        }
+
+        $signalFile = $files[0]['name'];
+        $days = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+
+        // Guardar configuración actualizada
+        $config = [
+            'signal_file' => $signalFile,
+            'frequency' => $frequency,
+            'days' => $days
+        ];
+        saveTimeSignalsConfig($username, $config);
+
+        // Aplicar via API
+        $result = applyTimeSignalsViaAPI($username);
         echo json_encode($result);
         exit;
     }

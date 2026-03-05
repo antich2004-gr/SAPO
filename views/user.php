@@ -687,7 +687,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 <p style="margin: 0 0 10px 0; font-weight: 500; color: #2d3748;">
                                     2️⃣ Frecuencia de reproducción:
                                 </p>
-                                <select name="frequency" id="signal-frequency" required style="width: 100%; max-width: 400px; padding: 10px; font-size: 14px; border: 1px solid #cbd5e0; border-radius: 4px;">
+                                <select name="frequency" id="signal-frequency" required style="width: 100%; max-width: 400px; padding: 10px; font-size: 14px; border: 1px solid #cbd5e0; border-radius: 4px;" onchange="onFrequencyChange()">
                                     <option value="hourly">Cada hora (en punto: :00)</option>
                                     <option value="half-hourly">Cada media hora (:00 y :30)</option>
                                 </select>
@@ -1526,6 +1526,23 @@ function syncFromLiquidsoap() {
 }
 
 /**
+ * Detectar cambio de frecuencia y regenerar código si ya está visible
+ */
+function onFrequencyChange() {
+    const codeContainer = document.getElementById('generated-code-container');
+
+    // Si el código ya está visible, regenerarlo automáticamente
+    if (codeContainer && codeContainer.style.display !== 'none') {
+        const statusDiv = document.getElementById('config-status');
+        statusDiv.innerHTML = '<div class="alert alert-info">Frecuencia actualizada. Regenerando código...</div>';
+
+        setTimeout(() => {
+            generateTimeSignalsCode();
+        }, 500);
+    }
+}
+
+/**
  * Generar código Liquidsoap
  */
 function generateTimeSignalsCode() {
@@ -1588,10 +1605,12 @@ function copyGeneratedCode() {
  */
 function applyTimeSignalsViaAPI() {
     const statusDiv = document.getElementById('config-status');
+    const frequency = document.getElementById('signal-frequency').value;
 
     const formData = new FormData();
     formData.append('action', 'apply_time_signals_via_api');
     formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
+    formData.append('frequency', frequency);
 
     statusDiv.innerHTML = '<p style="color: #3182ce;">Aplicando vía API de AzuraCast...</p>';
 
