@@ -3,13 +3,17 @@
 
 /**
  * Obtener directorio de señales horarias del usuario
+ * Guardamos directamente en el directorio media de la emisora
  */
 function getTimeSignalsDir($username) {
-    $baseDir = __DIR__ . '/../user_data/time_signals';
-    if (!is_dir($baseDir)) {
-        mkdir($baseDir, 0755, true);
+    $dir = "/mnt/emisoras/{$username}/media/senales_horarias";
+
+    // Crear directorio si no existe
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
     }
-    return $baseDir . '/' . $username;
+
+    return $dir;
 }
 
 /**
@@ -97,12 +101,14 @@ function listTimeSignals($username) {
 
         $size = filesize($path);
         $sizeFormatted = formatFileSize($size);
+        $modified = date('Y-m-d H:i:s', filemtime($path));
 
         $files[] = [
             'name' => $item,
             'path' => $path,
             'size' => $sizeFormatted,
             'size_bytes' => $size,
+            'modified' => $modified,
             'extension' => $ext
         ];
     }
@@ -172,11 +178,31 @@ function uploadTimeSignal($username, $file) {
         $counter++;
     }
 
+    // Verificar que el directorio sea escribible
+    if (!is_writable($dir)) {
+        error_log("Directorio no escribible: $dir");
+        return ['success' => false, 'message' => 'Directorio no tiene permisos de escritura'];
+    }
+
+    // Verificar que el archivo temporal exista
+    if (!file_exists($file['tmp_name'])) {
+        error_log("Archivo temporal no existe: " . $file['tmp_name']);
+        return ['success' => false, 'message' => 'Archivo temporal no encontrado'];
+    }
+
     if (move_uploaded_file($file['tmp_name'], $destination)) {
         chmod($destination, 0644);
-        return ['success' => true, 'filename' => $filename];
+        return [
+            'success' => true,
+            'filename' => $filename,
+            'message' => 'Archivo subido correctamente'
+        ];
     } else {
-        return ['success' => false, 'message' => 'Error al guardar el archivo'];
+        $error = error_get_last();
+        error_log("Error al mover archivo: " . json_encode($error));
+        error_log("Destino: $destination");
+        error_log("Permisos del directorio: " . substr(sprintf('%o', fileperms($dir)), -4));
+        return ['success' => false, 'message' => 'Error al guardar el archivo en: ' . basename($destination)];
     }
 }
 
@@ -569,20 +595,12 @@ function applyTimeSignalsToAzuraCast($username) {
     $frequency = $config['frequency'] ?? 'hourly';
     $days = $config['days'] ?? [];
 
-    // PASO 1: Subir archivo a AzuraCast
-    $uploadResult = uploadFileToAzuraCast($username, $audioPath, 'senales_horarias');
-
-    if (!$uploadResult['success']) {
-        return [
-            'success' => false,
-            'message' => 'Error al subir archivo: ' . $uploadResult['message']
-        ];
-    }
-
-    $azuracastPath = $uploadResult['path'];
+    // PASO 1: Generar path para Liquidsoap
+    // El archivo ya está en /mnt/emisoras/{username}/media/senales_horarias/{filename}
+    $liquidsoapPath = "/mnt/emisoras/{$username}/media/senales_horarias/{$config['signal_file']}";
 
     // PASO 2: Generar código Liquidsoap
-    $liquidsoapCode = generateLiquidsoapTimeSignals($azuracastPath, $days, $frequency);
+    $liquidsoapCode = generateLiquidsoapTimeSignals($liquidsoapPath, $days, $frequency);
 
     if (empty($liquidsoapCode)) {
         return ['success' => false, 'message' => 'Error al generar código Liquidsoap'];
