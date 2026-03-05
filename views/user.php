@@ -663,9 +663,9 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
                     <!-- CONFIGURACIÓN DE HORARIOS -->
                     <div class="time-signals-config" style="margin-top: 40px;">
-                        <h5>Configuracion de Horarios</h5>
+                        <h5>Configuracion de Senales Horarias</h5>
                         <p style="color: #718096; margin-bottom: 20px; font-size: 14px;">
-                            Selecciona el archivo de senal horaria y configura los horarios de reproduccion por dia de la semana.
+                            Las senales horarias sonaran automaticamente en la hora en punto (o con la frecuencia seleccionada) los dias que actives.
                         </p>
 
                         <form id="time-signals-form">
@@ -677,9 +677,27 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 </select>
                             </div>
 
-                            <!-- Configuración de horarios por día -->
+                            <!-- Configuración de frecuencia -->
                             <div style="margin-top: 30px;">
-                                <h6 style="margin-bottom: 15px;">Horarios de Reproduccion:</h6>
+                                <div class="form-group">
+                                    <label>Frecuencia de Reproduccion:</label>
+                                    <select name="frequency" id="signal-frequency" style="width: 100%; max-width: 400px;" onchange="updateDayInfo()">
+                                        <option value="hourly">Cada hora (en punto: :00)</option>
+                                        <option value="half-hourly">Cada media hora (:00 y :30)</option>
+                                        <option value="quarter-hourly">Cada 15 minutos (:00, :15, :30, :45)</option>
+                                    </select>
+                                    <small style="color: #718096; display: block; margin-top: 8px;">
+                                        La senal se reproducira automaticamente en los minutos especificados de cada hora.
+                                    </small>
+                                </div>
+                            </div>
+
+                            <!-- Selección de días activos -->
+                            <div style="margin-top: 30px;">
+                                <h6 style="margin-bottom: 15px;">Dias Activos:</h6>
+                                <p style="color: #718096; font-size: 14px; margin-bottom: 15px;">
+                                    Selecciona los dias en que deben sonar las senales horarias
+                                </p>
 
                                 <?php
                                 $dias = [
@@ -694,19 +712,23 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
                                 foreach ($dias as $key => $label):
                                 ?>
-                                <div class="day-schedule" style="display: flex; gap: 15px; align-items: center; margin-bottom: 15px; padding: 12px; background: #f7fafc; border-radius: 6px;">
-                                    <label style="min-width: 100px; margin: 0; font-weight: 500;">
+                                <div class="day-schedule" style="display: flex; gap: 15px; align-items: center; margin-bottom: 10px; padding: 12px; background: #f7fafc; border-radius: 6px;">
+                                    <label style="min-width: 120px; margin: 0; font-weight: 500; cursor: pointer;">
                                         <input type="checkbox" name="days[]" value="<?php echo $key; ?>" class="day-checkbox" style="margin-right: 8px;">
                                         <?php echo $label; ?>
                                     </label>
-                                    <div style="display: flex; gap: 10px; align-items: center;">
-                                        <label style="margin: 0; font-size: 14px;">Desde:</label>
-                                        <input type="time" name="<?php echo $key; ?>_start" class="time-input" style="padding: 6px;">
-                                        <label style="margin: 0; font-size: 14px;">Hasta:</label>
-                                        <input type="time" name="<?php echo $key; ?>_end" class="time-input" style="padding: 6px;">
-                                    </div>
+                                    <span class="day-info" style="color: #718096; font-size: 13px; font-style: italic;" data-day="<?php echo $key; ?>">
+                                        <!-- Se llenará con JS según frecuencia -->
+                                    </span>
                                 </div>
                                 <?php endforeach; ?>
+
+                                <!-- Botón para seleccionar/deseleccionar todos -->
+                                <div style="margin-top: 15px;">
+                                    <button type="button" class="btn btn-secondary" onclick="toggleAllDays()" style="padding: 8px 16px;">
+                                        Seleccionar/Deseleccionar todos
+                                    </button>
+                                </div>
                             </div>
 
                             <!-- Botones de acción -->

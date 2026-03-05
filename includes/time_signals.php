@@ -165,7 +165,8 @@ function getTimeSignalsConfig($username) {
     if (!file_exists($configPath)) {
         return [
             'signal_file' => '',
-            'schedule' => []
+            'frequency' => 'hourly',
+            'days' => []
         ];
     }
 
@@ -175,7 +176,8 @@ function getTimeSignalsConfig($username) {
     if (!is_array($config)) {
         return [
             'signal_file' => '',
-            'schedule' => []
+            'frequency' => 'hourly',
+            'days' => []
         ];
     }
 
@@ -312,7 +314,7 @@ function findTimeSignalsPlaylist($username) {
 /**
  * Crear o actualizar playlist de señales horarias
  */
-function createOrUpdateTimeSignalsPlaylist($username, $audioPath, $schedule) {
+function createOrUpdateTimeSignalsPlaylist($username, $audioPath, $days, $frequency) {
     $globalConfig = getConfig();
     $apiUrl = $globalConfig['azuracast_api_url'] ?? '';
     $apiKey = $globalConfig['azuracast_api_key'] ?? '';
@@ -327,8 +329,7 @@ function createOrUpdateTimeSignalsPlaylist($username, $audioPath, $schedule) {
     // Buscar playlist existente
     $existingPlaylist = findTimeSignalsPlaylist($username);
 
-    // Convertir schedule a formato AzuraCast
-    $scheduleRules = [];
+    // Mapeo de días español -> AzuraCast (0=domingo, 1=lunes, ..., 6=sábado)
     $dayMap = [
         'lunes' => 1,
         'martes' => 2,
@@ -339,15 +340,45 @@ function createOrUpdateTimeSignalsPlaylist($username, $audioPath, $schedule) {
         'domingo' => 0
     ];
 
-    foreach ($schedule as $day => $times) {
-        if (!isset($dayMap[$day])) continue;
+    // Convertir días seleccionados
+    $activeDays = [];
+    foreach ($days as $day) {
+        if (isset($dayMap[$day])) {
+            $activeDays[] = $dayMap[$day];
+        }
+    }
 
+    if (empty($activeDays)) {
+        return ['success' => false, 'message' => 'Debe seleccionar al menos un día'];
+    }
+
+    // Generar horarios según frecuencia
+    $scheduleRules = [];
+    $minutes = [];
+
+    switch ($frequency) {
+        case 'hourly':
+            $minutes = [0]; // Solo en punto
+            break;
+        case 'half-hourly':
+            $minutes = [0, 30]; // Cada media hora
+            break;
+        case 'quarter-hourly':
+            $minutes = [0, 15, 30, 45]; // Cada 15 minutos
+            break;
+        default:
+            $minutes = [0];
+    }
+
+    // Crear reglas para cada minuto y cada día
+    foreach ($minutes as $minute) {
         $scheduleRules[] = [
-            'start_time' => $times['start'] . ':00',
-            'end_time' => $times['end'] . ':59',
+            'start_time' => sprintf('%02d:%02d:00', 0, $minute),  // Desde las 00:XX
+            'end_time' => '23:59:59',  // Hasta las 23:59
             'start_date' => null,
             'end_date' => null,
-            'days' => [$dayMap[$day]]
+            'days' => $activeDays,
+            'loop_once_per_hour' => true  // Importante: solo una vez por hora en el minuto especificado
         ];
     }
 
@@ -459,7 +490,7 @@ function makeAzuraCastRequest($url, $method = 'GET', $data = null, $apiKey = nul
 function applyTimeSignalsToAzuraCast($username) {
     $config = getTimeSignalsConfig($username);
 
-    if (empty($config['signal_file']) || empty($config['schedule'])) {
+    if (empty($config['signal_file']) || empty($config['days'])) {
         return ['success' => false, 'message' => 'Configuración incompleta'];
     }
 
@@ -485,6 +516,9 @@ function applyTimeSignalsToAzuraCast($username) {
         return ['success' => false, 'message' => 'Archivo de audio no encontrado'];
     }
 
+    $frequency = $config['frequency'] ?? 'hourly';
+    $days = $config['days'] ?? [];
+
     // PASO 1: Subir archivo a AzuraCast
     $uploadResult = uploadFileToAzuraCast($username, $audioPath, 'senales_horarias');
 
@@ -498,7 +532,7 @@ function applyTimeSignalsToAzuraCast($username) {
     $azuracastPath = $uploadResult['path'];
 
     // PASO 2: Crear o actualizar playlist programada
-    $playlistResult = createOrUpdateTimeSignalsPlaylist($username, $azuracastPath, $config['schedule']);
+    $playlistResult = createOrUpdateTimeSignalsPlaylist($username, $azuracastPath, $days, $frequency);
 
     if (!$playlistResult['success']) {
         return [
@@ -526,6 +560,7 @@ function applyTimeSignalsToAzuraCast($username) {
 function processTimeSignalsForm($username, $postData) {
     $signalFile = $postData['signal_file'] ?? '';
     $days = $postData['days'] ?? [];
+    $frequency = $postData['frequency'] ?? 'hourly';
 
     if (empty($signalFile)) {
         return ['success' => false, 'message' => 'Debe seleccionar un archivo de señal horaria'];
@@ -541,37 +576,26 @@ function processTimeSignalsForm($username, $postData) {
         return ['success' => false, 'message' => 'El archivo seleccionado no existe'];
     }
 
-    $schedule = [];
+    // Validar frecuencia
+    $validFrequencies = ['hourly', 'half-hourly', 'quarter-hourly'];
+    if (!in_array($frequency, $validFrequencies)) {
+        $frequency = 'hourly';
+    }
 
-    foreach ($days as $day) {
-        $startKey = $day . '_start';
-        $endKey = $day . '_end';
+    // Validar días
+    $validDays = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+    $days = array_filter($days, function($day) use ($validDays) {
+        return in_array($day, $validDays);
+    });
 
-        $start = $postData[$startKey] ?? '';
-        $end = $postData[$endKey] ?? '';
-
-        if (empty($start) || empty($end)) {
-            return ['success' => false, 'message' => "Debe especificar horarios para $day"];
-        }
-
-        // Validar formato de hora
-        if (!preg_match('/^([01][0-9]|2[0-3]):([0-5][0-9])$/', $start)) {
-            return ['success' => false, 'message' => "Formato de hora inválido para inicio de $day"];
-        }
-
-        if (!preg_match('/^([01][0-9]|2[0-3]):([0-5][0-9])$/', $end)) {
-            return ['success' => false, 'message' => "Formato de hora inválido para fin de $day"];
-        }
-
-        $schedule[$day] = [
-            'start' => $start,
-            'end' => $end
-        ];
+    if (empty($days)) {
+        return ['success' => false, 'message' => 'Debe seleccionar al menos un día válido'];
     }
 
     $config = [
         'signal_file' => $signalFile,
-        'schedule' => $schedule
+        'frequency' => $frequency,
+        'days' => array_values($days)
     ];
 
     $result = saveTimeSignalsConfig($username, $config);
