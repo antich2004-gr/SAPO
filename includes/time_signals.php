@@ -1132,27 +1132,29 @@ function generateTimeSignalsSmooth($audioPath, $days, $frequency, $musicVolume =
             $minutes = [0];
     }
 
-    // Asegurar que los valores son floats válidos para Liquidsoap
+    // Liquidsoap 2.x requiere floats explícitos (1.0 no 1)
     $durationFloat = number_format((float)$transitionDuration, 1, '.', '');
-    $volumeFloat = number_format((float)$musicVolume, 2, '.', '');
+    $volumeFloat = number_format((float)$musicVolume, 1, '.', '');
+    $musicPercent = (int)($musicVolume * 100);
 
     $code = "# Señales Horarias - SAPO (smooth_add)\n";
-    $code .= "# Señal horaria con smooth_add\n";
     $code .= "señal_horaria = single(\"$audioPath\")\n";
     $code .= "horarias = switch(id=\"time_signal_switch\", [\n";
 
+    // Generar entradas del switch sin coma final en la última
+    $entries = [];
     foreach ($minutes as $minute) {
-        $code .= "  (predicate.once({ {$minute}m }), señal_horaria),\n";
+        $entries[] = "  (predicate.once({ {$minute}m }), señal_horaria)";
     }
+    $code .= implode(",\n", $entries) . "\n";
 
-    $code .= "])\n\n";
+    $code .= "])\n";
     $code .= "# smooth_add mezcla suavemente sin cortar\n";
     $code .= "radio = smooth_add(\n";
-    $code .= "  duration={$durationFloat},      # Duración de la transición\n";
-    $musicPercent = (int)($musicVolume * 100);
-    $code .= "  p={$volumeFloat},                    # Música baja al {$musicPercent}%\n";
-    $code .= "  normal=radio,                        # Fuente principal\n";
-    $code .= "  special=horarias                     # Señales horarias\n";
+    $code .= "  duration={$durationFloat},      # Duración de la transición ({$durationFloat} segundos)\n";
+    $code .= "  p={$volumeFloat},             # Música baja al {$musicPercent}%\n";
+    $code .= "  normal=radio,      # Fuente principal\n";
+    $code .= "  special=horarias   # Señales horarias\n";
     $code .= ")\n";
 
     return $code;
