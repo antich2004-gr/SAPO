@@ -315,7 +315,8 @@ initSession();
 
         // Generar código con valores personalizados
         $liquidsoapPath = "/var/azuracast/stations/{$username}/media/senales_horarias/{$signalFile}";
-        $liquidsoapCode = generateLiquidsoapTimeSignals($liquidsoapPath, $days, $frequency, $duration, $attenuation);
+        $musicVolume = 1.0 - $attenuation; // Convertir atenuación a volumen
+        $liquidsoapCode = generateTimeSignalsSmooth($liquidsoapPath, $days, $frequency, $musicVolume, $duration);
 
         if (empty($liquidsoapCode)) {
             echo json_encode(['success' => false, 'message' => 'Error al generar código']);
