@@ -158,11 +158,26 @@ function getTimeSignalsConfigPath($username) {
 
 /**
  * Cargar configuración de señales horarias
+ * Intenta sincronizar desde Liquidsoap si no hay config.json
  */
 function getTimeSignalsConfig($username) {
     $configPath = getTimeSignalsConfigPath($username);
 
+    // Si no existe config.json, intentar sincronizar desde Liquidsoap
     if (!file_exists($configPath)) {
+        $synced = syncTimeSignalsFromLiquidsoap($username);
+        if ($synced) {
+            // Leer la configuración sincronizada
+            if (file_exists($configPath)) {
+                $json = file_get_contents($configPath);
+                $config = json_decode($json, true);
+                if (is_array($config)) {
+                    return $config;
+                }
+            }
+        }
+
+        // Si no se pudo sincronizar, retornar configuración vacía
         return [
             'signal_file' => '',
             'frequency' => 'hourly',
@@ -174,6 +189,16 @@ function getTimeSignalsConfig($username) {
     $config = json_decode($json, true);
 
     if (!is_array($config)) {
+        // Si el JSON está corrupto, intentar sincronizar desde Liquidsoap
+        $synced = syncTimeSignalsFromLiquidsoap($username);
+        if ($synced) {
+            $json = file_get_contents($configPath);
+            $config = json_decode($json, true);
+            if (is_array($config)) {
+                return $config;
+            }
+        }
+
         return [
             'signal_file' => '',
             'frequency' => 'hourly',
@@ -362,6 +387,119 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency) {
     $code .= ")\n";
 
     return $code;
+}
+
+/**
+ * Parsear configuración de señales horarias desde Liquidsoap
+ * Lee el liquidsoap.liq y extrae la configuración actual
+ */
+function parseTimeSignalsFromLiquidsoap($username) {
+    // Obtener configuración actual de Liquidsoap
+    $currentConfig = getAzuracastLiquidsoapConfig($username);
+    if ($currentConfig === false) {
+        return null;
+    }
+
+    // Buscar custom_config
+    $customConfig = '';
+    foreach ($currentConfig as $field) {
+        if ($field['field'] === 'custom_config') {
+            $customConfig = $field['value'];
+            break;
+        }
+    }
+
+    if (empty($customConfig)) {
+        return null;
+    }
+
+    // Buscar el marcador de señales horarias
+    $marker = '# Señales Horarias - SAPO';
+    if (strpos($customConfig, $marker) === false) {
+        return null; // No hay señales horarias configuradas
+    }
+
+    $config = [
+        'signal_file' => null,
+        'frequency' => 'hourly',
+        'days' => []
+    ];
+
+    // 1. Extraer archivo de audio
+    if (preg_match('/time_signal_source\s*=\s*single\("([^"]+)"\)/', $customConfig, $matches)) {
+        $fullPath = $matches[1];
+        // Extraer solo el nombre del archivo
+        $config['signal_file'] = basename($fullPath);
+    }
+
+    // 2. Extraer minutos y días de las condiciones
+    // Patrón: ({1w and 0m0s}, time_signal_source)
+    preg_match_all('/\{(\d+)w\s+and\s+(\d+)m0s\}/', $customConfig, $matches, PREG_SET_ORDER);
+
+    $minutes = [];
+    $dayNums = [];
+
+    foreach ($matches as $match) {
+        $dayNum = (int)$match[1];
+        $minute = (int)$match[2];
+
+        if (!in_array($dayNum, $dayNums)) {
+            $dayNums[] = $dayNum;
+        }
+        if (!in_array($minute, $minutes)) {
+            $minutes[] = $minute;
+        }
+    }
+
+    // 3. Determinar frecuencia basada en los minutos
+    sort($minutes);
+    if (count($minutes) >= 2 && in_array(0, $minutes) && in_array(30, $minutes)) {
+        $config['frequency'] = 'half-hourly';
+    } elseif (count($minutes) === 1 && $minutes[0] === 0) {
+        $config['frequency'] = 'hourly';
+    }
+
+    // 4. Convertir números de días a nombres
+    $dayMap = [
+        1 => 'lunes',
+        2 => 'martes',
+        3 => 'miercoles',
+        4 => 'jueves',
+        5 => 'viernes',
+        6 => 'sabado',
+        7 => 'domingo'
+    ];
+
+    sort($dayNums);
+    foreach ($dayNums as $num) {
+        if (isset($dayMap[$num])) {
+            $config['days'][] = $dayMap[$num];
+        }
+    }
+
+    // Si no se pudo extraer información válida, retornar null
+    if (empty($config['signal_file']) || empty($config['days'])) {
+        return null;
+    }
+
+    return $config;
+}
+
+/**
+ * Sincronizar configuración desde Liquidsoap al config.json
+ * Lee el liquidsoap.liq y actualiza el config.json con la configuración real
+ */
+function syncTimeSignalsFromLiquidsoap($username) {
+    $parsedConfig = parseTimeSignalsFromLiquidsoap($username);
+
+    if ($parsedConfig === null) {
+        return false; // No hay nada que sincronizar
+    }
+
+    // Guardar la configuración parseada
+    $result = saveTimeSignalsConfig($username, $parsedConfig);
+
+    return $result['success'];
 }
 
 /**

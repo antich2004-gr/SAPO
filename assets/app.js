@@ -1416,6 +1416,58 @@ function saveTimeSignalsConfig() {
     });
 }
 
+/**
+ * Sincronizar configuración desde Liquidsoap
+ */
+function syncFromLiquidsoap() {
+    const statusDiv = document.getElementById('config-status');
+    const formData = new FormData();
+
+    formData.append('action', 'sync_time_signals_from_liquidsoap');
+
+    statusDiv.innerHTML = '<p style="color: #718096;">🔍 Sincronizando desde Liquidsoap...</p>';
+
+    fetch('index.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            statusDiv.innerHTML = '<div class="alert alert-success">✅ ' + data.message + '</div>';
+
+            // Actualizar el formulario con la configuración sincronizada
+            if (data.config) {
+                const frequencySelect = document.getElementById('signal-frequency');
+                if (frequencySelect && data.config.frequency) {
+                    frequencySelect.value = data.config.frequency;
+                }
+
+                const currentFileSpan = document.getElementById('current-signal-file');
+                if (currentFileSpan && data.config.signal_file) {
+                    currentFileSpan.textContent = data.config.signal_file;
+                }
+            }
+
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 4000);
+        } else {
+            statusDiv.innerHTML = '<div class="alert alert-error">❌ ' + data.message + '</div>';
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 5000);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        statusDiv.innerHTML = '<div class="alert alert-error">❌ Error al sincronizar</div>';
+        setTimeout(() => {
+            statusDiv.innerHTML = '';
+        }, 4000);
+    });
+}
+
 // ============================================================================
 // FUNCIONES OBSOLETAS (Ya no se usan en formulario simplificado)
 // ============================================================================
