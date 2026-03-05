@@ -1164,25 +1164,6 @@ function initializeTimeSignalsDropzone() {
         handleFileUpload(files);
     });
 
-    // Habilitar/deshabilitar campos de horario según checkbox
-    document.querySelectorAll('.day-checkbox').forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const day = this.value;
-            const startInput = document.querySelector(`input[name="${day}_start"]`);
-            const endInput = document.querySelector(`input[name="${day}_end"]`);
-
-            if (startInput && endInput) {
-                startInput.disabled = !this.checked;
-                endInput.disabled = !this.checked;
-
-                if (!this.checked) {
-                    startInput.value = '';
-                    endInput.value = '';
-                }
-            }
-        });
-    });
-
     // Submit del formulario
     const form = document.getElementById('time-signals-form');
     if (form) {
@@ -1191,6 +1172,9 @@ function initializeTimeSignalsDropzone() {
             saveTimeSignalsConfig();
         });
     }
+
+    // Actualizar info inicial
+    setTimeout(() => updateDayInfo(), 100);
 }
 
 /**
@@ -1388,26 +1372,24 @@ function loadTimeSignalsConfig() {
                     selectFile.value = config.signal_file;
                 }
 
-                // Configurar días y horarios
-                if (config.schedule) {
-                    Object.keys(config.schedule).forEach(day => {
-                        const checkbox = document.querySelector(`input[value="${day}"]`);
-                        const startInput = document.querySelector(`input[name="${day}_start"]`);
-                        const endInput = document.querySelector(`input[name="${day}_end"]`);
+                // Seleccionar frecuencia
+                const frequencySelect = document.getElementById('signal-frequency');
+                if (frequencySelect && config.frequency) {
+                    frequencySelect.value = config.frequency;
+                }
 
-                        if (checkbox && config.schedule[day]) {
+                // Configurar días activos
+                if (config.days && Array.isArray(config.days)) {
+                    config.days.forEach(day => {
+                        const checkbox = document.querySelector(`input[value="${day}"]`);
+                        if (checkbox) {
                             checkbox.checked = true;
-                            if (startInput) {
-                                startInput.disabled = false;
-                                startInput.value = config.schedule[day].start || '';
-                            }
-                            if (endInput) {
-                                endInput.disabled = false;
-                                endInput.value = config.schedule[day].end || '';
-                            }
                         }
                     });
                 }
+
+                // Actualizar info visual
+                updateDayInfo();
             }
         })
         .catch(error => {
@@ -1447,4 +1429,50 @@ function saveTimeSignalsConfig() {
         console.error('Error:', error);
         statusDiv.innerHTML = '<div class="alert alert-error">❌ Error al guardar configuración</div>';
     });
+}
+
+/**
+ * Actualizar información de días según frecuencia
+ */
+function updateDayInfo() {
+    const frequency = document.getElementById('signal-frequency')?.value || 'hourly';
+    const dayInfos = document.querySelectorAll('.day-info');
+
+    let infoText = '';
+    switch (frequency) {
+        case 'hourly':
+            infoText = 'Sonará cada hora en punto (:00)';
+            break;
+        case 'half-hourly':
+            infoText = 'Sonará cada media hora (:00 y :30)';
+            break;
+        case 'quarter-hourly':
+            infoText = 'Sonará cada 15 minutos (:00, :15, :30, :45)';
+            break;
+    }
+
+    dayInfos.forEach(info => {
+        const checkbox = info.closest('.day-schedule').querySelector('.day-checkbox');
+        if (checkbox && checkbox.checked) {
+            info.textContent = infoText;
+            info.style.display = 'inline';
+        } else {
+            info.textContent = '';
+            info.style.display = 'none';
+        }
+    });
+}
+
+/**
+ * Seleccionar/deseleccionar todos los días
+ */
+function toggleAllDays() {
+    const checkboxes = document.querySelectorAll('.day-checkbox');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = !allChecked;
+    });
+
+    updateDayInfo();
 }
