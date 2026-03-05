@@ -528,10 +528,10 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency, $duration 
     $code .= "horarias_con_fondo = add(normalize=false, [horarias, radio_atenuado])\n\n";
 
     $code .= "# Prioridad: si hay señal horaria, se reproduce inmediatamente sobre música atenuada\n";
+    $code .= "# track_sensitive=false hace el cambio inmediato sin esperar fin de pista\n";
     $code .= "radio = fallback(\n";
-    $code .= "  track_sensitive=false,     # No esperar fin de pista\n";
-    $code .= "  transitions=[fun(_,_)->0.0],  # Sin transiciones (inmediato)\n";
-    $code .= "  [horarias_con_fondo, radio]   # Prioridad a señales\n";
+    $code .= "  track_sensitive=false,\n";
+    $code .= "  [horarias_con_fondo, radio]\n";
     $code .= ")\n";
 
     return $code;
