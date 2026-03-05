@@ -6,7 +6,7 @@
  * Guardamos directamente en el directorio media de la emisora
  */
 function getTimeSignalsDir($username) {
-    $dir = "/mnt/emisoras/{$username}/media/senales_horarias";
+    $dir = "/var/azuracast/stations/{$username}/media/senales_horarias";
 
     // Crear directorio si no existe
     if (!is_dir($dir)) {
@@ -20,7 +20,7 @@ function getTimeSignalsDir($username) {
  * Obtener ruta del archivo liquidsoap.liq de la emisora
  */
 function getLiquidsoapFilePath($username) {
-    return "/mnt/emisoras/{$username}/config/liquidsoap.liq";
+    return "/var/azuracast/stations/{$username}/config/liquidsoap.liq";
 }
 
 /**
@@ -402,7 +402,7 @@ function uploadFileToAzuraCast($username, $filePath, $destinationPath = '') {
 /**
  * Generar código Liquidsoap para señales horarias
  */
-function generateLiquidsoapTimeSignals($audioPath, $days, $frequency) {
+function generateLiquidsoapTimeSignals($audioPath, $days, $frequency, $duration = 1.5, $attenuation = 0.3) {
     // Mapeo de días español -> liquidsoap (1=lunes, 2=martes, ..., 7=domingo)
     $dayMap = [
         'lunes' => 1,
@@ -426,6 +426,9 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency) {
         return '';
     }
 
+    // Verificar si es todos los días (formato simplificado)
+    $allDays = count($activeDays) === 7;
+
     // Generar condiciones de minutos según frecuencia
     $minuteConditions = [];
     switch ($frequency) {
@@ -448,28 +451,42 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency) {
 
     // Generar código liquidsoap
     $code = "# Señales Horarias - SAPO\n";
-    $code .= "time_signal_source = single(\"$audioPath\")\n\n";
+    $code .= "señal_horaria = single(\"$audioPath\")\n";
 
-    // Combinar minutos y días - cada condición con su fuente
-    $switchCases = [];
-    foreach ($minuteConditions as $minute) {
-        foreach ($activeDays as $dayNum) {
-            // Formato: ({1w and 0m0s}, time_signal_source) = lunes a las :00
-            $condition = sprintf("{%dw and %s0s}", $dayNum, $minute);
-            $switchCases[] = "  ($condition, time_signal_source)";
+    // Usar formato simplificado con predicate.once si es todos los días
+    if ($allDays) {
+        $code .= "horarias = switch(id=\"time_signal_switch\", [\n";
+        foreach ($minuteConditions as $minute) {
+            $code .= "  (predicate.once({ $minute }), señal_horaria)";
+            if ($minute !== end($minuteConditions)) {
+                $code .= ",";
+            }
+            $code .= "\n";
         }
+        $code .= "])\n\n";
+    } else {
+        // Formato completo con días específicos
+        $switchCases = [];
+        foreach ($minuteConditions as $minute) {
+            foreach ($activeDays as $dayNum) {
+                $condition = sprintf("{%dw and %s0s}", $dayNum, $minute);
+                $switchCases[] = "  ($condition, señal_horaria)";
+            }
+        }
+        $code .= "horarias = switch(id=\"time_signal_switch\", [\n";
+        $code .= implode(",\n", $switchCases) . "\n";
+        $code .= "])\n\n";
     }
 
-    $code .= "time_signal = switch(id=\"time_signal_switch\", [\n";
-    $code .= implode(",\n", $switchCases) . "\n";
-    $code .= "])\n\n";
+    // Convertir atenuación a porcentaje para el comentario
+    $attenuationPercent = (int)($attenuation * 100);
 
-    $code .= "# Integrar señales horarias en la radio con mezcla suave\n";
+    $code .= "# smooth_add mezcla suavemente sin cortar\n";
     $code .= "radio = smooth_add(\n";
-    $code .= "  duration=1.5,      # Duración de la transición (1.5 segundos)\n";
-    $code .= "  p=0.3,             # Música baja al 30%\n";
+    $code .= "  duration=$duration,      # Duración de la transición ($duration segundos)\n";
+    $code .= "  p=$attenuation,             # Música baja al $attenuationPercent%\n";
     $code .= "  normal=radio,      # Fuente principal\n";
-    $code .= "  special=time_signal   # Señales horarias\n";
+    $code .= "  special=horarias   # Señales horarias\n";
     $code .= ")\n";
 
     return $code;
@@ -478,6 +495,7 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency) {
 /**
  * Parsear configuración de señales horarias desde Liquidsoap
  * Lee el liquidsoap.liq directamente del sistema de archivos
+ * Soporta tanto formato SAPO como configuraciones manuales
  */
 function parseTimeSignalsFromLiquidsoap($username) {
     // Leer archivo liquidsoap.liq directamente
@@ -488,53 +506,74 @@ function parseTimeSignalsFromLiquidsoap($username) {
         return null;
     }
 
-    // Buscar el marcador de señales horarias
-    $marker = '# Señales Horarias - SAPO';
-    if (strpos($liquidsoapContent, $marker) === false) {
-        return null; // No hay señales horarias configuradas
-    }
-
     $config = [
         'signal_file' => null,
         'frequency' => 'hourly',
         'days' => []
     ];
 
-    // 1. Extraer archivo de audio
-    if (preg_match('/time_signal_source\s*=\s*single\("([^"]+)"\)/', $liquidsoapContent, $matches)) {
+    // 1. Detectar archivo de audio (soporta múltiples nombres de variables)
+    // Buscar: señal_horaria = single("...") o time_signal_source = single("...")
+    if (preg_match('/(?:señal_horaria|time_signal_source|signal)\s*=\s*single\(["\']([^"\']+)["\']\)/', $liquidsoapContent, $matches)) {
         $fullPath = $matches[1];
         // Extraer solo el nombre del archivo
-        $config['signal_file'] = basename($fullPath);
+        $filename = basename($fullPath);
+
+        // Si el archivo está en senales_horarias.mp3 (sin carpeta), conservarlo así
+        if (strpos($fullPath, '/senales_horarias/') !== false) {
+            // Archivo en carpeta senales_horarias/
+            $config['signal_file'] = $filename;
+        } else if ($filename === 'senales_horarias.mp3') {
+            // Archivo directo senales_horarias.mp3
+            $config['signal_file'] = $filename;
+        } else {
+            $config['signal_file'] = $filename;
+        }
     }
 
-    // 2. Extraer minutos y días de las condiciones
-    // Patrón: ({1w and 0m0s}, time_signal_source)
-    preg_match_all('/\{(\d+)w\s+and\s+(\d+)m0s\}/', $liquidsoapContent, $matches, PREG_SET_ORDER);
+    // Si no se encuentra archivo, no hay señales horarias
+    if (empty($config['signal_file'])) {
+        return null;
+    }
 
+    // 2. Detectar formato de condiciones
     $minutes = [];
     $dayNums = [];
+    $allDays = false;
 
-    foreach ($matches as $match) {
-        $dayNum = (int)$match[1];
-        $minute = (int)$match[2];
-
-        if (!in_array($dayNum, $dayNums)) {
-            $dayNums[] = $dayNum;
+    // Formato A: predicate.once({ 0m }) - todos los días
+    if (preg_match_all('/predicate\.once\(\{\s*(\d+)m\s*\}\)/', $liquidsoapContent, $matches)) {
+        $allDays = true;
+        foreach ($matches[1] as $minute) {
+            $minutes[] = (int)$minute;
         }
-        if (!in_array($minute, $minutes)) {
-            $minutes[] = $minute;
+    }
+    // Formato B: {1w and 0m0s} - días específicos
+    else if (preg_match_all('/\{(\d+)w\s+and\s+(\d+)m0s\}/', $liquidsoapContent, $matches, PREG_SET_ORDER)) {
+        foreach ($matches as $match) {
+            $dayNum = (int)$match[1];
+            $minute = (int)$match[2];
+
+            if (!in_array($dayNum, $dayNums)) {
+                $dayNums[] = $dayNum;
+            }
+            if (!in_array($minute, $minutes)) {
+                $minutes[] = $minute;
+            }
         }
     }
 
     // 3. Determinar frecuencia basada en los minutos
     sort($minutes);
-    if (count($minutes) >= 2 && in_array(0, $minutes) && in_array(30, $minutes)) {
+    if (count($minutes) >= 4) {
+        $config['frequency'] = 'quarter-hourly';
+    } else if (count($minutes) >= 2 && in_array(0, $minutes) && in_array(30, $minutes)) {
         $config['frequency'] = 'half-hourly';
-    } elseif (count($minutes) === 1 && $minutes[0] === 0) {
+    } else if (count($minutes) === 1 && $minutes[0] === 0) {
         $config['frequency'] = 'hourly';
     }
 
-    // 4. Convertir números de días a nombres
+    // 4. Determinar días
     $dayMap = [
         1 => 'lunes',
         2 => 'martes',
@@ -545,15 +584,21 @@ function parseTimeSignalsFromLiquidsoap($username) {
         7 => 'domingo'
     ];
 
-    sort($dayNums);
-    foreach ($dayNums as $num) {
-        if (isset($dayMap[$num])) {
-            $config['days'][] = $dayMap[$num];
+    if ($allDays) {
+        // Si usa predicate.once, son todos los días
+        $config['days'] = array_values($dayMap);
+    } else {
+        // Convertir números de días a nombres
+        sort($dayNums);
+        foreach ($dayNums as $num) {
+            if (isset($dayMap[$num])) {
+                $config['days'][] = $dayMap[$num];
+            }
         }
     }
 
-    // Si no se pudo extraer información válida, retornar null
-    if (empty($config['signal_file']) || empty($config['days'])) {
+    // Si no hay días configurados, retornar null
+    if (empty($config['days'])) {
         return null;
     }
 
@@ -596,8 +641,8 @@ function applyTimeSignalsToAzuraCast($username) {
     $days = $config['days'] ?? [];
 
     // PASO 1: Generar path para Liquidsoap
-    // El archivo ya está en /mnt/emisoras/{username}/media/senales_horarias/{filename}
-    $liquidsoapPath = "/mnt/emisoras/{$username}/media/senales_horarias/{$config['signal_file']}";
+    // El archivo ya está en /var/azuracast/stations/{username}/media/senales_horarias/{filename}
+    $liquidsoapPath = "/var/azuracast/stations/{$username}/media/senales_horarias/{$config['signal_file']}";
 
     // PASO 2: Generar código Liquidsoap
     $liquidsoapCode = generateLiquidsoapTimeSignals($liquidsoapPath, $days, $frequency);
