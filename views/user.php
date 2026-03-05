@@ -1453,7 +1453,7 @@ function syncFromLiquidsoap() {
     const statusDiv = document.getElementById('config-status');
     statusDiv.innerHTML = '<p style="color: #3182ce;">Sincronizando desde Liquidsoap...</p>';
 
-    fetch('?action=sync_from_liquidsoap', {
+    fetch('?action=sync_time_signals_from_liquidsoap', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
