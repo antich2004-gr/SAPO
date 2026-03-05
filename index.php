@@ -243,6 +243,28 @@ initSession();
         exit;
     }
 
+    // AJAX: Sincronizar configuración desde Liquidsoap
+    if (isset($_POST['action']) && $_POST['action'] == 'sync_time_signals_from_liquidsoap' && isLoggedIn() && !isAdmin()) {
+        header('Content-Type: application/json');
+
+        $synced = syncTimeSignalsFromLiquidsoap($_SESSION['username']);
+
+        if ($synced) {
+            $config = getTimeSignalsConfig($_SESSION['username']);
+            echo json_encode([
+                'success' => true,
+                'message' => 'Configuración sincronizada correctamente',
+                'config' => $config
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'message' => 'No se encontró configuración de señales horarias en Liquidsoap'
+            ]);
+        }
+        exit;
+    }
+
 
 $message = '';
 $error = '';

@@ -692,12 +692,15 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             </div>
 
                             <!-- Botones de acción -->
-                            <div style="margin-top: 30px; display: flex; gap: 15px;">
+                            <div style="margin-top: 30px; display: flex; gap: 15px; flex-wrap: wrap;">
                                 <button type="submit" class="btn btn-success" style="font-size: 16px; padding: 12px 30px;">
                                     ✅ Activar Senales Horarias
                                 </button>
                                 <button type="button" class="btn btn-secondary" onclick="loadTimeSignalsConfig()" style="padding: 12px 30px;">
                                     🔄 Recargar
+                                </button>
+                                <button type="button" class="btn btn-info" onclick="syncFromLiquidsoap()" style="padding: 12px 30px;">
+                                    🔍 Sincronizar desde Liquidsoap
                                 </button>
                             </div>
                         </form>
