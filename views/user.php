@@ -1406,11 +1406,15 @@ function deleteTimeSignalFile(filename) {
 }
 
 /**
- * Cargar configuración de señales horarias desde Liquidsoap
+ * Cargar configuración de señales horarias desde JSON guardado
+ * @param {boolean} silent - Si es true, no muestra mensajes en pantalla
  */
-function loadTimeSignalsConfig() {
+function loadTimeSignalsConfig(silent = false) {
     const statusDiv = document.getElementById('config-status');
-    statusDiv.innerHTML = '<p style="color: #3182ce;">Cargando configuración...</p>';
+
+    if (!silent) {
+        statusDiv.innerHTML = '<p style="color: #3182ce;">Cargando configuración...</p>';
+    }
 
     fetch('?action=get_time_signals_config')
         .then(response => response.json())
@@ -1428,21 +1432,26 @@ function loadTimeSignalsConfig() {
                     document.getElementById('current-signal-file').textContent = config.signal_file;
                 }
 
-                statusDiv.innerHTML = '<div class="alert alert-success">Configuración cargada correctamente</div>';
-
-                setTimeout(() => {
-                    statusDiv.innerHTML = '';
-                }, 3000);
+                if (!silent) {
+                    statusDiv.innerHTML = '<div class="alert alert-success">Configuración cargada correctamente</div>';
+                    setTimeout(() => {
+                        statusDiv.innerHTML = '';
+                    }, 3000);
+                }
             } else {
-                statusDiv.innerHTML = '<div class="alert alert-info">No hay configuración previa</div>';
-                setTimeout(() => {
-                    statusDiv.innerHTML = '';
-                }, 3000);
+                if (!silent) {
+                    statusDiv.innerHTML = '<div class="alert alert-info">No hay configuración previa</div>';
+                    setTimeout(() => {
+                        statusDiv.innerHTML = '';
+                    }, 3000);
+                }
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            statusDiv.innerHTML = '<div class="alert alert-danger">Error al cargar configuración</div>';
+            if (!silent) {
+                statusDiv.innerHTML = '<div class="alert alert-danger">Error al cargar configuración</div>';
+            }
         });
 }
 
@@ -1533,10 +1542,44 @@ document.getElementById('time-signals-form')?.addEventListener('submit', functio
     });
 });
 
-// Cargar archivos al iniciar la página
+/**
+ * Cargar configuración inicial: intenta desde Liquidsoap primero, luego desde JSON guardado
+ */
+function loadInitialConfig() {
+    // Intentar sincronizar desde liquidsoap.liq automáticamente (sin mostrar errores)
+    fetch('?action=sync_time_signals_from_liquidsoap', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'csrf_token=<?php echo generateCSRFToken(); ?>'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.config) {
+            // Configuración encontrada en liquidsoap.liq - cargarla
+            if (data.config.frequency) {
+                document.getElementById('signal-frequency').value = data.config.frequency;
+            }
+            if (data.config.signal_file) {
+                document.getElementById('current-signal-file').textContent = data.config.signal_file;
+            }
+        } else {
+            // No hay configuración en liquidsoap.liq, intentar cargar desde JSON guardado (silencioso)
+            loadTimeSignalsConfig(true);
+        }
+    })
+    .catch(error => {
+        console.error('Error al sincronizar:', error);
+        // Si hay error, intentar cargar desde JSON guardado (silencioso)
+        loadTimeSignalsConfig(true);
+    });
+}
+
+// Cargar archivos y configuración al iniciar la página
 document.addEventListener('DOMContentLoaded', function() {
     loadTimeSignalFiles();
-    loadTimeSignalsConfig();
+    loadInitialConfig();
 });
 
 
