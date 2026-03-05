@@ -293,7 +293,14 @@ initSession();
         }
 
         $frequency = $_POST['frequency'] ?? 'hourly';
+        $duration = floatval($_POST['duration'] ?? 1.5);
+        $attenuationPercent = intval($_POST['attenuation'] ?? 30);
+        $attenuation = $attenuationPercent / 100; // Convertir porcentaje a decimal
         $username = $_SESSION['username'];
+
+        // Validar rangos
+        $duration = max(0.5, min(10, $duration));
+        $attenuation = max(0, min(1, $attenuation));
 
         // Obtener el último archivo subido
         $files = listTimeSignals($username);
@@ -306,20 +313,22 @@ initSession();
         $signalFile = $files[0]['name'];
         $days = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
 
-        // Generar código
+        // Generar código con valores personalizados
         $liquidsoapPath = "/var/azuracast/stations/{$username}/media/senales_horarias/{$signalFile}";
-        $liquidsoapCode = generateLiquidsoapTimeSignals($liquidsoapPath, $days, $frequency);
+        $liquidsoapCode = generateLiquidsoapTimeSignals($liquidsoapPath, $days, $frequency, $duration, $attenuation);
 
         if (empty($liquidsoapCode)) {
             echo json_encode(['success' => false, 'message' => 'Error al generar código']);
             exit;
         }
 
-        // Guardar configuración
+        // Guardar configuración con valores personalizados
         $config = [
             'signal_file' => $signalFile,
             'frequency' => $frequency,
-            'days' => $days
+            'days' => $days,
+            'duration' => $duration,
+            'attenuation' => $attenuationPercent // Guardar como porcentaje
         ];
         saveTimeSignalsConfig($username, $config);
 
@@ -342,9 +351,15 @@ initSession();
             exit;
         }
 
-        // Recibir frecuencia del formulario
+        // Recibir parámetros del formulario
         $frequency = $_POST['frequency'] ?? 'hourly';
+        $duration = floatval($_POST['duration'] ?? 1.5);
+        $attenuationPercent = intval($_POST['attenuation'] ?? 30);
         $username = $_SESSION['username'];
+
+        // Validar rangos
+        $duration = max(0.5, min(10, $duration));
+        $attenuationPercent = max(0, min(100, $attenuationPercent));
 
         // Obtener el último archivo subido
         $files = listTimeSignals($username);
@@ -357,11 +372,13 @@ initSession();
         $signalFile = $files[0]['name'];
         $days = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
 
-        // Guardar configuración actualizada
+        // Guardar configuración actualizada con valores personalizados
         $config = [
             'signal_file' => $signalFile,
             'frequency' => $frequency,
-            'days' => $days
+            'days' => $days,
+            'duration' => $duration,
+            'attenuation' => $attenuationPercent
         ];
         saveTimeSignalsConfig($username, $config);
 

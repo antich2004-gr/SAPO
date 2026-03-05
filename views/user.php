@@ -699,6 +699,39 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 </small>
                             </div>
 
+                            <!-- Paso 2.5: Configuración avanzada de mezcla -->
+                            <div style="padding: 15px; background: #f7fafc; border-radius: 8px; margin-bottom: 20px;">
+                                <p style="margin: 0 0 15px 0; font-weight: 500; color: #2d3748;">
+                                    ⚙️ Configuración avanzada de mezcla:
+                                </p>
+
+                                <!-- Duración -->
+                                <div style="margin-bottom: 15px;">
+                                    <label for="signal-duration" style="display: block; margin-bottom: 5px; color: #4a5568; font-size: 14px;">
+                                        Duración de transición (segundos):
+                                    </label>
+                                    <input type="number" id="signal-duration" name="duration" min="0.5" max="10" step="0.5" value="1.5"
+                                           onchange="onConfigChange('duration')"
+                                           style="width: 150px; padding: 8px; font-size: 14px; border: 1px solid #cbd5e0; border-radius: 4px;">
+                                    <small style="color: #718096; display: block; margin-top: 5px;">
+                                        Tiempo que tarda la señal en mezclarse con la música (recomendado: 1.5 - 3 segundos)
+                                    </small>
+                                </div>
+
+                                <!-- Atenuación -->
+                                <div>
+                                    <label for="signal-attenuation" style="display: block; margin-bottom: 5px; color: #4a5568; font-size: 14px;">
+                                        Atenuación de música (%):
+                                    </label>
+                                    <input type="number" id="signal-attenuation" name="attenuation" min="0" max="100" step="5" value="30"
+                                           onchange="onConfigChange('attenuation')"
+                                           style="width: 150px; padding: 8px; font-size: 14px; border: 1px solid #cbd5e0; border-radius: 4px;">
+                                    <small style="color: #718096; display: block; margin-top: 5px;">
+                                        Porcentaje al que se reduce el volumen de la música durante la señal (recomendado: 20-40%)
+                                    </small>
+                                </div>
+                            </div>
+
                             <!-- Paso 3: Generar código -->
                             <div style="padding: 15px; background: #f7fafc; border-radius: 8px; margin-bottom: 20px;">
                                 <p style="margin: 0 0 10px 0; font-weight: 500; color: #2d3748;">
@@ -1463,6 +1496,14 @@ function loadTimeSignalsConfig(silent = false) {
                     document.getElementById('current-signal-file').textContent = config.signal_file;
                 }
 
+                // Actualizar duración y atenuación
+                if (config.duration) {
+                    document.getElementById('signal-duration').value = config.duration;
+                }
+                if (config.attenuation) {
+                    document.getElementById('signal-attenuation').value = config.attenuation;
+                }
+
                 if (!silent) {
                     statusDiv.innerHTML = '<div class="alert alert-success">Configuración cargada correctamente</div>';
                     setTimeout(() => {
@@ -1529,20 +1570,25 @@ function syncFromLiquidsoap() {
 }
 
 /**
- * Detectar cambio de frecuencia y regenerar código si ya está visible
+ * Detectar cambio de configuración y regenerar código si ya está visible
  */
-function onFrequencyChange() {
+function onConfigChange(paramName) {
     const codeContainer = document.getElementById('generated-code-container');
 
     // Si el código ya está visible, regenerarlo automáticamente
     if (codeContainer && codeContainer.style.display !== 'none') {
         const statusDiv = document.getElementById('config-status');
-        statusDiv.innerHTML = '<div class="alert alert-info">Frecuencia actualizada. Regenerando código...</div>';
+        statusDiv.innerHTML = '<div class="alert alert-info">Configuración actualizada. Regenerando código...</div>';
 
         setTimeout(() => {
             generateTimeSignalsCode();
         }, 500);
     }
+}
+
+// Alias para compatibilidad
+function onFrequencyChange() {
+    onConfigChange('frequency');
 }
 
 /**
@@ -1551,11 +1597,15 @@ function onFrequencyChange() {
 function generateTimeSignalsCode() {
     const statusDiv = document.getElementById('config-status');
     const frequency = document.getElementById('signal-frequency').value;
+    const duration = document.getElementById('signal-duration').value;
+    const attenuation = document.getElementById('signal-attenuation').value;
 
     const formData = new FormData();
     formData.append('action', 'generate_time_signals_code');
     formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
     formData.append('frequency', frequency);
+    formData.append('duration', duration);
+    formData.append('attenuation', attenuation);
 
     statusDiv.innerHTML = '<p style="color: #3182ce;">Generando código...</p>';
 
@@ -1609,6 +1659,8 @@ function copyGeneratedCode() {
 function applyTimeSignalsViaAPI() {
     const statusDiv = document.getElementById('config-status');
     const frequency = document.getElementById('signal-frequency').value;
+    const duration = document.getElementById('signal-duration').value;
+    const attenuation = document.getElementById('signal-attenuation').value;
 
     // Mostrar diálogo de confirmación
     const confirmMessage =
@@ -1631,6 +1683,8 @@ function applyTimeSignalsViaAPI() {
     formData.append('action', 'apply_time_signals_via_api');
     formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
     formData.append('frequency', frequency);
+    formData.append('duration', duration);
+    formData.append('attenuation', attenuation);
 
     statusDiv.innerHTML = '<p style="color: #3182ce;">⏳ Aplicando vía API de AzuraCast y reiniciando emisora...</p>';
 
@@ -1677,6 +1731,12 @@ function loadInitialConfig() {
             }
             if (data.config.signal_file) {
                 document.getElementById('current-signal-file').textContent = data.config.signal_file;
+            }
+            if (data.config.duration) {
+                document.getElementById('signal-duration').value = data.config.duration;
+            }
+            if (data.config.attenuation) {
+                document.getElementById('signal-attenuation').value = data.config.attenuation;
             }
         } else {
             // No hay configuración en liquidsoap.liq, intentar cargar desde JSON guardado (silencioso)
