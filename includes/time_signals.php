@@ -13,6 +13,66 @@ function getTimeSignalsDir($username) {
 }
 
 /**
+ * Obtener ruta del archivo liquidsoap.liq de la emisora
+ */
+function getLiquidsoapFilePath($username) {
+    return "/mnt/emisoras/{$username}/config/liquidsoap.liq";
+}
+
+/**
+ * Leer contenido del archivo liquidsoap.liq directamente
+ */
+function readLiquidsoapFile($username) {
+    $filePath = getLiquidsoapFilePath($username);
+
+    if (!file_exists($filePath)) {
+        error_log("Liquidsoap file not found: $filePath");
+        return false;
+    }
+
+    if (!is_readable($filePath)) {
+        error_log("Liquidsoap file not readable: $filePath");
+        return false;
+    }
+
+    $content = file_get_contents($filePath);
+
+    if ($content === false) {
+        error_log("Failed to read liquidsoap file: $filePath");
+        return false;
+    }
+
+    return $content;
+}
+
+/**
+ * Escribir contenido al archivo liquidsoap.liq directamente
+ */
+function writeLiquidsoapFile($username, $content) {
+    $filePath = getLiquidsoapFilePath($username);
+    $dirPath = dirname($filePath);
+
+    if (!is_dir($dirPath)) {
+        error_log("Liquidsoap config directory not found: $dirPath");
+        return false;
+    }
+
+    if (!is_writable($dirPath)) {
+        error_log("Liquidsoap config directory not writable: $dirPath");
+        return false;
+    }
+
+    $result = file_put_contents($filePath, $content);
+
+    if ($result === false) {
+        error_log("Failed to write liquidsoap file: $filePath");
+        return false;
+    }
+
+    return true;
+}
+
+/**
  * Listar archivos de señales horarias
  */
 function listTimeSignals($username) {
@@ -391,31 +451,20 @@ function generateLiquidsoapTimeSignals($audioPath, $days, $frequency) {
 
 /**
  * Parsear configuración de señales horarias desde Liquidsoap
- * Lee el liquidsoap.liq y extrae la configuración actual
+ * Lee el liquidsoap.liq directamente del sistema de archivos
  */
 function parseTimeSignalsFromLiquidsoap($username) {
-    // Obtener configuración actual de Liquidsoap
-    $currentConfig = getAzuracastLiquidsoapConfig($username);
-    if ($currentConfig === false) {
-        return null;
-    }
+    // Leer archivo liquidsoap.liq directamente
+    $liquidsoapContent = readLiquidsoapFile($username);
 
-    // Buscar custom_config
-    $customConfig = '';
-    foreach ($currentConfig as $field) {
-        if ($field['field'] === 'custom_config') {
-            $customConfig = $field['value'];
-            break;
-        }
-    }
-
-    if (empty($customConfig)) {
+    if ($liquidsoapContent === false) {
+        error_log("No se pudo leer liquidsoap.liq para usuario: $username");
         return null;
     }
 
     // Buscar el marcador de señales horarias
     $marker = '# Señales Horarias - SAPO';
-    if (strpos($customConfig, $marker) === false) {
+    if (strpos($liquidsoapContent, $marker) === false) {
         return null; // No hay señales horarias configuradas
     }
 
@@ -426,7 +475,7 @@ function parseTimeSignalsFromLiquidsoap($username) {
     ];
 
     // 1. Extraer archivo de audio
-    if (preg_match('/time_signal_source\s*=\s*single\("([^"]+)"\)/', $customConfig, $matches)) {
+    if (preg_match('/time_signal_source\s*=\s*single\("([^"]+)"\)/', $liquidsoapContent, $matches)) {
         $fullPath = $matches[1];
         // Extraer solo el nombre del archivo
         $config['signal_file'] = basename($fullPath);
@@ -434,7 +483,7 @@ function parseTimeSignalsFromLiquidsoap($username) {
 
     // 2. Extraer minutos y días de las condiciones
     // Patrón: ({1w and 0m0s}, time_signal_source)
-    preg_match_all('/\{(\d+)w\s+and\s+(\d+)m0s\}/', $customConfig, $matches, PREG_SET_ORDER);
+    preg_match_all('/\{(\d+)w\s+and\s+(\d+)m0s\}/', $liquidsoapContent, $matches, PREG_SET_ORDER);
 
     $minutes = [];
     $dayNums = [];
@@ -539,48 +588,37 @@ function applyTimeSignalsToAzuraCast($username) {
         return ['success' => false, 'message' => 'Error al generar código Liquidsoap'];
     }
 
-    // PASO 3: Obtener configuración actual de Liquidsoap
-    $currentConfig = getAzuracastLiquidsoapConfig($username);
-    if ($currentConfig === false) {
-        return ['success' => false, 'message' => 'Error al obtener configuración de Liquidsoap'];
-    }
-
-    // Buscar el campo custom_config
-    $customConfig = '';
-    foreach ($currentConfig as $field) {
-        if ($field['field'] === 'custom_config') {
-            $customConfig = $field['value'];
-            break;
-        }
+    // PASO 3: Leer archivo liquidsoap.liq actual
+    $liquidsoapContent = readLiquidsoapFile($username);
+    if ($liquidsoapContent === false) {
+        return ['success' => false, 'message' => 'Error al leer archivo liquidsoap.liq'];
     }
 
     // PASO 4: Reemplazar o añadir código de señales horarias
     $marker_start = '# Señales Horarias - SAPO';
 
     // Buscar y eliminar código antiguo de señales horarias
-    if (strpos($customConfig, $marker_start) !== false) {
+    if (strpos($liquidsoapContent, $marker_start) !== false) {
         // Eliminar desde el marcador inicial hasta el cierre de smooth_add o fallback
         // Soporta tanto el formato antiguo (fallback) como el nuevo (smooth_add)
         $pattern = '/' . preg_quote($marker_start, '/') . '.*?(?:radio = fallback\(track_sensitive=false, \[time_signal, radio\]\)|radio = smooth_add\([^)]*\))\s*\n?/s';
-        $customConfig = preg_replace($pattern, '', $customConfig);
+        $liquidsoapContent = preg_replace($pattern, '', $liquidsoapContent);
     }
 
     // Añadir nuevo código al final
-    $customConfig = trim($customConfig);
-    if (!empty($customConfig)) {
-        $customConfig .= "\n\n";
+    $liquidsoapContent = trim($liquidsoapContent);
+    if (!empty($liquidsoapContent)) {
+        $liquidsoapContent .= "\n\n";
     }
-    $customConfig .= $liquidsoapCode;
+    $liquidsoapContent .= $liquidsoapCode;
 
-    // PASO 5: Actualizar configuración en AzuraCast
-    $updateResult = updateAzuracastLiquidsoapConfig($username, [
-        'custom_config' => $customConfig
-    ]);
+    // PASO 5: Escribir archivo liquidsoap.liq actualizado
+    $writeResult = writeLiquidsoapFile($username, $liquidsoapContent);
 
-    if (!$updateResult['success']) {
+    if (!$writeResult) {
         return [
             'success' => false,
-            'message' => 'Error al actualizar Liquidsoap: ' . $updateResult['message']
+            'message' => 'Error al escribir archivo liquidsoap.liq'
         ];
     }
 
