@@ -1082,6 +1082,10 @@ function applyTimeSignalsViaAPI($username) {
     $attenuationPercent = intval($config['attenuation'] ?? 30);
     $attenuation = $attenuationPercent / 100; // Convertir porcentaje a decimal
 
+    // Generar path para Liquidsoap
+    $liquidsoapPath = "/var/azuracast/stations/{$username}/media/senales_horarias/{$config['signal_file']}";
+    error_log("API APPLY - Path Liquidsoap: $liquidsoapPath");
+
     // Generar código Liquidsoap con valores personalizados
     $musicVolume = 1.0 - $attenuation; # Convertir atenuación a volumen
     $liquidsoapCode = generateTimeSignalsSmooth($liquidsoapPath, $days, $frequency, $musicVolume, $duration);
