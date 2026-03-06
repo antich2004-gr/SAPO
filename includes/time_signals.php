@@ -1102,6 +1102,11 @@ function applyTimeSignalsViaAPI($username) {
     // Aplicar via API
     $result = updateAzuraCastCustomConfig($username, $liquidsoapCode);
 
+    // Agregar código generado a la respuesta (opcional para ver)
+    if ($result['success']) {
+        $result['code'] = $liquidsoapCode;
+    }
+
     return $result;
 }
 
