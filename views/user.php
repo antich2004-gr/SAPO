@@ -628,9 +628,9 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
                 <!-- PESTAÑA 4: CONFIGURACIÓN -->
                 <div id="tab-config" class="tab-panel">
-                    <h4>Configuracion de Senales Horarias</h4>
+                    <h4>Configuración de Señales Horarias</h4>
                     <p style="color: #718096; margin-bottom: 30px;">
-                        Sube tus senales horarias y configurales cuando deben reproducirse en tu estacion.
+                        Sube tus señales horarias y configúralas cuando deban reproducirse en tu estación.
                     </p>
 
                     <!-- UPLOADER -->
@@ -639,7 +639,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         <div id="dropzone" class="dropzone">
                             <div class="dropzone-content">
                                 <span class="dropzone-icon">📁</span>
-                                <p>Arrastra archivos aqui o haz clic para seleccionar</p>
+                                <p>Arrastra archivos aquí o haz clic para seleccionar</p>
                                 <p style="font-size: 12px; color: #718096;">Formatos: MP3, WAV, OGG, M4A (Max 10MB)</p>
                             </div>
                             <input type="file" id="file-input" accept=".mp3,.wav,.ogg,.m4a" multiple style="display: none;">
@@ -655,9 +655,9 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
                     <!-- CONFIGURACIÓN DE HORARIOS -->
                     <div class="time-signals-config" style="margin-top: 40px;">
-                        <h5>Configuracion de Senales Horarias</h5>
+                        <h5>Configuración de Señales Horarias</h5>
                         <p style="color: #718096; margin-bottom: 20px; font-size: 14px;">
-                            Las senales horarias sonaran automaticamente <strong>todos los dias</strong> con la frecuencia que selecciones.
+                            Las señales horarias sonarán automáticamente <strong>todos los días</strong> con la frecuencia que selecciones.
                         </p>
 
                         <form id="time-signals-form">
