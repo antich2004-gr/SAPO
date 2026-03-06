@@ -1149,8 +1149,7 @@ function generateTimeSignalsSmooth($audioPath, $days, $frequency, $musicVolume =
         $offsetDesc = $offsetSeconds < 0 ? abs($offsetSeconds) . 's adelantado' : $offsetSeconds . 's retrasado';
         $code .= "# Offset: {$offsetDesc}\n";
     }
-    $code .= "# Buffer agregado para estabilizar latencia\n";
-    $code .= "señal_horaria = buffer(single(\"$audioPath\"))\n";
+    $code .= "señal_horaria = single(\"$audioPath\")\n";
     $code .= "horarias = switch(id=\"time_signal_switch\", [\n";
 
     // Generar entradas del switch con offset aplicado
