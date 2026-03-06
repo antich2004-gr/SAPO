@@ -1662,8 +1662,13 @@ function copyGeneratedCode() {
 function toggleGeneratedCode() {
     const container = document.getElementById('generated-code-container');
     const icon = document.getElementById('toggle-code-icon');
+    const codeTextarea = document.getElementById('generated-code');
 
     if (container.style.display === 'none') {
+        // Si el textarea está vacío, generar código primero
+        if (!codeTextarea.value.trim()) {
+            generateTimeSignalsCode();
+        }
         container.style.display = 'block';
         icon.textContent = '▼';
     } else {
