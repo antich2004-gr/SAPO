@@ -153,7 +153,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 <button class="tab-button active" data-tab="podcasts" onclick="switchTab('podcasts')">Mis Podcasts</button>
                 <button class="tab-button" data-tab="importar" onclick="switchTab('importar')">Importar/Exportar</button>
                 <button class="tab-button" data-tab="descargas" onclick="switchTab('descargas')">Descargas</button>
-                <button class="tab-button" data-tab="config" onclick="switchTab('config')">Configuracion</button>
+                <button class="tab-button" data-tab="config" onclick="switchTab('config')">Señales horarias</button>
             </div>
             
             <div class="tabs-content">
