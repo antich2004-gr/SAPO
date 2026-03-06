@@ -299,7 +299,7 @@ initSession();
         $username = $_SESSION['username'];
 
         // Validar rangos
-        $duration = max(0.5, min(10, $duration));
+        $duration = max(0.2, min(10, $duration));
         $attenuation = max(0, min(1, $attenuation));
 
         // Obtener el último archivo subido
@@ -360,7 +360,7 @@ initSession();
         $username = $_SESSION['username'];
 
         // Validar rangos
-        $duration = max(0.5, min(10, $duration));
+        $duration = max(0.2, min(10, $duration));
         $attenuationPercent = max(0, min(100, $attenuationPercent));
 
         // Obtener el último archivo subido
