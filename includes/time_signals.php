@@ -761,7 +761,8 @@ function applyTimeSignalsToAzuraCast($username) {
     // PASO 2: Generar código Liquidsoap con valores personalizados
     error_log("APPLY DEBUG - Generando código Liquidsoap...");
     $musicVolume = 1.0 - $attenuation; # Convertir atenuación a volumen
-    $liquidsoapCode = generateTimeSignalsSmooth($liquidsoapPath, $days, $frequency, $musicVolume, $duration);
+    $offsetSeconds = -40; # Compensar delay de 50s (adelantar 40s)
+    $liquidsoapCode = generateTimeSignalsSmooth($liquidsoapPath, $days, $frequency, $musicVolume, $duration, $offsetSeconds);
 
     if (empty($liquidsoapCode)) {
         error_log("APPLY DEBUG - ERROR: Código Liquidsoap vacío");
@@ -1088,7 +1089,8 @@ function applyTimeSignalsViaAPI($username) {
 
     // Generar código Liquidsoap con valores personalizados
     $musicVolume = 1.0 - $attenuation; # Convertir atenuación a volumen
-    $liquidsoapCode = generateTimeSignalsSmooth($liquidsoapPath, $days, $frequency, $musicVolume, $duration);
+    $offsetSeconds = -40; # Compensar delay de 50s (adelantar 40s)
+    $liquidsoapCode = generateTimeSignalsSmooth($liquidsoapPath, $days, $frequency, $musicVolume, $duration, $offsetSeconds);
 
     if (empty($liquidsoapCode)) {
         error_log("API APPLY - ERROR: No se pudo generar código");
@@ -1112,9 +1114,10 @@ function applyTimeSignalsViaAPI($username) {
  * @param string $frequency Frecuencia de las señales
  * @param float $musicVolume Volumen de música durante señal (0.0-1.0)
  * @param float $transitionDuration Duración de la transición en segundos
+ * @param int $offsetSeconds Offset en segundos (negativo = adelantar, positivo = retrasar)
  * @return string Código Liquidsoap generado
  */
-function generateTimeSignalsSmooth($audioPath, $days, $frequency, $musicVolume = 0.5, $transitionDuration = 0.8) {
+function generateTimeSignalsSmooth($audioPath, $days, $frequency, $musicVolume = 0.5, $transitionDuration = 0.8, $offsetSeconds = 0) {
     // Convertir frecuencia en minutos
     $minutes = [];
     switch ($frequency) {
@@ -1142,13 +1145,36 @@ function generateTimeSignalsSmooth($audioPath, $days, $frequency, $musicVolume =
     $musicPercent = (int)($musicVolume * 100);
 
     $code = "# Señales Horarias - SAPO (smooth_add)\n";
+    if ($offsetSeconds != 0) {
+        $offsetDesc = $offsetSeconds < 0 ? abs($offsetSeconds) . 's adelantado' : $offsetSeconds . 's retrasado';
+        $code .= "# Offset: {$offsetDesc}\n";
+    }
     $code .= "señal_horaria = single(\"$audioPath\")\n";
     $code .= "horarias = switch(id=\"time_signal_switch\", [\n";
 
-    // Generar entradas del switch sin coma final en la última
+    // Generar entradas del switch con offset aplicado
     $entries = [];
     foreach ($minutes as $minute) {
-        $entries[] = "  (predicate.once({ {$minute}m }), señal_horaria)";
+        // Convertir a segundos totales
+        $totalSeconds = ($minute * 60) + $offsetSeconds;
+
+        // Ajustar si es negativo (retroceder al minuto anterior)
+        if ($totalSeconds < 0) {
+            $totalSeconds = 3600 + $totalSeconds; // Retroceder en la hora
+        }
+
+        // Normalizar dentro de 0-3599 (0h00m00s - 0h59m59s)
+        $totalSeconds = $totalSeconds % 3600;
+
+        // Convertir de vuelta a minutos y segundos
+        $adjustedMinute = intval($totalSeconds / 60);
+        $adjustedSecond = $totalSeconds % 60;
+
+        if ($adjustedSecond > 0) {
+            $entries[] = "  (predicate.once({ {$adjustedMinute}m{$adjustedSecond}s }), señal_horaria)";
+        } else {
+            $entries[] = "  (predicate.once({ {$adjustedMinute}m }), señal_horaria)";
+        }
     }
     $code .= implode(",\n", $entries) . "\n";
 
