@@ -653,17 +653,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         </div>
                     </div>
 
-                    <!-- ARCHIVO ACTIVO -->
-                    <div class="time-signals-files" style="margin-top: 40px;">
-                        <h5>Archivo Activo</h5>
-                        <p style="color: #718096; margin-bottom: 15px; font-size: 13px;">
-                            Solo puede haber un archivo de señal horaria. Al subir uno nuevo, reemplazará al anterior.
-                        </p>
-                        <div id="files-list" style="background: #f7fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 100px;">
-                            <p style="color: #718096; text-align: center;">Cargando...</p>
-                        </div>
-                    </div>
-
                     <!-- CONFIGURACIÓN DE HORARIOS -->
                     <div class="time-signals-config" style="margin-top: 40px;">
                         <h5>Configuracion de Senales Horarias</h5>
@@ -1338,49 +1327,27 @@ document.addEventListener('DOMContentLoaded', function() {
 // ============================================
 
 /**
- * Cargar lista de archivos de señales horarias
+ * Cargar archivo actual de señal horaria
  */
 function loadTimeSignalFiles() {
     fetch('?action=list_time_signals')
         .then(response => response.json())
         .then(data => {
-            const filesListDiv = document.getElementById('files-list');
+            const currentFileSpan = document.getElementById('current-signal-file');
 
             if (!data.success || !data.files || data.files.length === 0) {
-                filesListDiv.innerHTML = '<p style="color: #718096; text-align: center;">No hay archivos subidos</p>';
+                currentFileSpan.textContent = 'Ninguno';
+                currentFileSpan.style.color = '#718096';
                 return;
             }
 
-            let html = '<div style="display: flex; flex-direction: column; gap: 10px;">';
-
-            data.files.forEach(file => {
-                html += `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 6px; border: 1px solid #e2e8f0;">
-                        <div style="flex: 1;">
-                            <div style="font-weight: 500; color: #2d3748; margin-bottom: 4px;">
-                                🎵 ${file.name}
-                            </div>
-                            <div style="font-size: 13px; color: #718096;">
-                                ${file.size} • ${file.modified}
-                            </div>
-                        </div>
-                        <button
-                            onclick="deleteTimeSignalFile('${file.name}')"
-                            class="btn btn-danger"
-                            style="font-size: 13px; padding: 6px 12px;">
-                            🗑️ Eliminar
-                        </button>
-                    </div>
-                `;
-            });
-
-            html += '</div>';
-            filesListDiv.innerHTML = html;
+            // Mostrar el archivo más reciente (el primero de la lista)
+            currentFileSpan.textContent = data.files[0].name;
+            currentFileSpan.style.color = '#38b2ac';
         })
         .catch(error => {
             console.error('Error al cargar archivos:', error);
-            document.getElementById('files-list').innerHTML =
-                '<p style="color: #e53e3e;">Error al cargar archivos</p>';
+            document.getElementById('current-signal-file').textContent = 'Error';
         });
 }
 
