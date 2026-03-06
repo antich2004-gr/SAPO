@@ -761,7 +761,7 @@ function applyTimeSignalsToAzuraCast($username) {
     // PASO 2: Generar código Liquidsoap con valores personalizados
     error_log("APPLY DEBUG - Generando código Liquidsoap...");
     $musicVolume = 1.0 - $attenuation; # Convertir atenuación a volumen
-    $offsetSeconds = -40; # Compensar delay de 50s (adelantar 40s)
+    $offsetSeconds = -50; # Compensar delay de 60s (adelantar 50s)
     $liquidsoapCode = generateTimeSignalsSmooth($liquidsoapPath, $days, $frequency, $musicVolume, $duration, $offsetSeconds);
 
     if (empty($liquidsoapCode)) {
@@ -1089,7 +1089,7 @@ function applyTimeSignalsViaAPI($username) {
 
     // Generar código Liquidsoap con valores personalizados
     $musicVolume = 1.0 - $attenuation; # Convertir atenuación a volumen
-    $offsetSeconds = -40; # Compensar delay de 50s (adelantar 40s)
+    $offsetSeconds = -50; # Compensar delay de 60s (adelantar 50s)
     $liquidsoapCode = generateTimeSignalsSmooth($liquidsoapPath, $days, $frequency, $musicVolume, $duration, $offsetSeconds);
 
     if (empty($liquidsoapCode)) {

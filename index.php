@@ -316,7 +316,7 @@ initSession();
         // Generar código con valores personalizados
         $liquidsoapPath = "/var/azuracast/stations/{$username}/media/senales_horarias/{$signalFile}";
         $musicVolume = 1.0 - $attenuation; // Convertir atenuación a volumen
-        $offsetSeconds = -40; // Compensar delay de 50s (adelantar 40s)
+        $offsetSeconds = -50; // Compensar delay de 60s (adelantar 50s)
         $liquidsoapCode = generateTimeSignalsSmooth($liquidsoapPath, $days, $frequency, $musicVolume, $duration, $offsetSeconds);
 
         if (empty($liquidsoapCode)) {
