@@ -72,8 +72,8 @@ $users = getAllUsers();
             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
             <div class="form-group">
                 <label>Nombre de Usuario (slug):</label>
-                <input type="text" name="new_username" required placeholder="radio_ejemplo" pattern="[a-z0-9_]+" title="Solo minusculas, numeros y guiones bajos" maxlength="50">
-                <small style="color: #718096;">Se convertira automaticamente en formato slug</small>
+                <input type="text" name="new_username" required placeholder="radio_ejemplo" pattern="[a-z0-9_]+" title="Solo minúsculas, números y guiones bajos" maxlength="50">
+                <small style="color: #718096;">Se convertirá automáticamente en formato slug</small>
             </div>
             <div class="form-group">
                 <label>Contraseña:</label>
