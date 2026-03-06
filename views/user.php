@@ -701,11 +701,11 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     <label for="signal-duration" style="display: block; margin-bottom: 5px; color: #4a5568; font-size: 14px;">
                                         Duración de transición (segundos):
                                     </label>
-                                    <input type="number" id="signal-duration" name="duration" min="0.5" max="10" step="0.5" value="1.5"
+                                    <input type="number" id="signal-duration" name="duration" min="0.2" max="10" step="0.1" value="1.5"
                                            onchange="onConfigChange('duration')"
                                            style="width: 150px; padding: 8px; font-size: 14px; border: 1px solid #cbd5e0; border-radius: 4px;">
                                     <small style="color: #718096; display: block; margin-top: 5px;">
-                                        Tiempo que tarda la señal en mezclarse con la música (recomendado: 1.5 - 3 segundos)
+                                        Tiempo que tarda la señal en mezclarse con la música (0.2 - 10 segundos)
                                     </small>
                                 </div>
 
