@@ -734,28 +734,29 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 </div>
                             </div>
 
-                            <!-- Paso 3: Generar código -->
+                            <!-- Paso 3: Aplicar señales horarias -->
                             <div style="padding: 15px; background: #f7fafc; border-radius: 8px; margin-bottom: 20px;">
                                 <p style="margin: 0 0 10px 0; font-weight: 500; color: #2d3748;">
-                                    3️⃣ Generar código Liquidsoap:
+                                    3️⃣ Aplicar señales horarias:
                                 </p>
-                                <button type="button" class="btn btn-primary" onclick="generateTimeSignalsCode()" style="padding: 10px 25px;">
-                                    🔨 Generar Código
+                                <button type="button" class="btn btn-success" onclick="applyTimeSignalsDirectly()" style="padding: 10px 25px; font-size: 15px;">
+                                    ✅ Aplicar Señales Horarias
                                 </button>
 
-                                <!-- Área de código generado -->
+                                <!-- Link para ver código (opcional) -->
+                                <div style="margin-top: 12px;">
+                                    <a href="javascript:void(0)" onclick="toggleGeneratedCode()" style="color: #4299e1; font-size: 13px; text-decoration: none;">
+                                        <span id="toggle-code-icon">▶</span> Ver código generado (opcional)
+                                    </a>
+                                </div>
+
+                                <!-- Área de código generado (colapsada) -->
                                 <div id="generated-code-container" style="display: none; margin-top: 15px;">
-                                    <label style="font-weight: 500; color: #2d3748; display: block; margin-bottom: 8px;">
-                                        Código generado:
-                                    </label>
                                     <textarea id="generated-code" readonly style="width: 100%; height: 300px; font-family: 'Courier New', monospace; font-size: 13px; padding: 15px; border: 1px solid #cbd5e0; border-radius: 4px; background: #1a202c; color: #48bb78; line-height: 1.5;"></textarea>
 
-                                    <div style="margin-top: 10px; display: flex; gap: 10px;">
+                                    <div style="margin-top: 10px;">
                                         <button type="button" class="btn btn-secondary" onclick="copyGeneratedCode()" style="padding: 8px 20px;">
                                             📋 Copiar Código
-                                        </button>
-                                        <button type="button" class="btn btn-success" onclick="applyTimeSignalsViaAPI()" style="padding: 8px 20px;">
-                                            ✅ Aplicar Automáticamente
                                         </button>
                                     </div>
 
@@ -1653,6 +1654,84 @@ function copyGeneratedCode() {
     setTimeout(() => {
         statusDiv.innerHTML = '';
     }, 3000);
+}
+
+/**
+ * Toggle mostrar/ocultar código generado
+ */
+function toggleGeneratedCode() {
+    const container = document.getElementById('generated-code-container');
+    const icon = document.getElementById('toggle-code-icon');
+
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        icon.textContent = '▼';
+    } else {
+        container.style.display = 'none';
+        icon.textContent = '▶';
+    }
+}
+
+/**
+ * Aplicar señales horarias directamente (genera y aplica en un solo paso)
+ */
+function applyTimeSignalsDirectly() {
+    const statusDiv = document.getElementById('config-status');
+    const frequency = document.getElementById('signal-frequency').value;
+    const duration = document.getElementById('signal-duration').value;
+    const attenuation = document.getElementById('signal-attenuation').value;
+
+    // Mostrar diálogo de confirmación
+    const confirmMessage =
+        "⚠️ AVISO IMPORTANTE\n\n" +
+        "Esta acción reiniciará la emisora para aplicar los cambios.\n\n" +
+        "• Duración estimada: 3-5 segundos\n" +
+        "• Habrá un corte breve en la transmisión\n" +
+        "• Las señales horarias se activarán automáticamente\n\n" +
+        "¿Deseas continuar?";
+
+    if (!confirm(confirmMessage)) {
+        statusDiv.innerHTML = '<div class="alert alert-info">❌ Operación cancelada</div>';
+        setTimeout(() => {
+            statusDiv.innerHTML = '';
+        }, 3000);
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('action', 'apply_time_signals_via_api');
+    formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
+    formData.append('frequency', frequency);
+    formData.append('duration', duration);
+    formData.append('attenuation', attenuation);
+
+    statusDiv.innerHTML = '<p style="color: #3182ce;">⏳ Aplicando señales horarias y reiniciando emisora...</p>';
+
+    fetch('', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Guardar código generado por si el usuario quiere verlo
+            if (data.code) {
+                document.getElementById('generated-code').value = data.code;
+            }
+
+            statusDiv.innerHTML = '<div class="alert alert-success">✅ ' + data.message + '</div>';
+
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 5000);
+        } else {
+            statusDiv.innerHTML = '<div class="alert alert-danger">❌ ' + data.message + '</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        statusDiv.innerHTML = '<div class="alert alert-danger">❌ Error al aplicar señales horarias</div>';
+    });
 }
 
 /**
