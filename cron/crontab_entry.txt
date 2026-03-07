@@ -1,0 +1,3 @@
+# Limpieza automática de grabaciones - SAPO
+# Se ejecuta todos los días a las 3:00 AM
+0 3 * * * /usr/bin/php /home/user/SAPO/cron/cleanup_recordings.php >> /home/user/SAPO/logs/cron.log 2>&1
