@@ -1829,62 +1829,10 @@ function applyTimeSignalsViaAPI() {
  * Cargar configuración inicial: intenta desde Liquidsoap primero, luego desde JSON guardado
  */
 function loadInitialConfig() {
-    console.log('[DEBUG] loadInitialConfig: Iniciando...');
+    console.log('[DEBUG] loadInitialConfig: Cargando configuración desde config.json...');
 
-    // Intentar sincronizar desde liquidsoap.liq automáticamente (sin mostrar errores)
-    fetch('?action=sync_time_signals_from_liquidsoap', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'csrf_token=<?php echo generateCSRFToken(); ?>'
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('[DEBUG] loadInitialConfig: Respuesta sync_time_signals_from_liquidsoap:', JSON.stringify(data, null, 2));
-
-        if (data.success && data.config) {
-            console.log('[DEBUG] loadInitialConfig: Config encontrada en Liquidsoap:', data.config);
-
-            // Configuración encontrada en liquidsoap.liq - cargarla
-            if (data.config.frequency) {
-                document.getElementById('signal-frequency').value = data.config.frequency;
-                console.log('[DEBUG] ✅ Frecuencia desde Liquidsoap:', data.config.frequency);
-            }
-            if (data.config.signal_file) {
-                document.getElementById('current-signal-file').textContent = data.config.signal_file;
-                console.log('[DEBUG] ✅ Archivo desde Liquidsoap:', data.config.signal_file);
-            }
-            if (data.config.duration !== undefined) {
-                document.getElementById('signal-duration').value = data.config.duration;
-                console.log('[DEBUG] ✅ Duration desde Liquidsoap:', data.config.duration);
-            } else {
-                console.warn('[DEBUG] ⚠️ Duration NO en Liquidsoap');
-            }
-            if (data.config.attenuation !== undefined) {
-                document.getElementById('signal-attenuation').value = data.config.attenuation;
-                console.log('[DEBUG] ✅ Attenuation desde Liquidsoap:', data.config.attenuation);
-            } else {
-                console.warn('[DEBUG] ⚠️ Attenuation NO en Liquidsoap');
-            }
-            if (data.config.offset_seconds !== undefined) {
-                document.getElementById('signal-offset').value = data.config.offset_seconds;
-                console.log('[DEBUG] ✅ Offset desde Liquidsoap:', data.config.offset_seconds);
-            } else {
-                document.getElementById('signal-offset').value = 0; // Default
-                console.warn('[DEBUG] ⚠️ Offset NO en Liquidsoap, usando 0');
-            }
-        } else {
-            console.log('[DEBUG] loadInitialConfig: No config en Liquidsoap, cargando desde JSON...');
-            // No hay configuración en liquidsoap.liq, intentar cargar desde JSON guardado (silencioso)
-            loadTimeSignalsConfig(true);
-        }
-    })
-    .catch(error => {
-        console.error('[DEBUG] loadInitialConfig ERROR:', error);
-        // Si hay error, intentar cargar desde JSON guardado (silencioso)
-        loadTimeSignalsConfig(true);
-    });
+    // Cargar directamente desde config.json (más confiable que Liquidsoap)
+    loadTimeSignalsConfig(true);
 }
 
 // Cargar archivos y configuración al iniciar la página
