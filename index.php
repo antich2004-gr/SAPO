@@ -586,13 +586,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $podcastsFolder = trim($_POST['podcasts_folder'] ?? 'Podcasts');
         $azuracastApiUrl = trim($_POST['azuracast_api_url'] ?? '');
         $azuracastApiKey = trim($_POST['azuracast_api_key'] ?? '');
+        $recordingsMountBase = trim($_POST['recordings_mount_base'] ?? '');
 
         if (empty($basePath)) {
             $error = 'La ruta base es obligatoria';
         } elseif (!is_dir($basePath)) {
             $error = 'La ruta base no existe o no es accesible';
         } else {
-            if (saveConfig($basePath, $subsFolder, $podcastsFolder, $azuracastApiUrl, $azuracastApiKey)) {
+            if (saveConfig($basePath, $subsFolder, $podcastsFolder, $azuracastApiUrl, $azuracastApiKey, $recordingsMountBase)) {
                 $message = 'Configuracion guardada correctamente';
             } else {
                 $error = 'Error al guardar la configuracion';
@@ -681,11 +682,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $username = $_POST['username'] ?? '';
         $stationId = $_POST['station_id'] ?? '';
         $widgetColor = $_POST['widget_color'] ?? '#3b82f6';
+        $recordingsFolder = trim($_POST['recordings_folder'] ?? '');
 
         if (empty($username)) {
             $error = 'Usuario no especificado';
         } else {
-            if (updateAzuracastConfig($username, $stationId, $widgetColor)) {
+            if (updateAzuracastConfig($username, $stationId, $widgetColor, $recordingsFolder)) {
                 $message = "Configuración de AzuraCast actualizada para $username";
             } else {
                 $error = 'Error al actualizar la configuración';
@@ -914,9 +916,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($action == 'update_azuracast_config_user' && isLoggedIn() && !isAdmin()) {
         $username = $_SESSION['username'];
 
-        // Obtener el Station ID actual (solo el admin puede cambiarlo)
+        // Obtener valores que solo el admin puede cambiar
         $currentConfig = getAzuracastConfig($username);
         $stationId = $currentConfig['station_id'] ?? '';
+        $recordingsFolder = $currentConfig['recordings_folder'] ?? '';
 
         // Los usuarios solo pueden actualizar personalización y stream URL
         $widgetColor = $_POST['widget_color'] ?? $_POST['widget_color_text'] ?? '#3b82f6';
@@ -925,7 +928,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $widgetFontSize = $_POST['widget_font_size'] ?? 'medium';
         $streamUrl = $_POST['stream_url'] ?? '';
 
-        if (updateAzuracastConfig($username, $stationId, $widgetColor, false, '', $widgetStyle, $widgetFontSize, $streamUrl, $widgetBackgroundColor)) {
+        if (updateAzuracastConfig($username, $stationId, $widgetColor, $recordingsFolder, false, '', $widgetStyle, $widgetFontSize, $streamUrl, $widgetBackgroundColor)) {
             $message = "Configuración de AzuraCast actualizada correctamente";
         } else {
             $error = 'Error al actualizar la configuración';

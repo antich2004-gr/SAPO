@@ -313,15 +313,16 @@ function getConfig() {
     return $config;
 }
 
-function saveConfig($basePath, $subscriptionsFolder, $podcastsFolder = null, $azuracastApiUrl = null, $azuracastApiKey = null) {
+function saveConfig($basePath, $subscriptionsFolder, $podcastsFolder = null, $azuracastApiUrl = null, $azuracastApiKey = null, $recordingsMountBase = null) {
     $db = getGlobalDB();
     $db['config'] = [
         'base_path' => rtrim($basePath, '/\\'),
         'subscriptions_folder' => trim($subscriptionsFolder, '/\\'),
         'podcasts_folder' => $podcastsFolder !== null ? trim($podcastsFolder) : ($db['config']['podcasts_folder'] ?? 'Podcasts'),
-        'cache_duration' => $db['config']['cache_duration'] ?? 86400,  // 24 horas por defecto
+        'cache_duration' => $db['config']['cache_duration'] ?? 86400,
         'azuracast_api_url' => $azuracastApiUrl !== null ? rtrim($azuracastApiUrl, '/') : ($db['config']['azuracast_api_url'] ?? ''),
-        'azuracast_api_key' => $azuracastApiKey !== null ? trim($azuracastApiKey) : ($db['config']['azuracast_api_key'] ?? '')
+        'azuracast_api_key' => $azuracastApiKey !== null ? trim($azuracastApiKey) : ($db['config']['azuracast_api_key'] ?? ''),
+        'recordings_mount_base' => $recordingsMountBase !== null ? rtrim(trim($recordingsMountBase), '/') : ($db['config']['recordings_mount_base'] ?? '')
     ];
     return saveGlobalDB($db);
 }

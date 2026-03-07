@@ -366,11 +366,12 @@ function savePlaylistsToCache($username, $data) {
  * @param string $logoUrl URL del logo
  * @return bool True si se guardó correctamente
  */
-function updateAzuracastConfig($username, $stationId, $widgetColor = '#3b82f6', $showLogo = false, $logoUrl = '', $widgetStyle = 'modern', $widgetFontSize = 'medium', $streamUrl = '', $widgetBackgroundColor = '#ffffff') {
+function updateAzuracastConfig($username, $stationId, $widgetColor = '#3b82f6', $recordingsFolder = '', $showLogo = false, $logoUrl = '', $widgetStyle = 'modern', $widgetFontSize = 'medium', $streamUrl = '', $widgetBackgroundColor = '#ffffff') {
     $userData = getUserDB($username);
 
     $userData['azuracast'] = [
         'station_id' => $stationId !== '' ? intval($stationId) : null,
+        'recordings_folder' => $recordingsFolder,
         'widget_color' => $widgetColor,
         'widget_background_color' => $widgetBackgroundColor,
         'show_logo' => (bool)$showLogo,

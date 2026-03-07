@@ -61,6 +61,13 @@ $users = getAllUsers();
                     Obtén la API Key en Radiobot → Admin → API Keys. Permite consultar estado de playlists (habilitada/deshabilitada).
                 </small>
             </div>
+            <div class="form-group">
+                <label>Ruta base de grabaciones: <small>(carpeta donde están montadas las emisoras)</small></label>
+                <input type="text" name="recordings_mount_base" value="<?php echo htmlEsc($config['recordings_mount_base'] ?? ''); ?>" placeholder="/mnt/emisoras" maxlength="255">
+                <small style="color: #718096; display: block; margin-top: 5px;">
+                    Ruta del servidor donde están las carpetas de cada emisora. La ruta final será <code>{base}/{carpeta_emisora}/recordings</code>. Si se deja vacío se usa la ruta de Radiobot.
+                </small>
+            </div>
             <button type="submit" class="btn btn-warning"><span class="btn-icon">💾</span> Guardar Configuracion</button>
         </form>
     </div>
@@ -112,10 +119,14 @@ $users = getAllUsers();
                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                             <input type="hidden" name="username" value="<?php echo htmlEsc($user['username']); ?>">
 
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: end;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; align-items: end;">
                                 <div class="form-group" style="margin: 0;">
                                     <label style="font-size: 12px; margin-bottom: 5px;">Station ID Radiobot:</label>
                                     <input type="number" name="station_id" value="<?php echo htmlEsc($azuracastConfig['station_id'] ?? ''); ?>" placeholder="34" style="padding: 6px;">
+                                </div>
+                                <div class="form-group" style="margin: 0;">
+                                    <label style="font-size: 12px; margin-bottom: 5px;">Carpeta grabaciones:</label>
+                                    <input type="text" name="recordings_folder" value="<?php echo htmlEsc($azuracastConfig['recordings_folder'] ?? ''); ?>" placeholder="<?php echo htmlEsc($user['username']); ?>" style="padding: 6px;">
                                 </div>
                                 <div class="form-group" style="margin: 0;">
                                     <label style="font-size: 12px; margin-bottom: 5px;">Color del widget:</label>
