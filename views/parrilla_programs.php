@@ -340,14 +340,14 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                     </div>
 
                     <?php
-                    // ====== HORARIOS: leer configuración manual guardada ======
+                    // ====== HORARIOS: leer configuración manual o fallback a AzuraCast ======
                     $scheduleSlots = [];
 
-                    // PRIORIDAD 1: Leer schedule_slots (formato nuevo)
+                    // PRIORIDAD 1: Leer schedule_slots guardados manualmente
                     if (!empty($programInfo['schedule_slots'])) {
                         $scheduleSlots = $programInfo['schedule_slots'];
                     }
-                    // PRIORIDAD 2: Migrar desde formato antiguo (solo programas live)
+                    // PRIORIDAD 2 (solo live): Migrar desde formato antiguo
                     elseif ($isLiveProgram && !empty($programInfo['schedule_days'])) {
                         $oldDays = (array)($programInfo['schedule_days'] ?? []);
                         $scheduleSlots = [[
@@ -356,19 +356,8 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                             'duration' => intval($programInfo['schedule_duration'] ?? 60)
                         ]];
                     }
-
-                    // Para programas live sin slots: crear uno vacío por defecto
-                    if ($isLiveProgram && empty($scheduleSlots)) {
-                        $scheduleSlots = [[
-                            'days' => [],
-                            'start_time' => '',
-                            'duration' => 60
-                        ]];
-                    }
-
-                    // ====== PARA PROGRAMAS NO-LIVE: horario de AzuraCast como referencia ======
-                    $azuracastScheduleRef = [];
-                    if (!$isLiveProgram) {
+                    // PRIORIDAD 3 (solo no-live): Pre-rellenar desde AzuraCast, agrupado por hora+duración
+                    elseif (!$isLiveProgram) {
                         $azuraSchedule = getAzuracastSchedule($username, 600);
                         if ($azuraSchedule !== false && !empty($azuraSchedule)) {
                             $currentProgramNameRef = getProgramNameFromKey($editingProgram);
@@ -390,50 +379,29 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                                 $time = $startDt->format('H:i');
                                 $key = $time . '_' . $dur;
                                 if (!isset($groupedRef[$key])) {
-                                    $groupedRef[$key] = ['days' => [], 'time' => $time, 'duration' => $dur];
+                                    $groupedRef[$key] = ['days' => [], 'start_time' => $time, 'duration' => $dur];
                                 }
                                 if (!in_array($day, $groupedRef[$key]['days'])) {
                                     $groupedRef[$key]['days'][] = $day;
                                 }
                             }
-                            $azuracastScheduleRef = array_values($groupedRef);
+                            $scheduleSlots = array_values($groupedRef);
                         }
                     }
-                    $dayNamesRef = [0 => 'Dom', 1 => 'Lun', 2 => 'Mar', 3 => 'Mié', 4 => 'Jue', 5 => 'Vie', 6 => 'Sáb'];
-                    ?>
 
-                        <?php if (!$isLiveProgram && !empty($azuracastScheduleRef)): ?>
-                        <div class="form-group">
-                            <label>📡 Horario actual en Radiobot: <small>(referencia, solo lectura)</small></label>
-                            <div style="background: #f0fdf4; padding: 12px 16px; border-radius: 8px; border: 1px solid #86efac;">
-                                <?php foreach ($azuracastScheduleRef as $ref): ?>
-                                <div style="display: flex; align-items: center; gap: 16px; padding: 5px 0; border-bottom: 1px solid #dcfce7; font-size: 14px;">
-                                    <span style="font-weight: 600; color: #15803d; min-width: 140px;"><?php
-                                        echo htmlEsc(implode(', ', array_map(fn($d) => $dayNamesRef[$d] ?? '?', $ref['days'])));
-                                    ?></span>
-                                    <span style="color: #374151;"><?php echo htmlEsc($ref['time']); ?></span>
-                                    <span style="color: #6b7280;"><?php
-                                        $d = $ref['duration'];
-                                        echo $d < 60 ? $d . ' min' : (floor($d/60) . 'h' . ($d%60 > 0 ? ' ' . ($d%60) . 'min' : ''));
-                                    ?></span>
-                                </div>
-                                <?php endforeach; ?>
-                            </div>
-                            <small style="color: #6b7280; display: block; margin-top: 6px;">
-                                Este horario viene de Radiobot y se actualiza automáticamente. No se guarda aquí.
-                            </small>
-                        </div>
-                        <?php endif; ?>
+                    // Si sigue vacío: crear un slot vacío por defecto
+                    if (empty($scheduleSlots)) {
+                        $scheduleSlots = [[
+                            'days' => [],
+                            'start_time' => '',
+                            'duration' => 60
+                        ]];
+                    }
+                    ?>
 
                         <div class="form-group">
                             <label style="display: flex; justify-content: space-between; align-items: center;">
-                                <span>
-                                    <?php if ($isLiveProgram): ?>
-                                    📅 Horarios de Emisión:
-                                    <?php else: ?>
-                                    📅 Horario personalizado: <small style="font-weight: normal; color: #6b7280;">(opcional)</small>
-                                    <?php endif; ?>
-                                </span>
+                                <span>📅 Horarios de Emisión:</span>
                                 <button type="button" onclick="addScheduleSlot()" class="btn" style="background: #10b981; color: white; padding: 6px 12px; font-size: 13px;">
                                     <span>➕</span> Añadir Horario
                                 </button>
@@ -442,7 +410,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                                 <?php if ($isLiveProgram): ?>
                                 Puedes añadir múltiples horarios si el programa se emite en diferentes días/horas
                                 <?php else: ?>
-                                Solo si necesitas sobreescribir el horario de Radiobot (por ejemplo, para ajustar la duración)
+                                Pre-rellenado desde Radiobot. Modifica solo si necesitas sobrescribir el horario real.
                                 <?php endif; ?>
                             </small>
 
