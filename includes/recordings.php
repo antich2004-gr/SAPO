@@ -9,12 +9,17 @@
  * Usa el campo recordings_storage_location.path devuelto por la API de AzuraCast
  */
 function getRecordingsDir($username) {
+    // Comprobar primero si hay un slug manual configurado en SAPO
+    $azConfig = getAzuracastConfig($username);
+    $manualSlug = $azConfig['azuracast_short_name'] ?? '';
+
     $stationInfo = getStationInfo($username);
 
     if ($stationInfo === null) {
         error_log("RECORDINGS: No se pudo obtener info de la estación para usuario: $username");
-        // Fallback: intentar con username directamente
-        return "/var/azuracast/stations/{$username}/recordings";
+        // Fallback: usar slug manual si está configurado, si no el username
+        $slug = !empty($manualSlug) ? $manualSlug : $username;
+        return "/var/azuracast/stations/{$slug}/recordings";
     }
 
     // recordings_storage_location puede ser un objeto con 'path' (versiones nuevas)
@@ -34,7 +39,7 @@ function getRecordingsDir($username) {
         return $path;
     }
 
-    // Último fallback: usar short_name
+    // Fallback: usar short_name de la API
     $shortName = $stationInfo['short_name'] ?? $stationInfo['name'] ?? null;
     if (!empty($shortName)) {
         $path = "/var/azuracast/stations/{$shortName}/recordings";
@@ -42,8 +47,10 @@ function getRecordingsDir($username) {
         return $path;
     }
 
-    error_log("RECORDINGS: No se pudo determinar la ruta de grabaciones para usuario: $username");
-    return "/var/azuracast/stations/{$username}/recordings";
+    // Último fallback: slug manual configurado en SAPO, o username
+    $slug = !empty($manualSlug) ? $manualSlug : $username;
+    error_log("RECORDINGS: Último fallback, usando slug: $slug");
+    return "/var/azuracast/stations/{$slug}/recordings";
 }
 
 /**

@@ -681,11 +681,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $username = $_POST['username'] ?? '';
         $stationId = $_POST['station_id'] ?? '';
         $widgetColor = $_POST['widget_color'] ?? '#3b82f6';
+        $azuracastShortName = $_POST['azuracast_short_name'] ?? '';
 
         if (empty($username)) {
             $error = 'Usuario no especificado';
         } else {
-            if (updateAzuracastConfig($username, $stationId, $widgetColor)) {
+            if (updateAzuracastConfig($username, $stationId, $widgetColor, false, '', 'modern', 'medium', '', '#ffffff', $azuracastShortName)) {
                 $message = "Configuración de AzuraCast actualizada para $username";
             } else {
                 $error = 'Error al actualizar la configuración';
