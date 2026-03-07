@@ -427,23 +427,8 @@ initSession();
     if (isset($_GET['action']) && $_GET['action'] == 'get_recordings_list' && isLoggedIn() && !isAdmin()) {
         header('Content-Type: application/json');
 
-        $username = $_SESSION['username'];
-        $stationInfo = getStationInfo($username);
-        $recordingsDir = getRecordingsDir($username);
-        $recordings = listRecordings($username);
-
-        echo json_encode([
-            'success' => true,
-            'recordings' => $recordings,
-            '_debug' => [
-                'recordings_dir' => $recordingsDir,
-                'dir_exists' => is_dir($recordingsDir),
-                'api_ok' => $stationInfo !== null,
-                'short_name' => $stationInfo['short_name'] ?? null,
-                'radio_base_dir' => $stationInfo['radio_base_dir'] ?? null,
-                'recordings_storage_location_path' => $stationInfo['recordings_storage_location']['path'] ?? null,
-            ]
-        ]);
+        $recordings = listRecordings($_SESSION['username']);
+        echo json_encode(['success' => true, 'recordings' => $recordings]);
         exit;
     }
 

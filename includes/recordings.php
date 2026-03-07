@@ -17,15 +17,16 @@ function getRecordingsDir($username) {
         return "/var/azuracast/stations/{$username}/recordings";
     }
 
-    // La API de AzuraCast devuelve recordings_storage_location.path con la ruta real configurada
-    $recordingsPath = $stationInfo['recordings_storage_location']['path'] ?? null;
-
-    if (!empty($recordingsPath)) {
-        error_log("RECORDINGS: Ruta de grabaciones obtenida desde API: $recordingsPath");
-        return rtrim($recordingsPath, '/');
+    // recordings_storage_location puede ser un objeto con 'path' (versiones nuevas)
+    // o simplemente el ID entero (versiones anteriores de AzuraCast)
+    $recStorageLoc = $stationInfo['recordings_storage_location'] ?? null;
+    if (is_array($recStorageLoc) && !empty($recStorageLoc['path'])) {
+        error_log("RECORDINGS: Ruta de grabaciones obtenida desde recordings_storage_location.path: " . $recStorageLoc['path']);
+        return rtrim($recStorageLoc['path'], '/');
     }
 
-    // Fallback: construir ruta desde radio_base_dir si está disponible
+    // Fallback principal: radio_base_dir devuelve la ruta real del servidor,
+    // incluyendo mayúsculas/minúsculas correctas del nombre de la emisora
     $radioBaseDir = $stationInfo['radio_base_dir'] ?? null;
     if (!empty($radioBaseDir)) {
         $path = rtrim($radioBaseDir, '/') . '/recordings';
