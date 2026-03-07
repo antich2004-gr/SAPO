@@ -255,8 +255,8 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
 
         if ($programInfo !== null):
         ?>
-            <div id="editProgramModal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.5); overflow-y:auto;">
-                <div style="background:#fff; border-radius:12px; max-width:760px; margin:40px auto; padding:0; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+            <div id="editProgramModal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.5); overflow-y:auto; padding:24px 16px;">
+                <div style="background:#fff; border-radius:12px; max-width:760px; margin:0 auto; padding:0; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
                     <!-- Cabecera del modal -->
                     <div style="display:flex; justify-content:space-between; align-items:center; padding:20px 24px; border-bottom:1px solid #e5e7eb; background:#f0f9ff; border-radius:12px 12px 0 0;">
                         <h3 style="margin:0; font-size:18px; color:#1e40af;">✏️ Editar: <?php echo htmlEsc($editingProgram); ?></h3>
@@ -871,7 +871,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('editProgramModal');
     if (modal) {
         modal.style.display = 'block';
-        document.body.style.overflow = 'hidden';
+        // No bloqueamos body scroll para que el overlay fixed pueda hacer scroll
 
         // Cerrar al hacer clic en el fondo
         modal.addEventListener('click', function(e) {
