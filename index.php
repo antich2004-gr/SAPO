@@ -27,6 +27,7 @@ require_once INCLUDES_DIR . '/feed.php';
 require_once INCLUDES_DIR . '/reports.php';
 require_once INCLUDES_DIR . '/azuracast.php';
 require_once INCLUDES_DIR . '/time_signals.php';
+require_once INCLUDES_DIR . '/recordings.php';
 
 initSession();
 
@@ -386,6 +387,89 @@ initSession();
 
         // Aplicar via API
         $result = applyTimeSignalsViaAPI($username);
+        echo json_encode($result);
+        exit;
+    }
+
+    // ====================================================================
+    // AJAX HANDLERS - GRABACIONES
+    // ====================================================================
+
+    // AJAX: Obtener lista de grabaciones
+    if (isset($_GET['action']) && $_GET['action'] == 'get_recordings_list' && isLoggedIn() && !isAdmin()) {
+        header('Content-Type: application/json');
+
+        $recordings = listRecordings($_SESSION['username']);
+        echo json_encode(['success' => true, 'recordings' => $recordings]);
+        exit;
+    }
+
+    // AJAX: Obtener estadísticas de grabaciones
+    if (isset($_GET['action']) && $_GET['action'] == 'get_recordings_stats' && isLoggedIn() && !isAdmin()) {
+        header('Content-Type: application/json');
+
+        $stats = getRecordingsStats($_SESSION['username']);
+        echo json_encode(['success' => true, 'stats' => $stats]);
+        exit;
+    }
+
+    // AJAX: Obtener configuración de grabaciones
+    if (isset($_GET['action']) && $_GET['action'] == 'get_recordings_config' && isLoggedIn() && !isAdmin()) {
+        header('Content-Type: application/json');
+
+        $config = getRecordingsConfig($_SESSION['username']);
+        echo json_encode(['success' => true, 'config' => $config]);
+        exit;
+    }
+
+    // AJAX: Guardar configuración de grabaciones
+    if (isset($_POST['action']) && $_POST['action'] == 'save_recordings_config' && isLoggedIn() && !isAdmin()) {
+        header('Content-Type: application/json');
+
+        // Validar CSRF token
+        $token = $_POST['csrf_token'] ?? '';
+        if (!validateCSRFToken($token)) {
+            echo json_encode(['success' => false, 'message' => ERROR_INVALID_TOKEN]);
+            exit;
+        }
+
+        $retentionDays = intval($_POST['retention_days'] ?? 30);
+        $autoDelete = isset($_POST['auto_delete']) ? (bool)$_POST['auto_delete'] : true;
+
+        $result = saveRecordingsConfig($_SESSION['username'], $retentionDays, $autoDelete);
+        echo json_encode($result);
+        exit;
+    }
+
+    // AJAX: Eliminar una grabación específica
+    if (isset($_POST['action']) && $_POST['action'] == 'delete_recording' && isLoggedIn() && !isAdmin()) {
+        header('Content-Type: application/json');
+
+        // Validar CSRF token
+        $token = $_POST['csrf_token'] ?? '';
+        if (!validateCSRFToken($token)) {
+            echo json_encode(['success' => false, 'message' => ERROR_INVALID_TOKEN]);
+            exit;
+        }
+
+        $filename = $_POST['filename'] ?? '';
+        $result = deleteRecording($_SESSION['username'], $filename);
+        echo json_encode($result);
+        exit;
+    }
+
+    // AJAX: Eliminar grabaciones antiguas
+    if (isset($_POST['action']) && $_POST['action'] == 'delete_old_recordings' && isLoggedIn() && !isAdmin()) {
+        header('Content-Type: application/json');
+
+        // Validar CSRF token
+        $token = $_POST['csrf_token'] ?? '';
+        if (!validateCSRFToken($token)) {
+            echo json_encode(['success' => false, 'message' => ERROR_INVALID_TOKEN]);
+            exit;
+        }
+
+        $result = deleteOldRecordings($_SESSION['username']);
         echo json_encode($result);
         exit;
     }

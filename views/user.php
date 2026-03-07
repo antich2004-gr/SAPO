@@ -154,6 +154,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 <button class="tab-button" data-tab="importar" onclick="switchTab('importar')">Importar/Exportar</button>
                 <button class="tab-button" data-tab="descargas" onclick="switchTab('descargas')">Descargas</button>
                 <button class="tab-button" data-tab="config" onclick="switchTab('config')">Señales horarias</button>
+                <button class="tab-button" data-tab="recordings" onclick="switchTab('recordings')">🎙️ Grabaciones</button>
             </div>
             
             <div class="tabs-content">
@@ -792,6 +793,95 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         <div id="config-status" style="margin-top: 20px;"></div>
                     </div>
                 </div>
+
+                <!-- PESTAÑA: GRABACIONES -->
+                <div id="tab-recordings" class="tab-panel">
+                    <h3 style="margin-bottom: 30px;">🎙️ Gestión de Grabaciones</h3>
+
+                    <!-- Configuración de retención -->
+                    <div style="background: #f7fafc; padding: 25px; border-radius: 12px; margin-bottom: 30px; border-left: 4px solid #3182ce;">
+                        <h4 style="margin: 0 0 20px 0; color: #2d3748; font-size: 18px;">
+                            ⚙️ Configuración de retención
+                        </h4>
+                        <p style="color: #718096; margin-bottom: 20px; font-size: 14px;">
+                            Las grabaciones más antiguas que el período configurado se eliminarán automáticamente cada 24 horas.
+                        </p>
+
+                        <div style="margin-bottom: 20px;">
+                            <label for="retention-days" style="display: block; margin-bottom: 10px; font-weight: 500; color: #4a5568;">
+                                Días de retención:
+                            </label>
+                            <select id="retention-days" style="width: 100%; max-width: 300px; padding: 12px; font-size: 16px; border: 2px solid #cbd5e0; border-radius: 8px;">
+                                <option value="7">7 días</option>
+                                <option value="15">15 días</option>
+                                <option value="30" selected>30 días (recomendado)</option>
+                                <option value="60">60 días</option>
+                                <option value="90">90 días</option>
+                                <option value="180">180 días (6 meses)</option>
+                                <option value="365">365 días (1 año)</option>
+                            </select>
+                        </div>
+
+                        <button onclick="saveRecordingsConfig()" style="background: #3182ce; color: white; padding: 12px 30px; border: none; border-radius: 8px; font-size: 16px; font-weight: 500; cursor: pointer;">
+                            💾 Guardar configuración
+                        </button>
+                    </div>
+
+                    <!-- Estadísticas -->
+                    <div id="recordings-stats" style="background: #fff; padding: 25px; border-radius: 12px; margin-bottom: 30px; border: 2px solid #e2e8f0;">
+                        <h4 style="margin: 0 0 20px 0; color: #2d3748; font-size: 18px;">
+                            📊 Estadísticas
+                        </h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                            <div>
+                                <p style="margin: 0; color: #718096; font-size: 14px;">Total de grabaciones</p>
+                                <p id="stats-total-count" style="margin: 5px 0 0 0; font-size: 28px; font-weight: bold; color: #2d3748;">-</p>
+                            </div>
+                            <div>
+                                <p style="margin: 0; color: #718096; font-size: 14px;">Espacio usado</p>
+                                <p id="stats-total-size" style="margin: 5px 0 0 0; font-size: 28px; font-weight: bold; color: #2d3748;">-</p>
+                            </div>
+                            <div>
+                                <p style="margin: 0; color: #718096; font-size: 14px;">Grabaciones antiguas</p>
+                                <p id="stats-old-count" style="margin: 5px 0 0 0; font-size: 28px; font-weight: bold; color: #e53e3e;">-</p>
+                            </div>
+                            <div>
+                                <p style="margin: 0; color: #718096; font-size: 14px;">Espacio a liberar</p>
+                                <p id="stats-old-size" style="margin: 5px 0 0 0; font-size: 28px; font-weight: bold; color: #e53e3e;">-</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Acciones -->
+                    <div style="background: #fff; padding: 25px; border-radius: 12px; margin-bottom: 30px; border: 2px solid #e2e8f0;">
+                        <h4 style="margin: 0 0 20px 0; color: #2d3748; font-size: 18px;">
+                            🗑️ Acciones
+                        </h4>
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                            <button onclick="loadRecordings()" style="background: #3182ce; color: white; padding: 12px 30px; border: none; border-radius: 8px; font-size: 16px; font-weight: 500; cursor: pointer;">
+                                🔄 Actualizar lista
+                            </button>
+                            <button onclick="deleteOldRecordingsNow()" style="background: #e53e3e; color: white; padding: 12px 30px; border: none; border-radius: 8px; font-size: 16px; font-weight: 500; cursor: pointer;">
+                                🗑️ Eliminar grabaciones antiguas
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Lista de grabaciones -->
+                    <div style="background: #fff; padding: 25px; border-radius: 12px; border: 2px solid #e2e8f0;">
+                        <h4 style="margin: 0 0 20px 0; color: #2d3748; font-size: 18px;">
+                            📋 Grabaciones
+                        </h4>
+                        <div id="recordings-list" style="max-height: 600px; overflow-y: auto;">
+                            <p style="color: #718096; text-align: center; padding: 40px 0;">
+                                Cargando grabaciones...
+                            </p>
+                        </div>
+                    </div>
+
+                    <div id="recordings-status" style="margin-top: 20px;"></div>
+                </div>
+
             </div>
         </div>
 </div>
@@ -1839,7 +1929,273 @@ function loadInitialConfig() {
 document.addEventListener('DOMContentLoaded', function() {
     loadTimeSignalFiles();
     loadInitialConfig();
+
+    // Cargar grabaciones si está en la pestaña
+    if (window.location.hash === '#recordings') {
+        loadRecordings();
+    }
 });
+
+// ====================================================================
+// FUNCIONES DE GRABACIONES
+// ====================================================================
+
+/**
+ * Cargar configuración de grabaciones
+ */
+function loadRecordingsConfig() {
+    fetch('?action=get_recordings_config')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.config) {
+                document.getElementById('retention-days').value = data.config.retention_days || 30;
+            }
+        })
+        .catch(error => console.error('Error al cargar config de grabaciones:', error));
+}
+
+/**
+ * Guardar configuración de grabaciones
+ */
+function saveRecordingsConfig() {
+    const statusDiv = document.getElementById('recordings-status');
+    const retentionDays = document.getElementById('retention-days').value;
+
+    const formData = new FormData();
+    formData.append('action', 'save_recordings_config');
+    formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
+    formData.append('retention_days', retentionDays);
+    formData.append('auto_delete', 'true');
+
+    statusDiv.innerHTML = '<p style="color: #3182ce;">Guardando configuración...</p>';
+
+    fetch('', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            statusDiv.innerHTML = '<div class="alert alert-success">✅ ' + data.message + '</div>';
+            loadRecordingsStats(); // Actualizar estadísticas
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 3000);
+        } else {
+            statusDiv.innerHTML = '<div class="alert alert-danger">❌ ' + data.message + '</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        statusDiv.innerHTML = '<div class="alert alert-danger">❌ Error al guardar configuración</div>';
+    });
+}
+
+/**
+ * Cargar estadísticas de grabaciones
+ */
+function loadRecordingsStats() {
+    fetch('?action=get_recordings_stats')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.stats) {
+                const stats = data.stats;
+                document.getElementById('stats-total-count').textContent = stats.total_count;
+                document.getElementById('stats-total-size').textContent = stats.total_size_formatted;
+                document.getElementById('stats-old-count').textContent = stats.old_count;
+                document.getElementById('stats-old-size').textContent = stats.old_size_formatted;
+            }
+        })
+        .catch(error => console.error('Error al cargar stats:', error));
+}
+
+/**
+ * Cargar lista de grabaciones
+ */
+function loadRecordings() {
+    const listDiv = document.getElementById('recordings-list');
+    listDiv.innerHTML = '<p style="color: #3182ce; text-align: center; padding: 40px 0;">🔄 Cargando grabaciones...</p>';
+
+    // Cargar configuración y estadísticas
+    loadRecordingsConfig();
+    loadRecordingsStats();
+
+    fetch('?action=get_recordings_list')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayRecordings(data.recordings);
+            } else {
+                listDiv.innerHTML = '<p style="color: #e53e3e; text-align: center; padding: 40px 0;">❌ Error al cargar grabaciones</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            listDiv.innerHTML = '<p style="color: #e53e3e; text-align: center; padding: 40px 0;">❌ Error de conexión</p>';
+        });
+}
+
+/**
+ * Mostrar lista de grabaciones en la interfaz
+ */
+function displayRecordings(recordings) {
+    const listDiv = document.getElementById('recordings-list');
+
+    if (recordings.length === 0) {
+        listDiv.innerHTML = '<p style="color: #718096; text-align: center; padding: 40px 0;">📭 No hay grabaciones disponibles</p>';
+        return;
+    }
+
+    let html = '<div style="display: flex; flex-direction: column; gap: 15px;">';
+
+    recordings.forEach(recording => {
+        const isOld = recording.days_old >= parseInt(document.getElementById('retention-days').value);
+        const borderColor = isOld ? '#e53e3e' : '#cbd5e0';
+        const bgColor = isOld ? '#fff5f5' : '#fff';
+
+        html += `
+            <div style="background: ${bgColor}; padding: 20px; border-radius: 8px; border: 2px solid ${borderColor};">
+                <div style="display: flex; justify-content: space-between; align-items: start; gap: 20px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <p style="margin: 0 0 8px 0; font-weight: 600; font-size: 16px; color: #2d3748;">
+                            📁 ${escapeHtml(recording.filename)}
+                        </p>
+                        <p style="margin: 0; color: #718096; font-size: 14px;">
+                            📅 ${recording.date} • 💾 ${recording.size_formatted} • ⏱️ ${recording.days_old} día(s)
+                        </p>
+                        ${isOld ? '<p style="margin: 8px 0 0 0; color: #e53e3e; font-weight: 500; font-size: 14px;">⚠️ Será eliminada automáticamente</p>' : ''}
+                    </div>
+                    <div>
+                        <button onclick="deleteRecordingConfirm('${escapeHtml(recording.filename)}')"
+                                style="background: #e53e3e; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer;">
+                            🗑️ Eliminar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    listDiv.innerHTML = html;
+}
+
+/**
+ * Confirmar eliminación de una grabación
+ */
+function deleteRecordingConfirm(filename) {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta grabación?\n\n' + filename)) {
+        return;
+    }
+
+    deleteRecordingFile(filename);
+}
+
+/**
+ * Eliminar una grabación específica
+ */
+function deleteRecordingFile(filename) {
+    const statusDiv = document.getElementById('recordings-status');
+
+    const formData = new FormData();
+    formData.append('action', 'delete_recording');
+    formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
+    formData.append('filename', filename);
+
+    statusDiv.innerHTML = '<p style="color: #3182ce;">Eliminando grabación...</p>';
+
+    fetch('', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            statusDiv.innerHTML = '<div class="alert alert-success">✅ ' + data.message + '</div>';
+            loadRecordings(); // Recargar lista
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 3000);
+        } else {
+            statusDiv.innerHTML = '<div class="alert alert-danger">❌ ' + data.message + '</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        statusDiv.innerHTML = '<div class="alert alert-danger">❌ Error al eliminar grabación</div>';
+    });
+}
+
+/**
+ * Eliminar todas las grabaciones antiguas
+ */
+function deleteOldRecordingsNow() {
+    const retentionDays = document.getElementById('retention-days').value;
+    const stats = {
+        old_count: parseInt(document.getElementById('stats-old-count').textContent) || 0
+    };
+
+    if (stats.old_count === 0) {
+        alert('No hay grabaciones antiguas para eliminar.');
+        return;
+    }
+
+    const confirmMessage =
+        `⚠️ CONFIRMACIÓN DE ELIMINACIÓN\n\n` +
+        `Se eliminarán ${stats.old_count} grabación(es) con más de ${retentionDays} días.\n\n` +
+        `¿Deseas continuar?`;
+
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+
+    const statusDiv = document.getElementById('recordings-status');
+
+    const formData = new FormData();
+    formData.append('action', 'delete_old_recordings');
+    formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
+
+    statusDiv.innerHTML = '<p style="color: #3182ce;">🗑️ Eliminando grabaciones antiguas...</p>';
+
+    fetch('', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            statusDiv.innerHTML = '<div class="alert alert-success">✅ ' + data.message + '</div>';
+            loadRecordings(); // Recargar lista y stats
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 5000);
+        } else {
+            statusDiv.innerHTML = '<div class="alert alert-danger">❌ ' + data.message + '</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        statusDiv.innerHTML = '<div class="alert alert-danger">❌ Error al eliminar grabaciones</div>';
+    });
+}
+
+/**
+ * Escapar HTML para prevenir XSS
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Cargar grabaciones cuando se cambia a la pestaña
+const originalSwitchTab = window.switchTab;
+window.switchTab = function(tabName) {
+    originalSwitchTab(tabName);
+    if (tabName === 'recordings') {
+        loadRecordings();
+    }
+};
 
 
 </script>
