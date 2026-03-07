@@ -370,6 +370,19 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                         ]];
                     }
                     ?>
+
+                    <!-- 🐛 DEBUG: Mostrar datos cargados -->
+                    <div style="background: #fef3c7; border: 2px solid #f59e0b; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-family: monospace; font-size: 12px;">
+                        <strong style="color: #92400e;">🐛 DEBUG (eliminar después):</strong><br>
+                        tiene_schedule_slots: <?php echo !empty($programInfo['schedule_slots']) ? 'true' : 'false'; ?><br>
+                        tiene_schedule_days: <?php echo !empty($programInfo['schedule_days']) ? 'true' : 'false'; ?><br>
+                        schedule_slots_raw: <?php echo htmlEsc(json_encode($programInfo['schedule_slots'] ?? null)); ?><br>
+                        schedule_days_raw: <?php echo htmlEsc(json_encode($programInfo['schedule_days'] ?? null)); ?><br>
+                        schedule_start_time: <?php echo htmlEsc($programInfo['schedule_start_time'] ?? 'null'); ?><br>
+                        schedule_duration: <?php echo intval($programInfo['schedule_duration'] ?? 0); ?><br>
+                        scheduleSlots procesados: <?php echo htmlEsc(json_encode($scheduleSlots)); ?>
+                    </div>
+
                         <div class="form-group">
                             <label style="display: flex; justify-content: space-between; align-items: center;">
                                 <span>📅 Horarios de Emisión:</span>
@@ -447,25 +460,6 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                             </small>
                         </div>
 
-                    <?php
-                    // Ocultar campo de duración para bloques musicales (usan duración de Radiobot)
-                    $isMusicBlock = ($programInfo['playlist_type'] ?? 'program') === 'music_block';
-                    if (!$isMusicBlock):
-                    ?>
-                    <div class="form-group">
-                        <label>Duración en parrilla:</label>
-                        <?php $currentDuration = intval($programInfo['schedule_duration'] ?? 60); ?>
-                        <select name="schedule_duration">
-                            <option value="15" <?php echo $currentDuration === 15 ? 'selected' : ''; ?>>15 minutos</option>
-                            <option value="30" <?php echo $currentDuration === 30 ? 'selected' : ''; ?>>30 minutos</option>
-                            <option value="45" <?php echo $currentDuration === 45 ? 'selected' : ''; ?>>45 minutos</option>
-                            <option value="60" <?php echo $currentDuration === 60 ? 'selected' : ''; ?>>1 hora</option>
-                            <option value="90" <?php echo $currentDuration === 90 ? 'selected' : ''; ?>>1h 30m</option>
-                            <option value="120" <?php echo $currentDuration === 120 ? 'selected' : ''; ?>>2 horas</option>
-                            <option value="180" <?php echo $currentDuration === 180 ? 'selected' : ''; ?>>3 horas</option>
-                        </select>
-                    </div>
-                    <?php endif; ?>
 
                     <div class="form-group">
                         <label>Temática:</label>
