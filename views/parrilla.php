@@ -278,14 +278,6 @@ if ($hasStationId) {
                             <li>Funciona en cualquier dominio (CORS habilitado)</li>
                         </ul>
                     </div>
-
-                    <div style="margin-top: 15px; background: #fef3c7; border: 1px solid #fcd34d; padding: 15px; border-radius: 8px;">
-                        <h4 style="margin: 0 0 10px 0; color: #92400e;">📖 Documentación completa</h4>
-                        <p style="margin: 0; color: #92400e; font-size: 14px;">
-                            Consulta el archivo <code>WIDGET.md</code> en el repositorio para ver ejemplos avanzados,
-                            opciones de personalización y cómo usar la API REST.
-                        </p>
-                    </div>
                 </div>
 
                 <!-- MÉTODO 2: iFrame (Legacy) -->
