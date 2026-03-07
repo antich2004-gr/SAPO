@@ -731,11 +731,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $playlistType = trim($_POST['playlist_type'] ?? 'program');
 
             // ====== PROCESAR HORARIOS MÚLTIPLES (schedule_slots) ======
+            // Procesar horarios para TODOS los tipos de programas (como en Grillo)
             $scheduleSlots = [];
 
-            // Solo procesar horarios si es programa en directo
-            if ($playlistType === 'live') {
-                if (isset($_POST['schedule_slots']) && is_array($_POST['schedule_slots'])) {
+            if (isset($_POST['schedule_slots']) && is_array($_POST['schedule_slots'])) {
                     // Formato NUEVO: schedule_slots
                     foreach ($_POST['schedule_slots'] as $slot) {
                         if (!empty($slot['days']) && !empty($slot['start_time'])) {

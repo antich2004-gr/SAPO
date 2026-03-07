@@ -340,11 +340,9 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                     </div>
 
                     <?php
-                    // Mostrar campos de horario solo si es programa en directo
-                    $isLiveProgram = ($programInfo['playlist_type'] ?? 'program') === 'live';
-                    if ($isLiveProgram):
-                        // ====== MIGRACIÓN AUTOMÁTICA: Formato antiguo → Nuevo ======
-                        $scheduleSlots = [];
+                    // ====== MIGRACIÓN AUTOMÁTICA: Formato antiguo → Nuevo ======
+                    // Mostrar horarios múltiples para TODOS los tipos de programas (como en Grillo)
+                    $scheduleSlots = [];
 
                         // PRIORIDAD 1: Leer schedule_slots (formato nuevo)
                         if (!empty($programInfo['schedule_slots'])) {
@@ -440,11 +438,9 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                             </div>
 
                             <small style="color: #6b7280; display: block; margin-top: 10px;">
-                                💡 Marca los días y horas en que se emite el programa en directo
+                                💡 Marca los días y horas en que se emite el programa
                             </small>
                         </div>
-
-                    <?php endif; ?>
 
                     <?php
                     // Ocultar campo de duración para bloques musicales (usan duración de Radiobot)
