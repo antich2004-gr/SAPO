@@ -59,15 +59,20 @@ trap 'rm -f "$LOCK_FILE"' EXIT
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Cargar configuración de API desde radiobot.conf (no versionado)
+# Cargar configuración desde radiobot.conf y leer API key/URL del global.json de SAPO
 AZURACAST_API_URL=""
 AZURACAST_API_KEY=""
+SAPO_GLOBAL_JSON=""
 if [[ -f "$SCRIPT_DIR/radiobot.conf" ]]; then
     # shellcheck source=/dev/null
     source "$SCRIPT_DIR/radiobot.conf"
+    if [[ -n "$SAPO_GLOBAL_JSON" && -f "$SAPO_GLOBAL_JSON" ]]; then
+        AZURACAST_API_URL=$(jq -r '.config.azuracast_api_url // ""' "$SAPO_GLOBAL_JSON" 2>/dev/null)
+        AZURACAST_API_KEY=$(jq -r '.config.azuracast_api_key // ""' "$SAPO_GLOBAL_JSON" 2>/dev/null)
+    fi
 else
     echo "⚠️  Aviso: no se encontró $SCRIPT_DIR/radiobot.conf — las listas vacías no se consultarán."
-    echo "   Crea el archivo copiando radiobot.conf.example y añade tu clave API."
+    echo "   Crea el archivo copiando radiobot.conf.example y ajusta SAPO_GLOBAL_JSON."
 fi
 
 obtener_slug_azuracast() {

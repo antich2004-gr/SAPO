@@ -1,6 +1,7 @@
-# Configuración de acceso a la API de Radiobot/AzuraCast
-# Copia este archivo como radiobot.conf y rellena los valores reales.
+# Configuración del cliente RRLL
+# Copia este archivo como radiobot.conf y ajusta la ruta.
 # IMPORTANTE: radiobot.conf está en .gitignore y nunca debe subirse al repositorio.
 
-AZURACAST_API_URL=https://radiobot.tudominio.com/api
-AZURACAST_API_KEY=tu_clave_api_aqui
+# Ruta al archivo global.json de la instalación de SAPO.
+# La API key y URL de Radiobot se leen automáticamente desde ahí.
+SAPO_GLOBAL_JSON=/var/www/sapo/db/global.json
