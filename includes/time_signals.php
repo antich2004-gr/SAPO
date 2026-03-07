@@ -286,7 +286,9 @@ function getTimeSignalsConfig($username) {
             'signal_file' => '',
             'frequency' => 'hourly',
             'days' => [],
-            'offset_seconds' => 0
+            'offset_seconds' => 0,
+            'duration' => 1.5,
+            'attenuation' => 30
         ];
     }
 
@@ -717,6 +719,28 @@ function parseTimeSignalsFromLiquidsoap($username) {
         error_log("PARSE DEBUG - No se detectó offset, usando 0");
     }
 
+    // 6. Detectar duration (duración de transición)
+    // Formato: duration=1.5,      # Duración de la transición (1.5 segundos)
+    $config['duration'] = 1.5; // Default
+    if (preg_match('/duration=([0-9.]+)/', $liquidsoapContent, $durationMatch)) {
+        $config['duration'] = floatval($durationMatch[1]);
+        error_log("PARSE DEBUG - Duration detectado: " . $config['duration'] . " segundos");
+    } else {
+        error_log("PARSE DEBUG - No se detectó duration, usando 1.5");
+    }
+
+    // 7. Detectar attenuation (porcentaje de atenuación de música)
+    // Formato: # Música baja al 70%
+    $config['attenuation'] = 30; // Default
+    if (preg_match('/# Música baja al (\d+)%/', $liquidsoapContent, $attenuationMatch)) {
+        $musicPercent = intval($attenuationMatch[1]);
+        // Convertir de "música al X%" a "atenuación del (100-X)%"
+        $config['attenuation'] = 100 - $musicPercent;
+        error_log("PARSE DEBUG - Attenuation detectado: " . $config['attenuation'] . "% (música al $musicPercent%)");
+    } else {
+        error_log("PARSE DEBUG - No se detectó attenuation, usando 30");
+    }
+
     error_log("PARSE DEBUG - ¡Configuración parseada exitosamente!: " . json_encode($config));
     return $config;
 }
@@ -854,9 +878,14 @@ function processTimeSignalsForm($username, $postData) {
     error_log("PROCESS FORM DEBUG - POST data: " . json_encode($postData));
 
     $frequency = $postData['frequency'] ?? 'hourly';
-    $offsetSeconds = intval($postData['offset_seconds'] ?? 0); // Capturar offset
+    $offsetSeconds = intval($postData['offset_seconds'] ?? 0);
+    $duration = floatval($postData['duration'] ?? 1.5);
+    $attenuation = intval($postData['attenuation'] ?? 30);
+
     error_log("PROCESS FORM DEBUG - Frecuencia: $frequency");
     error_log("PROCESS FORM DEBUG - Offset seconds: $offsetSeconds");
+    error_log("PROCESS FORM DEBUG - Duration: $duration");
+    error_log("PROCESS FORM DEBUG - Attenuation: $attenuation");
 
     // Obtener el último archivo subido automáticamente
     $files = listTimeSignals($username);
@@ -886,6 +915,16 @@ function processTimeSignalsForm($username, $postData) {
         $offsetSeconds = 0;
     }
 
+    // Validar duration (0.2 a 10 segundos)
+    if ($duration < 0.2 || $duration > 10) {
+        $duration = 1.5;
+    }
+
+    // Validar attenuation (0 a 100%)
+    if ($attenuation < 0 || $attenuation > 100) {
+        $attenuation = 30;
+    }
+
     // Siempre usar todos los días
     $days = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
 
@@ -893,7 +932,9 @@ function processTimeSignalsForm($username, $postData) {
         'signal_file' => $signalFile,
         'frequency' => $frequency,
         'days' => $days,
-        'offset_seconds' => $offsetSeconds
+        'offset_seconds' => $offsetSeconds,
+        'duration' => $duration,
+        'attenuation' => $attenuation
     ];
 
     error_log("PROCESS FORM DEBUG - Config a guardar: " . json_encode($config));

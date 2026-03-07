@@ -1562,6 +1562,12 @@ function syncFromLiquidsoap() {
                 if (data.config.offset_seconds !== undefined) {
                     document.getElementById('signal-offset').value = data.config.offset_seconds;
                 }
+                if (data.config.duration !== undefined) {
+                    document.getElementById('signal-duration').value = data.config.duration;
+                }
+                if (data.config.attenuation !== undefined) {
+                    document.getElementById('signal-attenuation').value = data.config.attenuation;
+                }
             }
 
             setTimeout(() => {
