@@ -531,39 +531,48 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                                placeholder="Ana García, Carlos Ruiz">
                     </div>
 
-                    <div class="form-group">
-                        <label>X (Twitter): <small>(handle sin @ o URL completa)</small></label>
-                        <input type="text" name="social_twitter"
-                               value="<?php echo htmlEsc($programInfo['social_twitter'] ?? ''); ?>"
-                               placeholder="alternativa90 o https://x.com/alternativa90">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Instagram: <small>(handle sin @ o URL completa)</small></label>
-                        <input type="text" name="social_instagram"
-                               value="<?php echo htmlEsc($programInfo['social_instagram'] ?? ''); ?>"
-                               placeholder="alternativa90 o https://instagram.com/alternativa90">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Mastodon: <small>(usuario completo @usuario@servidor o URL)</small></label>
-                        <input type="text" name="social_mastodon"
-                               value="<?php echo htmlEsc($programInfo['social_mastodon'] ?? ''); ?>"
-                               placeholder="@programa@mastodon.social o https://mastodon.social/@programa">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Bluesky: <small>(handle completo o URL)</small></label>
-                        <input type="text" name="social_bluesky"
-                               value="<?php echo htmlEsc($programInfo['social_bluesky'] ?? ''); ?>"
-                               placeholder="programa.bsky.social o https://bsky.app/profile/programa.bsky.social">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Facebook: <small>(nombre de página o URL completa)</small></label>
-                        <input type="text" name="social_facebook"
-                               value="<?php echo htmlEsc($programInfo['social_facebook'] ?? ''); ?>"
-                               placeholder="alternativa90 o https://facebook.com/alternativa90">
+                    <?php
+                    $hasSocial = !empty($programInfo['social_twitter']) || !empty($programInfo['social_instagram']) ||
+                                 !empty($programInfo['social_mastodon']) || !empty($programInfo['social_bluesky']) ||
+                                 !empty($programInfo['social_facebook']);
+                    ?>
+                    <div style="border:1px solid #e5e7eb; border-radius:8px; margin-bottom:16px; overflow:hidden;">
+                        <button type="button" onclick="toggleSocial()" style="width:100%; display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#f9fafb; border:none; cursor:pointer; font-size:14px; font-weight:600; color:#374151;">
+                            <span>🌐 Redes Sociales<?php if ($hasSocial): ?> <span style="font-weight:400; color:#10b981; font-size:12px;">● configuradas</span><?php endif; ?></span>
+                            <span id="social-arrow" style="font-size:12px; transition:transform 0.2s;"><?php echo $hasSocial ? '▲' : '▼'; ?></span>
+                        </button>
+                        <div id="social-fields" style="padding:<?php echo $hasSocial ? '16px' : '0'; ?>; max-height:<?php echo $hasSocial ? '600px' : '0'; ?>; overflow:hidden; transition:max-height 0.3s ease, padding 0.3s ease;">
+                            <div class="form-group">
+                                <label>X (Twitter): <small>(handle sin @ o URL completa)</small></label>
+                                <input type="text" name="social_twitter"
+                                       value="<?php echo htmlEsc($programInfo['social_twitter'] ?? ''); ?>"
+                                       placeholder="alternativa90 o https://x.com/alternativa90">
+                            </div>
+                            <div class="form-group">
+                                <label>Instagram: <small>(handle sin @ o URL completa)</small></label>
+                                <input type="text" name="social_instagram"
+                                       value="<?php echo htmlEsc($programInfo['social_instagram'] ?? ''); ?>"
+                                       placeholder="alternativa90 o https://instagram.com/alternativa90">
+                            </div>
+                            <div class="form-group">
+                                <label>Mastodon: <small>(usuario completo @usuario@servidor o URL)</small></label>
+                                <input type="text" name="social_mastodon"
+                                       value="<?php echo htmlEsc($programInfo['social_mastodon'] ?? ''); ?>"
+                                       placeholder="@programa@mastodon.social o https://mastodon.social/@programa">
+                            </div>
+                            <div class="form-group">
+                                <label>Bluesky: <small>(handle completo o URL)</small></label>
+                                <input type="text" name="social_bluesky"
+                                       value="<?php echo htmlEsc($programInfo['social_bluesky'] ?? ''); ?>"
+                                       placeholder="programa.bsky.social o https://bsky.app/profile/programa.bsky.social">
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label>Facebook: <small>(nombre de página o URL completa)</small></label>
+                                <input type="text" name="social_facebook"
+                                       value="<?php echo htmlEsc($programInfo['social_facebook'] ?? ''); ?>"
+                                       placeholder="alternativa90 o https://facebook.com/alternativa90">
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -833,6 +842,25 @@ function updateDeleteButtons() {
             btn.style.display = 'none';
         }
     });
+}
+
+/**
+ * Colapsar/expandir redes sociales
+ */
+function toggleSocial() {
+    const fields = document.getElementById('social-fields');
+    const arrow = document.getElementById('social-arrow');
+    if (!fields) return;
+    const isOpen = fields.style.maxHeight !== '0px' && fields.style.maxHeight !== '';
+    if (isOpen) {
+        fields.style.maxHeight = '0';
+        fields.style.padding = '0';
+        arrow.textContent = '▼';
+    } else {
+        fields.style.maxHeight = '600px';
+        fields.style.padding = '16px';
+        arrow.textContent = '▲';
+    }
 }
 
 // Inicializar al cargar
