@@ -154,7 +154,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 <button class="tab-button" data-tab="importar" onclick="switchTab('importar')">Importar/Exportar</button>
                 <button class="tab-button" data-tab="descargas" onclick="switchTab('descargas')">Descargas</button>
                 <button class="tab-button" data-tab="config" onclick="switchTab('config')">Señales horarias</button>
-                <button class="tab-button" data-tab="recordings" onclick="switchTab('recordings')">🎙️ Grabaciones</button>
+                <button class="tab-button" data-tab="recordings" onclick="switchTab('recordings'); loadRecordings()">🎙️ Grabaciones</button>
             </div>
             
             <div class="tabs-content">
@@ -2187,14 +2187,13 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Cargar grabaciones cuando se cambia a la pestaña
-const originalSwitchTab = window.switchTab;
-window.switchTab = function(tabName) {
-    originalSwitchTab(tabName);
-    if (tabName === 'recordings') {
+// Si la página carga con la pestaña de grabaciones activa (ej: recarga de página), cargar datos
+document.addEventListener('DOMContentLoaded', function() {
+    const activeTab = document.querySelector('.tab-panel.active');
+    if (activeTab && activeTab.id === 'tab-recordings') {
         loadRecordings();
     }
-};
+});
 
 
 </script>
