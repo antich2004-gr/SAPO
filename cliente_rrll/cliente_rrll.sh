@@ -406,7 +406,7 @@ for carpeta in "${!MAPA_DURACIONES[@]}"; do
     margen_min=${MAPA_MARGENES[$carpeta]:-5}
     umbral=$(( base_seg + margen_min * 60 ))
 
-    if [[ "$carpeta" == "$carpeta" && "${MAPA_TIEMPO_SEG[$carpeta]+x}" ]]; then
+    if [[ -n "${MAPA_BASE_SEG[$carpeta]+x}" ]]; then
         # Carpeta tipo 1H:1H → recorrer subcarpetas de Podcast/1H/
         echo "📂 Verificando subcarpetas de $carpeta (límite: $((umbral/60)) min)"
         find "$PODCASTS_DIR/$carpeta" -mindepth 1 -maxdepth 1 -type d | while read -r subdir; do
