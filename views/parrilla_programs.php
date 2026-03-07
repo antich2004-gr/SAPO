@@ -411,6 +411,16 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                     // Mostrar horarios múltiples para TODOS los tipos de programas (como en Grillo)
                     $scheduleSlots = [];
 
+                    // DEBUG: Mostrar datos crudos (comentar después de diagnosticar)
+                    $debugInfo = [
+                        'tiene_schedule_slots' => !empty($programInfo['schedule_slots']),
+                        'tiene_schedule_days' => !empty($programInfo['schedule_days']),
+                        'schedule_slots_raw' => $programInfo['schedule_slots'] ?? null,
+                        'schedule_days_raw' => $programInfo['schedule_days'] ?? null,
+                        'schedule_start_time' => $programInfo['schedule_start_time'] ?? null,
+                        'schedule_duration' => $programInfo['schedule_duration'] ?? null,
+                    ];
+
                     // PRIORIDAD 1: Leer schedule_slots (formato nuevo)
                     if (!empty($programInfo['schedule_slots'])) {
                         $scheduleSlots = $programInfo['schedule_slots'];
@@ -437,18 +447,14 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                         ]];
                     }
                     ?>
-
-                    <!-- 🐛 DEBUG: Mostrar datos cargados -->
-                    <div style="background: #fef3c7; border: 2px solid #f59e0b; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-family: monospace; font-size: 12px;">
-                        <strong style="color: #92400e;">🐛 DEBUG (eliminar después):</strong><br>
-                        tiene_schedule_slots: <?php echo !empty($programInfo['schedule_slots']) ? 'true' : 'false'; ?><br>
-                        tiene_schedule_days: <?php echo !empty($programInfo['schedule_days']) ? 'true' : 'false'; ?><br>
-                        schedule_slots_raw: <?php echo htmlEsc(json_encode($programInfo['schedule_slots'] ?? null)); ?><br>
-                        schedule_days_raw: <?php echo htmlEsc(json_encode($programInfo['schedule_days'] ?? null)); ?><br>
-                        schedule_start_time: <?php echo htmlEsc($programInfo['schedule_start_time'] ?? 'null'); ?><br>
-                        schedule_duration: <?php echo intval($programInfo['schedule_duration'] ?? 0); ?><br>
-                        scheduleSlots procesados: <?php echo htmlEsc(json_encode($scheduleSlots)); ?>
-                    </div>
+                        <!-- DEBUG: Mostrar datos cargados -->
+                        <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 10px; margin-bottom: 15px; border-radius: 5px; font-size: 12px; font-family: monospace;">
+                            <strong>🐛 DEBUG (eliminar después):</strong><br>
+                            <?php foreach ($debugInfo as $key => $value): ?>
+                                <div><?php echo htmlspecialchars($key); ?>: <?php echo htmlspecialchars(json_encode($value, JSON_UNESCAPED_UNICODE)); ?></div>
+                            <?php endforeach; ?>
+                            <div><strong>scheduleSlots procesados:</strong> <?php echo htmlspecialchars(json_encode($scheduleSlots, JSON_UNESCAPED_UNICODE)); ?></div>
+                        </div>
 
                         <div class="form-group">
                             <label style="display: flex; justify-content: space-between; align-items: center;">
@@ -526,7 +532,6 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                                 💡 Marca los días y horas en que se emite el programa
                             </small>
                         </div>
-
 
                     <div class="form-group">
                         <label>Temática:</label>
