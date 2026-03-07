@@ -690,7 +690,35 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 </small>
                             </div>
 
-                            <!-- Paso 2.5: Configuración avanzada de mezcla -->
+                            <!-- Paso 2.5: Ajuste de tiempo (offset) -->
+                            <div style="padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 8px; margin-bottom: 20px;">
+                                <p style="margin: 0 0 10px 0; font-weight: 500; color: #856404;">
+                                    ⏱️ Ajuste de tiempo (segundos):
+                                </p>
+                                <input
+                                    type="number"
+                                    name="offset_seconds"
+                                    id="signal-offset"
+                                    value="0"
+                                    min="-60"
+                                    max="60"
+                                    step="1"
+                                    style="width: 100%; max-width: 150px; padding: 10px; font-size: 16px; border: 2px solid #ffc107; border-radius: 4px; text-align: center; font-weight: bold;"
+                                    onchange="onConfigChange('offset')">
+                                <div style="margin-top: 12px; padding: 10px; background: #fff; border-radius: 4px; font-size: 13px; color: #856404;">
+                                    <p style="margin: 0 0 8px 0; font-weight: 500;">💡 Cómo funciona:</p>
+                                    <ul style="margin: 0; padding-left: 20px; line-height: 1.6;">
+                                        <li><strong>0</strong> = Reproduce exactamente a la hora (XX:00:00)</li>
+                                        <li><strong>-5</strong> = Reproduce 5 segundos antes (XX:59:55)</li>
+                                        <li><strong>+5</strong> = Reproduce 5 segundos después (XX:00:05)</li>
+                                    </ul>
+                                    <p style="margin: 12px 0 0 0; color: #666; font-size: 12px;">
+                                        ⚠️ Usa este ajuste si las señales no suenan exactamente a la hora. Prueba con valores pequeños (±5 segundos) primero.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Paso 3: Configuración avanzada de mezcla -->
                             <div style="padding: 15px; background: #f7fafc; border-radius: 8px; margin-bottom: 20px;">
                                 <p style="margin: 0 0 15px 0; font-weight: 500; color: #2d3748;">
                                     ⚙️ Configuración avanzada de mezcla:
@@ -1474,6 +1502,13 @@ function loadTimeSignalsConfig(silent = false) {
                     document.getElementById('signal-attenuation').value = config.attenuation;
                 }
 
+                // Actualizar offset (ajuste de tiempo)
+                if (config.offset_seconds !== undefined) {
+                    document.getElementById('signal-offset').value = config.offset_seconds;
+                } else {
+                    document.getElementById('signal-offset').value = 0; // Default
+                }
+
                 if (!silent) {
                     statusDiv.innerHTML = '<div class="alert alert-success">Configuración cargada correctamente</div>';
                     setTimeout(() => {
@@ -1523,6 +1558,9 @@ function syncFromLiquidsoap() {
                 }
                 if (data.config.signal_file) {
                     document.getElementById('current-signal-file').textContent = data.config.signal_file;
+                }
+                if (data.config.offset_seconds !== undefined) {
+                    document.getElementById('signal-offset').value = data.config.offset_seconds;
                 }
             }
 
@@ -1652,6 +1690,7 @@ function applyTimeSignalsDirectly() {
     const frequency = document.getElementById('signal-frequency').value;
     const duration = document.getElementById('signal-duration').value;
     const attenuation = document.getElementById('signal-attenuation').value;
+    const offsetSeconds = document.getElementById('signal-offset').value;
 
     // Mostrar diálogo de confirmación
     const confirmMessage =
@@ -1676,6 +1715,7 @@ function applyTimeSignalsDirectly() {
     formData.append('frequency', frequency);
     formData.append('duration', duration);
     formData.append('attenuation', attenuation);
+    formData.append('offset_seconds', offsetSeconds);
 
     statusDiv.innerHTML = '<p style="color: #3182ce;">⏳ Aplicando señales horarias y reiniciando emisora...</p>';
 
@@ -1714,6 +1754,7 @@ function applyTimeSignalsViaAPI() {
     const frequency = document.getElementById('signal-frequency').value;
     const duration = document.getElementById('signal-duration').value;
     const attenuation = document.getElementById('signal-attenuation').value;
+    const offsetSeconds = document.getElementById('signal-offset').value;
 
     // Mostrar diálogo de confirmación
     const confirmMessage =
@@ -1738,6 +1779,7 @@ function applyTimeSignalsViaAPI() {
     formData.append('frequency', frequency);
     formData.append('duration', duration);
     formData.append('attenuation', attenuation);
+    formData.append('offset_seconds', offsetSeconds);
 
     statusDiv.innerHTML = '<p style="color: #3182ce;">⏳ Aplicando vía API de AzuraCast y reiniciando emisora...</p>';
 
