@@ -35,3 +35,5 @@ ADMIN_CREDENTIALS.txt
 db/global.json
 db/users/*.json
 db.json
+clear_cache.php
+check_programs.php
