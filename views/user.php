@@ -2053,12 +2053,16 @@ function displayRecordings(recordings) {
         const borderColor = isOld ? '#e53e3e' : '#cbd5e0';
         const bgColor = isOld ? '#fff5f5' : '#fff';
 
+        const displayName = recording.streamer
+            ? `<span style="color:#805ad5;font-size:13px;">🎙️ ${escapeHtml(recording.streamer)}</span> / ${escapeHtml(recording.filename.split('/').pop())}`
+            : escapeHtml(recording.filename);
+
         html += `
             <div style="background: ${bgColor}; padding: 20px; border-radius: 8px; border: 2px solid ${borderColor};">
                 <div style="display: flex; justify-content: space-between; align-items: start; gap: 20px; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 200px;">
                         <p style="margin: 0 0 8px 0; font-weight: 600; font-size: 16px; color: #2d3748;">
-                            📁 ${escapeHtml(recording.filename)}
+                            📁 ${displayName}
                         </p>
                         <p style="margin: 0; color: #718096; font-size: 14px;">
                             📅 ${recording.date} • 💾 ${recording.size_formatted} • ⏱️ ${recording.days_old} día(s)
