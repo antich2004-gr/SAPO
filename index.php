@@ -735,26 +735,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $scheduleSlots = [];
 
             if (isset($_POST['schedule_slots']) && is_array($_POST['schedule_slots'])) {
-                    // Formato NUEVO: schedule_slots
-                    foreach ($_POST['schedule_slots'] as $slot) {
-                        if (!empty($slot['days']) && !empty($slot['start_time'])) {
-                            $scheduleSlots[] = [
-                                'days' => array_map('intval', (array)$slot['days']),
-                                'start_time' => trim($slot['start_time']),
-                                'duration' => intval($slot['duration'] ?? 60)
-                            ];
-                        }
-                    }
-                } elseif (isset($_POST['schedule_days'])) {
-                    // Formato ANTIGUO: schedule_days (retrocompatibilidad)
-                    $scheduleDays = $_POST['schedule_days'] ?? [];
-                    if (!empty($scheduleDays)) {
+                // Formato NUEVO: schedule_slots
+                foreach ($_POST['schedule_slots'] as $slot) {
+                    if (!empty($slot['days']) && !empty($slot['start_time'])) {
                         $scheduleSlots[] = [
-                            'days' => array_map('intval', (array)$scheduleDays),
-                            'start_time' => trim($_POST['schedule_start_time'] ?? ''),
-                            'duration' => intval($_POST['schedule_duration'] ?? 60)
+                            'days' => array_map('intval', (array)$slot['days']),
+                            'start_time' => trim($slot['start_time']),
+                            'duration' => intval($slot['duration'] ?? 60)
                         ];
                     }
+                }
+            } elseif (isset($_POST['schedule_days'])) {
+                // Formato ANTIGUO: schedule_days (retrocompatibilidad)
+                $scheduleDays = $_POST['schedule_days'] ?? [];
+                if (!empty($scheduleDays)) {
+                    $scheduleSlots[] = [
+                        'days' => array_map('intval', (array)$scheduleDays),
+                        'start_time' => trim($_POST['schedule_start_time'] ?? ''),
+                        'duration' => intval($_POST['schedule_duration'] ?? 60)
+                    ];
                 }
             }
 
