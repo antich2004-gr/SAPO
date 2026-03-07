@@ -344,27 +344,31 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                     // Mostrar horarios múltiples para TODOS los tipos de programas (como en Grillo)
                     $scheduleSlots = [];
 
-                        // PRIORIDAD 1: Leer schedule_slots (formato nuevo)
-                        if (!empty($programInfo['schedule_slots'])) {
-                            $scheduleSlots = $programInfo['schedule_slots'];
-                        }
-                        // PRIORIDAD 2: Migrar desde formato antiguo
-                        elseif (!empty($programInfo['schedule_days'])) {
-                            $scheduleSlots = [[
-                                'days' => $programInfo['schedule_days'],
-                                'start_time' => $programInfo['schedule_start_time'] ?? '',
-                                'duration' => intval($programInfo['schedule_duration'] ?? 60)
-                            ]];
-                        }
+                    // PRIORIDAD 1: Leer schedule_slots (formato nuevo)
+                    if (!empty($programInfo['schedule_slots'])) {
+                        $scheduleSlots = $programInfo['schedule_slots'];
+                    }
+                    // PRIORIDAD 2: Migrar desde formato antiguo
+                    elseif (!empty($programInfo['schedule_days'])) {
+                        // Asegurar que los días sean integers
+                        $oldDays = (array)($programInfo['schedule_days'] ?? []);
+                        $daysAsInts = array_map('intval', $oldDays);
 
-                        // Si no hay slots, crear uno vacío
-                        if (empty($scheduleSlots)) {
-                            $scheduleSlots = [[
-                                'days' => [],
-                                'start_time' => '',
-                                'duration' => 60
-                            ]];
-                        }
+                        $scheduleSlots = [[
+                            'days' => $daysAsInts,
+                            'start_time' => $programInfo['schedule_start_time'] ?? '',
+                            'duration' => intval($programInfo['schedule_duration'] ?? 60)
+                        ]];
+                    }
+
+                    // Si no hay slots, crear uno vacío
+                    if (empty($scheduleSlots)) {
+                        $scheduleSlots = [[
+                            'days' => [],
+                            'start_time' => '',
+                            'duration' => 60
+                        ]];
+                    }
                     ?>
                         <div class="form-group">
                             <label style="display: flex; justify-content: space-between; align-items: center;">
@@ -396,9 +400,10 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                                                     '1' => 'L', '2' => 'M', '3' => 'X',
                                                     '4' => 'J', '5' => 'V', '6' => 'S', '0' => 'D'
                                                 ];
-                                                $slotDays = $slot['days'] ?? [];
+                                                // Asegurar que slotDays sea array de integers
+                                                $slotDays = array_map('intval', (array)($slot['days'] ?? []));
                                                 foreach ($days as $value => $label):
-                                                    $checked = in_array((int)$value, (array)$slotDays) ? 'checked' : '';
+                                                    $checked = in_array((int)$value, $slotDays) ? 'checked' : '';
                                                 ?>
                                                     <label style="display: inline-flex; align-items: center; padding: 6px 10px; background: white; border: 2px solid <?php echo $checked ? '#10b981' : '#d1d5db'; ?>; border-radius: 6px; cursor: pointer;">
                                                         <input type="checkbox" name="schedule_slots[<?php echo $index; ?>][days][]" value="<?php echo $value; ?>" <?php echo $checked; ?> style="margin-right: 5px; cursor: pointer;">
