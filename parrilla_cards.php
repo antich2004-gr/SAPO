@@ -34,6 +34,7 @@ require_once INCLUDES_DIR . '/database.php';
 require_once INCLUDES_DIR . '/azuracast.php';
 require_once INCLUDES_DIR . '/programs.php';
 require_once INCLUDES_DIR . '/utils.php';
+require_once INCLUDES_DIR . '/cache.php';
 
 // SEGURIDAD: Rate limiting por IP para archivo público
 session_start();
@@ -122,6 +123,30 @@ if (isset($_GET['refresh']) && $_GET['refresh'] === '1') {
     }
 }
 $cacheTTL = $forceRefresh ? 0 : 600;
+
+// ====== SISTEMA DE CACHÉ HTML COMPLETO ======
+// Generar clave única para esta parrilla
+$cacheKey = "parrilla_html_{$station}_" . md5(serialize([
+    'station' => $station,
+    'widget_color' => $widgetColor ?? '',
+    'widget_bg' => $widgetBackgroundColor ?? '',
+    'widget_style' => $widgetStyle ?? '',
+    'font_size' => $widgetFontSize ?? ''
+]));
+
+// Intentar servir desde caché (3 minutos TTL)
+if (!$forceRefresh) {
+    $cachedHTML = cacheGet($cacheKey, 180); // 3 minutos
+    if ($cachedHTML !== null) {
+        // Cache HIT - servir directamente
+        header('X-Cache: HIT');
+        echo $cachedHTML;
+        exit;
+    }
+}
+
+// Cache MISS - continuar con generación normal
+header('X-Cache: MISS');
 
 $schedule = getAzuracastSchedule($station, $cacheTTL);
 if ($schedule === false) $schedule = [];
@@ -1387,6 +1412,13 @@ error_log(sprintf("PERFORMANCE: Preparación datos completada en %.3fs (antes de
 </body>
 </html>
 <?php
+// ====== GUARDAR HTML EN CACHÉ ======
+// Capturar todo el HTML generado desde el output buffer
+$generatedHTML = ob_get_contents();
+if (!empty($generatedHTML) && !$forceRefresh) {
+    cacheSet($cacheKey, $generatedHTML);
+}
+
 // Medición de rendimiento final
 if (isset($_START_TIME)) {
     $duration = microtime(true) - $_START_TIME;

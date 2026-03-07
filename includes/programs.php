@@ -1,6 +1,9 @@
 <?php
 // includes/programs.php - Funciones para gestión de información de programas
 
+// Cargar sistema de caché para invalidación automática
+require_once __DIR__ . '/cache.php';
+
 /**
  * Obtener ruta del archivo de programas de un usuario
  */
@@ -68,6 +71,8 @@ function saveProgramsDB($username, $data) {
     if ($result) {
         clearScheduleCache($username);
         clearPlaylistsCache($username);
+        // Invalidar caché HTML de parrilla
+        cacheInvalidateUser($username);
     }
 
     return $result;
