@@ -586,13 +586,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $podcastsFolder = trim($_POST['podcasts_folder'] ?? 'Podcasts');
         $azuracastApiUrl = trim($_POST['azuracast_api_url'] ?? '');
         $azuracastApiKey = trim($_POST['azuracast_api_key'] ?? '');
+        $recordingsMountBase = trim($_POST['recordings_mount_base'] ?? '');
 
         if (empty($basePath)) {
             $error = 'La ruta base es obligatoria';
         } elseif (!is_dir($basePath)) {
             $error = 'La ruta base no existe o no es accesible';
         } else {
-            if (saveConfig($basePath, $subsFolder, $podcastsFolder, $azuracastApiUrl, $azuracastApiKey)) {
+            if (saveConfig($basePath, $subsFolder, $podcastsFolder, $azuracastApiUrl, $azuracastApiKey, $recordingsMountBase)) {
                 $message = 'Configuracion guardada correctamente';
             } else {
                 $error = 'Error al guardar la configuracion';
@@ -681,11 +682,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $username = $_POST['username'] ?? '';
         $stationId = $_POST['station_id'] ?? '';
         $widgetColor = $_POST['widget_color'] ?? '#3b82f6';
+        $recordingsFolder = trim($_POST['recordings_folder'] ?? '');
 
         if (empty($username)) {
             $error = 'Usuario no especificado';
         } else {
-            if (updateAzuracastConfig($username, $stationId, $widgetColor)) {
+            if (updateAzuracastConfig($username, $stationId, $widgetColor, $recordingsFolder)) {
                 $message = "Configuración de AzuraCast actualizada para $username";
             } else {
                 $error = 'Error al actualizar la configuración';
