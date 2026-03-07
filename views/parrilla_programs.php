@@ -88,51 +88,76 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                 </div>
 
                 <div class="form-group">
-                    <label>Días de emisión: <small>(marcar los días en que se emite)</small></label>
-                    <div style="display: flex; flex-wrap: wrap; gap: 10px; padding: 10px; background: #f9fafb; border-radius: 6px;">
-                        <?php
-                        $days = [
-                            '1' => 'Lunes',
-                            '2' => 'Martes',
-                            '3' => 'Miércoles',
-                            '4' => 'Jueves',
-                            '5' => 'Viernes',
-                            '6' => 'Sábado',
-                            '0' => 'Domingo'
-                        ];
-                        foreach ($days as $value => $label):
-                        ?>
-                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                                <input type="checkbox" name="schedule_days[]" value="<?php echo $value; ?>" style="cursor: pointer;">
-                                <?php echo htmlEsc($label); ?>
-                            </label>
-                        <?php endforeach; ?>
+                    <label style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>📅 Horarios de Emisión:</span>
+                        <button type="button" onclick="addScheduleSlot()" class="btn" style="background: #10b981; color: white; padding: 6px 12px; font-size: 13px;">
+                            <span>➕</span> Añadir Horario
+                        </button>
+                    </label>
+                    <small style="display: block; margin-bottom: 15px; color: #6b7280;">
+                        Puedes añadir múltiples horarios si el programa se emite en diferentes días/horas
+                    </small>
+
+                    <div id="schedule-slots-container">
+                        <!-- Por defecto, crear un slot vacío -->
+                        <div class="schedule-slot" data-slot-index="0">
+                            <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 15px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                    <strong style="color: #374151; font-size: 14px;">Horario #1</strong>
+                                    <button type="button" onclick="removeScheduleSlot(this)" class="btn" style="background: #dc2626; color: white; padding: 4px 8px; font-size: 12px; display: none;">
+                                        🗑️ Eliminar
+                                    </button>
+                                </div>
+
+                                <div style="margin-bottom: 12px;">
+                                    <label style="font-size: 13px; color: #6b7280; margin-bottom: 8px; display: block;">Días de emisión:</label>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                        <?php
+                                        $days = [
+                                            '1' => 'L', '2' => 'M', '3' => 'X',
+                                            '4' => 'J', '5' => 'V', '6' => 'S', '0' => 'D'
+                                        ];
+                                        foreach ($days as $value => $label):
+                                        ?>
+                                            <label style="display: inline-flex; align-items: center; padding: 6px 10px; background: white; border: 2px solid #d1d5db; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                                                <input type="checkbox" name="schedule_slots[0][days][]" value="<?php echo $value; ?>" style="margin-right: 5px; cursor: pointer;">
+                                                <span><?php echo $label; ?></span>
+                                            </label>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <div>
+                                        <label style="font-size: 13px; color: #6b7280; margin-bottom: 6px; display: block;">Hora inicio:</label>
+                                        <input type="time" name="schedule_slots[0][start_time]" value=""
+                                               style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 13px; color: #6b7280; margin-bottom: 6px; display: block;">Duración:</label>
+                                        <select name="schedule_slots[0][duration]"
+                                                style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+                                            <option value="15">15min</option>
+                                            <option value="30">30min</option>
+                                            <option value="45">45min</option>
+                                            <option value="60" selected>1h</option>
+                                            <option value="90">1h 30m</option>
+                                            <option value="120">2h</option>
+                                            <option value="150">2h 30m</option>
+                                            <option value="180">3h</option>
+                                            <option value="240">4h</option>
+                                            <option value="300">5h</option>
+                                            <option value="360">6h</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <small style="color: #6b7280;">
-                        Si no seleccionas ningún día, el programa solo aparecerá cuando Radiobot lo programe
-                    </small>
-                </div>
 
-                <div class="form-group">
-                    <label>Hora de inicio: <small>(formato 24h)</small></label>
-                    <input type="time" name="schedule_start_time"
-                           placeholder="20:00">
-                    <small style="color: #6b7280;">
-                        Hora a la que comienza la emisión (ej: 20:00)
+                    <small style="color: #6b7280; display: block; margin-top: 10px;">
+                        💡 Si no seleccionas ningún día, el programa solo aparecerá cuando Radiobot lo programe
                     </small>
-                </div>
-
-                <div class="form-group">
-                    <label>Duración:</label>
-                    <select name="schedule_duration">
-                        <option value="15">15 minutos</option>
-                        <option value="30">30 minutos</option>
-                        <option value="45">45 minutos</option>
-                        <option value="60" selected>1 hora</option>
-                        <option value="90">1h 30m</option>
-                        <option value="120">2 horas</option>
-                        <option value="180">3 horas</option>
-                    </select>
                 </div>
 
                 <div class="form-group">
@@ -318,44 +343,111 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                     // Mostrar campos de horario solo si es programa en directo
                     $isLiveProgram = ($programInfo['playlist_type'] ?? 'program') === 'live';
                     if ($isLiveProgram):
+                        // ====== MIGRACIÓN AUTOMÁTICA: Formato antiguo → Nuevo ======
+                        $scheduleSlots = [];
+
+                        // PRIORIDAD 1: Leer schedule_slots (formato nuevo)
+                        if (!empty($programInfo['schedule_slots'])) {
+                            $scheduleSlots = $programInfo['schedule_slots'];
+                        }
+                        // PRIORIDAD 2: Migrar desde formato antiguo
+                        elseif (!empty($programInfo['schedule_days'])) {
+                            $scheduleSlots = [[
+                                'days' => $programInfo['schedule_days'],
+                                'start_time' => $programInfo['schedule_start_time'] ?? '',
+                                'duration' => intval($programInfo['schedule_duration'] ?? 60)
+                            ]];
+                        }
+
+                        // Si no hay slots, crear uno vacío
+                        if (empty($scheduleSlots)) {
+                            $scheduleSlots = [[
+                                'days' => [],
+                                'start_time' => '',
+                                'duration' => 60
+                            ]];
+                        }
                     ?>
                         <div class="form-group">
-                            <label>Días de emisión: <small>(marcar los días en que se emite)</small></label>
-                            <div style="display: flex; flex-wrap: wrap; gap: 10px; padding: 10px; background: #f9fafb; border-radius: 6px;">
-                                <?php
-                                $days = [
-                                    '1' => 'Lunes',
-                                    '2' => 'Martes',
-                                    '3' => 'Miércoles',
-                                    '4' => 'Jueves',
-                                    '5' => 'Viernes',
-                                    '6' => 'Sábado',
-                                    '0' => 'Domingo'
-                                ];
-                                $currentScheduleDays = $programInfo['schedule_days'] ?? [];
-                                foreach ($days as $value => $label):
-                                    $checked = in_array($value, $currentScheduleDays) ? 'checked' : '';
-                                ?>
-                                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                                        <input type="checkbox" name="schedule_days[]" value="<?php echo $value; ?>" <?php echo $checked; ?> style="cursor: pointer;">
-                                        <?php echo htmlEsc($label); ?>
-                                    </label>
+                            <label style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>📅 Horarios de Emisión:</span>
+                                <button type="button" onclick="addScheduleSlot()" class="btn" style="background: #10b981; color: white; padding: 6px 12px; font-size: 13px;">
+                                    <span>➕</span> Añadir Horario
+                                </button>
+                            </label>
+                            <small style="display: block; margin-bottom: 15px; color: #6b7280;">
+                                Puedes añadir múltiples horarios si el programa se emite en diferentes días/horas
+                            </small>
+
+                            <div id="schedule-slots-container">
+                                <?php foreach ($scheduleSlots as $index => $slot): ?>
+                                <div class="schedule-slot" data-slot-index="<?php echo $index; ?>">
+                                    <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 15px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                            <strong style="color: #374151; font-size: 14px;">Horario #<?php echo $index + 1; ?></strong>
+                                            <button type="button" onclick="removeScheduleSlot(this)" class="btn" style="background: #dc2626; color: white; padding: 4px 8px; font-size: 12px; <?php echo count($scheduleSlots) <= 1 ? 'display: none;' : ''; ?>">
+                                                🗑️ Eliminar
+                                            </button>
+                                        </div>
+
+                                        <div style="margin-bottom: 12px;">
+                                            <label style="font-size: 13px; color: #6b7280; margin-bottom: 8px; display: block;">Días de emisión:</label>
+                                            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                                <?php
+                                                $days = [
+                                                    '1' => 'L', '2' => 'M', '3' => 'X',
+                                                    '4' => 'J', '5' => 'V', '6' => 'S', '0' => 'D'
+                                                ];
+                                                $slotDays = $slot['days'] ?? [];
+                                                foreach ($days as $value => $label):
+                                                    $checked = in_array((int)$value, (array)$slotDays) ? 'checked' : '';
+                                                ?>
+                                                    <label style="display: inline-flex; align-items: center; padding: 6px 10px; background: white; border: 2px solid <?php echo $checked ? '#10b981' : '#d1d5db'; ?>; border-radius: 6px; cursor: pointer;">
+                                                        <input type="checkbox" name="schedule_slots[<?php echo $index; ?>][days][]" value="<?php echo $value; ?>" <?php echo $checked; ?> style="margin-right: 5px; cursor: pointer;">
+                                                        <span><?php echo $label; ?></span>
+                                                    </label>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        </div>
+
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                            <div>
+                                                <label style="font-size: 13px; color: #6b7280; margin-bottom: 6px; display: block;">Hora inicio:</label>
+                                                <input type="time" name="schedule_slots[<?php echo $index; ?>][start_time]"
+                                                       value="<?php echo htmlEsc($slot['start_time'] ?? ''); ?>"
+                                                       style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+                                            </div>
+                                            <div>
+                                                <label style="font-size: 13px; color: #6b7280; margin-bottom: 6px; display: block;">Duración:</label>
+                                                <select name="schedule_slots[<?php echo $index; ?>][duration]"
+                                                        style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+                                                    <?php
+                                                    $currentDuration = intval($slot['duration'] ?? 60);
+                                                    $durations = [
+                                                        15 => '15min', 30 => '30min', 45 => '45min', 60 => '1h', 90 => '1h 30m',
+                                                        120 => '2h', 150 => '2h 30m', 180 => '3h', 240 => '4h', 300 => '5h', 360 => '6h'
+                                                    ];
+                                                    foreach ($durations as $mins => $label):
+                                                    ?>
+                                                        <option value="<?php echo $mins; ?>" <?php echo $currentDuration === $mins ? 'selected' : ''; ?>><?php echo $label; ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                                 <?php endforeach; ?>
                             </div>
-                            <small style="color: #6b7280;">
-                                Marca los días en que se emite el programa en directo
+
+                            <small style="color: #6b7280; display: block; margin-top: 10px;">
+                                💡 Marca los días y horas en que se emite el programa en directo
                             </small>
                         </div>
 
-                        <div class="form-group">
-                            <label>Hora de inicio: <small>(formato 24h)</small></label>
-                            <input type="time" name="schedule_start_time"
-                                   value="<?php echo htmlEsc($programInfo['schedule_start_time'] ?? ''); ?>"
-                                   placeholder="20:00">
-                            <small style="color: #6b7280;">
-                                Hora a la que comienza la emisión (ej: 20:00)
-                            </small>
-                        </div>
+                        <script>
+                        // Inicializar contador desde el último índice
+                        let slotCounter = <?php echo count($scheduleSlots); ?>;
+                        </script>
 
                     <?php endif; ?>
 
@@ -593,3 +685,139 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
         <?php endif; ?>
     </div>
 </div>
+
+<script>
+// ====== JAVASCRIPT PARA HORARIOS MÚLTIPLES ======
+let slotCounter = 1; // Ya tenemos el slot 0 por defecto
+
+/**
+ * Añadir nuevo bloque de horario
+ */
+function addScheduleSlot() {
+    const container = document.getElementById('schedule-slots-container');
+    const slotIndex = slotCounter++;
+
+    const slotHTML = `
+        <div class="schedule-slot" data-slot-index="${slotIndex}">
+            <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <strong style="color: #374151; font-size: 14px;">Horario #${slotIndex + 1}</strong>
+                    <button type="button" onclick="removeScheduleSlot(this)" class="btn" style="background: #dc2626; color: white; padding: 4px 8px; font-size: 12px;">
+                        🗑️ Eliminar
+                    </button>
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <label style="font-size: 13px; color: #6b7280; margin-bottom: 8px; display: block;">Días de emisión:</label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <label style="display: inline-flex; align-items: center; padding: 6px 10px; background: white; border: 2px solid #d1d5db; border-radius: 6px; cursor: pointer;">
+                            <input type="checkbox" name="schedule_slots[${slotIndex}][days][]" value="1" style="margin-right: 5px; cursor: pointer;">
+                            <span>L</span>
+                        </label>
+                        <label style="display: inline-flex; align-items: center; padding: 6px 10px; background: white; border: 2px solid #d1d5db; border-radius: 6px; cursor: pointer;">
+                            <input type="checkbox" name="schedule_slots[${slotIndex}][days][]" value="2" style="margin-right: 5px; cursor: pointer;">
+                            <span>M</span>
+                        </label>
+                        <label style="display: inline-flex; align-items: center; padding: 6px 10px; background: white; border: 2px solid #d1d5db; border-radius: 6px; cursor: pointer;">
+                            <input type="checkbox" name="schedule_slots[${slotIndex}][days][]" value="3" style="margin-right: 5px; cursor: pointer;">
+                            <span>X</span>
+                        </label>
+                        <label style="display: inline-flex; align-items: center; padding: 6px 10px; background: white; border: 2px solid #d1d5db; border-radius: 6px; cursor: pointer;">
+                            <input type="checkbox" name="schedule_slots[${slotIndex}][days][]" value="4" style="margin-right: 5px; cursor: pointer;">
+                            <span>J</span>
+                        </label>
+                        <label style="display: inline-flex; align-items: center; padding: 6px 10px; background: white; border: 2px solid #d1d5db; border-radius: 6px; cursor: pointer;">
+                            <input type="checkbox" name="schedule_slots[${slotIndex}][days][]" value="5" style="margin-right: 5px; cursor: pointer;">
+                            <span>V</span>
+                        </label>
+                        <label style="display: inline-flex; align-items: center; padding: 6px 10px; background: white; border: 2px solid #d1d5db; border-radius: 6px; cursor: pointer;">
+                            <input type="checkbox" name="schedule_slots[${slotIndex}][days][]" value="6" style="margin-right: 5px; cursor: pointer;">
+                            <span>S</span>
+                        </label>
+                        <label style="display: inline-flex; align-items: center; padding: 6px 10px; background: white; border: 2px solid #d1d5db; border-radius: 6px; cursor: pointer;">
+                            <input type="checkbox" name="schedule_slots[${slotIndex}][days][]" value="0" style="margin-right: 5px; cursor: pointer;">
+                            <span>D</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label style="font-size: 13px; color: #6b7280; margin-bottom: 6px; display: block;">Hora inicio:</label>
+                        <input type="time" name="schedule_slots[${slotIndex}][start_time]" value=""
+                               style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 13px; color: #6b7280; margin-bottom: 6px; display: block;">Duración:</label>
+                        <select name="schedule_slots[${slotIndex}][duration]"
+                                style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+                            <option value="15">15min</option>
+                            <option value="30">30min</option>
+                            <option value="45">45min</option>
+                            <option value="60" selected>1h</option>
+                            <option value="90">1h 30m</option>
+                            <option value="120">2h</option>
+                            <option value="150">2h 30m</option>
+                            <option value="180">3h</option>
+                            <option value="240">4h</option>
+                            <option value="300">5h</option>
+                            <option value="360">6h</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', slotHTML);
+    updateSlotNumbers();
+    updateDeleteButtons();
+}
+
+/**
+ * Eliminar bloque de horario
+ */
+function removeScheduleSlot(button) {
+    const slot = button.closest('.schedule-slot');
+    if (slot) {
+        slot.remove();
+        updateSlotNumbers();
+        updateDeleteButtons();
+    }
+}
+
+/**
+ * Actualizar numeración de slots
+ */
+function updateSlotNumbers() {
+    const slots = document.querySelectorAll('.schedule-slot');
+    slots.forEach((slot, index) => {
+        const title = slot.querySelector('strong');
+        if (title) {
+            title.textContent = `Horario #${index + 1}`;
+        }
+    });
+}
+
+/**
+ * Mostrar/ocultar botones de eliminar
+ * Solo mostrar si hay más de un slot
+ */
+function updateDeleteButtons() {
+    const slots = document.querySelectorAll('.schedule-slot');
+    const deleteButtons = document.querySelectorAll('.schedule-slot button[onclick*="removeScheduleSlot"]');
+
+    deleteButtons.forEach(btn => {
+        if (slots.length > 1) {
+            btn.style.display = 'inline-block';
+        } else {
+            btn.style.display = 'none';
+        }
+    });
+}
+
+// Inicializar al cargar
+document.addEventListener('DOMContentLoaded', function() {
+    updateDeleteButtons();
+});
+</script>
