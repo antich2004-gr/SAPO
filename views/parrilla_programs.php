@@ -255,11 +255,15 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
 
         if ($programInfo !== null):
         ?>
-            <div class="section" style="background: #f0f9ff; border: 2px solid #3b82f6;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3 style="margin: 0;">Editar: <?php echo htmlEsc($editingProgram); ?></h3>
-                    <a href="?page=parrilla&section=programs" class="btn btn-secondary">❌ Cancelar</a>
-                </div>
+            <div id="editProgramModal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.5); overflow-y:auto;">
+                <div style="background:#fff; border-radius:12px; max-width:760px; margin:40px auto; padding:0; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                    <!-- Cabecera del modal -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:20px 24px; border-bottom:1px solid #e5e7eb; background:#f0f9ff; border-radius:12px 12px 0 0;">
+                        <h3 style="margin:0; font-size:18px; color:#1e40af;">✏️ Editar: <?php echo htmlEsc($editingProgram); ?></h3>
+                        <a href="?page=parrilla&section=programs" style="background:none; border:none; font-size:22px; cursor:pointer; color:#6b7280; line-height:1; text-decoration:none;" title="Cerrar">✕</a>
+                    </div>
+                    <!-- Contenido del formulario -->
+                    <div style="padding:24px;">
 
                 <form method="POST">
                     <input type="hidden" name="action" value="save_program">
@@ -579,7 +583,9 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                         <a href="?page=parrilla&section=programs" class="btn btn-secondary">Cancelar</a>
                     </div>
                 </form>
-            </div>
+                    </div><!-- /padding -->
+                </div><!-- /modal-box -->
+            </div><!-- /modal-overlay -->
         <?php else: ?>
             <div class="alert alert-error">Programa no encontrado</div>
         <?php endif; ?>
@@ -832,5 +838,19 @@ function updateDeleteButtons() {
 // Inicializar al cargar
 document.addEventListener('DOMContentLoaded', function() {
     updateDeleteButtons();
+
+    // Abrir modal de edición si la URL tiene ?edit=...
+    const modal = document.getElementById('editProgramModal');
+    if (modal) {
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+
+        // Cerrar al hacer clic en el fondo
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                window.location.href = '?page=parrilla&section=programs';
+            }
+        });
+    }
 });
 </script>
