@@ -9,48 +9,38 @@
  * Usa el campo recordings_storage_location.path devuelto por la API de AzuraCast
  */
 function getRecordingsDir($username) {
-    // Comprobar primero si hay un slug manual configurado en SAPO
-    $azConfig = getAzuracastConfig($username);
-    $manualSlug = $azConfig['azuracast_short_name'] ?? '';
-
     $stationInfo = getStationInfo($username);
 
     if ($stationInfo === null) {
         error_log("RECORDINGS: No se pudo obtener info de la estación para usuario: $username");
-        // Fallback: usar slug manual si está configurado, si no el username
-        $slug = !empty($manualSlug) ? $manualSlug : $username;
-        return "/var/azuracast/stations/{$slug}/recordings";
+        return "/var/azuracast/stations/{$username}/recordings";
     }
 
-    // recordings_storage_location puede ser un objeto con 'path' (versiones nuevas)
-    // o simplemente el ID entero (versiones anteriores de AzuraCast)
+    // Opción 1: recordings_storage_location.path (versiones nuevas de AzuraCast, endpoint admin)
     $recStorageLoc = $stationInfo['recordings_storage_location'] ?? null;
     if (is_array($recStorageLoc) && !empty($recStorageLoc['path'])) {
-        error_log("RECORDINGS: Ruta de grabaciones obtenida desde recordings_storage_location.path: " . $recStorageLoc['path']);
+        error_log("RECORDINGS: Ruta desde recordings_storage_location.path: " . $recStorageLoc['path']);
         return rtrim($recStorageLoc['path'], '/');
     }
 
-    // Fallback principal: radio_base_dir devuelve la ruta real del servidor,
-    // incluyendo mayúsculas/minúsculas correctas del nombre de la emisora
+    // Opción 2: radio_base_dir (endpoint admin, ruta real del servidor)
     $radioBaseDir = $stationInfo['radio_base_dir'] ?? null;
     if (!empty($radioBaseDir)) {
         $path = rtrim($radioBaseDir, '/') . '/recordings';
-        error_log("RECORDINGS: Ruta de grabaciones construida desde radio_base_dir: $path");
+        error_log("RECORDINGS: Ruta desde radio_base_dir: $path");
         return $path;
     }
 
-    // Fallback: usar short_name de la API
+    // Opción 3: short_name de la API (endpoint público o admin)
     $shortName = $stationInfo['short_name'] ?? $stationInfo['name'] ?? null;
     if (!empty($shortName)) {
         $path = "/var/azuracast/stations/{$shortName}/recordings";
-        error_log("RECORDINGS: Ruta de grabaciones construida desde short_name: $path");
+        error_log("RECORDINGS: Ruta desde short_name: $path");
         return $path;
     }
 
-    // Último fallback: slug manual configurado en SAPO, o username
-    $slug = !empty($manualSlug) ? $manualSlug : $username;
-    error_log("RECORDINGS: Último fallback, usando slug: $slug");
-    return "/var/azuracast/stations/{$slug}/recordings";
+    error_log("RECORDINGS: No se pudo determinar la ruta para usuario: $username");
+    return "/var/azuracast/stations/{$username}/recordings";
 }
 
 /**

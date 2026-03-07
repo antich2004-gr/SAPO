@@ -366,15 +366,11 @@ function savePlaylistsToCache($username, $data) {
  * @param string $logoUrl URL del logo
  * @return bool True si se guardó correctamente
  */
-function updateAzuracastConfig($username, $stationId, $widgetColor = '#3b82f6', $showLogo = false, $logoUrl = '', $widgetStyle = 'modern', $widgetFontSize = 'medium', $streamUrl = '', $widgetBackgroundColor = '#ffffff', $azuracastShortName = '') {
+function updateAzuracastConfig($username, $stationId, $widgetColor = '#3b82f6', $showLogo = false, $logoUrl = '', $widgetStyle = 'modern', $widgetFontSize = 'medium', $streamUrl = '', $widgetBackgroundColor = '#ffffff') {
     $userData = getUserDB($username);
-
-    // Preservar azuracast_short_name si no se pasa uno nuevo
-    $existingShortName = $userData['azuracast']['azuracast_short_name'] ?? '';
 
     $userData['azuracast'] = [
         'station_id' => $stationId !== '' ? intval($stationId) : null,
-        'azuracast_short_name' => $azuracastShortName !== '' ? trim($azuracastShortName) : $existingShortName,
         'widget_color' => $widgetColor,
         'widget_background_color' => $widgetBackgroundColor,
         'show_logo' => (bool)$showLogo,
@@ -397,7 +393,6 @@ function getAzuracastConfig($username) {
     $userData = getUserDB($username);
     return $userData['azuracast'] ?? [
         'station_id' => null,
-        'azuracast_short_name' => '',
         'widget_color' => '#3b82f6',
         'widget_background_color' => '#ffffff',
         'show_logo' => false,
