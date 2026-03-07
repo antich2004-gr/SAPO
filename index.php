@@ -395,25 +395,30 @@ initSession();
     // AJAX HANDLERS - GRABACIONES
     // ====================================================================
 
-    // AJAX: Diagnóstico de ruta de grabaciones (temporal, solo admin)
-    if (isset($_GET['action']) && $_GET['action'] == 'debug_recordings_path' && isLoggedIn() && isAdmin()) {
+    // AJAX: Diagnóstico de ruta de grabaciones (temporal)
+    if (isset($_GET['action']) && $_GET['action'] == 'debug_recordings_path' && isLoggedIn()) {
         header('Content-Type: application/json');
 
-        $targetUser = $_GET['user'] ?? '';
-        if (empty($targetUser)) {
-            echo json_encode(['error' => 'Falta parámetro user']);
-            exit;
+        // Admin puede consultar cualquier usuario; usuario normal solo el suyo
+        if (isAdmin()) {
+            $targetUser = $_GET['user'] ?? $_SESSION['username'];
+        } else {
+            $targetUser = $_SESSION['username'];
         }
 
         $stationInfo = getStationInfo($targetUser);
         $resolvedPath = getRecordingsDir($targetUser);
+        $dirExists = is_dir($resolvedPath);
 
         echo json_encode([
+            'user' => $targetUser,
             'resolved_path' => $resolvedPath,
+            'dir_exists' => $dirExists,
+            'station_api_ok' => $stationInfo !== null,
+            'recordings_storage_location' => $stationInfo['recordings_storage_location'] ?? 'NO PRESENTE EN API',
+            'radio_base_dir' => $stationInfo['radio_base_dir'] ?? 'NO PRESENTE EN API',
+            'short_name' => $stationInfo['short_name'] ?? 'NO PRESENTE EN API',
             'station_info_keys' => $stationInfo ? array_keys($stationInfo) : null,
-            'recordings_storage_location' => $stationInfo['recordings_storage_location'] ?? 'NO PRESENTE',
-            'radio_base_dir' => $stationInfo['radio_base_dir'] ?? 'NO PRESENTE',
-            'short_name' => $stationInfo['short_name'] ?? 'NO PRESENTE',
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         exit;
     }
