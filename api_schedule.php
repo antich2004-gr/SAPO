@@ -99,12 +99,31 @@ foreach ($programsData as $programKey => $programInfo) {
         // Saltar programas ocultos
         if (!empty($programInfo['hidden_from_schedule'])) continue;
 
-        // Obtener días y horarios
-        $scheduleDays = $programInfo['schedule_days'] ?? [];
-        $startTime = $programInfo['schedule_start_time'] ?? '';
-        $duration = (int)($programInfo['schedule_duration'] ?? 60);
+        // ====== SOPORTE PARA HORARIOS MÚLTIPLES (schedule_slots) ======
+        // Obtener slots de horarios con retrocompatibilidad
+        $slots = [];
 
-        if (!empty($scheduleDays) && !empty($startTime)) {
+        // PRIORIDAD 1: Leer schedule_slots (formato nuevo)
+        if (!empty($programInfo['schedule_slots'])) {
+            $slots = $programInfo['schedule_slots'];
+        }
+        // PRIORIDAD 2: Migrar desde formato antiguo
+        elseif (!empty($programInfo['schedule_days']) && !empty($programInfo['schedule_start_time'])) {
+            $slots = [[
+                'days' => $programInfo['schedule_days'],
+                'start_time' => $programInfo['schedule_start_time'],
+                'duration' => (int)($programInfo['schedule_duration'] ?? 60)
+            ]];
+        }
+
+        // Procesar cada bloque de horario
+        foreach ($slots as $slot) {
+            $scheduleDays = $slot['days'] ?? [];
+            $startTime = $slot['start_time'] ?? '';
+            $duration = (int)($slot['duration'] ?? 60);
+
+            if (empty($scheduleDays) || empty($startTime)) continue;
+
             foreach ($scheduleDays as $day) {
                 $startDateTime = DateTime::createFromFormat('H:i', $startTime);
                 if (!$startDateTime) continue;
@@ -121,14 +140,16 @@ foreach ($programsData as $programKey => $programInfo) {
 
                 $programData = [
                     'title' => $displayTitle,
-                    'description' => $programInfo['description'] ?? '',
-                    'image' => $programInfo['image_url'] ?? '',
+                    'description' => $programInfo['short_description'] ?? $programInfo['description'] ?? '',
+                    'image' => $programInfo['image'] ?? $programInfo['image_url'] ?? '',
                     'type' => 'live',
                     'url' => $programInfo['url'] ?? '',
                     'social' => [
                         'twitter' => $programInfo['social_twitter'] ?? '',
                         'instagram' => $programInfo['social_instagram'] ?? '',
-                        'facebook' => $programInfo['social_facebook'] ?? ''
+                        'facebook' => $programInfo['social_facebook'] ?? '',
+                        'mastodon' => $programInfo['social_mastodon'] ?? '',
+                        'bluesky' => $programInfo['social_bluesky'] ?? ''
                     ]
                 ];
 

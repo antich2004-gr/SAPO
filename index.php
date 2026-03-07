@@ -612,11 +612,41 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $typeName = $playlistType === 'live' ? 'en directo' : 'enlatado';
                 $error = "Ya existe un programa $typeName con ese nombre";
             } else {
-                // Procesar días de emisión
-                $scheduleDays = $_POST['schedule_days'] ?? [];
-                if (!is_array($scheduleDays)) {
-                    $scheduleDays = [];
+                // ====== PROCESAR HORARIOS MÚLTIPLES (schedule_slots) ======
+                // Soporte para formato nuevo (múltiples horarios) con retrocompatibilidad total
+                $scheduleSlots = [];
+
+                if (isset($_POST['schedule_slots']) && is_array($_POST['schedule_slots'])) {
+                    // Formato NUEVO: schedule_slots
+                    foreach ($_POST['schedule_slots'] as $slot) {
+                        // Validar que el slot tenga días y hora
+                        if (!empty($slot['days']) && !empty($slot['start_time'])) {
+                            $scheduleSlots[] = [
+                                'days' => array_map('intval', (array)$slot['days']),
+                                'start_time' => trim($slot['start_time']),
+                                'duration' => intval($slot['duration'] ?? 60)
+                            ];
+                        }
+                    }
+                } elseif (isset($_POST['schedule_days'])) {
+                    // Formato ANTIGUO: schedule_days (retrocompatibilidad)
+                    // Migrar automáticamente al formato nuevo
+                    $scheduleDays = $_POST['schedule_days'] ?? [];
+                    if (!empty($scheduleDays)) {
+                        $scheduleSlots[] = [
+                            'days' => array_map('intval', (array)$scheduleDays),
+                            'start_time' => trim($_POST['schedule_start_time'] ?? ''),
+                            'duration' => intval($_POST['schedule_duration'] ?? 60)
+                        ];
+                    }
                 }
+
+                // RETROCOMPATIBILIDAD: Guardar TAMBIÉN en formato antiguo (primer slot)
+                // Esto garantiza que código antiguo siga funcionando
+                $firstSlot = $scheduleSlots[0] ?? null;
+                $scheduleDays = $firstSlot ? $firstSlot['days'] : [];
+                $scheduleStartTime = $firstSlot ? $firstSlot['start_time'] : '';
+                $scheduleDuration = $firstSlot ? $firstSlot['duration'] : 60;
 
                 $programInfo = [
                     'original_name' => $programName,  // Guardar nombre original
@@ -634,9 +664,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     'social_bluesky' => trim($_POST['social_bluesky'] ?? ''),
                     'social_facebook' => trim($_POST['social_facebook'] ?? ''),
                     'rss_feed' => trim($_POST['rss_feed'] ?? ''),
+                    // FORMATO NUEVO: múltiples horarios
+                    'schedule_slots' => $scheduleSlots,
+                    // FORMATO ANTIGUO: mantener por retrocompatibilidad
                     'schedule_days' => $scheduleDays,
-                    'schedule_start_time' => trim($_POST['schedule_start_time'] ?? ''),
-                    'schedule_duration' => (int)($_POST['schedule_duration'] ?? 60),
+                    'schedule_start_time' => $scheduleStartTime,
+                    'schedule_duration' => $scheduleDuration,
                     'created_at' => date('Y-m-d H:i:s')
                 ];
 
@@ -697,6 +730,41 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } else {
             $playlistType = trim($_POST['playlist_type'] ?? 'program');
 
+            // ====== PROCESAR HORARIOS MÚLTIPLES (schedule_slots) ======
+            $scheduleSlots = [];
+
+            // Solo procesar horarios si es programa en directo
+            if ($playlistType === 'live') {
+                if (isset($_POST['schedule_slots']) && is_array($_POST['schedule_slots'])) {
+                    // Formato NUEVO: schedule_slots
+                    foreach ($_POST['schedule_slots'] as $slot) {
+                        if (!empty($slot['days']) && !empty($slot['start_time'])) {
+                            $scheduleSlots[] = [
+                                'days' => array_map('intval', (array)$slot['days']),
+                                'start_time' => trim($slot['start_time']),
+                                'duration' => intval($slot['duration'] ?? 60)
+                            ];
+                        }
+                    }
+                } elseif (isset($_POST['schedule_days'])) {
+                    // Formato ANTIGUO: schedule_days (retrocompatibilidad)
+                    $scheduleDays = $_POST['schedule_days'] ?? [];
+                    if (!empty($scheduleDays)) {
+                        $scheduleSlots[] = [
+                            'days' => array_map('intval', (array)$scheduleDays),
+                            'start_time' => trim($_POST['schedule_start_time'] ?? ''),
+                            'duration' => intval($_POST['schedule_duration'] ?? 60)
+                        ];
+                    }
+                }
+            }
+
+            // RETROCOMPATIBILIDAD: Guardar TAMBIÉN en formato antiguo (primer slot)
+            $firstSlot = $scheduleSlots[0] ?? null;
+            $scheduleDays = $firstSlot ? $firstSlot['days'] : [];
+            $scheduleStartTime = $firstSlot ? $firstSlot['start_time'] : '';
+            $scheduleDuration = $firstSlot ? $firstSlot['duration'] : 60;
+
             $programInfo = [
                 'display_title' => trim($_POST['display_title'] ?? ''),
                 'playlist_type' => $playlistType,
@@ -713,19 +781,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'social_facebook' => trim($_POST['social_facebook'] ?? ''),
                 'rss_feed' => trim($_POST['rss_feed'] ?? ''),
                 'hidden_from_schedule' => isset($_POST['hidden_from_schedule']) ? true : false,
-                'schedule_duration' => (int)($_POST['schedule_duration'] ?? 60)
+                // FORMATO NUEVO: múltiples horarios
+                'schedule_slots' => $scheduleSlots,
+                // FORMATO ANTIGUO: mantener por retrocompatibilidad
+                'schedule_days' => $scheduleDays,
+                'schedule_start_time' => $scheduleStartTime,
+                'schedule_duration' => $scheduleDuration
             ];
-
-            // Solo guardar campos de horario de días/hora si es programa en directo
-            if ($playlistType === 'live') {
-                $scheduleDays = $_POST['schedule_days'] ?? [];
-                if (!is_array($scheduleDays)) {
-                    $scheduleDays = [];
-                }
-
-                $programInfo['schedule_days'] = $scheduleDays;
-                $programInfo['schedule_start_time'] = trim($_POST['schedule_start_time'] ?? '');
-            }
 
             if (saveProgramInfo($username, $programName, $programInfo)) {
                 $message = "Información del programa guardada correctamente";
