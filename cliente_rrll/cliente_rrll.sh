@@ -372,33 +372,39 @@ echo "⏱️ Verificando duración de archivos por carpeta..."
 
 DURACIONES_FILE="$CONFIG_DIR/duraciones.txt"
 declare -A MAPA_DURACIONES
-declare -A MAPA_TIEMPO_SEG
+declare -A MAPA_BASE_SEG
+declare -A MAPA_MARGENES
 
-# Definir límites con 5 minutos extra (en segundos)
+# Duración base en segundos (sin margen)
+MAPA_BASE_SEG["30M"]=1800     # 30 min
+MAPA_BASE_SEG["1H"]=3600      # 60 min
+MAPA_BASE_SEG["1H30"]=5400    # 90 min
+MAPA_BASE_SEG["2H"]=7200      # 120 min
+MAPA_BASE_SEG["2H30"]=9000    # 150 min
+MAPA_BASE_SEG["3H"]=10800     # 180 min
 
-MAPA_TIEMPO_SEG["30M"]=2100     # 35 min
-MAPA_TIEMPO_SEG["1H"]=3900      # 65 min
-MAPA_TIEMPO_SEG["1H30"]=5700    # 95 min
-MAPA_TIEMPO_SEG["2H"]=7500      # 125 min
-MAPA_TIEMPO_SEG["2H30"]=9300    # 155 min
-MAPA_TIEMPO_SEG["3H"]=11100     # 185 min    # 185 min  # 185 min
-
-
-
-# Leer archivo de configuración
+# Leer archivo de configuración (formato: carpeta:clave  o  carpeta:clave:margen_min)
 if [[ -f "$DURACIONES_FILE" ]]; then
-    while IFS=':' read -r carpeta clave; do
+    while IFS=':' read -r carpeta clave margen_campo; do
         carpeta=$(echo "$carpeta" | xargs)
         clave=$(echo "$clave" | xargs)
-        if [[ -n "$carpeta" && -n "$clave" && -n "${MAPA_TIEMPO_SEG[$clave]:-}" ]]; then
-            MAPA_DURACIONES["$carpeta"]="${MAPA_TIEMPO_SEG[$clave]}"
+        margen_campo=$(echo "${margen_campo:-5}" | xargs)
+        if [[ -n "$carpeta" && -n "$clave" && -n "${MAPA_BASE_SEG[$clave]:-}" ]]; then
+            margen_min=5
+            if [[ "$margen_campo" =~ ^[0-9]+$ && "$margen_campo" -gt 0 ]]; then
+                margen_min=$margen_campo
+            fi
+            MAPA_DURACIONES["$carpeta"]="${MAPA_BASE_SEG[$clave]}"
+            MAPA_MARGENES["$carpeta"]=$margen_min
         fi
     done < "$DURACIONES_FILE"
 fi
 
 # Aplicar verificación por carpeta
 for carpeta in "${!MAPA_DURACIONES[@]}"; do
-    umbral=${MAPA_DURACIONES[$carpeta]}
+    base_seg=${MAPA_DURACIONES[$carpeta]}
+    margen_min=${MAPA_MARGENES[$carpeta]:-5}
+    umbral=$(( base_seg + margen_min * 60 ))
 
     if [[ "$carpeta" == "$carpeta" && "${MAPA_TIEMPO_SEG[$carpeta]+x}" ]]; then
         # Carpeta tipo 1H:1H → recorrer subcarpetas de Podcast/1H/

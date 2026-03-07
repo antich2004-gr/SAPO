@@ -262,7 +262,7 @@ function writeServerList($username, $podcasts) {
     return file_put_contents($path, $content) !== false;
 }
 
-function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracion = '') {
+function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracion = '', $margen = 5) {
     $podcasts = readServerList($username);
     
     foreach ($podcasts as $podcast) {
@@ -294,8 +294,10 @@ function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracio
         // Guardar duracion si no es vacia
         if (!empty($duracion)) {
             $duraciones = readDuraciones($username);
+            $margenes = readMargenes($username);
             $duraciones[$sanitizedName] = $duracion;
-            writeDuraciones($username, $duraciones);
+            $margenes[$sanitizedName] = (int)$margen;
+            writeDuraciones($username, $duraciones, $margenes);
         }
 
         return [
@@ -309,7 +311,7 @@ function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracio
     }
 }
 
-function editPodcast($username, $index, $url, $category, $name, $caducidad = 30, $duracion = '') {
+function editPodcast($username, $index, $url, $category, $name, $caducidad = 30, $duracion = '', $margen = 5) {
     $podcasts = readServerList($username);
 
     // Ordenar alfabéticamente igual que en user.php para que los índices coincidan
@@ -435,17 +437,21 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
 
         // Actualizar duraciones.txt
         $duraciones = readDuraciones($username);
+        $margenes = readMargenes($username);
         if (!empty($duracion)) {
             $duraciones[$sanitizedName] = $duracion;
+            $margenes[$sanitizedName] = (int)$margen;
         } else {
             // Si esta vacio, eliminar la entrada
             unset($duraciones[$sanitizedName]);
+            unset($margenes[$sanitizedName]);
         }
         // Si cambio el nombre, eliminar la entrada antigua
         if ($oldName !== $sanitizedName) {
             unset($duraciones[$oldName]);
+            unset($margenes[$oldName]);
         }
-        writeDuraciones($username, $duraciones);
+        writeDuraciones($username, $duraciones, $margenes);
 
         $result = [
             'success' => true,
@@ -635,7 +641,7 @@ function executePodget($username) {
 
 /**
  * Leer archivo duraciones.txt
- * Formato: nombre_podcast:30M
+ * Formato: nombre_podcast:30M  o  nombre_podcast:30M:10
  * Retorna array asociativo ['nombre_podcast' => '30M']
  */
 function readDuraciones($username) {
@@ -657,8 +663,8 @@ function readDuraciones($username) {
             continue;
         }
 
-        $parts = explode(':', $line, 2);
-        if (count($parts) === 2) {
+        $parts = explode(':', $line, 3);
+        if (count($parts) >= 2) {
             $podcastName = trim($parts[0]);
             $duracion = trim($parts[1]);
             $duraciones[$podcastName] = $duracion;
@@ -669,9 +675,46 @@ function readDuraciones($username) {
 }
 
 /**
- * Escribir archivo duraciones.txt
+ * Leer márgenes desde duraciones.txt (3er campo opcional)
+ * Retorna array asociativo ['nombre_podcast' => 10] (minutos, defecto 5)
  */
-function writeDuraciones($username, $duraciones) {
+function readMargenes($username) {
+    $duracionesPath = getDuracionesPath($username);
+    $margenes = [];
+
+    if (!file_exists($duracionesPath)) {
+        return $margenes;
+    }
+
+    $lines = file($duracionesPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($lines === false) {
+        return $margenes;
+    }
+
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if (empty($line) || strpos($line, '#') === 0) {
+            continue;
+        }
+
+        $parts = explode(':', $line, 3);
+        if (count($parts) === 3) {
+            $podcastName = trim($parts[0]);
+            $margen = (int)trim($parts[2]);
+            if ($margen > 0) {
+                $margenes[$podcastName] = $margen;
+            }
+        }
+    }
+
+    return $margenes;
+}
+
+/**
+ * Escribir archivo duraciones.txt
+ * Incluye el margen como 3er campo cuando es distinto del defecto (5 min)
+ */
+function writeDuraciones($username, $duraciones, $margenes = []) {
     $duracionesPath = getDuracionesPath($username);
 
     // Asegurar que el directorio existe
@@ -683,7 +726,12 @@ function writeDuraciones($username, $duraciones) {
     $content = "";
     foreach ($duraciones as $podcastName => $duracion) {
         if (!empty($duracion)) {
-            $content .= slugify($podcastName) . ":" . $duracion . "\n";
+            $margen = isset($margenes[$podcastName]) ? (int)$margenes[$podcastName] : 5;
+            $line = slugify($podcastName) . ":" . $duracion;
+            if ($margen !== 5) {
+                $line .= ":" . $margen;
+            }
+            $content .= $line . "\n";
         }
     }
 
@@ -716,6 +764,17 @@ function getDuracionesOptions() {
         '2H' => '2 horas',
         '2H30' => '2 horas 30 minutos',
         '3H' => '3 horas'
+    ];
+}
+
+/**
+ * Obtener opciones disponibles de margen de duración
+ */
+function getMargenesOptions() {
+    return [
+        5  => '5 minutos (defecto)',
+        10 => '10 minutos',
+        15 => '15 minutos',
     ];
 }
 
