@@ -151,7 +151,7 @@ function saveRecordingsConfig($username, $retentionDays, $autoDelete = true) {
     $configPath = getRecordingsConfigPath($username);
 
     // Validar días de retención (mínimo 1, máximo 365)
-    $retentionDays = max(1, min(365, intval($retentionDays)));
+    $retentionDays = max(1, min(180, intval($retentionDays)));
 
     $config = [
         'retention_days' => $retentionDays,
