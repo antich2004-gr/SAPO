@@ -539,9 +539,9 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                     <div style="border:1px solid #e5e7eb; border-radius:8px; margin-bottom:16px; overflow:hidden;">
                         <button type="button" onclick="toggleSocial()" style="width:100%; display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#f9fafb; border:none; cursor:pointer; font-size:14px; font-weight:600; color:#374151;">
                             <span>🌐 Redes Sociales<?php if ($hasSocial): ?> <span style="font-weight:400; color:#10b981; font-size:12px;">● configuradas</span><?php endif; ?></span>
-                            <span id="social-arrow" style="font-size:12px; transition:transform 0.2s;"><?php echo $hasSocial ? '▲' : '▼'; ?></span>
+                            <span id="social-arrow" style="font-size:12px; transition:transform 0.2s;">▼</span>
                         </button>
-                        <div id="social-fields" style="padding:<?php echo $hasSocial ? '16px' : '0'; ?>; max-height:<?php echo $hasSocial ? '600px' : '0'; ?>; overflow:hidden; transition:max-height 0.3s ease, padding 0.3s ease;">
+                        <div id="social-fields" style="padding:0; max-height:0; overflow:hidden; transition:max-height 0.3s ease, padding 0.3s ease;">
                             <div class="form-group">
                                 <label>X (Twitter): <small>(handle sin @ o URL completa)</small></label>
                                 <input type="text" name="social_twitter"
