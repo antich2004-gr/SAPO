@@ -4,7 +4,9 @@ $userCategories = getUserCategories($_SESSION['username']);
 $podcasts = readServerList($_SESSION['username']);
 $caducidades = readCaducidades($_SESSION['username']);
 $duraciones = readDuraciones($_SESSION['username']);
+$margenes = readMargenes($_SESSION['username']);
 $duracionesOptions = getDuracionesOptions();
+$margenesOptions = getMargenesOptions();
 $defaultCaducidad = getDefaultCaducidad($_SESSION['username']);
 
 // Sincronizar caducidades si hay podcasts sin caducidad definida
@@ -130,6 +132,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
             'category' => $podcast['category'],
             'caducidad' => $caducidades[$podcast['name']] ?? $defaultCaducidad,
             'duracion' => $duraciones[$podcast['name']] ?? '',
+            'margen' => $margenes[$podcast['name']] ?? 5,
             'paused' => isset($podcast['paused']) ? $podcast['paused'] : false,
             'feedInfo' => [
                 'timestamp' => $feedInfo['timestamp'],
@@ -941,6 +944,18 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     <small style="color: #718096;">Los episodios que excedan esta duración serán eliminados durante la limpieza diaria</small>
                 </div>
 
+                <div class="form-group">
+                    <label>Margen de tolerancia:</label>
+                    <select name="margen" id="podcast_margen">
+                        <?php foreach ($margenesOptions as $value => $label): ?>
+                            <option value="<?php echo htmlEsc($value); ?>" <?php echo $value === 5 ? 'selected' : ''; ?>>
+                                <?php echo htmlEsc($label); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <small style="color: #718096;">Tiempo extra permitido sobre la duración máxima antes de eliminar el episodio</small>
+                </div>
+
                 <div class="form-actions">
                     <button type="submit" class="btn btn-success"><span class="btn-icon">➕</span> Agregar Podcast</button>
                     <button type="button" class="btn btn-secondary" onclick="closeAddPodcastModal()">Cancelar</button>
@@ -1008,6 +1023,16 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         <?php endforeach; ?>
                     </select>
                     <small style="color: #718096;">Los episodios que excedan esta duración serán eliminados durante la limpieza diaria</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Margen de tolerancia:</label>
+                    <select name="margen" id="edit_podcast_margen">
+                        <?php foreach ($margenesOptions as $value => $label): ?>
+                            <option value="<?php echo htmlEsc($value); ?>"><?php echo htmlEsc($label); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <small style="color: #718096;">Tiempo extra permitido sobre la duración máxima antes de eliminar el episodio</small>
                 </div>
 
                 <div class="form-actions">
@@ -1383,6 +1408,7 @@ function showEditPodcastModal(index) {
     const categoryField = document.getElementById('edit_podcast_category');
     const caducidadField = document.getElementById('edit_podcast_caducidad');
     const duracionField = document.getElementById('edit_podcast_duracion');
+    const margenField = document.getElementById('edit_podcast_margen');
 
     if (indexField) indexField.value = podcast.index;
     if (urlField) urlField.value = podcast.url;
@@ -1394,6 +1420,7 @@ function showEditPodcastModal(index) {
     }
     if (caducidadField) caducidadField.value = podcast.caducidad;
     if (duracionField) duracionField.value = podcast.duracion;
+    if (margenField) margenField.value = podcast.margen || 5;
 
     // Mostrar el modal
     document.getElementById('editPodcastModal').style.display = 'block';
