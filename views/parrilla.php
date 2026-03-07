@@ -232,16 +232,82 @@ if ($hasStationId) {
                 $widgetUrl = rtrim($baseUrl, '/') . '/parrilla_cards.php?station=' . urlencode($username);
                 ?>
 
-                <p style="color: #6b7280; margin-bottom: 20px;">
-                    Copia este código HTML e insértalo en tu sitio web donde quieras mostrar la parrilla:
-                </p>
-
-                <div style="background: #1f2937; color: #e5e7eb; padding: 20px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 13px; overflow-x: auto; position: relative;">
-                    <button onclick="copyEmbedCode()"
-                            style="position: absolute; top: 10px; right: 10px; background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                        📋 Copiar
+                <!-- Pestañas de métodos de incrustación -->
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb;">
+                    <button onclick="showEmbedMethod('widget')" id="btn-widget"
+                            style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid #10b981; color: #10b981; font-weight: 600; cursor: pointer; font-size: 15px;">
+                        ✨ Widget JavaScript (Recomendado)
                     </button>
-                    <pre id="embed-code" style="margin: 0; color: #e5e7eb; white-space: pre-wrap; word-wrap: break-word;">&lt;!-- Parrilla de Programación - <?php echo htmlEsc($_SESSION['station_name']); ?> --&gt;
+                    <button onclick="showEmbedMethod('iframe')" id="btn-iframe"
+                            style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid transparent; color: #6b7280; font-weight: 400; cursor: pointer; font-size: 15px;">
+                        📦 iFrame (Legacy)
+                    </button>
+                </div>
+
+                <!-- MÉTODO 1: Widget JavaScript (Recomendado) -->
+                <div id="embed-widget" style="display: block;">
+                    <div style="background: #dbeafe; border: 1px solid #93c5fd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 10px 0; color: #1e40af;">🌟 Recomendado: Widget JavaScript</h4>
+                        <p style="margin: 0; color: #1e40af; font-size: 14px;">
+                            <strong>Ventajas:</strong> Sin iframe, mejor SEO, responsive, más rápido, integración nativa, sin restricciones de cookies.
+                        </p>
+                    </div>
+
+                    <p style="color: #6b7280; margin-bottom: 20px;">
+                        Copia este código HTML e insértalo en tu sitio web donde quieras mostrar la parrilla:
+                    </p>
+
+                    <div style="background: #1f2937; color: #e5e7eb; padding: 20px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 13px; overflow-x: auto; position: relative;">
+                        <button onclick="copyCode('widget-code')"
+                                style="position: absolute; top: 10px; right: 10px; background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                            📋 Copiar
+                        </button>
+                        <pre id="widget-code" style="margin: 0; color: #e5e7eb; white-space: pre-wrap; word-wrap: break-word;">&lt;!-- Parrilla de Programación - <?php echo htmlEsc($_SESSION['station_name']); ?> --&gt;
+&lt;div id="sapo-widget" data-station="<?php echo htmlspecialchars($username); ?>"&gt;&lt;/div&gt;
+&lt;script src="<?php echo htmlspecialchars($baseUrl); ?>/sapo-widget.js"&gt;&lt;/script&gt;</pre>
+                    </div>
+
+                    <div style="margin-top: 20px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 15px; border-radius: 8px;">
+                        <h4 style="margin: 0 0 10px 0; color: #166534;">✅ Características del widget</h4>
+                        <ul style="margin: 0; padding-left: 20px; color: #166534; font-size: 14px;">
+                            <li>Sin iframe - integración nativa en tu sitio</li>
+                            <li>Responsive - se adapta a móviles y tablets</li>
+                            <li>Lightweight - solo ~12KB</li>
+                            <li>Actualización automática cada 5 minutos</li>
+                            <li>Usa tus colores personalizados de SAPO</li>
+                            <li>Funciona en cualquier dominio (CORS habilitado)</li>
+                        </ul>
+                    </div>
+
+                    <div style="margin-top: 15px; background: #fef3c7; border: 1px solid #fcd34d; padding: 15px; border-radius: 8px;">
+                        <h4 style="margin: 0 0 10px 0; color: #92400e;">📖 Documentación completa</h4>
+                        <p style="margin: 0; color: #92400e; font-size: 14px;">
+                            Consulta el archivo <code>WIDGET.md</code> en el repositorio para ver ejemplos avanzados,
+                            opciones de personalización y cómo usar la API REST.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- MÉTODO 2: iFrame (Legacy) -->
+                <div id="embed-iframe" style="display: none;">
+                    <div style="background: #fef3c7; border: 1px solid #fcd34d; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 10px 0; color: #92400e;">⚠️ Método Legacy: iFrame</h4>
+                        <p style="margin: 0; color: #92400e; font-size: 14px;">
+                            Este método funciona pero tiene limitaciones: peor SEO, restricciones de cookies, menos responsive.
+                            <strong>Recomendamos usar el Widget JavaScript.</strong>
+                        </p>
+                    </div>
+
+                    <p style="color: #6b7280; margin-bottom: 20px;">
+                        Copia este código HTML e insértalo en tu sitio web:
+                    </p>
+
+                    <div style="background: #1f2937; color: #e5e7eb; padding: 20px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 13px; overflow-x: auto; position: relative;">
+                        <button onclick="copyCode('iframe-code')"
+                                style="position: absolute; top: 10px; right: 10px; background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                            📋 Copiar
+                        </button>
+                        <pre id="iframe-code" style="margin: 0; color: #e5e7eb; white-space: pre-wrap; word-wrap: break-word;">&lt;!-- Parrilla de Programación - <?php echo htmlEsc($_SESSION['station_name']); ?> --&gt;
 &lt;iframe src="<?php echo htmlspecialchars($widgetUrl); ?>"
         width="100%"
         height="900"
@@ -249,11 +315,48 @@ if ($hasStationId) {
         style="border: none; border-radius: 8px;"
         title="Parrilla de Programación"&gt;
 &lt;/iframe&gt;</pre>
+                    </div>
+
+                    <div style="margin-top: 20px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 15px; border-radius: 8px;">
+                        <h4 style="margin: 0 0 10px 0; color: #166534;">✅ Personalización</h4>
+                        <p style="margin: 0; color: #166534; font-size: 14px;">
+                            Puedes ajustar el <code>height</code> (altura) del iframe según el espacio disponible en tu web.<br>
+                            Recomendado: entre 800 y 1200 píxeles.
+                        </p>
+                    </div>
                 </div>
 
+                <!-- Script para alternar entre métodos -->
                 <script>
-                function copyEmbedCode() {
-                    const code = document.getElementById('embed-code').textContent;
+                function showEmbedMethod(method) {
+                    // Ocultar todos
+                    document.getElementById('embed-widget').style.display = 'none';
+                    document.getElementById('embed-iframe').style.display = 'none';
+
+                    // Resetear estilos de botones
+                    document.getElementById('btn-widget').style.borderBottom = '3px solid transparent';
+                    document.getElementById('btn-widget').style.color = '#6b7280';
+                    document.getElementById('btn-widget').style.fontWeight = '400';
+                    document.getElementById('btn-iframe').style.borderBottom = '3px solid transparent';
+                    document.getElementById('btn-iframe').style.color = '#6b7280';
+                    document.getElementById('btn-iframe').style.fontWeight = '400';
+
+                    // Mostrar el seleccionado
+                    if (method === 'widget') {
+                        document.getElementById('embed-widget').style.display = 'block';
+                        document.getElementById('btn-widget').style.borderBottom = '3px solid #10b981';
+                        document.getElementById('btn-widget').style.color = '#10b981';
+                        document.getElementById('btn-widget').style.fontWeight = '600';
+                    } else {
+                        document.getElementById('embed-iframe').style.display = 'block';
+                        document.getElementById('btn-iframe').style.borderBottom = '3px solid #10b981';
+                        document.getElementById('btn-iframe').style.color = '#10b981';
+                        document.getElementById('btn-iframe').style.fontWeight = '600';
+                    }
+                }
+
+                function copyCode(elementId) {
+                    const code = document.getElementById(elementId).textContent;
                     navigator.clipboard.writeText(code).then(function() {
                         alert('✅ Código copiado al portapapeles');
                     }, function() {
@@ -262,15 +365,7 @@ if ($hasStationId) {
                 }
                 </script>
 
-                <div style="margin-top: 20px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 15px; border-radius: 8px;">
-                    <h4 style="margin: 0 0 10px 0; color: #166534;">✅ Personalización</h4>
-                    <p style="margin: 0; color: #166534; font-size: 14px;">
-                        Puedes ajustar el <code>height</code> (altura) del iframe según el espacio disponible en tu web.<br>
-                        Recomendado: entre 800 y 1200 píxeles.
-                    </p>
-                </div>
-
-                <div style="margin-top: 15px; background: #fffbeb; border: 1px solid #fde68a; padding: 15px; border-radius: 8px;">
+                <div style="margin-top: 20px; background: #fffbeb; border: 1px solid #fde68a; padding: 15px; border-radius: 8px;">
                     <h4 style="margin: 0 0 10px 0; color: #92400e;">💡 Consejo</h4>
                     <p style="margin: 0; color: #92400e; font-size: 14px;">
                         La parrilla se actualiza automáticamente con los cambios que hagas en Radiobot y en la gestión de programas de SAPO.
