@@ -57,29 +57,46 @@ touch "$LOCK_FILE"
 trap 'rm -f "$LOCK_FILE"' EXIT
 
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Cargar configuración de API desde radiobot.conf (no versionado)
+AZURACAST_API_URL=""
+AZURACAST_API_KEY=""
+if [[ -f "$SCRIPT_DIR/radiobot.conf" ]]; then
+    # shellcheck source=/dev/null
+    source "$SCRIPT_DIR/radiobot.conf"
+else
+    echo "⚠️  Aviso: no se encontró $SCRIPT_DIR/radiobot.conf — las listas vacías no se consultarán."
+    echo "   Crea el archivo copiando radiobot.conf.example y añade tu clave API."
+fi
+
 obtener_slug_azuracast() {
     local nombre_script="$1"
-    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    local archivo_emisoras="$script_dir/emisoras.txt"
+    local archivo_emisoras="$SCRIPT_DIR/emisoras.txt"
     grep -E "^[^#]*:$nombre_script$" "$archivo_emisoras" | cut -d':' -f2
 }
 
 mostrar_playlists_vacias() {
     local emisora_slug="$1"
-    local api_url="https://radiobot.radioslibres.info/api"
-    local api_key="fff87a384794a795:b52adf1198024d8d45e6b27539076031"
+
+    if [[ -z "$AZURACAST_API_URL" || -z "$AZURACAST_API_KEY" ]]; then
+        echo "  ⚠️  API no configurada. Configura radiobot.conf para ver las listas vacías."
+        return
+    fi
 
     echo
     echo "📄 Listas de reproducción vacías (según API):"
 
-    local json=$(curl -s -H "X-API-Key: $api_key" "$api_url/station/$emisora_slug/playlists")
+    local json
+    json=$(curl -s -H "X-API-Key: $AZURACAST_API_KEY" "$AZURACAST_API_URL/station/$emisora_slug/playlists")
 
     if [[ -z "$json" || "$json" == "[]" ]]; then
         echo "  ❌ No se pudieron obtener listas para $emisora_slug."
         return
     fi
 
-    local vacias=$(echo "$json" | jq -r '.[] | select(.source == "songs") | select(.is_enabled == true) | select(.num_songs == 0) | .name')
+    local vacias
+    vacias=$(echo "$json" | jq -r '.[] | select(.source == "songs") | select(.is_enabled == true) | select(.num_songs == 0) | .name')
 
     if [[ -z "$vacias" ]]; then
         echo "  (ninguna lista vacía activa)"
