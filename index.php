@@ -395,6 +395,29 @@ initSession();
     // AJAX HANDLERS - GRABACIONES
     // ====================================================================
 
+    // AJAX: Diagnóstico de ruta de grabaciones (temporal, solo admin)
+    if (isset($_GET['action']) && $_GET['action'] == 'debug_recordings_path' && isLoggedIn() && isAdmin()) {
+        header('Content-Type: application/json');
+
+        $targetUser = $_GET['user'] ?? '';
+        if (empty($targetUser)) {
+            echo json_encode(['error' => 'Falta parámetro user']);
+            exit;
+        }
+
+        $stationInfo = getStationInfo($targetUser);
+        $resolvedPath = getRecordingsDir($targetUser);
+
+        echo json_encode([
+            'resolved_path' => $resolvedPath,
+            'station_info_keys' => $stationInfo ? array_keys($stationInfo) : null,
+            'recordings_storage_location' => $stationInfo['recordings_storage_location'] ?? 'NO PRESENTE',
+            'radio_base_dir' => $stationInfo['radio_base_dir'] ?? 'NO PRESENTE',
+            'short_name' => $stationInfo['short_name'] ?? 'NO PRESENTE',
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
     // AJAX: Obtener lista de grabaciones
     if (isset($_GET['action']) && $_GET['action'] == 'get_recordings_list' && isLoggedIn() && !isAdmin()) {
         header('Content-Type: application/json');
