@@ -811,15 +811,10 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             <label for="retention-days" style="display: block; margin-bottom: 10px; font-weight: 500; color: #4a5568;">
                                 Días de retención:
                             </label>
-                            <select id="retention-days" style="width: 100%; max-width: 300px; padding: 12px; font-size: 16px; border: 2px solid #cbd5e0; border-radius: 8px;">
-                                <option value="7">7 días</option>
-                                <option value="15">15 días</option>
-                                <option value="30" selected>30 días (recomendado)</option>
-                                <option value="60">60 días</option>
-                                <option value="90">90 días</option>
-                                <option value="180">180 días (6 meses)</option>
-                                <option value="365">365 días (1 año)</option>
-                            </select>
+                            <input type="number" id="retention-days" min="1" max="180" value="30"
+                                   style="width: 100%; max-width: 300px; padding: 12px; font-size: 16px; border: 2px solid #cbd5e0; border-radius: 8px;"
+                                   oninput="this.value = Math.min(180, Math.max(1, parseInt(this.value) || 1))">
+                            <span style="display: block; margin-top: 6px; color: #718096; font-size: 13px;">Mínimo 1 día · Máximo 180 días</span>
                         </div>
 
                         <button onclick="saveRecordingsConfig()" style="background: #3182ce; color: white; padding: 12px 30px; border: none; border-radius: 8px; font-size: 16px; font-weight: 500; cursor: pointer;">
