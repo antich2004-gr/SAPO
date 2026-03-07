@@ -244,17 +244,4 @@ function deleteOldRecordings($username, $retentionDays = null) {
     ];
 }
 
-/**
- * Formatear bytes en formato legible
- */
-function formatBytes($bytes, $precision = 2) {
-    if ($bytes <= 0) return '0 B';
-
-    $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    $pow = floor(log($bytes, 1024));
-    $pow = min($pow, count($units) - 1);
-
-    $bytes /= pow(1024, $pow);
-
-    return round($bytes, $precision) . ' ' . $units[$pow];
-}
+// Nota: formatBytes() ya está definida en includes/categories.php
