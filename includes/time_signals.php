@@ -285,7 +285,8 @@ function getTimeSignalsConfig($username) {
         return [
             'signal_file' => '',
             'frequency' => 'hourly',
-            'days' => []
+            'days' => [],
+            'offset_seconds' => 0
         ];
     }
 
@@ -699,6 +700,23 @@ function parseTimeSignalsFromLiquidsoap($username) {
         return null;
     }
 
+    // 5. Detectar offset si existe
+    // Formato: # Offset: 5s adelantado o # Offset: 5s retrasado
+    $config['offset_seconds'] = 0; // Default
+    if (preg_match('/# Offset: (\d+)s (adelantado|retrasado)/', $liquidsoapContent, $offsetMatch)) {
+        $offsetValue = (int)$offsetMatch[1];
+        $offsetDirection = $offsetMatch[2];
+
+        if ($offsetDirection === 'adelantado') {
+            $config['offset_seconds'] = -$offsetValue; // Negativo = adelantar
+        } else {
+            $config['offset_seconds'] = $offsetValue; // Positivo = retrasar
+        }
+        error_log("PARSE DEBUG - Offset detectado: " . $config['offset_seconds'] . " segundos");
+    } else {
+        error_log("PARSE DEBUG - No se detectó offset, usando 0");
+    }
+
     error_log("PARSE DEBUG - ¡Configuración parseada exitosamente!: " . json_encode($config));
     return $config;
 }
@@ -748,6 +766,7 @@ function applyTimeSignalsToAzuraCast($username) {
     $duration = floatval($config['duration'] ?? 1.5);
     $attenuationPercent = intval($config['attenuation'] ?? 30);
     $attenuation = $attenuationPercent / 100; // Convertir porcentaje a decimal
+    $offsetSeconds = intval($config['offset_seconds'] ?? 0); // Leer offset desde config
 
     // PASO 1: Generar path para Liquidsoap
     // El archivo ya está en /var/azuracast/stations/{username}/media/senales_horarias/{filename}
@@ -757,11 +776,11 @@ function applyTimeSignalsToAzuraCast($username) {
     error_log("APPLY DEBUG - Días: " . json_encode($days));
     error_log("APPLY DEBUG - Duración: $duration");
     error_log("APPLY DEBUG - Atenuación: $attenuationPercent%");
+    error_log("APPLY DEBUG - Offset: $offsetSeconds segundos");
 
     // PASO 2: Generar código Liquidsoap con valores personalizados
     error_log("APPLY DEBUG - Generando código Liquidsoap...");
     $musicVolume = 1.0 - $attenuation; # Convertir atenuación a volumen
-    $offsetSeconds = 0; # Sin offset - reproducir exactamente a la hora
     $liquidsoapCode = generateTimeSignalsSmooth($liquidsoapPath, $days, $frequency, $musicVolume, $duration, $offsetSeconds);
 
     if (empty($liquidsoapCode)) {
@@ -835,7 +854,9 @@ function processTimeSignalsForm($username, $postData) {
     error_log("PROCESS FORM DEBUG - POST data: " . json_encode($postData));
 
     $frequency = $postData['frequency'] ?? 'hourly';
+    $offsetSeconds = intval($postData['offset_seconds'] ?? 0); // Capturar offset
     error_log("PROCESS FORM DEBUG - Frecuencia: $frequency");
+    error_log("PROCESS FORM DEBUG - Offset seconds: $offsetSeconds");
 
     // Obtener el último archivo subido automáticamente
     $files = listTimeSignals($username);
@@ -860,13 +881,19 @@ function processTimeSignalsForm($username, $postData) {
         $frequency = 'hourly';
     }
 
+    // Validar offset (-60 a +60 segundos)
+    if ($offsetSeconds < -60 || $offsetSeconds > 60) {
+        $offsetSeconds = 0;
+    }
+
     // Siempre usar todos los días
     $days = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
 
     $config = [
         'signal_file' => $signalFile,
         'frequency' => $frequency,
-        'days' => $days
+        'days' => $days,
+        'offset_seconds' => $offsetSeconds
     ];
 
     error_log("PROCESS FORM DEBUG - Config a guardar: " . json_encode($config));
@@ -1082,14 +1109,15 @@ function applyTimeSignalsViaAPI($username) {
     $duration = floatval($config['duration'] ?? 1.5);
     $attenuationPercent = intval($config['attenuation'] ?? 30);
     $attenuation = $attenuationPercent / 100; // Convertir porcentaje a decimal
+    $offsetSeconds = intval($config['offset_seconds'] ?? 0); // Leer offset desde config
 
     // Generar path para Liquidsoap
     $liquidsoapPath = "/var/azuracast/stations/{$username}/media/senales_horarias/{$config['signal_file']}";
     error_log("API APPLY - Path Liquidsoap: $liquidsoapPath");
+    error_log("API APPLY - Offset: $offsetSeconds segundos");
 
     // Generar código Liquidsoap con valores personalizados
     $musicVolume = 1.0 - $attenuation; # Convertir atenuación a volumen
-    $offsetSeconds = 0; # Sin offset - reproducir exactamente a la hora
     $liquidsoapCode = generateTimeSignalsSmooth($liquidsoapPath, $days, $frequency, $musicVolume, $duration, $offsetSeconds);
 
     if (empty($liquidsoapCode)) {
