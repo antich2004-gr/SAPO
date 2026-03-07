@@ -444,11 +444,6 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                             </small>
                         </div>
 
-                        <script>
-                        // Inicializar contador desde el último índice
-                        let slotCounter = <?php echo count($scheduleSlots); ?>;
-                        </script>
-
                     <?php endif; ?>
 
                     <?php
@@ -688,7 +683,8 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
 
 <script>
 // ====== JAVASCRIPT PARA HORARIOS MÚLTIPLES ======
-let slotCounter = 1; // Ya tenemos el slot 0 por defecto
+// Inicializar contador dinámicamente desde los slots existentes en el DOM
+let slotCounter = document.querySelectorAll('.schedule-slot').length;
 
 /**
  * Añadir nuevo bloque de horario
