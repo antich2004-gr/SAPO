@@ -1833,6 +1833,11 @@ function loadInitialConfig() {
             if (data.config.attenuation) {
                 document.getElementById('signal-attenuation').value = data.config.attenuation;
             }
+            if (data.config.offset_seconds !== undefined) {
+                document.getElementById('signal-offset').value = data.config.offset_seconds;
+            } else {
+                document.getElementById('signal-offset').value = 0; // Default
+            }
         } else {
             // No hay configuración en liquidsoap.liq, intentar cargar desde JSON guardado (silencioso)
             loadTimeSignalsConfig(true);
