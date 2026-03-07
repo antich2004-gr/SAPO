@@ -6,9 +6,63 @@
 
 /**
  * Obtener directorio de grabaciones de la emisora
+ * Usa el short_name de la estación de AzuraCast
  */
 function getRecordingsDir($username) {
-    return "/var/azuracast/stations/{$username}/recordings";
+    // Obtener station short name desde AzuraCast
+    $stationShortName = getStationShortName($username);
+
+    if ($stationShortName === null) {
+        error_log("RECORDINGS: No se pudo obtener station short name para usuario: $username");
+        // Fallback: intentar con username
+        return "/var/azuracast/stations/{$username}/recordings";
+    }
+
+    return "/var/azuracast/stations/{$stationShortName}/recordings";
+}
+
+/**
+ * Obtener el short_name de la estación desde AzuraCast API
+ */
+function getStationShortName($username) {
+    $config = getConfig();
+    $apiUrl = $config['azuracast_api_url'] ?? '';
+    $apiKey = $config['azuracast_api_key'] ?? '';
+
+    if (empty($apiUrl) || empty($apiKey)) {
+        return null;
+    }
+
+    $userData = getUserDB($username);
+    $stationId = $userData['azuracast']['station_id'] ?? null;
+
+    if (empty($stationId)) {
+        return null;
+    }
+
+    // Endpoint para obtener info de la estación
+    $endpoint = rtrim($apiUrl, '/') . '/admin/station/' . $stationId;
+
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'GET',
+            'header' => "X-API-Key: {$apiKey}\r\n"
+        ]
+    ]);
+
+    $response = @file_get_contents($endpoint, false, $context);
+
+    if ($response === false) {
+        error_log("RECORDINGS: Error al obtener station info desde API");
+        return null;
+    }
+
+    $stationData = json_decode($response, true);
+    $shortName = $stationData['short_name'] ?? $stationData['name'] ?? null;
+
+    error_log("RECORDINGS: Station short name obtenido: $shortName (station_id: $stationId)");
+
+    return $shortName;
 }
 
 /**
