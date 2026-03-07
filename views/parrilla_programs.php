@@ -411,16 +411,6 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                     // Mostrar horarios múltiples para TODOS los tipos de programas (como en Grillo)
                     $scheduleSlots = [];
 
-                    // DEBUG: Mostrar datos crudos (comentar después de diagnosticar)
-                    $debugInfo = [
-                        'tiene_schedule_slots' => !empty($programInfo['schedule_slots']),
-                        'tiene_schedule_days' => !empty($programInfo['schedule_days']),
-                        'schedule_slots_raw' => $programInfo['schedule_slots'] ?? null,
-                        'schedule_days_raw' => $programInfo['schedule_days'] ?? null,
-                        'schedule_start_time' => $programInfo['schedule_start_time'] ?? null,
-                        'schedule_duration' => $programInfo['schedule_duration'] ?? null,
-                    ];
-
                     // PRIORIDAD 1: Leer schedule_slots (formato nuevo)
                     if (!empty($programInfo['schedule_slots'])) {
                         $scheduleSlots = $programInfo['schedule_slots'];
@@ -447,14 +437,6 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                         ]];
                     }
                     ?>
-                        <!-- DEBUG: Mostrar datos cargados -->
-                        <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 10px; margin-bottom: 15px; border-radius: 5px; font-size: 12px; font-family: monospace;">
-                            <strong>🐛 DEBUG (eliminar después):</strong><br>
-                            <?php foreach ($debugInfo as $key => $value): ?>
-                                <div><?php echo htmlspecialchars($key); ?>: <?php echo htmlspecialchars(json_encode($value, JSON_UNESCAPED_UNICODE)); ?></div>
-                            <?php endforeach; ?>
-                            <div><strong>scheduleSlots procesados:</strong> <?php echo htmlspecialchars(json_encode($scheduleSlots, JSON_UNESCAPED_UNICODE)); ?></div>
-                        </div>
 
                         <div class="form-group">
                             <label style="display: flex; justify-content: space-between; align-items: center;">
