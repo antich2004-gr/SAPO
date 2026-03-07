@@ -21,6 +21,10 @@ test_*.html
 # Logs
 *.log
 
+# Sistema de caché
+cache/
+*.cache
+
 # Sistema operativo
 .DS_Store
 Thumbs.db
