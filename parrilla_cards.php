@@ -185,15 +185,33 @@ $musicBlocksByDay = [1 => [], 2 => [], 3 => [], 4 => [], 5 => [], 6 => [], 0 => 
 // PRIMERO: Añadir programas en directo (live) manuales de SAPO
 foreach ($programsData as $programKey => $programInfo) {
     if (($programInfo['playlist_type'] ?? '') === 'live') {
-        $scheduleDays = $programInfo['schedule_days'] ?? [];
-        $startTime = $programInfo['schedule_start_time'] ?? '';
-        $duration = (int)($programInfo['schedule_duration'] ?? 60);
-
         // Obtener nombre original del programa (sin sufijo ::live)
         $programName = $programInfo['original_name'] ?? getProgramNameFromKey($programKey);
 
-        // Solo añadir si tiene horario configurado
-        if (!empty($scheduleDays) && !empty($startTime)) {
+        // ====== SOPORTE PARA HORARIOS MÚLTIPLES (schedule_slots) ======
+        $slots = [];
+
+        // PRIORIDAD 1: Leer schedule_slots (formato nuevo con múltiples horarios)
+        if (!empty($programInfo['schedule_slots'])) {
+            $slots = $programInfo['schedule_slots'];
+        }
+        // PRIORIDAD 2: Migrar desde formato antiguo (retrocompatibilidad)
+        elseif (!empty($programInfo['schedule_days']) && !empty($programInfo['schedule_start_time'])) {
+            $slots = [[
+                'days' => $programInfo['schedule_days'],
+                'start_time' => $programInfo['schedule_start_time'],
+                'duration' => (int)($programInfo['schedule_duration'] ?? 60)
+            ]];
+        }
+
+        // Procesar cada bloque de horario
+        foreach ($slots as $slot) {
+            $scheduleDays = $slot['days'] ?? [];
+            $startTime = $slot['start_time'] ?? '';
+            $duration = (int)($slot['duration'] ?? 60);
+
+            if (empty($scheduleDays) || empty($startTime)) continue;
+
             foreach ($scheduleDays as $day) {
                 // Convertir día a integer para evitar problemas con el valor '0' (domingo)
                 $day = (int)$day;
