@@ -62,8 +62,8 @@ function getStationInfo($username) {
     $apiUrl = $config['azuracast_api_url'] ?? '';
     $apiKey = $config['azuracast_api_key'] ?? '';
 
-    if (empty($apiUrl) || empty($apiKey)) {
-        error_log("RECORDINGS: API URL o API Key no configurados");
+    if (empty($apiUrl)) {
+        error_log("RECORDINGS: API URL no configurada");
         return null;
     }
 
@@ -75,33 +75,36 @@ function getStationInfo($username) {
         return null;
     }
 
-    // Endpoint de admin devuelve datos completos incluyendo recordings_storage_location.path
-    $endpoint = rtrim($apiUrl, '/') . '/admin/station/' . $stationId;
-
-    $context = stream_context_create([
-        'http' => [
-            'method' => 'GET',
-            'header' => "X-API-Key: {$apiKey}\r\n"
-        ]
-    ]);
-
-    $response = @file_get_contents($endpoint, false, $context);
-
-    if ($response === false) {
-        error_log("RECORDINGS: Error al obtener station info desde API (station_id: $stationId)");
-        return null;
+    // Intentar primero con el endpoint de admin (datos completos: radio_base_dir, recordings_storage_location)
+    if (!empty($apiKey)) {
+        $endpoint = rtrim($apiUrl, '/') . '/admin/station/' . $stationId;
+        $context = stream_context_create([
+            'http' => ['method' => 'GET', 'header' => "X-API-Key: {$apiKey}\r\n"]
+        ]);
+        $response = @file_get_contents($endpoint, false, $context);
+        if ($response !== false) {
+            $stationData = json_decode($response, true);
+            if (is_array($stationData) && !empty($stationData['short_name'])) {
+                error_log("RECORDINGS: Station info (admin) obtenida para station_id: $stationId, short_name: " . $stationData['short_name']);
+                return $stationData;
+            }
+        }
+        error_log("RECORDINGS: Fallo endpoint admin, intentando endpoint público...");
     }
 
-    $stationData = json_decode($response, true);
-
-    if (!is_array($stationData)) {
-        error_log("RECORDINGS: Respuesta inválida de la API para station_id: $stationId");
-        return null;
+    // Fallback: endpoint público (sin API key) — devuelve short_name pero no radio_base_dir
+    $publicEndpoint = rtrim($apiUrl, '/') . '/station/' . $stationId;
+    $response = @file_get_contents($publicEndpoint, false);
+    if ($response !== false) {
+        $stationData = json_decode($response, true);
+        if (is_array($stationData) && !empty($stationData['short_name'])) {
+            error_log("RECORDINGS: Station info (público) obtenida para station_id: $stationId, short_name: " . $stationData['short_name']);
+            return $stationData;
+        }
     }
 
-    error_log("RECORDINGS: Station info obtenida para station_id: $stationId, short_name: " . ($stationData['short_name'] ?? 'N/A'));
-
-    return $stationData;
+    error_log("RECORDINGS: Error al obtener station info desde API (station_id: $stationId)");
+    return null;
 }
 
 /**
