@@ -169,77 +169,80 @@ function saveRecordingsConfig($username, $retentionDays, $autoDelete = true) {
 }
 
 /**
- * Listar todas las grabaciones de la emisora
- * Devuelve array con información detallada de cada grabación
+ * Listar todas las grabaciones de la emisora.
+ * AzuraCast organiza las grabaciones en subcarpetas por streamer:
+ *   recordings/nombre_streamer/archivo.mp3
+ * El campo 'filename' devuelve la ruta relativa: "nombre_streamer/archivo.mp3"
  */
 function listRecordings($username) {
-    error_log("RECORDINGS: Listando grabaciones para usuario: $username");
-
     $recordingsDir = getRecordingsDir($username);
-    error_log("RECORDINGS: Directorio de grabaciones: $recordingsDir");
+    error_log("RECORDINGS: Escaneando directorio: $recordingsDir");
 
     if (!is_dir($recordingsDir)) {
         error_log("RECORDINGS: ERROR - El directorio NO EXISTE: $recordingsDir");
-
-        // Intentar listar directorios disponibles para debug
-        $basePath = dirname($recordingsDir);
-        if (is_dir($basePath)) {
-            $dirs = scandir($basePath);
-            error_log("RECORDINGS: Directorios disponibles en $basePath: " . implode(', ', array_diff($dirs, ['.', '..'])));
-        } else {
-            error_log("RECORDINGS: Base path tampoco existe: $basePath");
-        }
-
         return [];
     }
 
-    error_log("RECORDINGS: Directorio existe, escaneando archivos...");
-
+    $audioExtensions = ['mp3', 'ogg', 'flac', 'wav', 'm4a', 'aac'];
     $recordings = [];
-    $files = scandir($recordingsDir);
 
-    error_log("RECORDINGS: Total de archivos en directorio: " . count($files));
-
-    foreach ($files as $file) {
-        if ($file === '.' || $file === '..') {
+    foreach (scandir($recordingsDir) as $entry) {
+        if ($entry === '.' || $entry === '..') {
             continue;
         }
 
-        $filePath = $recordingsDir . '/' . $file;
+        $entryPath = $recordingsDir . '/' . $entry;
 
-        // Solo archivos de audio
-        $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-        if (!in_array($extension, ['mp3', 'ogg', 'flac', 'wav', 'm4a', 'aac'])) {
-            error_log("RECORDINGS: Ignorando archivo (no es audio): $file");
-            continue;
-        }
-
-        if (is_file($filePath)) {
-            $fileSize = filesize($filePath);
-            $fileTime = filemtime($filePath);
-            $daysOld = floor((time() - $fileTime) / 86400);
-
+        if (is_dir($entryPath)) {
+            // Subcarpeta de streamer: escanear su contenido
+            $streamer = $entry;
+            foreach (scandir($entryPath) as $file) {
+                if ($file === '.' || $file === '..') {
+                    continue;
+                }
+                $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+                if (!in_array($extension, $audioExtensions)) {
+                    continue;
+                }
+                $filePath = $entryPath . '/' . $file;
+                if (!is_file($filePath)) {
+                    continue;
+                }
+                $fileTime = filemtime($filePath);
+                $recordings[] = [
+                    'filename' => $streamer . '/' . $file,  // ruta relativa para borrado
+                    'streamer' => $streamer,
+                    'size' => filesize($filePath),
+                    'size_formatted' => formatBytes(filesize($filePath)),
+                    'date' => date('Y-m-d H:i:s', $fileTime),
+                    'timestamp' => $fileTime,
+                    'days_old' => (int)floor((time() - $fileTime) / 86400),
+                    'extension' => $extension
+                ];
+            }
+        } else {
+            // Archivos en la raíz (sin subcarpeta de streamer)
+            $extension = strtolower(pathinfo($entry, PATHINFO_EXTENSION));
+            if (!in_array($extension, $audioExtensions) || !is_file($entryPath)) {
+                continue;
+            }
+            $fileTime = filemtime($entryPath);
             $recordings[] = [
-                'filename' => $file,
-                'size' => $fileSize,
-                'size_formatted' => formatBytes($fileSize),
+                'filename' => $entry,
+                'streamer' => '',
+                'size' => filesize($entryPath),
+                'size_formatted' => formatBytes(filesize($entryPath)),
                 'date' => date('Y-m-d H:i:s', $fileTime),
                 'timestamp' => $fileTime,
-                'days_old' => $daysOld,
+                'days_old' => (int)floor((time() - $fileTime) / 86400),
                 'extension' => $extension
             ];
-
-            error_log("RECORDINGS: Archivo encontrado: $file (" . formatBytes($fileSize) . ", $daysOld días)");
         }
     }
 
-    // Ordenar por fecha (más recientes primero)
-    usort($recordings, function($a, $b) {
-        return $b['timestamp'] - $a['timestamp'];
-    });
+    usort($recordings, fn($a, $b) => $b['timestamp'] - $a['timestamp']);
 
-    error_log("RECORDINGS: Total de grabaciones encontradas: " . count($recordings));
-
+    error_log("RECORDINGS: Total grabaciones encontradas: " . count($recordings));
     return $recordings;
 }
 
@@ -280,32 +283,39 @@ function getRecordingsStats($username, $retentionDays = null) {
 }
 
 /**
- * Eliminar una grabación específica
+ * Eliminar una grabación específica.
+ * $filename puede ser "archivo.mp3" o "streamer/archivo.mp3" (subcarpeta de streamer).
  */
 function deleteRecording($username, $filename) {
-    // Validar nombre de archivo (seguridad)
-    if (empty($filename) || strpos($filename, '..') !== false || strpos($filename, '/') !== false) {
+    if (empty($filename) || strpos($filename, '..') !== false) {
         return ['success' => false, 'message' => 'Nombre de archivo inválido'];
     }
 
     $recordingsDir = getRecordingsDir($username);
-    $filePath = $recordingsDir . '/' . $filename;
 
-    if (!file_exists($filePath)) {
+    // Resolver ruta real y verificar que esté dentro del directorio de grabaciones
+    $filePath = realpath($recordingsDir . '/' . $filename);
+    $realRecordingsDir = realpath($recordingsDir);
+
+    if ($filePath === false || $realRecordingsDir === false) {
         return ['success' => false, 'message' => 'El archivo no existe'];
+    }
+
+    // Prevenir path traversal: la ruta resuelta debe empezar por el directorio de grabaciones
+    if (strpos($filePath, $realRecordingsDir . DIRECTORY_SEPARATOR) !== 0) {
+        error_log("RECORDINGS: Intento de path traversal bloqueado: $filename");
+        return ['success' => false, 'message' => 'Ruta de archivo no permitida'];
     }
 
     if (!is_file($filePath)) {
         return ['success' => false, 'message' => 'La ruta no es un archivo válido'];
     }
 
-    // Verificar que sea un archivo de audio
-    $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+    $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
     if (!in_array($extension, ['mp3', 'ogg', 'flac', 'wav', 'm4a', 'aac'])) {
         return ['success' => false, 'message' => 'Solo se pueden eliminar archivos de audio'];
     }
 
-    // Eliminar archivo
     if (unlink($filePath)) {
         error_log("RECORDINGS: Archivo eliminado: $filePath");
         return ['success' => true, 'message' => 'Grabación eliminada correctamente'];
