@@ -6,30 +6,56 @@
 
 /**
  * Obtener directorio de grabaciones de la emisora
- * Usa el short_name de la estación de AzuraCast
+ * Usa el campo recordings_storage_location.path devuelto por la API de AzuraCast
  */
 function getRecordingsDir($username) {
-    // Obtener station short name desde AzuraCast
-    $stationShortName = getStationShortName($username);
+    $stationInfo = getStationInfo($username);
 
-    if ($stationShortName === null) {
-        error_log("RECORDINGS: No se pudo obtener station short name para usuario: $username");
-        // Fallback: intentar con username
+    if ($stationInfo === null) {
+        error_log("RECORDINGS: No se pudo obtener info de la estación para usuario: $username");
+        // Fallback: intentar con username directamente
         return "/var/azuracast/stations/{$username}/recordings";
     }
 
-    return "/var/azuracast/stations/{$stationShortName}/recordings";
+    // La API de AzuraCast devuelve recordings_storage_location.path con la ruta real configurada
+    $recordingsPath = $stationInfo['recordings_storage_location']['path'] ?? null;
+
+    if (!empty($recordingsPath)) {
+        error_log("RECORDINGS: Ruta de grabaciones obtenida desde API: $recordingsPath");
+        return rtrim($recordingsPath, '/');
+    }
+
+    // Fallback: construir ruta desde radio_base_dir si está disponible
+    $radioBaseDir = $stationInfo['radio_base_dir'] ?? null;
+    if (!empty($radioBaseDir)) {
+        $path = rtrim($radioBaseDir, '/') . '/recordings';
+        error_log("RECORDINGS: Ruta de grabaciones construida desde radio_base_dir: $path");
+        return $path;
+    }
+
+    // Último fallback: usar short_name
+    $shortName = $stationInfo['short_name'] ?? $stationInfo['name'] ?? null;
+    if (!empty($shortName)) {
+        $path = "/var/azuracast/stations/{$shortName}/recordings";
+        error_log("RECORDINGS: Ruta de grabaciones construida desde short_name: $path");
+        return $path;
+    }
+
+    error_log("RECORDINGS: No se pudo determinar la ruta de grabaciones para usuario: $username");
+    return "/var/azuracast/stations/{$username}/recordings";
 }
 
 /**
- * Obtener el short_name de la estación desde AzuraCast API
+ * Obtener información completa de la estación desde AzuraCast API
+ * Devuelve el objeto estación incluyendo recordings_storage_location, radio_base_dir, short_name, etc.
  */
-function getStationShortName($username) {
+function getStationInfo($username) {
     $config = getConfig();
     $apiUrl = $config['azuracast_api_url'] ?? '';
     $apiKey = $config['azuracast_api_key'] ?? '';
 
     if (empty($apiUrl) || empty($apiKey)) {
+        error_log("RECORDINGS: API URL o API Key no configurados");
         return null;
     }
 
@@ -37,10 +63,11 @@ function getStationShortName($username) {
     $stationId = $userData['azuracast']['station_id'] ?? null;
 
     if (empty($stationId)) {
+        error_log("RECORDINGS: No hay station_id configurado para usuario: $username");
         return null;
     }
 
-    // Endpoint para obtener info de la estación
+    // Endpoint de admin devuelve datos completos incluyendo recordings_storage_location.path
     $endpoint = rtrim($apiUrl, '/') . '/admin/station/' . $stationId;
 
     $context = stream_context_create([
@@ -53,16 +80,29 @@ function getStationShortName($username) {
     $response = @file_get_contents($endpoint, false, $context);
 
     if ($response === false) {
-        error_log("RECORDINGS: Error al obtener station info desde API");
+        error_log("RECORDINGS: Error al obtener station info desde API (station_id: $stationId)");
         return null;
     }
 
     $stationData = json_decode($response, true);
-    $shortName = $stationData['short_name'] ?? $stationData['name'] ?? null;
 
-    error_log("RECORDINGS: Station short name obtenido: $shortName (station_id: $stationId)");
+    if (!is_array($stationData)) {
+        error_log("RECORDINGS: Respuesta inválida de la API para station_id: $stationId");
+        return null;
+    }
 
-    return $shortName;
+    error_log("RECORDINGS: Station info obtenida para station_id: $stationId, short_name: " . ($stationData['short_name'] ?? 'N/A'));
+
+    return $stationData;
+}
+
+/**
+ * Obtener el short_name de la estación desde AzuraCast API
+ * @deprecated Usar getStationInfo() directamente para acceder a todos los campos
+ */
+function getStationShortName($username) {
+    $stationData = getStationInfo($username);
+    return $stationData['short_name'] ?? $stationData['name'] ?? null;
 }
 
 /**
