@@ -132,14 +132,32 @@ function saveRecordingsConfig($username, $retentionDays, $autoDelete = true) {
  * Devuelve array con información detallada de cada grabación
  */
 function listRecordings($username) {
+    error_log("RECORDINGS: Listando grabaciones para usuario: $username");
+
     $recordingsDir = getRecordingsDir($username);
+    error_log("RECORDINGS: Directorio de grabaciones: $recordingsDir");
 
     if (!is_dir($recordingsDir)) {
+        error_log("RECORDINGS: ERROR - El directorio NO EXISTE: $recordingsDir");
+
+        // Intentar listar directorios disponibles para debug
+        $basePath = dirname($recordingsDir);
+        if (is_dir($basePath)) {
+            $dirs = scandir($basePath);
+            error_log("RECORDINGS: Directorios disponibles en $basePath: " . implode(', ', array_diff($dirs, ['.', '..'])));
+        } else {
+            error_log("RECORDINGS: Base path tampoco existe: $basePath");
+        }
+
         return [];
     }
 
+    error_log("RECORDINGS: Directorio existe, escaneando archivos...");
+
     $recordings = [];
     $files = scandir($recordingsDir);
+
+    error_log("RECORDINGS: Total de archivos en directorio: " . count($files));
 
     foreach ($files as $file) {
         if ($file === '.' || $file === '..') {
@@ -151,6 +169,7 @@ function listRecordings($username) {
         // Solo archivos de audio
         $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
         if (!in_array($extension, ['mp3', 'ogg', 'flac', 'wav', 'm4a', 'aac'])) {
+            error_log("RECORDINGS: Ignorando archivo (no es audio): $file");
             continue;
         }
 
@@ -168,6 +187,8 @@ function listRecordings($username) {
                 'days_old' => $daysOld,
                 'extension' => $extension
             ];
+
+            error_log("RECORDINGS: Archivo encontrado: $file (" . formatBytes($fileSize) . ", $daysOld días)");
         }
     }
 
@@ -175,6 +196,8 @@ function listRecordings($username) {
     usort($recordings, function($a, $b) {
         return $b['timestamp'] - $a['timestamp'];
     });
+
+    error_log("RECORDINGS: Total de grabaciones encontradas: " . count($recordings));
 
     return $recordings;
 }
