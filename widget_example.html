@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAPO Widget - Ejemplo de uso</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #f9fafb;
+        }
+
+        h1 {
+            text-align: center;
+            color: #111827;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 40px;
+        }
+
+        .instructions {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+        }
+
+        .instructions h2 {
+            margin-top: 0;
+            color: #111827;
+            border-bottom: 2px solid #10b981;
+            padding-bottom: 10px;
+        }
+
+        .instructions h3 {
+            color: #374151;
+            margin-top: 30px;
+        }
+
+        .code-block {
+            background: #1a202c;
+            color: #48bb78;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 15px 0;
+        }
+
+        .code-block code {
+            color: #48bb78;
+        }
+
+        .highlight {
+            background: #fef3c7;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .note {
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .note strong {
+            color: #1e40af;
+        }
+
+        ul {
+            line-height: 1.8;
+        }
+
+        .widget-container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>🦎 SAPO Widget - Parrilla Embebible</h1>
+    <p class="subtitle">Ejemplo de uso del widget JavaScript</p>
+
+    <div class="instructions">
+        <h2>📖 Instrucciones de uso</h2>
+
+        <h3>1️⃣ Método simple (un contenedor)</h3>
+        <p>Añade este código HTML donde quieras mostrar la parrilla:</p>
+        <div class="code-block"><code>&lt;div id="sapo-widget" data-station="<strong>TU_EMISORA</strong>"&gt;&lt;/div&gt;
+&lt;script src="<strong>https://tudominio.com/sapo/sapo-widget.js</strong>"&gt;&lt;/script&gt;</code></div>
+
+        <h3>2️⃣ Método múltiple (varios contenedores)</h3>
+        <p>Puedes tener varias parrillas en la misma página:</p>
+        <div class="code-block"><code>&lt;div class="sapo-widget" data-station="<strong>emisora1</strong>"&gt;&lt;/div&gt;
+&lt;div class="sapo-widget" data-station="<strong>emisora2</strong>"&gt;&lt;/div&gt;
+&lt;script src="<strong>https://tudominio.com/sapo/sapo-widget.js</strong>"&gt;&lt;/script&gt;</code></div>
+
+        <h3>3️⃣ Configuración avanzada</h3>
+        <p>Puedes personalizar la URL base de la API:</p>
+        <div class="code-block"><code>&lt;div id="sapo-widget"
+     data-station="<strong>TU_EMISORA</strong>"
+     data-api-url="<strong>https://tudominio.com/sapo</strong>"&gt;&lt;/div&gt;
+&lt;script src="<strong>https://tudominio.com/sapo/sapo-widget.js</strong>"&gt;&lt;/script&gt;</code></div>
+
+        <div class="note">
+            <strong>💡 Nota:</strong> Reemplaza <span class="highlight">TU_EMISORA</span> con el nombre de usuario de tu emisora en SAPO.
+        </div>
+
+        <h3>✨ Características</h3>
+        <ul>
+            <li><strong>Sin iframe:</strong> Se integra nativamente en tu página</li>
+            <li><strong>Responsive:</strong> Se adapta a dispositivos móviles</li>
+            <li><strong>Caché inteligente:</strong> Actualización cada 5 minutos</li>
+            <li><strong>Colores personalizables:</strong> Usa la configuración de tu emisora</li>
+            <li><strong>CORS habilitado:</strong> Funciona en cualquier dominio</li>
+            <li><strong>Lightweight:</strong> Solo ~12KB minificado</li>
+        </ul>
+
+        <h3>🎨 Personalización</h3>
+        <p>Los colores y estilos se configuran desde el panel de SAPO:</p>
+        <ul>
+            <li>Color principal del widget</li>
+            <li>Color de fondo</li>
+            <li>Estilo (moderno, clásico, compacto, minimalista)</li>
+            <li>Tamaño de fuente (pequeño, mediano, grande)</li>
+        </ul>
+
+        <h3>🔌 API REST</h3>
+        <p>También puedes acceder directamente a la API JSON:</p>
+        <div class="code-block"><code>GET https://tudominio.com/sapo/api_schedule.php?station=<strong>TU_EMISORA</strong></code></div>
+
+        <p>La respuesta incluye:</p>
+        <ul>
+            <li>Programación completa de la semana</li>
+            <li>Información de cada programa (título, descripción, imagen, redes sociales)</li>
+            <li>Configuración de colores y estilos</li>
+            <li>Datos de la emisora</li>
+        </ul>
+
+        <h3>🚀 Caché y rendimiento</h3>
+        <ul>
+            <li><strong>Caché del servidor:</strong> 5 minutos (header X-Cache: HIT/MISS)</li>
+            <li><strong>Caché del navegador:</strong> 5 minutos (Cache-Control)</li>
+            <li><strong>Actualización automática:</strong> El widget se actualiza solo</li>
+        </ul>
+    </div>
+
+    <div class="widget-container">
+        <h2 style="margin-top: 0; color: #111827;">📺 Ejemplo en vivo</h2>
+        <p style="color: #6b7280; margin-bottom: 20px;">
+            <strong>Nota:</strong> Cambia el atributo <span class="highlight">data-station</span> con tu nombre de emisora.
+        </p>
+
+        <!-- WIDGET DE EJEMPLO -->
+        <div id="sapo-widget" data-station="demo"></div>
+    </div>
+
+    <div style="text-align: center; margin-top: 40px; color: #9ca3af; font-size: 14px;">
+        <p>Desarrollado con ❤️ para radios comunitarias</p>
+        <p>Basado en <a href="https://github.com/antich2004-gr/SAPO" style="color: #10b981; text-decoration: none;">SAPO</a></p>
+    </div>
+
+    <!-- CARGAR EL WIDGET -->
+    <script>
+        // Configuración del script base
+        // El widget buscará automáticamente elementos con id="sapo-widget" o class="sapo-widget"
+        const scriptUrl = window.location.origin + window.location.pathname.replace('widget_example.html', 'sapo-widget.js');
+        const script = document.createElement('script');
+        script.src = scriptUrl;
+        document.body.appendChild(script);
+    </script>
+</body>
+</html>
