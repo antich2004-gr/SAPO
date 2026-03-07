@@ -1,4 +1,3 @@
-
 <?php
 // includes/session.php - Manejo de sesiones
 
@@ -76,5 +75,3 @@ function requireAdmin() {
         exit;
     }
 }
-
-?>
