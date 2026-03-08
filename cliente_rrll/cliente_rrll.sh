@@ -267,8 +267,8 @@ if [[ "$EJECUTAR_PODGET" -eq 1 ]]; then
                 -o "$destino/%(title)s.%(ext)s" \
                 "$url" 2>&1 | grep -v "^\[download\] .*has already been recorded")
             echo "$ytdlp_output"
-            if echo "$ytdlp_output" | grep -q "Sign in to confirm you're not a bot"; then
-                echo "  🔑 AVISO: Las cookies de YouTube han caducado o son inválidas. Es necesario renovarlas."
+            if echo "$ytdlp_output" | grep -qE "Sign in to confirm you're not a bot|cookies are no longer valid|account cookies.*no longer valid"; then
+                echo "  🔑 AVISO: Las cookies de YouTube han caducado o han sido invalidadas. Es necesario renovarlas."
                 echo "  🔑 Ruta del archivo: ${cookies_file}"
             elif echo "$ytdlp_output" | grep -q "ERROR:"; then
                 echo "  ⚠️  Error al descargar $url"
