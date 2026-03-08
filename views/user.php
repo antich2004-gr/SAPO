@@ -717,34 +717,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 </small>
                             </div>
 
-                            <!-- Paso 2.5: Ajuste de tiempo (offset) -->
-                            <div style="padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 8px; margin-bottom: 20px;">
-                                <p style="margin: 0 0 10px 0; font-weight: 500; color: #856404;">
-                                    ⏱️ Ajuste de tiempo (segundos):
-                                </p>
-                                <input
-                                    type="number"
-                                    name="offset_seconds"
-                                    id="signal-offset"
-                                    value="0"
-                                    min="-60"
-                                    max="60"
-                                    step="1"
-                                    style="width: 100%; max-width: 150px; padding: 10px; font-size: 16px; border: 2px solid #ffc107; border-radius: 4px; text-align: center; font-weight: bold;"
-                                    onchange="onConfigChange('offset')">
-                                <div style="margin-top: 12px; padding: 10px; background: #fff; border-radius: 4px; font-size: 13px; color: #856404;">
-                                    <p style="margin: 0 0 8px 0; font-weight: 500;">💡 Cómo funciona:</p>
-                                    <ul style="margin: 0; padding-left: 20px; line-height: 1.6;">
-                                        <li><strong>0</strong> = Reproduce exactamente a la hora (XX:00:00)</li>
-                                        <li><strong>-5</strong> = Reproduce 5 segundos antes (XX:59:55)</li>
-                                        <li><strong>+5</strong> = Reproduce 5 segundos después (XX:00:05)</li>
-                                    </ul>
-                                    <p style="margin: 12px 0 0 0; color: #666; font-size: 12px;">
-                                        ⚠️ Usa este ajuste si las señales no suenan exactamente a la hora. Prueba con valores pequeños (±5 segundos) primero.
-                                    </p>
-                                </div>
-                            </div>
-
                             <!-- Paso 3: Configuración avanzada de mezcla -->
                             <div style="padding: 15px; background: #f7fafc; border-radius: 8px; margin-bottom: 20px;">
                                 <p style="margin: 0 0 15px 0; font-weight: 500; color: #2d3748;">
