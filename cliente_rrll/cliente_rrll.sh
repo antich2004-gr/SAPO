@@ -38,6 +38,7 @@ if [[ -z "${EMISORA:-}" ]]; then
     echo "❌ Error: debe indicar la emisora usando --emisora."
     exit 1
 fi
+
 # --- BLOQUEO POR EMISORA ---
 LOCK_FILE="/tmp/cliente_descarga_${EMISORA}.lock"
 MAX_RETRIES=5
@@ -56,7 +57,6 @@ done
 
 touch "$LOCK_FILE"
 trap 'rm -f "$LOCK_FILE"' EXIT
-
 
 # Leer API key/URL directamente del global.json de SAPO
 SAPO_GLOBAL_JSON="$SCRIPT_DIR/../db/global.json"
@@ -93,7 +93,7 @@ mostrar_playlists_vacias() {
     fi
 
     local vacias
-    vacias=$(echo "$json" | jq -r '.[] | select(.source == "songs") | select(.is_enabled == true) | select(.num_songs == 0) | .name')
+    vacias=$(jq -r '.[] | select(.source == "songs") | select(.is_enabled == true) | select(.num_songs == 0) | .name' <<< "$json")
 
     if [[ -z "$vacias" ]]; then
         echo "  (ninguna lista vacía activa)"
@@ -103,8 +103,6 @@ mostrar_playlists_vacias() {
         done
     fi
 }
-
-
 
 # --- VARIABLES DE DIRECTORIO ---
 BASE_DIR="/mnt/emisoras/$EMISORA/media"
@@ -160,7 +158,7 @@ for HISTORICO in "$RENOMBRADOS_HISTORICO" "$ELIMINADOS_HISTORICO"; do
     ' "$HISTORICO" > "${HISTORICO}.tmp" && mv "${HISTORICO}.tmp" "$HISTORICO"
 done
 
-# --- [NUEVO] Utilidades de limpieza de locks Podget ---
+# --- Utilidades de limpieza de locks Podget ---
 # Extrae DIR_SESSION de podgetrc.$EMISORA (si existe y no comentado)
 obtener_dir_session() {
     local rcfile="$CONFIG_DIR/podgetrc.$EMISORA"
@@ -233,6 +231,7 @@ if [[ "$EJECUTAR_PODGET" -eq 1 ]]; then
         echo "📺 No se detectaron URLs de YouTube en serverlist.txt"
     fi
 
+    purgar_bloqueos_podget_antiguos
     cd "$CONFIG_DIR"
     podget -d . -c "podgetrc.$EMISORA" | tee "$PODGET_LOG"
     cd - >/dev/null
