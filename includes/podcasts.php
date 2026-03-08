@@ -790,8 +790,8 @@ function importPodcasts($username, $fileContent) {
 }
 
 function executePodget($username) {
-    $scriptPath = '/home/radioslibres/cliente_rrll/cliente_rrll.sh';
-    $logFile = '/var/log/sapo/podget_' . $username . '.log';
+    $scriptPath = PROJECT_DIR . '/cliente_rrll/cliente_rrll.sh';
+    $logFile = PROJECT_DIR . '/logs/podget_' . $username . '.log';
 
     // SEGURIDAD: Validación estricta del username contra inyección de comandos
     if (!validateUsernameStrict($username)) {

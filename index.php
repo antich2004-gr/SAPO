@@ -1239,7 +1239,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         $username = $_SESSION['username'];
-        $logFile = '/var/log/sapo/podget_' . $username . '.log';
+        $logFile = PROJECT_DIR . '/logs/podget_' . $username . '.log';
 
         $status = [
             'exists' => false,
