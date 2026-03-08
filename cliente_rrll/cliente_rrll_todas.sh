@@ -32,24 +32,27 @@ if [ ! -f "$SAPO_DB" ]; then
     exit 1
 fi
 
-# Leer emisoras, base_path y config de AzuraCast desde db.json
-read -r EMISORAS_BASE_DB AZ_API_URL AZ_API_KEY EMISORAS_LIST < <(python3 -c "
+# Leer config desde db.json (cada valor en su propia línea para evitar errores con campos vacíos)
+SAPO_CONFIG=$(python3 -c "
 import json
 with open('$SAPO_DB') as f:
     db = json.load(f)
 cfg = db.get('config', {})
-base = cfg.get('base_path', '/mnt/emisoras')
-az_url = cfg.get('azuracast_api_url', '')
-az_key = cfg.get('azuracast_api_key', '')
-users = [u['username'] for u in db.get('users', []) if not u.get('is_admin', False)]
-print(base, az_url, az_key, ' '.join(users))
+print(cfg.get('base_path', '/mnt/emisoras'))
+print(cfg.get('azuracast_api_url', ''))
+print(cfg.get('azuracast_api_key', ''))
+for u in db.get('users', []):
+    if not u.get('is_admin', False):
+        print('USER:' + u['username'])
 " 2>/dev/null)
+
+EMISORAS_BASE_DB=$(echo "$SAPO_CONFIG" | sed -n '1p')
+AZ_API_URL=$(echo "$SAPO_CONFIG"      | sed -n '2p')
+AZ_API_KEY=$(echo "$SAPO_CONFIG"      | sed -n '3p')
+mapfile -t EMISORAS_SAPO < <(echo "$SAPO_CONFIG" | grep '^USER:' | sed 's/^USER://')
 
 # Usar base_path de db.json si está disponible, si no el valor por defecto
 [ -n "$EMISORAS_BASE_DB" ] && EMISORAS_BASE="$EMISORAS_BASE_DB"
-
-# Convertir lista de emisoras SAPO a array
-read -ra EMISORAS_SAPO <<< "$EMISORAS_LIST"
 
 # Obtener emisoras desde AzuraCast (/api/stations devuelve shortcode de cada emisora)
 EMISORAS_AZ=()
