@@ -110,6 +110,7 @@ mostrar_playlists_vacias() {
 BASE_DIR="/mnt/emisoras/$EMISORA/media"
 CONFIG_DIR="$BASE_DIR/Suscripciones"
 INFORMES_DIR="$BASE_DIR/Informes"
+LIQUIDSOAP_LOG="/mnt/emisoras/$EMISORA/config/liquidsoap.log"
 
 # Leer DIR_PODCAST o DIR_LIBRARY del podgetrc si existe, si no usar el valor por defecto
 _leer_dir_podcast() {
@@ -446,9 +447,8 @@ INFORME="$INFORMES_DIR/Informe_diario_${DIA}_${MES}_${ANO}.log"
 
     echo "🎷 Últimos podcasts descargados:"
     echo
-    echo
-         echo " Hoy"
-         awk -F'|' -v hoy="$HOY" '
+    echo " Hoy"
+    awk -F'|' -v hoy="$HOY" '
              BEGIN {count=0}
              $1 ~ hoy {
                  split($1, f, "[- :]")
@@ -483,42 +483,42 @@ INFORME="$INFORMES_DIR/Informe_diario_${DIA}_${MES}_${ANO}.log"
     echo
     echo "🗑️ Últimos archivos eliminados:"
     echo
-echo " Hoy"
-awk -F'|' -v hoy="$HOY" '
-    $1 ~ hoy {
-        split($1, f, "[- :]")
-        n = split($2, parts, "/")
-        archivo = (n > 0) ? parts[n] : $2
-        podcast = toupper(gensub("_", " ", "g", parts[n-1]))
-        motivo = tolower($3)
-        gsub("_", " ", motivo)
-        printf "  %s - [%02d-%02d-%04d %02d:%02d:%02d] %s ← por %s\n",
-               podcast, f[3], f[2], f[1], f[4], f[5], f[6], archivo, motivo
-        encontrado = 1
-    }
-    END {
-        if (!encontrado) print "  (ninguno)"
-    }
-' "$ELIMINADOS_HISTORICO"
+    echo " Hoy"
+    awk -F'|' -v hoy="$HOY" '
+        $1 ~ hoy {
+            split($1, f, "[- :]")
+            n = split($2, parts, "/")
+            archivo = (n > 0) ? parts[n] : $2
+            podcast = toupper(gensub("_", " ", "g", parts[n-1]))
+            motivo = tolower($3)
+            gsub("_", " ", motivo)
+            printf "  %s - [%02d-%02d-%04d %02d:%02d:%02d] %s ← por %s\n",
+                   podcast, f[3], f[2], f[1], f[4], f[5], f[6], archivo, motivo
+            encontrado = 1
+        }
+        END {
+            if (!encontrado) print "  (ninguno)"
+        }
+    ' "$ELIMINADOS_HISTORICO"
 
     echo
     echo " Días anteriores"
-awk -F'|' -v hoy="$HOY" '
-    $1 !~ hoy {
-        split($1, f, "[- :]")
-        n = split($2, parts, "/")
-        archivo = (n > 0) ? parts[n] : $2
-        podcast = toupper(gensub("_", " ", "g", parts[n-1]))
-        motivo = tolower($3)
-        gsub("_", " ", motivo)
-        entradas[count++] = sprintf("  %s - [%02d-%02d-%04d %02d:%02d:%02d] %s ← por %s",
-            podcast, f[3], f[2], f[1], f[4], f[5], f[6], archivo, motivo)
-    }
-    END {
-        for (i = count - 1; i >= 0 && i >= count - 5; i--) print entradas[i]
-        if (count == 0) print "  (ninguno)"
-    }
-' "$ELIMINADOS_HISTORICO"
+    awk -F'|' -v hoy="$HOY" '
+        $1 !~ hoy {
+            split($1, f, "[- :]")
+            n = split($2, parts, "/")
+            archivo = (n > 0) ? parts[n] : $2
+            podcast = toupper(gensub("_", " ", "g", parts[n-1]))
+            motivo = tolower($3)
+            gsub("_", " ", motivo)
+            entradas[count++] = sprintf("  %s - [%02d-%02d-%04d %02d:%02d:%02d] %s ← por %s",
+                podcast, f[3], f[2], f[1], f[4], f[5], f[6], archivo, motivo)
+        }
+        END {
+            for (i = count - 1; i >= 0 && i >= count - 5; i--) print entradas[i]
+            if (count == 0) print "  (ninguno)"
+        }
+    ' "$ELIMINADOS_HISTORICO"
 
     echo
     echo "📂 Carpetas vacías:"
@@ -558,11 +558,9 @@ awk -F'|' -v hoy="$HOY" '
         }
     ' "$PODGET_LOG"
 
-LIQUIDSOAP_LOG="/mnt/emisoras/$EMISORA/config/liquidsoap.log"
-
     echo
-echo "📡 Emisiones en directo:"
-awk -v hoy="$(date +%Y/%m/%d)" '
+    echo "📡 Emisiones en directo:"
+    awk -v hoy="$(date +%Y/%m/%d)" '
     BEGIN {
         encontrado = 0
     }
@@ -625,15 +623,9 @@ awk -v hoy="$(date +%Y/%m/%d)" '
         mostrar_playlists_vacias "$slug_api"
     fi
 
-
-
-
-
-echo
     echo "✅ Finalizado correctamente."
 } > "$INFORME"
 
 echo
 echo "✅ Finalizado correctamente."
 exit 0
-
