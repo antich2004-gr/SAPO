@@ -124,6 +124,19 @@ foreach ($programsData as $programKey => $programInfo) {
 
             if (empty($scheduleDays) || empty($startTime)) continue;
 
+            // Obtener último episodio RSS (caché 6h, una vez por slot)
+            $rssUrl = $programInfo['rss_feed'] ?? '';
+            $latestEpisode = null;
+            if (!empty($rssUrl)) {
+                $episode = getLatestEpisodeFromRSS($rssUrl, 21600);
+                if ($episode) {
+                    $latestEpisode = [
+                        'title' => $episode['title'] ?? '',
+                        'link' => $episode['link'] ?? ''
+                    ];
+                }
+            }
+
             foreach ($scheduleDays as $day) {
                 $startDateTime = DateTime::createFromFormat('H:i', $startTime);
                 if (!$startDateTime) continue;
@@ -150,7 +163,9 @@ foreach ($programsData as $programKey => $programInfo) {
                         'facebook' => $programInfo['social_facebook'] ?? '',
                         'mastodon' => $programInfo['social_mastodon'] ?? '',
                         'bluesky' => $programInfo['social_bluesky'] ?? ''
-                    ]
+                    ],
+                    'rss_feed' => $rssUrl,
+                    'latest_episode' => $latestEpisode
                 ];
 
                 // Manejar programas que cruzan medianoche
@@ -226,6 +241,19 @@ foreach ($schedule as $event) {
     // Título para mostrar
     $displayTitle = !empty($programInfo['display_title']) ? $programInfo['display_title'] : $title;
 
+    // Obtener último episodio RSS (caché 6h)
+    $rssUrl = $programInfo['rss_feed'] ?? '';
+    $latestEpisode = null;
+    if (!empty($rssUrl)) {
+        $episode = getLatestEpisodeFromRSS($rssUrl, 21600);
+        if ($episode) {
+            $latestEpisode = [
+                'title' => $episode['title'] ?? '',
+                'link' => $episode['link'] ?? ''
+            ];
+        }
+    }
+
     $eventData = [
         'title' => $displayTitle,
         'description' => $programInfo['description'] ?? '',
@@ -235,8 +263,12 @@ foreach ($schedule as $event) {
         'social' => [
             'twitter' => $programInfo['social_twitter'] ?? '',
             'instagram' => $programInfo['social_instagram'] ?? '',
-            'facebook' => $programInfo['social_facebook'] ?? ''
-        ]
+            'facebook' => $programInfo['social_facebook'] ?? '',
+            'mastodon' => $programInfo['social_mastodon'] ?? '',
+            'bluesky' => $programInfo['social_bluesky'] ?? ''
+        ],
+        'rss_feed' => $rssUrl,
+        'latest_episode' => $latestEpisode
     ];
 
     // Manejar eventos que cruzan medianoche
