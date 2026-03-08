@@ -1,19 +1,58 @@
 #!/bin/bash
 
-# Script para ejecutar cliente_rrll.sh en todas las emisoras
+# Script para ejecutar cliente_rrll.sh en todas las emisoras activas de SAPO
 
-CLIENTE_SCRIPT="/home/radioslibres/cliente_rrll/cliente_rrll.sh"
+# Ruta del script principal relativa a este archivo
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+CLIENTE_SCRIPT="$SCRIPT_DIR/cliente_rrll.sh"
+
+# Ruta de db.json de SAPO
+SAPO_DB="$(dirname "$SCRIPT_DIR")/db.json"
+
+# Directorio de logs
 LOG_DIR="/tmp/logs_cliente_rrll"
 mkdir -p "$LOG_DIR"
 
-# 🔧 Lista  de emisoras
-EMISORAS=("galapagar" "cable" "omc" "sonora" "radiobot")
- 
+# Ruta base donde viven las emisoras
+EMISORAS_BASE="/mnt/emisoras"
+
+# Verificaciones previas
+if [ ! -f "$CLIENTE_SCRIPT" ]; then
+    echo "❌ No se encontró el script: $CLIENTE_SCRIPT"
+    exit 1
+fi
+
+if [ ! -x "$CLIENTE_SCRIPT" ]; then
+    echo "❌ El script no tiene permisos de ejecución: $CLIENTE_SCRIPT"
+    exit 1
+fi
+
+if [ ! -f "$SAPO_DB" ]; then
+    echo "❌ No se encontró la base de datos de SAPO: $SAPO_DB"
+    exit 1
+fi
+
+# Leer emisoras activas desde db.json (usuarios no admin)
+mapfile -t EMISORAS < <(python3 -c "
+import json, sys
+with open('$SAPO_DB') as f:
+    db = json.load(f)
+for u in db.get('users', []):
+    if not u.get('is_admin', False):
+        print(u['username'])
+" 2>/dev/null)
+
+if [ ${#EMISORAS[@]} -eq 0 ]; then
+    echo "❌ No se encontraron emisoras activas en SAPO"
+    exit 1
+fi
+
 EMISORAS_OK=()
 EMISORAS_ERROR=()
 
-echo "🚀 Ejecutando cliente_rrll.sh en emisoras definidas manualmente..."
+echo "🚀 Ejecutando cliente_rrll.sh en todas las emisoras activas de SAPO..."
 echo "🗂️  Guardando logs en: $LOG_DIR"
+echo "📋 Emisoras encontradas: ${#EMISORAS[@]}"
 echo
 
 for NOMBRE in "${EMISORAS[@]}"; do
@@ -33,13 +72,14 @@ for NOMBRE in "${EMISORAS[@]}"; do
     echo "---------------------------------------------"
 done
 
-# ⚠️ Comprobar espacio libre tras ejecutar script
-    ESPACIO_DISPONIBLE=$(df --output=avail /dev/sdb | tail -1)
+# ⚠️ Comprobar espacio libre en la partición de emisoras
+if mountpoint -q "$EMISORAS_BASE" 2>/dev/null || [ -d "$EMISORAS_BASE" ]; then
+    ESPACIO_DISPONIBLE=$(df --output=avail "$EMISORAS_BASE" | tail -1)
     if (( ESPACIO_DISPONIBLE < 5000000 )); then
-        echo "⚠️ Espacio en /dev/sdb por debajo de 5 GB. Enviando aviso..."
-
-        echo -e "Asunto: Espacio crítico en /dev/sdb\n\nSe detectó que el espacio libre en /dev/sdb es inferior a 5 GB." | /usr/sbin/sendmail fide@afoot.es
+        echo "⚠️ Espacio en $EMISORAS_BASE por debajo de 5 GB. Enviando aviso..."
+        echo -e "Asunto: Espacio crítico en $EMISORAS_BASE\n\nSe detectó que el espacio libre en $EMISORAS_BASE es inferior a 5 GB." | /usr/sbin/sendmail fide@afoot.es
     fi
+fi
 
 # 📊 Resumen final
 echo
@@ -57,4 +97,3 @@ done
 
 echo
 echo "🏁 Finalizado."
-
