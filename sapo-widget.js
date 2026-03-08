@@ -15,8 +15,14 @@
 
     // Estilos del widget
     const WIDGET_STYLES = `
+        /* Reset scoped: evita que el CSS del sitio padre interfiera */
+        .sapo-widget,
+        .sapo-widget * {
+            box-sizing: border-box !important;
+        }
+
         .sapo-widget {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
@@ -44,7 +50,7 @@
         }
 
         .sapo-days {
-            display: grid;
+            display: grid !important;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
             margin-bottom: 20px;
@@ -88,8 +94,8 @@
         }
 
         .sapo-program-header {
-            display: flex;
-            align-items: center;
+            display: flex !important;
+            align-items: center !important;
             gap: 10px;
             margin-bottom: 6px;
         }
@@ -141,35 +147,37 @@
         }
 
         .sapo-program-image {
-            width: 100%;
-            height: 120px;
-            object-fit: cover;
+            width: 100% !important;
+            height: 120px !important;
+            object-fit: cover !important;
             border-radius: 6px;
             margin-top: 8px;
+            display: block !important;
         }
 
         .sapo-program-social {
-            display: flex;
+            display: flex !important;
             gap: 8px;
             margin-top: 8px;
         }
 
         .sapo-program-social a {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: #e5e7eb;
-            text-decoration: none;
-            font-size: 14px;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 28px !important;
+            height: 28px !important;
+            border-radius: 50% !important;
+            background: #e5e7eb !important;
+            text-decoration: none !important;
+            color: inherit !important;
+            font-size: 14px !important;
             transition: all 0.2s;
         }
 
         .sapo-program-social a:hover {
             transform: scale(1.1);
-            background: #d1d5db;
+            background: #d1d5db !important;
         }
 
         .sapo-empty {
