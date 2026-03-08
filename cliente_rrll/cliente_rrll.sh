@@ -255,7 +255,8 @@ if [[ "$EJECUTAR_PODGET" -eq 1 ]]; then
             local ytdlp_cookies_arg=()
             [[ -f "$cookies_file" ]] && ytdlp_cookies_arg=(--cookies "$cookies_file")
 
-            yt-dlp \
+            local ytdlp_output
+            ytdlp_output=$(yt-dlp \
                 -x --audio-format mp3 \
                 --audio-quality 5 \
                 --playlist-end "$max_ep" \
@@ -264,8 +265,15 @@ if [[ "$EJECUTAR_PODGET" -eq 1 ]]; then
                 --no-playlist-reverse \
                 "${ytdlp_cookies_arg[@]}" \
                 -o "$destino/%(title)s.%(ext)s" \
-                "$url" 2>&1 | grep -v "^\[download\] .*has already been recorded" \
-                || { echo "  ⚠️  Error al descargar $url"; ((errores++)) || true; }
+                "$url" 2>&1 | grep -v "^\[download\] .*has already been recorded")
+            echo "$ytdlp_output"
+            if echo "$ytdlp_output" | grep -q "Sign in to confirm you're not a bot"; then
+                echo "  🔑 AVISO: Las cookies de YouTube han caducado o son inválidas. Es necesario renovarlas."
+                echo "  🔑 Ruta del archivo: ${cookies_file}"
+            elif echo "$ytdlp_output" | grep -q "ERROR:"; then
+                echo "  ⚠️  Error al descargar $url"
+                ((errores++)) || true
+            fi
 
             ((descargados++)) || true
         done < "$feeds_file"

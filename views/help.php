@@ -288,7 +288,7 @@
 
         <h4>Opciones al añadir una suscripción de plataforma</h4>
         <ul>
-            <li><strong>Máx. episodios:</strong> Cuántos episodios recientes descargar en cada ejecución (recomendado: 1-3 para programas diarios, 5-10 para semanales)</li>
+            <li><strong>Máx. episodios:</strong> Cuántos episodios recientes descargar en cada ejecución</li>
             <li><strong>Caducidad:</strong> Igual que en RSS, días que se conservan los archivos descargados</li>
         </ul>
 
