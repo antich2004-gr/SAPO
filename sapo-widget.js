@@ -453,6 +453,8 @@
             root.className = `sapo-widget${styleClass}`;
             root.style.setProperty('--sapo-color', color);
 
+            const streamUrl = data.station.stream_url || '';
+
             // Día y hora actual
             const now = new Date();
             const jsDay = now.getDay(); // 0=Dom … 6=Sab
@@ -520,9 +522,13 @@
                         // Rango horario
                         html += `<div class="sapo-program-schedule">${escapeHtml(program.start_time)} a ${escapeHtml(program.end_time)}</div>`;
 
-                        // Badge "AHORA EN DIRECTO"
+                        // Badge "AHORA EN DIRECTO" (con enlace al stream si existe)
                         if (isLive) {
-                            html += `<div class="sapo-live-badge">▶ AHORA EN DIRECTO</div>`;
+                            if (streamUrl) {
+                                html += `<a href="${escapeHtml(streamUrl)}" target="_blank" rel="noopener" class="sapo-live-badge" style="text-decoration:none;cursor:pointer;" title="Escuchar en directo">▶️ AHORA EN DIRECTO</a>`;
+                            } else {
+                                html += `<div class="sapo-live-badge">▶️ AHORA EN DIRECTO</div>`;
+                            }
                         }
 
                         // Descripción
