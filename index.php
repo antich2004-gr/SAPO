@@ -432,6 +432,44 @@ initSession();
         exit;
     }
 
+    // Descarga de grabación
+    if (isset($_GET['action']) && $_GET['action'] == 'download_recording' && isLoggedIn() && !isAdmin()) {
+        $filename = $_GET['filename'] ?? '';
+
+        if (empty($filename) || strpos($filename, '..') !== false) {
+            http_response_code(400);
+            exit('Archivo inválido');
+        }
+
+        $recordingsDir = getRecordingsDir($_SESSION['username']);
+        $filePath = realpath($recordingsDir . '/' . $filename);
+        $realRecordingsDir = realpath($recordingsDir);
+
+        if ($filePath === false || $realRecordingsDir === false || strpos($filePath, $realRecordingsDir . DIRECTORY_SEPARATOR) !== 0) {
+            http_response_code(403);
+            exit('Acceso denegado');
+        }
+
+        if (!is_file($filePath)) {
+            http_response_code(404);
+            exit('Archivo no encontrado');
+        }
+
+        $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+        if (!in_array($extension, ['mp3', 'ogg', 'flac', 'wav', 'm4a', 'aac'])) {
+            http_response_code(403);
+            exit('Tipo de archivo no permitido');
+        }
+
+        $basename = basename($filePath);
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="' . $basename . '"');
+        header('Content-Length: ' . filesize($filePath));
+        header('Cache-Control: no-cache');
+        readfile($filePath);
+        exit;
+    }
+
     // AJAX: Obtener estadísticas de grabaciones
     if (isset($_GET['action']) && $_GET['action'] == 'get_recordings_stats' && isLoggedIn() && !isAdmin()) {
         header('Content-Type: application/json');

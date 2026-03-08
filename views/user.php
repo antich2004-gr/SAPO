@@ -2158,7 +2158,12 @@ function displayRecordings(recordings) {
                         </p>
                         ${isOld ? '<p style="margin: 8px 0 0 0; color: #e53e3e; font-weight: 500; font-size: 14px;">⚠️ Será eliminada automáticamente</p>' : ''}
                     </div>
-                    <div>
+                    <div style="display: flex; gap: 10px;">
+                        <a href="?action=download_recording&filename=${encodeURIComponent(recording.filename)}"
+                           download
+                           style="display: inline-block; background: #3182ce; color: white; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 500; text-decoration: none;">
+                            ⬇️ Descargar
+                        </a>
                         <button onclick="deleteRecordingConfirm('${escapeHtml(recording.filename)}')"
                                 style="background: #e53e3e; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer;">
                             🗑️ Eliminar
