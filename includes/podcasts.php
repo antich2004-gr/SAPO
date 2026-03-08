@@ -64,6 +64,155 @@ function getCaducidadesPath($username) {
 }
 
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SOPORTE YT-DLP: YouTube, SoundCloud, Vimeo y otras plataformas de vídeo/audio
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Detecta si una URL debe descargarse con yt-dlp en lugar de podget/RSS.
+ */
+function isYtdlpUrl($url) {
+    $ytdlpDomains = [
+        'youtube.com', 'youtu.be',
+        'soundcloud.com',
+        'vimeo.com',
+        'dailymotion.com',
+        'twitch.tv',
+        'rumble.com',
+        'odysee.com',
+        'tiktok.com',
+        'instagram.com',
+        'facebook.com',
+        'fb.watch',
+    ];
+    $host = strtolower(parse_url($url, PHP_URL_HOST) ?? '');
+    $host = preg_replace('/^www\./', '', $host);
+    foreach ($ytdlpDomains as $domain) {
+        if ($host === $domain || substr($host, -(strlen($domain) + 1)) === '.' . $domain) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Ruta de ytdlp_feeds.txt (mismo directorio que serverlist.txt).
+ */
+function getYtdlpFeedsPath($username) {
+    $config = getConfig();
+    $basePath = $config['base_path'];
+    $subsFolder = $config['subscriptions_folder'];
+
+    if (empty($basePath)) {
+        return false;
+    }
+
+    $path = $basePath . DIRECTORY_SEPARATOR . $username . DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . $subsFolder . DIRECTORY_SEPARATOR . 'ytdlp_feeds.txt';
+
+    $realBasePath = realpath($basePath);
+    $realPath = realpath(dirname($path));
+
+    if ($realPath === false) {
+        if (strpos($username, '..') !== false || strpos($username, DIRECTORY_SEPARATOR) !== false) {
+            return false;
+        }
+    } elseif ($realBasePath !== false && strpos($realPath, $realBasePath) !== 0) {
+        return false;
+    }
+
+    return $path;
+}
+
+/**
+ * Lee ytdlp_feeds.txt.
+ * Formato por línea: URL CATEGORIA NOMBRE MAX_EPISODIOS
+ *   - CATEGORIA = '-' si no tiene categoría
+ *   - MAX_EPISODIOS = número entero (defecto 5)
+ *   - Líneas pausadas: '# PAUSADO: URL CATEGORIA NOMBRE MAX_EPISODIOS'
+ * Retorna el mismo esquema que readServerList() con 'type'=>'ytdlp' y 'max_episodios'.
+ */
+function readYtdlpFeeds($username) {
+    $path = getYtdlpFeedsPath($username);
+    if (!$path || !file_exists($path)) return [];
+
+    $feeds = [];
+    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if (empty($line)) continue;
+
+        $paused = false;
+        if (strpos($line, '# PAUSADO:') === 0) {
+            $paused = true;
+            $line = trim(substr($line, 10));
+        } elseif ($line[0] === '#') {
+            continue; // otros comentarios
+        }
+
+        // Formato: URL CATEGORIA NOMBRE MAX_EPISODIOS (4 campos, CATEGORIA='-' si vacía)
+        $parts = preg_split('/\s+/', $line, 4);
+        if (count($parts) < 3) continue;
+
+        $url      = $parts[0];
+        $category = ($parts[1] === '-') ? '' : $parts[1];
+        $name     = $parts[2];
+        $maxEp    = isset($parts[3]) ? max(1, (int)$parts[3]) : 5;
+
+        $feeds[] = [
+            'url'           => $url,
+            'category'      => $category,
+            'name'          => $name,
+            'paused'        => $paused,
+            'type'          => 'ytdlp',
+            'max_episodios' => $maxEp,
+        ];
+    }
+    return $feeds;
+}
+
+/**
+ * Escribe ytdlp_feeds.txt.
+ */
+function writeYtdlpFeeds($username, $feeds) {
+    $path = getYtdlpFeedsPath($username);
+    if (!$path) return false;
+
+    $dir = dirname($path);
+    if (!is_dir($dir)) {
+        if (!mkdir($dir, 0755, true)) return false;
+    }
+
+    $user = getCurrentUser();
+    $stationName = $user ? $user['station_name'] : 'Emisora';
+    $dateTime = date('d/m/Y H:i:s');
+
+    $content  = "# ytdlp_feeds.txt - Suscripciones de plataformas de vídeo/audio\n";
+    $content .= "# Emisora: $stationName\n";
+    $content .= "# Fecha de generacion: $dateTime\n";
+    $content .= "# Formato: URL CATEGORIA NOMBRE MAX_EPISODIOS\n";
+    $content .= "# Si no tiene categoría, CATEGORIA='-'\n";
+    $content .= "# Los podcasts pausados se comentan con '# PAUSADO:' y no se descargan\n";
+    $content .= "\n";
+
+    foreach ($feeds as $feed) {
+        $sanitizedName     = sanitizePodcastName($feed['name']);
+        $sanitizedCategory = empty($feed['category']) ? '-' : sanitizePodcastName($feed['category']);
+        $maxEp             = isset($feed['max_episodios']) ? max(1, (int)$feed['max_episodios']) : 5;
+
+        $line = $feed['url'] . ' ' . $sanitizedCategory . ' ' . $sanitizedName . ' ' . $maxEp;
+
+        if (isset($feed['paused']) && $feed['paused'] === true) {
+            $content .= "# PAUSADO: " . $line . "\n";
+        } else {
+            $content .= $line . "\n";
+        }
+    }
+
+    return file_put_contents($path, $content) !== false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function readCaducidades($username) {
     $path = getCaducidadesPath($username);
     if (!$path || !file_exists($path)) return [];
@@ -173,45 +322,50 @@ function syncAllCaducidades($username, $oldDefaultCaducidad = null) {
 
 function readServerList($username) {
     $path = getServerListPath($username);
-    if (!$path || !file_exists($path)) return [];
-
     $podcasts = [];
-    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        $line = trim($line);
-        if (empty($line)) {
-            continue;
-        }
 
-        // Detectar si es un podcast pausado
-        $paused = false;
-        if (strpos($line, '# PAUSADO:') === 0) {
-            $paused = true;
-            $line = trim(substr($line, 10)); // Eliminar "# PAUSADO:"
-        } elseif ($line[0] == '#') {
-            // Otros comentarios se ignoran
-            continue;
-        }
+    if ($path && file_exists($path)) {
+        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (empty($line)) {
+                continue;
+            }
 
-        $parts = preg_split('/\s+/', $line, 3);
+            // Detectar si es un podcast pausado
+            $paused = false;
+            if (strpos($line, '# PAUSADO:') === 0) {
+                $paused = true;
+                $line = trim(substr($line, 10)); // Eliminar "# PAUSADO:"
+            } elseif ($line[0] == '#') {
+                // Otros comentarios se ignoran
+                continue;
+            }
 
-        if (count($parts) == 2) {
-            $podcasts[] = [
-                'url' => $parts[0],
-                'category' => '',  // Mantener categoría vacía para podcasts sin categoría
-                'name' => $parts[1],
-                'paused' => $paused
-            ];
-        } elseif (count($parts) == 3) {
-            $podcasts[] = [
-                'url' => $parts[0],
-                'category' => $parts[1],
-                'name' => $parts[2],
-                'paused' => $paused
-            ];
+            $parts = preg_split('/\s+/', $line, 3);
+
+            if (count($parts) == 2) {
+                $podcasts[] = [
+                    'url'      => $parts[0],
+                    'category' => '',
+                    'name'     => $parts[1],
+                    'paused'   => $paused,
+                    'type'     => 'rss',
+                ];
+            } elseif (count($parts) == 3) {
+                $podcasts[] = [
+                    'url'      => $parts[0],
+                    'category' => $parts[1],
+                    'name'     => $parts[2],
+                    'paused'   => $paused,
+                    'type'     => 'rss',
+                ];
+            }
         }
     }
-    return $podcasts;
+
+    // Mezclar con ytdlp_feeds.txt
+    return array_merge($podcasts, readYtdlpFeeds($username));
 }
 
 function writeServerList($username, $podcasts) {
@@ -240,6 +394,11 @@ function writeServerList($username, $podcasts) {
     $content .= "\n";
 
     foreach ($podcasts as $podcast) {
+        // Solo escribir entradas RSS (las ytdlp van a ytdlp_feeds.txt)
+        if (isset($podcast['type']) && $podcast['type'] === 'ytdlp') {
+            continue;
+        }
+
         $sanitizedName = sanitizePodcastName($podcast['name']);
 
         // Si la categoría está vacía, usar formato de 2 campos (URL nombre)
@@ -262,27 +421,44 @@ function writeServerList($username, $podcasts) {
     return file_put_contents($path, $content) !== false;
 }
 
-function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracion = '', $margen = 5) {
-    $podcasts = readServerList($username);
-    
-    foreach ($podcasts as $podcast) {
+function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracion = '', $margen = 5, $max_episodios = 5) {
+    // Comprobar duplicados en AMBOS ficheros (RSS y ytdlp)
+    $allPodcasts = readServerList($username);
+    foreach ($allPodcasts as $podcast) {
         if ($podcast['url'] == $url) {
             return ['success' => false, 'error' => 'El podcast ya existe'];
         }
     }
 
-    // Solo sanitizar la categoría si no está vacía
     $sanitizedCategory = empty($category) ? '' : sanitizePodcastName($category);
     $sanitizedName = sanitizePodcastName($name);
-    
-    $podcasts[] = [
-        'url' => $url,
-        'category' => $sanitizedCategory,
-        'name' => $sanitizedName
-    ];
-    
-    if (writeServerList($username, $podcasts)) {
-        // Actualizar caducidades.txt SIEMPRE (todos los podcasts deben tener caducidad definida)
+
+    if (isYtdlpUrl($url)) {
+        // Guardar en ytdlp_feeds.txt
+        $ytdlpFeeds = readYtdlpFeeds($username);
+        $ytdlpFeeds[] = [
+            'url'           => $url,
+            'category'      => $sanitizedCategory,
+            'name'          => $sanitizedName,
+            'paused'        => false,
+            'type'          => 'ytdlp',
+            'max_episodios' => max(1, (int)$max_episodios),
+        ];
+        $writeOk = writeYtdlpFeeds($username, $ytdlpFeeds);
+    } else {
+        // Guardar en serverlist.txt (RSS)
+        // allPodcasts ya tiene la lista mezclada; writeServerList filtra ytdlp automáticamente
+        $allPodcasts[] = [
+            'url'      => $url,
+            'category' => $sanitizedCategory,
+            'name'     => $sanitizedName,
+            'type'     => 'rss',
+        ];
+        $writeOk = writeServerList($username, $allPodcasts);
+    }
+
+    if ($writeOk) {
+        // Actualizar caducidades.txt SIEMPRE
         setCaducidad($username, $sanitizedName, $caducidad);
 
         // Marcar como personalizada si es diferente al valor por defecto
@@ -291,7 +467,7 @@ function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracio
             markCaducidadAsCustom($username, $sanitizedName);
         }
 
-        // Guardar duracion si no es vacia
+        // Guardar duración si no es vacía
         if (!empty($duracion)) {
             $duraciones = readDuraciones($username);
             $margenes = readMargenes($username);
@@ -301,205 +477,258 @@ function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracio
         }
 
         return [
-            'success' => true,
-            'message' => 'Podcast agregado correctamente',
+            'success'            => true,
+            'message'            => 'Podcast agregado correctamente',
             'sanitized_category' => $sanitizedCategory,
-            'sanitized_name' => $sanitizedName
+            'sanitized_name'     => $sanitizedName,
         ];
     } else {
         return ['success' => false, 'error' => 'Error al guardar el podcast'];
     }
 }
 
-function editPodcast($username, $index, $url, $category, $name, $caducidad = 30, $duracion = '', $margen = 5) {
-    $podcasts = readServerList($username);
-
-    // Ordenar alfabéticamente igual que en user.php para que los índices coincidan
-    usort($podcasts, function($a, $b) {
+function editPodcast($username, $index, $url, $category, $name, $caducidad = 30, $duracion = '', $margen = 5, $max_episodios = 5) {
+    // Lista mezclada ordenada para resolver el índice
+    $allPodcasts = readServerList($username);
+    usort($allPodcasts, function($a, $b) {
         return strcasecmp($a['name'], $b['name']);
     });
-    $podcasts = array_values($podcasts);
+    $allPodcasts = array_values($allPodcasts);
 
-    if ($index < 0 || $index >= count($podcasts)) {
+    if ($index < 0 || $index >= count($allPodcasts)) {
         return ['success' => false, 'error' => 'Podcast no encontrado'];
     }
 
-    // Guardar estado original para poder revertir si es necesario
-    $oldCategory = $podcasts[$index]['category'];
-    $oldName = $podcasts[$index]['name'];
-    $oldUrl = $podcasts[$index]['url'];
+    $oldCategory = $allPodcasts[$index]['category'];
+    $oldName     = $allPodcasts[$index]['name'];
+    $oldUrl      = $allPodcasts[$index]['url'];
+    $oldType     = $allPodcasts[$index]['type'] ?? 'rss';
 
-    // Releer la lista original (sin ordenar) para hacer los cambios
-    $podcastsOriginal = readServerList($username);
-    $oldPodcasts = $podcastsOriginal; // Backup completo
+    // Lista mezclada original (sin ordenar) para backup y búsqueda
+    $allOriginal = readServerList($username);
 
     // Verificar que la URL no exista en otro podcast
-    foreach ($podcastsOriginal as $i => $podcast) {
+    foreach ($allOriginal as $podcast) {
         if ($podcast['url'] == $url && $podcast['url'] != $oldUrl) {
             return ['success' => false, 'error' => 'Esta URL ya existe en otro podcast'];
         }
     }
 
-    // Solo sanitizar la categoría si no está vacía
     $sanitizedCategory = empty($category) ? '' : sanitizePodcastName($category);
-    $sanitizedName = sanitizePodcastName($name);
+    $sanitizedName     = sanitizePodcastName($name);
+    $newType           = isYtdlpUrl($url) ? 'ytdlp' : 'rss';
+    $typeChanged       = ($oldType !== $newType);
+    $categoryChanged   = ($oldCategory !== $sanitizedCategory);
 
-    // Buscar el podcast por URL original y actualizarlo
-    $found = false;
-    $realIndex = -1;
-    foreach ($podcastsOriginal as $i => $podcast) {
-        if ($podcast['url'] === $oldUrl) {
-            $podcastsOriginal[$i] = [
-                'url' => $url,
-                'category' => $sanitizedCategory,
-                'name' => $sanitizedName
+    // ── Operaciones de fichero (mover/renombrar directorio) ──────────────────
+    $moveResult = ['success' => true, 'moved' => 0];
+
+    if ($categoryChanged) {
+        $moveResult = movePodcastFiles($username, $oldName, $oldCategory, $sanitizedCategory);
+        if (!$moveResult['success']) {
+            return [
+                'success' => false,
+                'error'   => 'Error al mover archivos: ' . ($moveResult['error'] ?? 'Error desconocido') . '. No se han realizado cambios.',
             ];
-            // Preservar el estado de pausa si existía
-            if (isset($podcast['paused'])) {
-                $podcastsOriginal[$i]['paused'] = $podcast['paused'];
-            }
-            $found = true;
-            $realIndex = $i;
-            break;
         }
     }
 
-    if (!$found) {
-        return ['success' => false, 'error' => 'Podcast no encontrado en la lista'];
+    if ($oldName !== $sanitizedName) {
+        $currentCategory = $categoryChanged ? $sanitizedCategory : $oldCategory;
+        $renameResult = renamePodcastDirectory($username, $oldName, $sanitizedName, $currentCategory);
+        if (!$renameResult['success']) {
+            if ($categoryChanged) {
+                @movePodcastFiles($username, $oldName, $sanitizedCategory, $oldCategory);
+            }
+            return [
+                'success' => false,
+                'error'   => 'Error al renombrar directorio: ' . ($renameResult['error'] ?? 'Error desconocido') . '. Se han revertido los cambios de categoría.',
+            ];
+        }
     }
 
-    if (writeServerList($username, $podcastsOriginal)) {
-        // NUEVO: Si cambió la categoría, mover archivos físicos
-        $moveResult = ['success' => true, 'moved' => 0];
-        $categoryChanged = false;
+    // ── Actualizar ficheros de configuración ─────────────────────────────────
+    $writeOk = false;
 
-        if ($oldCategory !== $sanitizedCategory) {
-            $categoryChanged = true;
+    if ($typeChanged) {
+        // El podcast cambia de tipo: eliminar del fichero original, añadir al nuevo
+        if ($oldType === 'rss') {
+            // Eliminar de serverlist.txt
+            $rssFeeds = array_values(array_filter($allOriginal, function($p) use ($oldUrl) {
+                return ($p['type'] ?? 'rss') === 'rss' && $p['url'] !== $oldUrl;
+            }));
+            writeServerList($username, $rssFeeds);
 
-            // Usar el nombre ANTIGUO del podcast para buscar los archivos
-            $moveResult = movePodcastFiles($username, $oldName, $oldCategory, $sanitizedCategory);
-
-            // DECISIÓN 1.A: Si falla el movimiento, revertir TODO
-            if (!$moveResult['success']) {
-                // Revertir serverlist.txt al estado original
-                writeServerList($username, $oldPodcasts);
-
-                return [
-                    'success' => false,
-                    'error' => 'Error al mover archivos: ' . ($moveResult['error'] ?? 'Error desconocido') . '. Se han revertido todos los cambios.'
-                ];
-            }
-        }
-
-        // Si cambió el nombre del podcast, renombrar directorio
-        // (ya sea en la misma categoría o después de haberlo movido a nueva categoría)
-        if ($oldName !== $sanitizedName) {
-            // Determinar en qué categoría está ahora el podcast
-            $currentCategory = $categoryChanged ? $sanitizedCategory : $oldCategory;
-
-            $renameResult = renamePodcastDirectory($username, $oldName, $sanitizedName, $currentCategory);
-
-            // Si falla el renombrado, revertir TODO
-            if (!$renameResult['success']) {
-                // Revertir serverlist.txt al estado original
-                writeServerList($username, $oldPodcasts);
-
-                // Si se había movido de categoría, intentar revertir el movimiento también
-                if ($categoryChanged) {
-                    // Intentar mover de vuelta (best effort, puede fallar)
-                    @movePodcastFiles($username, $oldName, $sanitizedCategory, $oldCategory);
-                }
-
-                return [
-                    'success' => false,
-                    'error' => 'Error al renombrar directorio: ' . ($renameResult['error'] ?? 'Error desconocido') . '. Se han revertido todos los cambios.'
-                ];
-            }
-        }
-
-        // Si cambió el nombre del podcast, eliminar la entrada antigua
-        if ($oldName !== $sanitizedName) {
-            deleteCaducidad($username, $oldName);
-            // También limpiar marca de personalización del nombre antiguo
-            unmarkCaducidadAsCustom($username, $oldName);
-        }
-
-        // Actualizar caducidades.txt SIEMPRE (todos los podcasts deben tener caducidad definida)
-        setCaducidad($username, $sanitizedName, $caducidad);
-
-        // Marcar/desmarcar como personalizada según si es diferente al valor por defecto
-        $defaultCaducidad = getDefaultCaducidad($username);
-        if ($caducidad != $defaultCaducidad) {
-            markCaducidadAsCustom($username, $sanitizedName);
+            // Añadir a ytdlp_feeds.txt
+            $ytdlpFeeds   = readYtdlpFeeds($username);
+            $ytdlpFeeds[] = [
+                'url'           => $url,
+                'category'      => $sanitizedCategory,
+                'name'          => $sanitizedName,
+                'paused'        => $allPodcasts[$index]['paused'] ?? false,
+                'type'          => 'ytdlp',
+                'max_episodios' => max(1, (int)$max_episodios),
+            ];
+            $writeOk = writeYtdlpFeeds($username, $ytdlpFeeds);
         } else {
-            unmarkCaducidadAsCustom($username, $sanitizedName);
-        }
+            // Eliminar de ytdlp_feeds.txt
+            $ytdlpFeeds = array_values(array_filter(readYtdlpFeeds($username), function($p) use ($oldUrl) {
+                return $p['url'] !== $oldUrl;
+            }));
+            writeYtdlpFeeds($username, $ytdlpFeeds);
 
-        // Actualizar duraciones.txt
-        $duraciones = readDuraciones($username);
-        $margenes = readMargenes($username);
-        if (!empty($duracion)) {
-            $duraciones[$sanitizedName] = $duracion;
-            $margenes[$sanitizedName] = (int)$margen;
-        } else {
-            // Si esta vacio, eliminar la entrada
-            unset($duraciones[$sanitizedName]);
-            unset($margenes[$sanitizedName]);
+            // Añadir a serverlist.txt
+            $rssFeeds   = array_values(array_filter($allOriginal, function($p) {
+                return ($p['type'] ?? 'rss') === 'rss';
+            }));
+            $rssFeeds[] = [
+                'url'      => $url,
+                'category' => $sanitizedCategory,
+                'name'     => $sanitizedName,
+                'paused'   => $allPodcasts[$index]['paused'] ?? false,
+                'type'     => 'rss',
+            ];
+            $writeOk = writeServerList($username, $rssFeeds);
         }
-        // Si cambio el nombre, eliminar la entrada antigua
-        if ($oldName !== $sanitizedName) {
-            unset($duraciones[$oldName]);
-            unset($margenes[$oldName]);
-        }
-        writeDuraciones($username, $duraciones, $margenes);
-
-        $result = [
-            'success' => true,
-            'message' => 'Podcast actualizado correctamente',
-            'sanitized_category' => $sanitizedCategory,
-            'sanitized_name' => $sanitizedName
-        ];
-
-        // Agregar información del movimiento de archivos
-        if ($categoryChanged) {
-            $result['category_changed'] = true;
-            $result['files_moved'] = $moveResult['moved'];
-            if (isset($moveResult['message'])) {
-                $result['move_message'] = $moveResult['message'];
+    } elseif ($newType === 'ytdlp') {
+        // Actualizar en ytdlp_feeds.txt
+        $ytdlpFeeds = readYtdlpFeeds($username);
+        $found = false;
+        foreach ($ytdlpFeeds as &$feed) {
+            if ($feed['url'] === $oldUrl) {
+                $feed['url']           = $url;
+                $feed['category']      = $sanitizedCategory;
+                $feed['name']          = $sanitizedName;
+                $feed['max_episodios'] = max(1, (int)$max_episodios);
+                $found = true;
+                break;
             }
         }
-
-        return $result;
+        unset($feed);
+        if (!$found) {
+            return ['success' => false, 'error' => 'Podcast no encontrado en ytdlp_feeds.txt'];
+        }
+        $writeOk = writeYtdlpFeeds($username, $ytdlpFeeds);
     } else {
+        // Actualizar en serverlist.txt
+        $rssFeeds = array_values(array_filter($allOriginal, function($p) {
+            return ($p['type'] ?? 'rss') === 'rss';
+        }));
+        $found = false;
+        foreach ($rssFeeds as &$feed) {
+            if ($feed['url'] === $oldUrl) {
+                $feed['url']      = $url;
+                $feed['category'] = $sanitizedCategory;
+                $feed['name']     = $sanitizedName;
+                $found = true;
+                break;
+            }
+        }
+        unset($feed);
+        if (!$found) {
+            return ['success' => false, 'error' => 'Podcast no encontrado en serverlist.txt'];
+        }
+        $writeOk = writeServerList($username, $rssFeeds);
+    }
+
+    if (!$writeOk) {
         return ['success' => false, 'error' => 'Error al actualizar el podcast'];
     }
+
+    // ── Caducidades y duraciones ──────────────────────────────────────────────
+    if ($oldName !== $sanitizedName) {
+        deleteCaducidad($username, $oldName);
+        unmarkCaducidadAsCustom($username, $oldName);
+    }
+
+    setCaducidad($username, $sanitizedName, $caducidad);
+
+    $defaultCaducidad = getDefaultCaducidad($username);
+    if ($caducidad != $defaultCaducidad) {
+        markCaducidadAsCustom($username, $sanitizedName);
+    } else {
+        unmarkCaducidadAsCustom($username, $sanitizedName);
+    }
+
+    $duraciones  = readDuraciones($username);
+    $margenesArr = readMargenes($username);
+    if (!empty($duracion)) {
+        $duraciones[$sanitizedName]  = $duracion;
+        $margenesArr[$sanitizedName] = (int)$margen;
+    } else {
+        unset($duraciones[$sanitizedName]);
+        unset($margenesArr[$sanitizedName]);
+    }
+    if ($oldName !== $sanitizedName) {
+        unset($duraciones[$oldName]);
+        unset($margenesArr[$oldName]);
+    }
+    writeDuraciones($username, $duraciones, $margenesArr);
+
+    $result = [
+        'success'            => true,
+        'message'            => 'Podcast actualizado correctamente',
+        'sanitized_category' => $sanitizedCategory,
+        'sanitized_name'     => $sanitizedName,
+    ];
+
+    if ($categoryChanged) {
+        $result['category_changed'] = true;
+        $result['files_moved']      = $moveResult['moved'];
+        if (isset($moveResult['message'])) {
+            $result['move_message'] = $moveResult['message'];
+        }
+    }
+
+    return $result;
 }
 
 function deletePodcast($username, $index) {
-    $podcasts = readServerList($username);
+    $allPodcasts = readServerList($username);
 
-    // Ordenar alfabéticamente igual que en user.php para que los índices coincidan
-    usort($podcasts, function($a, $b) {
+    usort($allPodcasts, function($a, $b) {
         return strcasecmp($a['name'], $b['name']);
     });
-    $podcasts = array_values($podcasts);
+    $allPodcasts = array_values($allPodcasts);
 
-    if ($index < 0 || $index >= count($podcasts)) {
+    if ($index < 0 || $index >= count($allPodcasts)) {
         return ['success' => false, 'error' => 'Podcast no encontrado'];
     }
 
-    // Obtener URL y nombre del podcast a eliminar
-    $targetUrl = $podcasts[$index]['url'];
-    $deletedName = $podcasts[$index]['name'];
+    $targetUrl   = $allPodcasts[$index]['url'];
+    $deletedName = $allPodcasts[$index]['name'];
+    $targetType  = $allPodcasts[$index]['type'] ?? 'rss';
 
-    // Releer la lista original (sin ordenar) para hacer los cambios
-    $podcastsOriginal = readServerList($username);
+    if ($targetType === 'ytdlp') {
+        $ytdlpFeeds = readYtdlpFeeds($username);
+        $found = false;
+        foreach ($ytdlpFeeds as $key => $feed) {
+            if ($feed['url'] === $targetUrl) {
+                array_splice($ytdlpFeeds, $key, 1);
+                $found = true;
+                break;
+            }
+        }
+        if (!$found) {
+            return ['success' => false, 'error' => 'Podcast no encontrado en la lista'];
+        }
+        if (writeYtdlpFeeds($username, $ytdlpFeeds)) {
+            deleteCaducidad($username, $deletedName);
+            return ['success' => true, 'message' => 'Podcast eliminado correctamente'];
+        }
+        return ['success' => false, 'error' => 'Error al eliminar el podcast'];
+    }
 
-    // Buscar y eliminar el podcast por URL
+    // RSS: releer sin ordenar y filtrar solo RSS
+    $allOriginal = readServerList($username);
+    $rssFeeds = array_values(array_filter($allOriginal, function($p) {
+        return ($p['type'] ?? 'rss') === 'rss';
+    }));
+
     $found = false;
-    foreach ($podcastsOriginal as $key => $podcast) {
+    foreach ($rssFeeds as $key => $podcast) {
         if ($podcast['url'] === $targetUrl) {
-            array_splice($podcastsOriginal, $key, 1);
+            array_splice($rssFeeds, $key, 1);
             $found = true;
             break;
         }
@@ -509,14 +738,11 @@ function deletePodcast($username, $index) {
         return ['success' => false, 'error' => 'Podcast no encontrado en la lista'];
     }
 
-    if (writeServerList($username, $podcastsOriginal)) {
-        // Eliminar entrada de caducidad del podcast
+    if (writeServerList($username, $rssFeeds)) {
         deleteCaducidad($username, $deletedName);
-
         return ['success' => true, 'message' => 'Podcast eliminado correctamente'];
-    } else {
-        return ['success' => false, 'error' => 'Error al eliminar el podcast'];
     }
+    return ['success' => false, 'error' => 'Error al eliminar el podcast'];
 }
 
 function importPodcasts($username, $fileContent) {
@@ -782,96 +1008,108 @@ function getMargenesOptions() {
  * Pausar un podcast (comentar línea en serverlist.txt)
  */
 function pausePodcast($username, $index) {
-    $podcasts = readServerList($username);
+    $allPodcasts = readServerList($username);
+    usort($allPodcasts, function($a, $b) { return strcasecmp($a['name'], $b['name']); });
+    $allPodcasts = array_values($allPodcasts);
 
-    // Ordenar alfabéticamente igual que en user.php para que los índices coincidan
-    usort($podcasts, function($a, $b) {
-        return strcasecmp($a['name'], $b['name']);
-    });
-    $podcasts = array_values($podcasts);
-
-    if (!isset($podcasts[$index])) {
+    if (!isset($allPodcasts[$index])) {
         return ['success' => false, 'message' => 'Podcast no encontrado'];
     }
 
-    // Obtener la URL del podcast a pausar (la URL es única y no cambia)
-    $targetUrl = $podcasts[$index]['url'];
+    $targetUrl  = $allPodcasts[$index]['url'];
+    $targetType = $allPodcasts[$index]['type'] ?? 'rss';
 
-    // Releer la lista original (sin ordenar) para hacer los cambios
-    $podcastsOriginal = readServerList($username);
+    if ($targetType === 'ytdlp') {
+        $ytdlpFeeds = readYtdlpFeeds($username);
+        $found = false;
+        foreach ($ytdlpFeeds as &$feed) {
+            if ($feed['url'] === $targetUrl) {
+                $feed['paused'] = true;
+                $found = true;
+                break;
+            }
+        }
+        unset($feed);
+        if (!$found) return ['success' => false, 'message' => 'Podcast no encontrado en la lista'];
+        if (writeYtdlpFeeds($username, $ytdlpFeeds)) {
+            return ['success' => true, 'message' => 'Podcast pausado correctamente. No se descargarán nuevos episodios.'];
+        }
+        return ['success' => false, 'message' => 'Error al pausar el podcast'];
+    }
 
-    // Buscar el podcast por URL y marcarlo como pausado
+    // RSS
+    $allOriginal = readServerList($username);
+    $rssFeeds = array_values(array_filter($allOriginal, function($p) {
+        return ($p['type'] ?? 'rss') === 'rss';
+    }));
     $found = false;
-    foreach ($podcastsOriginal as &$podcast) {
+    foreach ($rssFeeds as &$podcast) {
         if ($podcast['url'] === $targetUrl) {
             $podcast['paused'] = true;
             $found = true;
             break;
         }
     }
-    unset($podcast); // Romper referencia
-
-    if (!$found) {
-        return ['success' => false, 'message' => 'Podcast no encontrado en la lista'];
+    unset($podcast);
+    if (!$found) return ['success' => false, 'message' => 'Podcast no encontrado en la lista'];
+    if (writeServerList($username, $rssFeeds)) {
+        return ['success' => true, 'message' => 'Podcast pausado correctamente. No se descargarán nuevos episodios.'];
     }
-
-    // Guardar
-    if (writeServerList($username, $podcastsOriginal)) {
-        return [
-            'success' => true,
-            'message' => 'Podcast pausado correctamente. No se descargarán nuevos episodios.'
-        ];
-    } else {
-        return ['success' => false, 'message' => 'Error al pausar el podcast'];
-    }
+    return ['success' => false, 'message' => 'Error al pausar el podcast'];
 }
 
 /**
  * Reanudar un podcast (descomentar línea en serverlist.txt)
  */
 function resumePodcast($username, $index) {
-    $podcasts = readServerList($username);
+    $allPodcasts = readServerList($username);
+    usort($allPodcasts, function($a, $b) { return strcasecmp($a['name'], $b['name']); });
+    $allPodcasts = array_values($allPodcasts);
 
-    // Ordenar alfabéticamente igual que en user.php para que los índices coincidan
-    usort($podcasts, function($a, $b) {
-        return strcasecmp($a['name'], $b['name']);
-    });
-    $podcasts = array_values($podcasts);
-
-    if (!isset($podcasts[$index])) {
+    if (!isset($allPodcasts[$index])) {
         return ['success' => false, 'message' => 'Podcast no encontrado'];
     }
 
-    // Obtener la URL del podcast a reanudar (la URL es única y no cambia)
-    $targetUrl = $podcasts[$index]['url'];
+    $targetUrl  = $allPodcasts[$index]['url'];
+    $targetType = $allPodcasts[$index]['type'] ?? 'rss';
 
-    // Releer la lista original (sin ordenar) para hacer los cambios
-    $podcastsOriginal = readServerList($username);
+    if ($targetType === 'ytdlp') {
+        $ytdlpFeeds = readYtdlpFeeds($username);
+        $found = false;
+        foreach ($ytdlpFeeds as &$feed) {
+            if ($feed['url'] === $targetUrl) {
+                $feed['paused'] = false;
+                $found = true;
+                break;
+            }
+        }
+        unset($feed);
+        if (!$found) return ['success' => false, 'message' => 'Podcast no encontrado en la lista'];
+        if (writeYtdlpFeeds($username, $ytdlpFeeds)) {
+            return ['success' => true, 'message' => 'Podcast reanudado correctamente. Se reanudarán las descargas.'];
+        }
+        return ['success' => false, 'message' => 'Error al reanudar el podcast'];
+    }
 
-    // Buscar el podcast por URL y marcarlo como no pausado
+    // RSS
+    $allOriginal = readServerList($username);
+    $rssFeeds = array_values(array_filter($allOriginal, function($p) {
+        return ($p['type'] ?? 'rss') === 'rss';
+    }));
     $found = false;
-    foreach ($podcastsOriginal as &$podcast) {
+    foreach ($rssFeeds as &$podcast) {
         if ($podcast['url'] === $targetUrl) {
             $podcast['paused'] = false;
             $found = true;
             break;
         }
     }
-    unset($podcast); // Romper referencia
-
-    if (!$found) {
-        return ['success' => false, 'message' => 'Podcast no encontrado en la lista'];
+    unset($podcast);
+    if (!$found) return ['success' => false, 'message' => 'Podcast no encontrado en la lista'];
+    if (writeServerList($username, $rssFeeds)) {
+        return ['success' => true, 'message' => 'Podcast reanudado correctamente. Se reanudarán las descargas.'];
     }
-
-    // Guardar
-    if (writeServerList($username, $podcastsOriginal)) {
-        return [
-            'success' => true,
-            'message' => 'Podcast reanudado correctamente. Se reanudarán las descargas.'
-        ];
-    } else {
-        return ['success' => false, 'message' => 'Error al reanudar el podcast'];
-    }
+    return ['success' => false, 'message' => 'Error al reanudar el podcast'];
 }
 
 /**

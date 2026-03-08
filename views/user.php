@@ -116,8 +116,13 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
         $shouldLoadFeedInfo = $isInCurrentPage || $hasActivityFilter;
 
         if ($shouldLoadFeedInfo) {
-            $feedInfo = getCachedFeedInfo($podcast['url']);
-            $statusInfo = formatFeedStatus($feedInfo['timestamp']);
+            if (($podcast['type'] ?? 'rss') === 'ytdlp') {
+                $feedInfo   = ['timestamp' => null, 'cached' => false, 'cache_age' => 0];
+                $statusInfo = ['class' => 'ytdlp', 'status' => 'Descarga vía yt-dlp', 'icon' => '📺', 'date' => '', 'days' => 0];
+            } else {
+                $feedInfo = getCachedFeedInfo($podcast['url']);
+                $statusInfo = formatFeedStatus($feedInfo['timestamp']);
+            }
         } else {
             // Para podcasts fuera de la página actual, usar datos vacíos
             // Se cargarán bajo demanda si el usuario navega a esa página
@@ -126,11 +131,13 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
         }
 
         $podcastsData[] = [
-            'index' => $index,
-            'url' => $podcast['url'],
-            'name' => displayName($podcast['name']),
-            'category' => $podcast['category'],
-            'caducidad' => $caducidades[$podcast['name']] ?? $defaultCaducidad,
+            'index'         => $index,
+            'url'           => $podcast['url'],
+            'name'          => displayName($podcast['name']),
+            'category'      => $podcast['category'],
+            'type'          => $podcast['type'] ?? 'rss',
+            'max_episodios' => $podcast['max_episodios'] ?? 5,
+            'caducidad'     => $caducidades[$podcast['name']] ?? $defaultCaducidad,
             'duracion' => $duraciones[$podcast['name']] ?? '',
             'margen' => $margenes[$podcast['name']] ?? 5,
             'paused' => isset($podcast['paused']) ? $podcast['paused'] : false,
@@ -282,8 +289,13 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 $globalIndex = $offset + $index;
                                 $podcastCaducidad = $caducidades[$podcast['name']] ?? $defaultCaducidad;
             $podcastDuracion = $duraciones[$podcast['name']] ?? '';
-                                $feedInfo = getCachedFeedInfo($podcast['url']);
-                                $statusInfo = formatFeedStatus($feedInfo['timestamp']);
+                                if (($podcast['type'] ?? 'rss') === 'ytdlp') {
+                                    $feedInfo   = ['timestamp' => null, 'cached' => false, 'cache_age' => 0];
+                                    $statusInfo = ['class' => 'ytdlp', 'status' => 'Descarga vía yt-dlp', 'icon' => '📺', 'date' => '', 'days' => 0];
+                                } else {
+                                    $feedInfo = getCachedFeedInfo($podcast['url']);
+                                    $statusInfo = formatFeedStatus($feedInfo['timestamp']);
+                                }
                             ?>
                                 <div class="podcast-item podcast-item-<?php echo htmlEsc($statusInfo['class']); ?> <?php echo (isset($podcast['paused']) && $podcast['paused']) ? 'podcast-paused' : ''; ?>" data-category="<?php echo htmlEsc($podcast['category']); ?>">
                                     <div class="podcast-info">
@@ -292,8 +304,11 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                             <?php if (isset($podcast['paused']) && $podcast['paused']): ?>
                                                 <span class="badge-paused">⏸️ PAUSADO</span>
                                             <?php endif; ?>
+                                            <?php if (($podcast['type'] ?? 'rss') === 'ytdlp'): ?>
+                                                <span class="badge-ytdlp">📺 yt-dlp</span>
+                                            <?php endif; ?>
                                         </strong>
-                                        <small>Categoría: <?php echo htmlEsc(displayName($podcast['category'])); ?> | Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días</small>
+                                        <small>Categoría: <?php echo htmlEsc(displayName($podcast['category'])); ?> | Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días<?php if (($podcast['type'] ?? 'rss') === 'ytdlp'): ?> | Máx. <?php echo htmlEsc($podcast['max_episodios'] ?? 5); ?> episodios<?php endif; ?></small>
                                         <small><?php echo htmlEsc($podcast['url']); ?></small>
 
                                         <div class="last-episode <?php echo $statusInfo['class']; ?>">
@@ -427,8 +442,13 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         <?php foreach ($categoryPodcasts as $podcast):
                                             $podcastCaducidad = $caducidades[$podcast['name']] ?? $defaultCaducidad;
             $podcastDuracion = $duraciones[$podcast['name']] ?? '';
-                                            $feedInfo = getCachedFeedInfo($podcast['url']);
-                                            $statusInfo = formatFeedStatus($feedInfo['timestamp']);
+                                            if (($podcast['type'] ?? 'rss') === 'ytdlp') {
+                                                $feedInfo   = ['timestamp' => null, 'cached' => false, 'cache_age' => 0];
+                                                $statusInfo = ['class' => 'ytdlp', 'status' => 'Descarga vía yt-dlp', 'icon' => '📺', 'date' => '', 'days' => 0];
+                                            } else {
+                                                $feedInfo = getCachedFeedInfo($podcast['url']);
+                                                $statusInfo = formatFeedStatus($feedInfo['timestamp']);
+                                            }
                                         ?>
                                             <div class="podcast-item podcast-item-<?php echo htmlEsc($statusInfo['class']); ?> <?php echo (isset($podcast['paused']) && $podcast['paused']) ? 'podcast-paused' : ''; ?>">
                                                 <div class="podcast-info">
@@ -437,8 +457,11 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                         <?php if (isset($podcast['paused']) && $podcast['paused']): ?>
                                                             <span class="badge-paused">⏸️ PAUSADO</span>
                                                         <?php endif; ?>
+                                                        <?php if (($podcast['type'] ?? 'rss') === 'ytdlp'): ?>
+                                                            <span class="badge-ytdlp">📺 yt-dlp</span>
+                                                        <?php endif; ?>
                                                     </strong>
-                                                    <small>Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días</small>
+                                                    <small>Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días<?php if (($podcast['type'] ?? 'rss') === 'ytdlp'): ?> | Máx. <?php echo htmlEsc($podcast['max_episodios'] ?? 5); ?> episodios<?php endif; ?></small>
                                                     <small><?php echo htmlEsc($podcast['url']); ?></small>
 
                                                     <div class="last-episode <?php echo $statusInfo['class']; ?>">
@@ -898,8 +921,9 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
 
                 <div class="form-group">
-                    <label>URL del RSS:</label>
-                    <input type="text" name="url" id="podcast_url" required placeholder="https://ejemplo.com/podcast/rss" maxlength="500">
+                    <label>URL del podcast o plataforma:</label>
+                    <input type="text" name="url" id="podcast_url" required placeholder="https://ejemplo.com/podcast/rss o https://youtube.com/channel/..." maxlength="500" oninput="detectPodcastUrlType(this.value, 'add')">
+                    <small id="podcast_url_hint" style="color: #718096;">RSS, YouTube, SoundCloud, Vimeo u otras plataformas compatibles</small>
                 </div>
 
                 <div class="form-group">
@@ -925,6 +949,12 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     <label>Nombre del Podcast:</label>
                     <input type="text" name="name" id="podcast_name" required placeholder="Mi Podcast" maxlength="100">
                     <small style="color: #718096;">Puedes usar espacios normales</small>
+                </div>
+
+                <div class="form-group" id="max_episodios_group" style="display: none;">
+                    <label>Máximo de episodios a descargar:</label>
+                    <input type="number" name="max_episodios" id="podcast_max_episodios" value="5" min="1" max="50">
+                    <small style="color: #718096;">Número máximo de episodios recientes a descargar (1-50, por defecto: 5)</small>
                 </div>
 
                 <div class="form-group">
@@ -980,8 +1010,9 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 <input type="hidden" name="index" id="edit_podcast_index">
 
                 <div class="form-group">
-                    <label>URL del RSS:</label>
-                    <input type="text" name="url" id="edit_podcast_url" required maxlength="500">
+                    <label>URL del podcast o plataforma:</label>
+                    <input type="text" name="url" id="edit_podcast_url" required maxlength="500" oninput="detectPodcastUrlType(this.value, 'edit')">
+                    <small id="edit_podcast_url_hint" style="color: #718096;">RSS, YouTube, SoundCloud, Vimeo u otras plataformas compatibles</small>
                 </div>
 
                 <div class="form-group">
@@ -1007,6 +1038,12 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     <label>Nombre del Podcast:</label>
                     <input type="text" name="name" id="edit_podcast_name" required maxlength="100">
                     <small style="color: #718096;">Puedes usar espacios normales</small>
+                </div>
+
+                <div class="form-group" id="edit_max_episodios_group" style="display: none;">
+                    <label>Máximo de episodios a descargar:</label>
+                    <input type="number" name="max_episodios" id="edit_podcast_max_episodios" value="5" min="1" max="50">
+                    <small style="color: #718096;">Número máximo de episodios recientes a descargar (1-50, por defecto: 5)</small>
                 </div>
 
                 <div class="form-group">
@@ -1178,6 +1215,22 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
     margin-left: 8px;
     display: inline-block;
     vertical-align: middle;
+}
+
+.badge-ytdlp {
+    background: #2563eb;
+    color: #ffffff;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 8px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.podcast-item-ytdlp {
+    border-left-color: #2563eb;
 }
 
 .podcast-paused {
@@ -1383,6 +1436,43 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 // Datos de todos los podcasts para JavaScript
 const podcastsData = <?php echo json_encode($podcastsData); ?>;
 
+// Dominios compatibles con yt-dlp (debe coincidir con isYtdlpUrl() en PHP)
+const YTDLP_DOMAINS = [
+    'youtube.com', 'youtu.be', 'soundcloud.com', 'vimeo.com',
+    'dailymotion.com', 'twitch.tv', 'rumble.com', 'odysee.com',
+    'tiktok.com', 'instagram.com', 'facebook.com', 'fb.watch'
+];
+
+function isYtdlpUrl(url) {
+    try {
+        const parsed = new URL(url);
+        let host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+        for (const domain of YTDLP_DOMAINS) {
+            if (host === domain || host.endsWith('.' + domain)) return true;
+        }
+    } catch (e) {}
+    return false;
+}
+
+function detectPodcastUrlType(url, mode) {
+    const isYtdlp = isYtdlpUrl(url);
+    const groupId    = mode === 'add' ? 'max_episodios_group'      : 'edit_max_episodios_group';
+    const hintId     = mode === 'add' ? 'podcast_url_hint'         : 'edit_podcast_url_hint';
+    const group      = document.getElementById(groupId);
+    const hint       = document.getElementById(hintId);
+
+    if (group) group.style.display = isYtdlp ? 'block' : 'none';
+    if (hint) {
+        if (isYtdlp) {
+            hint.textContent = '📺 URL de plataforma detectada — se descargará con yt-dlp';
+            hint.style.color = '#2563eb';
+        } else {
+            hint.textContent = 'RSS, YouTube, SoundCloud, Vimeo u otras plataformas compatibles';
+            hint.style.color = '#718096';
+        }
+    }
+}
+
 // Funciones para el modal de editar podcast
 function showEditPodcastModal(index) {
     // Convertir a número por si viene como string
@@ -1421,6 +1511,11 @@ function showEditPodcastModal(index) {
     if (caducidadField) caducidadField.value = podcast.caducidad;
     if (duracionField) duracionField.value = podcast.duracion;
     if (margenField) margenField.value = podcast.margen || 5;
+
+    // Mostrar/ocultar campo max_episodios según tipo
+    const maxEpField = document.getElementById('edit_podcast_max_episodios');
+    if (maxEpField) maxEpField.value = podcast.max_episodios || 5;
+    detectPodcastUrlType(podcast.url, 'edit');
 
     // Mostrar el modal
     document.getElementById('editPodcastModal').style.display = 'block';
