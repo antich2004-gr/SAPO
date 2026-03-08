@@ -837,9 +837,8 @@ function executePodget($username) {
     ];
 
     // Comando como array (sin concatenación de strings = sin injection)
+    // PHP-FPM ya corre como radioslibres, no se necesita sudo
     $cmd = [
-        '/usr/bin/sudo',
-        '-u', 'radioslibres',
         '/bin/bash',
         $scriptPath,
         '--emisora', $username
