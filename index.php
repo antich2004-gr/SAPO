@@ -1110,8 +1110,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $duracion = trim($_POST['duracion'] ?? '');
         $margen = intval($_POST['margen'] ?? 5);
         if (!in_array($margen, [5, 10, 15])) $margen = 5;
-        $max_episodios = intval($_POST['max_episodios'] ?? 5);
-        if ($max_episodios < 1 || $max_episodios > 50) $max_episodios = 5;
+        $max_episodios = intval($_POST['max_episodios'] ?? 1);
+        if ($max_episodios < 1 || $max_episodios > 50) $max_episodios = 1;
 
         // Validar caducidad
         if ($caducidad < 1 || $caducidad > 365) {
@@ -1149,8 +1149,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $duracion = trim($_POST['duracion'] ?? '');
         $margen = intval($_POST['margen'] ?? 5);
         if (!in_array($margen, [5, 10, 15])) $margen = 5;
-        $max_episodios = intval($_POST['max_episodios'] ?? 5);
-        if ($max_episodios < 1 || $max_episodios > 50) $max_episodios = 5;
+        $max_episodios = intval($_POST['max_episodios'] ?? 1);
+        if ($max_episodios < 1 || $max_episodios > 50) $max_episodios = 1;
 
         // Validar caducidad
         if ($caducidad < 1 || $caducidad > 365) {

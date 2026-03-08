@@ -156,7 +156,7 @@ function readYtdlpFeeds($username) {
         $url      = $parts[0];
         $category = ($parts[1] === '-') ? '' : $parts[1];
         $name     = $parts[2];
-        $maxEp    = isset($parts[3]) ? max(1, (int)$parts[3]) : 5;
+        $maxEp    = isset($parts[3]) ? max(1, (int)$parts[3]) : 1;
 
         $feeds[] = [
             'url'           => $url,
@@ -197,7 +197,7 @@ function writeYtdlpFeeds($username, $feeds) {
     foreach ($feeds as $feed) {
         $sanitizedName     = sanitizePodcastName($feed['name']);
         $sanitizedCategory = empty($feed['category']) ? '-' : sanitizePodcastName($feed['category']);
-        $maxEp             = isset($feed['max_episodios']) ? max(1, (int)$feed['max_episodios']) : 5;
+        $maxEp             = isset($feed['max_episodios']) ? max(1, (int)$feed['max_episodios']) : 1;
 
         $line = $feed['url'] . ' ' . $sanitizedCategory . ' ' . $sanitizedName . ' ' . $maxEp;
 
@@ -421,7 +421,7 @@ function writeServerList($username, $podcasts) {
     return file_put_contents($path, $content) !== false;
 }
 
-function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracion = '', $margen = 5, $max_episodios = 5) {
+function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracion = '', $margen = 5, $max_episodios = 1) {
     // Comprobar duplicados en AMBOS ficheros (RSS y ytdlp)
     $allPodcasts = readServerList($username);
     foreach ($allPodcasts as $podcast) {
@@ -487,7 +487,7 @@ function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracio
     }
 }
 
-function editPodcast($username, $index, $url, $category, $name, $caducidad = 30, $duracion = '', $margen = 5, $max_episodios = 5) {
+function editPodcast($username, $index, $url, $category, $name, $caducidad = 30, $duracion = '', $margen = 5, $max_episodios = 1) {
     // Lista mezclada ordenada para resolver el índice
     $allPodcasts = readServerList($username);
     usort($allPodcasts, function($a, $b) {
@@ -952,7 +952,7 @@ function writeDuraciones($username, $duraciones, $margenes = []) {
     $content = "";
     foreach ($duraciones as $podcastName => $duracion) {
         if (!empty($duracion)) {
-            $margen = isset($margenes[$podcastName]) ? (int)$margenes[$podcastName] : 5;
+            $margen = isset($margenes[$podcastName]) ? (int)$margenes[$podcastName] : 1;
             $line = slugify($podcastName) . ":" . $duracion;
             if ($margen !== 5) {
                 $line .= ":" . $margen;
