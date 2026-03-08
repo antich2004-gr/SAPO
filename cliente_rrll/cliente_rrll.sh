@@ -345,35 +345,30 @@ done < <(find "$PODCASTS_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
 # --- ELIMINAR ARCHIVOS ANTIGUOS, CONSERVANDO SOLO EL MÁS RECIENTE POR CARPETA ---
 echo "🧹 Manteniendo solo el archivo más reciente por carpeta..."
 
+_eliminar_antiguos_en_dir() {
+    local dir="$1"
+    mapfile -t archivos < <(find "$dir" -maxdepth 1 -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) -printf "%T@|%p\n" | sort -n | awk -F'|' '{print $2}')
+    local total=${#archivos[@]}
+    if (( total > 1 )); then
+        local fecha_actual
+        fecha_actual=$(date +"%Y-%m-%d %H:%M:%S")
+        for (( i=0; i<total-1; i++ )); do
+            local archivo="${archivos[i]}"
+            echo "  🗑️ Eliminando por antigüedad: $(basename "$archivo")"
+            rm -f "$archivo"
+            echo "$fecha_actual|$archivo|REEMPLAZO" >> "$ELIMINADOS_HISTORICO"
+        done
+    fi
+}
+
 find "$PODCASTS_DIR" -mindepth 1 -maxdepth 1 -type d | while read -r subdir; do
     if find "$subdir" -mindepth 1 -maxdepth 1 -type d | grep -q .; then
-        # Tiene subcarpetas → procesar cada subcarpeta
+        # Tiene subcarpetas → procesar cada una
         find "$subdir" -mindepth 1 -maxdepth 1 -type d | while read -r nested; do
-            archivos=( $(find "$nested" -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) -printf "%T@|%p\n" | sort -n | awk -F'|' '{print $2}') )
-            total=${#archivos[@]}
-            if (( total > 1 )); then
-                for (( i=0; i<total-1; i++ )); do
-                    archivo="${archivos[i]}"
-                    echo "  🗑️ Eliminando por antigüedad: $(basename "$archivo")"
-                    rm -f "$archivo"
-                    fecha_actual=$(date +"%Y-%m-%d %H:%M:%S")
-                    echo "$fecha_actual|$archivo|REEMPLAZO" >> "$ELIMINADOS_HISTORICO"
-                done
-            fi
+            _eliminar_antiguos_en_dir "$nested"
         done
     else
-        # No tiene subcarpetas → procesar directamente
-        archivos=( $(find "$subdir" -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) -printf "%T@|%p\n" | sort -n | awk -F'|' '{print $2}') )
-        total=${#archivos[@]}
-        if (( total > 1 )); then
-            for (( i=0; i<total-1; i++ )); do
-                archivo="${archivos[i]}"
-                echo "  🗑️ Eliminando por antigüedad: $(basename "$archivo")"
-                rm -f "$archivo"
-                fecha_actual=$(date +"%Y-%m-%d %H:%M:%S")
-                echo "$fecha_actual|$archivo|REEMPLAZO" >> "$ELIMINADOS_HISTORICO"
-            done
-        fi
+        _eliminar_antiguos_en_dir "$subdir"
     fi
 done
 
