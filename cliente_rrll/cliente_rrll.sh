@@ -200,7 +200,7 @@ purgar_bloqueos_podget_antiguos() {
 }
 
 # --- DESCARGA DE PODCASTS (opcional con --sinpodget) ---
-PODGET_LOG="/tmp/podget_${EMISORA}.log"
+PODGET_LOG="$INFORMES_DIR/podget_${EMISORA}.log"
 if [[ "$EJECUTAR_PODGET" -eq 1 ]]; then
     echo "📅 Ejecutando podget para $EMISORA..."
 
