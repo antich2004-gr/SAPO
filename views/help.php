@@ -124,8 +124,9 @@
                     <li><strong>URL del RSS:</strong> Dirección del feed (ejemplo: https://feeds.feedburner.com/mi-podcast)</li>
                     <li><strong>Categoría:</strong> Selecciona una existente o crea una nueva</li>
                     <li><strong>Nombre del podcast:</strong> Nombre descriptivo (será el nombre de la carpeta)</li>
-                    <li><strong>Caducidad:</strong> Días a conservar episodios (1-365 días, por defecto: 30)</li>
+                    <li><strong>Caducidad:</strong> Días a conservar episodios (1-365 días). Se rellena automáticamente con la caducidad por defecto configurada</li>
                     <li><strong>Duración máxima:</strong> Límite de duración de episodios (opcional). Los episodios que excedan este tiempo serán eliminados automáticamente</li>
+                    <li><strong>Margen de tolerancia:</strong> Tiempo extra permitido sobre la duración máxima antes de eliminar el episodio (5, 10 o 15 minutos). Por defecto: 5 minutos</li>
                 </ul>
             </li>
             <li>Haz clic en <strong>"Agregar Podcast"</strong></li>
@@ -135,6 +136,9 @@
             <strong>⚠️ Importante:</strong> El nombre del podcast se normaliza automáticamente. Los espacios se convierten en guiones bajos y se eliminan caracteres especiales.<br>
             Ejemplo: "Mi Podcast Ñoño" → "Mi_Podcast_Nono"
         </div>
+
+        <h4>⚙️ Caducidad por defecto</h4>
+        <p>En la parte superior de la pestaña "Mis Podcasts" hay un campo <strong>Caducidad por defecto</strong> que establece el valor inicial de caducidad para los nuevos podcasts que añadas. Cámbialo antes de añadir un podcast si quieres que use un valor distinto al actual.</p>
 
         <h4>✏️ Editar un podcast</h4>
         <ol>
@@ -390,12 +394,22 @@
         <h4>Vistas de organización</h4>
         <ul>
             <li><strong>Vista alfabética:</strong> Todos los podcasts ordenados A-Z</li>
-            <li><strong>Vista agrupada:</strong> Podcasts organizados por categoría</li>
+            <li><strong>Vista agrupada:</strong> Podcasts organizados por categoría. Actívala con el botón <strong>"Agrupar por categoría"</strong></li>
         </ul>
-        <p>Alterna entre vistas con el botón <strong>"Agrupar por categoría"</strong>.</p>
 
-        <h4>Filtrar por categoría</h4>
-        <p>Usa el selector en la parte superior para mostrar solo podcasts de una categoría específica.</p>
+        <h4>Filtros disponibles</h4>
+        <p>En la parte superior de la lista hay dos selectores de filtro combinables:</p>
+        <ul>
+            <li><strong>Filtrar por categoría:</strong> Muestra solo los podcasts de una categoría concreta</li>
+            <li><strong>Filtrar por actividad:</strong> Filtra según el estado del feed:
+                <ul>
+                    <li>✅ <strong>Activo</strong> — último episodio hace ≤ 30 días</li>
+                    <li>⚠️ <strong>Poco activo</strong> — último episodio hace 31-90 días</li>
+                    <li>❌ <strong>Inactivo</strong> — último episodio hace más de 90 días</li>
+                    <li>❓ <strong>No responde</strong> — no se pudo consultar el feed</li>
+                </ul>
+            </li>
+        </ul>
 
         <div style="background: #e6fffa; border-left: 4px solid #38b2ac; padding: 15px; margin: 15px 0;">
             <strong>💡 Tip:</strong> SAPO detecta automáticamente los sufijos que podget agrega a los nombres de directorios (como "_OPT_FILENAME_RENAME_...") y los maneja correctamente durante los movimientos.
