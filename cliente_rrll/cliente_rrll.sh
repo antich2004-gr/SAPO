@@ -10,6 +10,8 @@ umask 002
 export LANG="es_ES.UTF-8"
 EJECUTAR_PODGET=1
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # --- PARSEAR PARÁMETROS ---
 while [[ "$#" -gt 0 ]]; do
     case "$1" in
@@ -57,8 +59,6 @@ touch "$LOCK_FILE"
 trap 'rm -f "$LOCK_FILE"' EXIT
 
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 # Leer API key/URL directamente del global.json de SAPO
 SAPO_GLOBAL_JSON="$SCRIPT_DIR/../db/global.json"
 AZURACAST_API_URL=""
@@ -78,7 +78,7 @@ mostrar_playlists_vacias() {
     local emisora_slug="$1"
 
     if [[ -z "$AZURACAST_API_URL" || -z "$AZURACAST_API_KEY" ]]; then
-        echo "  ⚠️  API no configurada. Configura radiobot.conf para ver las listas vacías."
+        echo "  ⚠️  API no configurada. Introduce la URL y clave API en el panel de administración de SAPO."
         return
     fi
 
@@ -211,29 +211,28 @@ purgar_bloqueos_podget_antiguos() {
 PODGET_LOG="/tmp/podget_${EMISORA}.log"
 if [[ "$EJECUTAR_PODGET" -eq 1 ]]; then
     echo "📅 Ejecutando podget para $EMISORA..."
-# --- DESCARGA AUTOMÁTICA DE PODCASTS DESDE YOUTUBE ---
-SERVERLIST="$CONFIG_DIR/serverlist.txt"
-if grep -Eiq "youtube\.com|youtu\.be" "$SERVERLIST" 2>/dev/null; then
-    echo "📺 Detectadas URLs de YouTube en $SERVERLIST"
-    mkdir -p "$PODCASTS_DIR"
 
-    grep -E "youtube\.com|youtu\.be" "$SERVERLIST" | while read -r url carpeta; do
-        [[ -z "$url" || -z "$carpeta" ]] && continue
-        destino="$PODCASTS_DIR/$carpeta"
-        mkdir -p "$destino"
-        echo "⬇️ Descargando desde YouTube: $url → $destino"
-        if command -v yt-dlp &>/dev/null; then
-            yt-dlp -x --audio-format mp3 -o "$destino/%(title)s.%(ext)s" "$url" \
-                || echo "⚠️ Error al descargar $url"
-        else
-            echo "⚠️ yt-dlp no está instalado. Instálalo con: apt install yt-dlp"
-        fi
-    done
-else
-    echo "📺 No se detectaron URLs de YouTube en serverlist.txt"
-fi
+    # --- DESCARGA AUTOMÁTICA DE PODCASTS DESDE YOUTUBE ---
+    SERVERLIST="$CONFIG_DIR/serverlist.txt"
+    if grep -Eiq "youtube\.com|youtu\.be" "$SERVERLIST" 2>/dev/null; then
+        echo "📺 Detectadas URLs de YouTube en $SERVERLIST"
+        mkdir -p "$PODCASTS_DIR"
+        grep -E "youtube\.com|youtu\.be" "$SERVERLIST" | while read -r url carpeta; do
+            [[ -z "$url" || -z "$carpeta" ]] && continue
+            destino="$PODCASTS_DIR/$carpeta"
+            mkdir -p "$destino"
+            echo "⬇️ Descargando desde YouTube: $url → $destino"
+            if command -v yt-dlp &>/dev/null; then
+                yt-dlp -x --audio-format mp3 -o "$destino/%(title)s.%(ext)s" "$url" \
+                    || echo "⚠️ Error al descargar $url"
+            else
+                echo "⚠️ yt-dlp no está instalado. Instálalo con: apt install yt-dlp"
+            fi
+        done
+    else
+        echo "📺 No se detectaron URLs de YouTube en serverlist.txt"
+    fi
 
-######
     cd "$CONFIG_DIR"
     podget -d . -c "podgetrc.$EMISORA" | tee "$PODGET_LOG"
     cd - >/dev/null
@@ -274,6 +273,7 @@ DIA=$(date +"%d")
 MES=$(date +"%m")
 ANO=$(date +"%Y")
 HOY=$(date +"%Y-%m-%d")
+now=$(date +%s)
 
 echo "📆 Renombrando descargas de hoy..."
 
@@ -307,11 +307,6 @@ find "$PODCASTS_DIR" -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wa
         fi
     fi
 done
-DIA=$(date +"%d")
-MES=$(date +"%m")
-ANO=$(date +"%Y")
-HOY=$(date +"%Y-%m-%d")
-now=$(date +%s)
 
 # --- LIMPIEZA POR CADUCIDAD ---
 echo "🧹 Limpiando archivos por caducidad..."
