@@ -31,6 +31,7 @@
             <li><a href="#urls">URLs de la parrilla</a></li>
             <li><a href="#indicador-directo">Indicador "AHORA EN DIRECTO"</a></li>
             <li><a href="#personalizacion">Personalización de programas</a></li>
+            <li><a href="#cobertura-semanal">📊 Cobertura semanal</a></li>
             <li><a href="#responsive">Diseño responsive</a></li>
         </ul>
     </div>
@@ -200,6 +201,32 @@
 
         <div style="background: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 15px 0;">
             <strong>💡 Tip:</strong> Configura toda la información de tus programas en SAPO para que la parrilla se vea completa y profesional, incluso si los nombres en Radiobot son técnicos o codificados.
+        </div>
+    </div>
+
+    <!-- Sección: Cobertura semanal -->
+    <div id="cobertura-semanal" style="margin-bottom: 40px;">
+        <h3>📊 Cobertura semanal</h3>
+        <p>La pestaña <strong>"Cobertura Semanal"</strong> muestra un resumen visual de todo el contenido programado día a día: programas, bloques musicales y emisiones en directo.</p>
+
+        <div style="background: #e6fffa; border-left: 4px solid #38b2ac; padding: 15px; margin: 15px 0;">
+            <strong>💡 Para qué sirve:</strong> De un vistazo puedes ver si todos los días de la semana tienen contenido suficiente, detectar huecos en la programación y comprobar el estado de los feeds RSS de cada programa.
+        </div>
+
+        <h4>¿Qué muestra cada día?</h4>
+        <p>Para cada día de la semana se muestra una barra con contadores de:</p>
+        <ul>
+            <li>🎵 <strong>Bloques musicales</strong> — playlists de música de fondo</li>
+            <li>📻 <strong>Programas</strong> — contenido de podcast/programa procedente de Radiobot</li>
+            <li>🎙️ <strong>Directos</strong> — emisiones en directo configuradas manualmente en SAPO</li>
+        </ul>
+        <p>También se muestra la duración total de contenido del día y una línea de tiempo proporcional con los bloques de cada tipo.</p>
+
+        <h4>Alertas de programas sin contenido</h4>
+        <p>Si algún programa tiene el feed RSS desactualizado (sin episodio nuevo en más de 90 días), aparecerá una advertencia en la cobertura. Esto ayuda a detectar podcasts que llevan tiempo sin publicar y que podrían dejar huecos en la emisión.</p>
+
+        <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 15px 0;">
+            <strong>⚠️ Requisito:</strong> La cobertura semanal requiere tener configurado el <strong>Station ID de Radiobot</strong> en la pestaña Configuración de la parrilla. Sin él, no se puede obtener la programación.
         </div>
     </div>
 
