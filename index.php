@@ -1110,6 +1110,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $duracion = trim($_POST['duracion'] ?? '');
         $margen = intval($_POST['margen'] ?? 5);
         if (!in_array($margen, [5, 10, 15])) $margen = 5;
+        $max_episodios = intval($_POST['max_episodios'] ?? 5);
+        if ($max_episodios < 1 || $max_episodios > 50) $max_episodios = 5;
 
         // Validar caducidad
         if ($caducidad < 1 || $caducidad > 365) {
@@ -1121,11 +1123,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (empty($url) || empty($name)) {
             $error = 'Todos los campos son obligatorios';
         } elseif (!validateInput($url, 'url')) {
-            $error = 'URL de RSS invalida';
+            $error = 'URL inválida';
         } elseif (strlen($name) > 100) {
             $error = 'El nombre del podcast es demasiado largo';
         } else {
-            $result = addPodcast($_SESSION['username'], $url, $finalCategory, $name, $caducidad, $duracion, $margen);
+            $result = addPodcast($_SESSION['username'], $url, $finalCategory, $name, $caducidad, $duracion, $margen, $max_episodios);
             if ($result['success']) {
                 $message = $result['message'];
             } else {
@@ -1147,6 +1149,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $duracion = trim($_POST['duracion'] ?? '');
         $margen = intval($_POST['margen'] ?? 5);
         if (!in_array($margen, [5, 10, 15])) $margen = 5;
+        $max_episodios = intval($_POST['max_episodios'] ?? 5);
+        if ($max_episodios < 1 || $max_episodios > 50) $max_episodios = 5;
 
         // Validar caducidad
         if ($caducidad < 1 || $caducidad > 365) {
@@ -1160,11 +1164,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } elseif (empty($url) || empty($name)) {
             $error = 'Todos los campos son obligatorios';
         } elseif (!validateInput($url, 'url')) {
-            $error = 'URL de RSS invalida';
+            $error = 'URL inválida';
         } elseif (strlen($name) > 100) {
             $error = 'El nombre del podcast es demasiado largo';
         } else {
-            $result = editPodcast($_SESSION['username'], $index, $url, $finalCategory, $name, $caducidad, $duracion, $margen);
+            $result = editPodcast($_SESSION['username'], $index, $url, $finalCategory, $name, $caducidad, $duracion, $margen, $max_episodios);
             if ($result['success']) {
                 // Si se cambió la categoría, mostrar recordatorio de AzuraCast
                 if (!empty($result['category_changed'])) {

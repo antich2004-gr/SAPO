@@ -204,26 +204,66 @@ PODGET_LOG="/tmp/podget_${EMISORA}.log"
 if [[ "$EJECUTAR_PODGET" -eq 1 ]]; then
     echo "📅 Ejecutando podget para $EMISORA..."
 
-    # --- DESCARGA AUTOMÁTICA DE PODCASTS DESDE YOUTUBE ---
-    SERVERLIST="$CONFIG_DIR/serverlist.txt"
-    if grep -Eiq "youtube\.com|youtu\.be" "$SERVERLIST" 2>/dev/null; then
-        echo "📺 Detectadas URLs de YouTube en $SERVERLIST"
-        mkdir -p "$PODCASTS_DIR"
-        grep -E "youtube\.com|youtu\.be" "$SERVERLIST" | while read -r url carpeta; do
-            [[ -z "$url" || -z "$carpeta" ]] && continue
-            destino="$PODCASTS_DIR/$carpeta"
-            mkdir -p "$destino"
-            echo "⬇️ Descargando desde YouTube: $url → $destino"
-            if command -v yt-dlp &>/dev/null; then
-                yt-dlp -x --audio-format mp3 -o "$destino/%(title)s.%(ext)s" "$url" \
-                    || echo "⚠️ Error al descargar $url"
+    # --- DESCARGA DE SUSCRIPCIONES VÍA YT-DLP ---
+    _descargar_ytdlp_feeds() {
+        local feeds_file="$CONFIG_DIR/ytdlp_feeds.txt"
+
+        if [[ ! -f "$feeds_file" ]]; then
+            echo "📺 No se encontró ytdlp_feeds.txt — sin suscripciones de plataformas de vídeo."
+            return 0
+        fi
+
+        if ! command -v yt-dlp &>/dev/null; then
+            echo "⚠️  yt-dlp no está instalado. Instálalo con: apt install yt-dlp"
+            return 0
+        fi
+
+        local archive_file="$CONFIG_DIR/ytdlp_archive_${EMISORA}.txt"
+        local descargados=0
+        local errores=0
+
+        echo "📺 Procesando suscripciones de plataformas (ytdlp_feeds.txt)..."
+
+        while IFS= read -r linea || [[ -n "$linea" ]]; do
+            # Ignorar comentarios y líneas vacías (incluyendo pausadas con '# PAUSADO:')
+            [[ "$linea" =~ ^[[:space:]]*# ]] && continue
+            [[ -z "${linea// /}" ]] && continue
+
+            # Parsear: URL CATEGORIA NOMBRE MAX_EPISODIOS
+            read -r url categoria nombre max_ep <<< "$linea"
+            [[ -z "$url" || -z "$nombre" ]] && continue
+
+            # CATEGORIA='-' significa sin categoría
+            local destino
+            if [[ "$categoria" == "-" || -z "$categoria" ]]; then
+                destino="$PODCASTS_DIR/$nombre"
             else
-                echo "⚠️ yt-dlp no está instalado. Instálalo con: apt install yt-dlp"
+                destino="$PODCASTS_DIR/$categoria/$nombre"
             fi
-        done
-    else
-        echo "📺 No se detectaron URLs de YouTube en serverlist.txt"
-    fi
+
+            max_ep="${max_ep:-5}"
+            mkdir -p "$destino"
+
+            echo "  ⬇️  $nombre ($url) → $destino [máx. $max_ep ep.]"
+
+            yt-dlp \
+                -x --audio-format mp3 \
+                --audio-quality 5 \
+                --playlist-end "$max_ep" \
+                --match-filter "duration > 60" \
+                --download-archive "$archive_file" \
+                --no-playlist-reverse \
+                -o "$destino/%(title)s.%(ext)s" \
+                "$url" 2>&1 | grep -v "^\[download\] .*has already been recorded" \
+                || { echo "  ⚠️  Error al descargar $url"; ((errores++)) || true; }
+
+            ((descargados++)) || true
+        done < "$feeds_file"
+
+        echo "📺 yt-dlp: $descargados fuente(s) procesada(s), $errores error(es)."
+    }
+
+    _descargar_ytdlp_feeds
 
     purgar_bloqueos_podget_antiguos
     cd "$CONFIG_DIR"
