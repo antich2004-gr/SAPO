@@ -86,8 +86,13 @@ mostrar_playlists_vacias() {
         return
     fi
 
+    if ! jq -e 'type == "array"' <<< "$json" >/dev/null 2>&1; then
+        echo "  ⚠️  Respuesta de API no válida para $emisora_slug."
+        return
+    fi
+
     local vacias
-    vacias=$(jq -r '.[] | select(.source == "songs") | select(.is_enabled == true) | select(.num_songs == 0) | .name' <<< "$json")
+    vacias=$(jq -r '.[] | select(.source == "songs") | select(.is_enabled == true) | select(.num_songs == 0) | .name' 2>/dev/null <<< "$json") || vacias=""
 
     if [[ -z "$vacias" ]]; then
         echo "  (ninguna lista vacía activa)"
