@@ -645,10 +645,6 @@
             <p>Sí. Pega la URL del canal o playlist al añadir un podcast. SAPO lo detecta automáticamente y descarga los episodios en MP3. Consulta la sección <a href="#suscripciones-plataformas">Suscripciones de plataformas</a> para ver todas las plataformas compatibles y cómo obtener las URLs.</p>
         </div>
 
-        <div style="margin-bottom: 20px;">
-            <h4>¿Qué significa "Máx. episodios" en las suscripciones de plataformas?</h4>
-            <p>Indica cuántos episodios recientes se descargan como máximo en cada ejecución. yt-dlp descarga los más recientes primero. Los episodios ya descargados no se vuelven a descargar (se registran en un archivo de historial). Para programas diarios se recomienda 1-2; para semanales, 3-5.</p>
-        </div>
     </div>
 
     <!-- Pie de página -->
