@@ -1,4 +1,3 @@
-
 #!/bin/bash
 # CLIENTE RRLL
 # Versión: 0.9.3
@@ -241,18 +240,6 @@ else
     echo "" > "$PODGET_LOG"
 fi
 
-# Limpieza post-podget (locks que queden colgados si ya no hay proceso activo)
-limpieza_post_podget() {
-    local minutos="${1:-10}"   # más conservador: 10 min
-    local dir_session
-    dir_session="$(obtener_dir_session)"
-    # Si Podget no está ejecutándose para esta emisora, limpia locks recientes
-    if ! pgrep -f "podget.*podgetrc\.${EMISORA}" >/dev/null 2>&1; then
-        _purgar_locks_en_dir "$CONFIG_DIR" "$minutos"
-        [[ -n "$dir_session" ]] && _purgar_locks_en_dir "$dir_session" "$minutos"
-    fi
-}
-
 # --- CORRECCIÓN DE EXTENSIONES MALFORMADAS ---
 echo "🔧 Corrigiendo extensiones malformadas..."
 find "$PODCASTS_DIR" -type f \( -iname "*.mp3.*" -o -iname "*.ogg.*" -o -iname "*.wav.*" \) | while read -r file; do
@@ -333,7 +320,7 @@ while IFS= read -r subdir; do
         nombre_base=$(basename "${archivo%.*}")
         nombre_podcast="${nombre_base%[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]}"
         dias_caducidad=${CADUCIDADES["$nombre_podcast"]:-$DEFAULT_DIAS}
-        umbral_segundos=$(( $(date +%s) - dias_caducidad * 86400 ))
+        umbral_segundos=$(( now - dias_caducidad * 86400 ))
         if (( ts < umbral_segundos )); then
             echo "  🗑️ Eliminando por caducidad ($dias_caducidad días): $(basename "$archivo")"
             rm -f "$archivo"
