@@ -318,8 +318,8 @@ DEFAULT_DIAS=30
 
 if [[ -f "$CADUCIDADES_FILE" ]]; then
     while IFS=':' read -r carpeta dias; do
-        carpeta=$(echo "$carpeta" | xargs)
-        dias=$(echo "$dias" | xargs)
+        read -r carpeta <<< "$carpeta"
+        read -r dias <<< "$dias"
         if [[ -n "$carpeta" && "$dias" =~ ^[0-9]+$ ]]; then
             CADUCIDADES["$carpeta"]=$dias
         fi
@@ -391,9 +391,10 @@ MAPA_BASE_SEG["3H"]=10800     # 180 min
 # Leer archivo de configuración (formato: carpeta:clave  o  carpeta:clave:margen_min)
 if [[ -f "$DURACIONES_FILE" ]]; then
     while IFS=':' read -r carpeta clave margen_campo; do
-        carpeta=$(echo "$carpeta" | xargs)
-        clave=$(echo "$clave" | xargs)
-        margen_campo=$(echo "${margen_campo:-5}" | xargs)
+        read -r carpeta <<< "$carpeta"
+        read -r clave <<< "$clave"
+        margen_campo="${margen_campo:-5}"
+        read -r margen_campo <<< "$margen_campo"
         if [[ -n "$carpeta" && -n "$clave" && -n "${MAPA_BASE_SEG[$clave]:-}" ]]; then
             margen_min=5
             if [[ "$margen_campo" =~ ^[0-9]+$ && "$margen_campo" -gt 0 ]]; then
@@ -406,6 +407,19 @@ if [[ -f "$DURACIONES_FILE" ]]; then
 fi
 
 # Aplicar verificación por carpeta
+_verificar_duracion_en_dir() {
+    local dir="$1" etiqueta="$2" umbral="$3"
+    find "$dir" -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) | while read -r archivo; do
+        duracion=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$archivo" 2>/dev/null | cut -d. -f1)
+        if [[ -n "$duracion" && "$duracion" -gt "$umbral" ]]; then
+            echo "⛔ $(basename "$archivo") en $etiqueta → ${duracion}s (excede)"
+            fecha_actual=$(date +"%Y-%m-%d %H:%M:%S")
+            echo "$fecha_actual|$archivo|EXCESO_DURACION" >> "$ELIMINADOS_HISTORICO"
+            rm -f "$archivo"
+        fi
+    done
+}
+
 for carpeta in "${!MAPA_DURACIONES[@]}"; do
     base_seg=${MAPA_DURACIONES[$carpeta]}
     margen_min=${MAPA_MARGENES[$carpeta]:-5}
@@ -414,34 +428,21 @@ for carpeta in "${!MAPA_DURACIONES[@]}"; do
     ruta="$PODCASTS_DIR/$carpeta"
     [[ -d "$ruta" ]] || continue
 
-    _verificar_duracion_en_dir() {
-        local dir="$1" etiqueta="$2"
-        find "$dir" -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) | while read -r archivo; do
-            duracion=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$archivo" 2>/dev/null | cut -d. -f1)
-            if [[ -n "$duracion" && "$duracion" -gt "$umbral" ]]; then
-                echo "⛔ $(basename "$archivo") en $etiqueta → ${duracion}s (excede)"
-                fecha_actual=$(date +"%Y-%m-%d %H:%M:%S")
-                echo "$fecha_actual|$archivo|EXCESO_DURACION" >> "$ELIMINADOS_HISTORICO"
-                rm -f "$archivo"
-            fi
-        done
-    }
-
     if find "$ruta" -mindepth 1 -maxdepth 1 -type d | grep -q .; then
         # Tiene subcarpetas → verificar cada una
         echo "📂 Verificando subcarpetas de $carpeta (límite: $((umbral/60)) min)"
         find "$ruta" -mindepth 1 -maxdepth 1 -type d | while read -r subdir; do
-            _verificar_duracion_en_dir "$subdir" "$(basename "$subdir")"
+            _verificar_duracion_en_dir "$subdir" "$(basename "$subdir")" "$umbral"
         done
     else
         echo "📂 Verificando carpeta $carpeta (límite: $((umbral/60)) min)"
-        _verificar_duracion_en_dir "$ruta" "$carpeta"
+        _verificar_duracion_en_dir "$ruta" "$carpeta" "$umbral"
     fi
 done
 INFORME="$INFORMES_DIR/Informe_diario_${DIA}_${MES}_${ANO}.log"
 
 {
-    EMISORA_MAYUSCULA="$(tr '[:lower:]' '[:upper:]' <<< ${EMISORA:0:1})${EMISORA:1}"
+    EMISORA_MAYUSCULA="$(tr '[:lower:]' '[:upper:]' <<< "${EMISORA:0:1}")${EMISORA:1}"
     MES_NOMBRE=$(LC_TIME=es_ES.UTF-8 date +"%B")
     echo "📻 Informe diario – Emisora: $EMISORA_MAYUSCULA"
     echo "🗓️  Fecha: $DIA de $MES_NOMBRE de $ANO"
@@ -539,9 +540,9 @@ awk -F'|' -v hoy="$HOY" '
             ultima_mod=$(stat -c %Y "$carpeta" 2>/dev/null)
             if [[ -n "$ultima_mod" ]]; then
                 dias_vacio=$(( (now - ultima_mod) / 86400 ))
-                echo -e "$dias_vacio\t$carpeta"
+                printf "%s\t%s\n" "$dias_vacio" "$carpeta"
             else
-                echo -e "SIN_FECHA\t$carpeta"
+                printf "SIN_FECHA\t%s\n" "$carpeta"
             fi
         fi
     done | sort -k1,1n | while IFS=$'\t' read -r dias carpeta; do
@@ -648,6 +649,4 @@ echo
 echo
 echo "✅ Finalizado correctamente."
 exit 0
-
-
 
