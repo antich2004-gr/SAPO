@@ -23,6 +23,7 @@
             <li><a href="#como-funciona">¿Cómo funciona con Radiobot?</a></li>
             <li><a href="#primeros-pasos">Primeros pasos</a></li>
             <li><a href="#gestionar-podcasts">Gestionar podcasts</a></li>
+            <li><a href="#suscripciones-plataformas">📺 Suscripciones de plataformas (YouTube, SoundCloud...)</a></li>
             <li><a href="#buscar-podcasts">Buscar podcasts</a></li>
             <li><a href="#categorias">Organizar categorías</a></li>
             <li><a href="#descargas">Ejecutar descargas</a></li>
@@ -169,6 +170,136 @@
 
         <div style="background: #fffaf0; border-left: 4px solid #f6ad55; padding: 15px; margin: 15px 0;">
             <strong>💡 Nota:</strong> Al eliminar un podcast de SAPO, los episodios ya descargados permanecen en el servidor hasta la próxima limpieza automática.
+        </div>
+    </div>
+
+    <!-- Sección: Suscripciones de plataformas (yt-dlp) -->
+    <div id="suscripciones-plataformas" style="margin-bottom: 40px;">
+        <h3>📺 Suscripciones de plataformas</h3>
+        <p>Además de feeds RSS, SAPO permite suscribirse a canales y listas de reproducción de plataformas de vídeo y audio mediante <strong>yt-dlp</strong>. Los episodios se descargan automáticamente en formato MP3.</p>
+
+        <div style="background: #e6f7ff; border-left: 4px solid #667eea; padding: 15px; margin: 15px 0;">
+            <strong>ℹ️ ¿Cómo se detecta?</strong> Cuando añades una URL, SAPO detecta automáticamente si pertenece a una plataforma compatible y la gestiona con yt-dlp en lugar de con podget/RSS. No necesitas hacer nada especial.
+        </div>
+
+        <h4>Plataformas compatibles y cómo obtener la URL</h4>
+
+        <div style="overflow-x: auto; margin: 20px 0;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <thead>
+                    <tr style="background: #667eea; color: white;">
+                        <th style="padding: 10px 14px; text-align: left;">Plataforma</th>
+                        <th style="padding: 10px 14px; text-align: left;">Qué se puede suscribir</th>
+                        <th style="padding: 10px 14px; text-align: left;">Cómo obtener la URL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 10px 14px;"><strong>🎬 YouTube</strong><br><small>youtube.com · youtu.be</small></td>
+                        <td style="padding: 10px 14px;">Canal, lista de reproducción (playlist)</td>
+                        <td style="padding: 10px 14px;">
+                            <strong>Canal:</strong> Ve al canal → copia la URL de la barra de direcciones<br>
+                            <code>youtube.com/@NombreCanal</code><br><br>
+                            <strong>Playlist:</strong> Abre la lista → copia la URL<br>
+                            <code>youtube.com/playlist?list=PLxxxxx</code>
+                        </td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0; background: #f7fafc;">
+                        <td style="padding: 10px 14px;"><strong>🎵 SoundCloud</strong><br><small>soundcloud.com</small></td>
+                        <td style="padding: 10px 14px;">Perfil de artista, playlist</td>
+                        <td style="padding: 10px 14px;">
+                            <strong>Perfil:</strong> <code>soundcloud.com/nombre-artista</code><br>
+                            <strong>Playlist:</strong> <code>soundcloud.com/artista/sets/nombre-set</code>
+                        </td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 10px 14px;"><strong>🎞️ Vimeo</strong><br><small>vimeo.com</small></td>
+                        <td style="padding: 10px 14px;">Canal, álbum, perfil de usuario</td>
+                        <td style="padding: 10px 14px;">
+                            <strong>Canal:</strong> <code>vimeo.com/channels/nombrecanal</code><br>
+                            <strong>Perfil:</strong> <code>vimeo.com/nombreusuario/videos</code>
+                        </td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0; background: #f7fafc;">
+                        <td style="padding: 10px 14px;"><strong>📺 Dailymotion</strong><br><small>dailymotion.com</small></td>
+                        <td style="padding: 10px 14px;">Canal de usuario</td>
+                        <td style="padding: 10px 14px;">
+                            <code>dailymotion.com/nombreusuario</code>
+                        </td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 10px 14px;"><strong>🟣 Twitch</strong><br><small>twitch.tv</small></td>
+                        <td style="padding: 10px 14px;">VODs de un canal</td>
+                        <td style="padding: 10px 14px;">
+                            <code>twitch.tv/nombrecanal/videos</code>
+                        </td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0; background: #f7fafc;">
+                        <td style="padding: 10px 14px;"><strong>🔴 Rumble</strong><br><small>rumble.com</small></td>
+                        <td style="padding: 10px 14px;">Canal de usuario</td>
+                        <td style="padding: 10px 14px;">
+                            <code>rumble.com/c/nombrecanal</code>
+                        </td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 10px 14px;"><strong>☁️ Odysee</strong><br><small>odysee.com</small></td>
+                        <td style="padding: 10px 14px;">Canal</td>
+                        <td style="padding: 10px 14px;">
+                            <code>odysee.com/@NombreCanal</code>
+                        </td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0; background: #f7fafc;">
+                        <td style="padding: 10px 14px;"><strong>🎵 TikTok</strong><br><small>tiktok.com</small></td>
+                        <td style="padding: 10px 14px;">Perfil de usuario</td>
+                        <td style="padding: 10px 14px;">
+                            <code>tiktok.com/@nombreusuario</code>
+                        </td>
+                    </tr>
+                    <tr style="background: #f7fafc;">
+                        <td style="padding: 10px 14px;"><strong>📘 Facebook / Instagram</strong><br><small>facebook.com · instagram.com · fb.watch</small></td>
+                        <td style="padding: 10px 14px;">Página o perfil público</td>
+                        <td style="padding: 10px 14px;">
+                            URL pública de la página o perfil.<br>
+                            <small style="color: #718096;">⚠️ Solo contenido público. Facebook e Instagram requieren cookies para la mayoría del contenido.</small>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h4>Diferencias respecto a RSS</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
+            <div style="background: #f0fff4; border: 1px solid #48bb78; border-radius: 8px; padding: 15px;">
+                <strong>📡 RSS (podget)</strong>
+                <ul style="margin: 10px 0 0 0; font-size: 14px;">
+                    <li>Descarga el episodio tal cual lo publica el podcast</li>
+                    <li>Estado del feed visible (activo/inactivo)</li>
+                    <li>No requiere cookies</li>
+                </ul>
+            </div>
+            <div style="background: #e6f7ff; border: 1px solid #667eea; border-radius: 8px; padding: 15px;">
+                <strong>📺 yt-dlp (plataformas)</strong>
+                <ul style="margin: 10px 0 0 0; font-size: 14px;">
+                    <li>Convierte vídeos a MP3 automáticamente</li>
+                    <li>Configura cuántos episodios máximos descargar</li>
+                    <li>Requiere cookies de YouTube para evitar bloqueos</li>
+                    <li>No muestra estado de feed (badge <span style="background:#667eea;color:white;padding:1px 6px;border-radius:4px;font-size:12px;">📺 yt-dlp</span>)</li>
+                </ul>
+            </div>
+        </div>
+
+        <h4>Opciones al añadir una suscripción de plataforma</h4>
+        <ul>
+            <li><strong>Máx. episodios:</strong> Cuántos episodios recientes descargar en cada ejecución (recomendado: 1-3 para programas diarios, 5-10 para semanales)</li>
+            <li><strong>Caducidad:</strong> Igual que en RSS, días que se conservan los archivos descargados</li>
+        </ul>
+
+        <div style="background: #fffaf0; border-left: 4px solid #f6ad55; padding: 15px; margin: 15px 0;">
+            <strong>⚠️ YouTube y cookies:</strong> YouTube puede bloquear las descargas si detecta actividad automatizada. Para evitarlo, el administrador del sistema debe configurar cookies exportadas de un navegador con sesión iniciada en YouTube. Si ves errores de "Sign in to confirm you're not a bot", contacta al administrador.
+        </div>
+
+        <div style="background: #fff5f5; border-left: 4px solid #f56565; padding: 15px; margin: 15px 0;">
+            <strong>🔒 Aviso legal:</strong> Asegúrate de tener derecho a descargar el contenido que suscribes. Respeta los términos de servicio de cada plataforma y los derechos de autor del contenido.
         </div>
     </div>
 
@@ -513,6 +644,21 @@
         <div style="margin-bottom: 20px;">
             <h4>¿Pierdo mis podcasts actuales al importar un serverlist.txt?</h4>
             <p>No, la importación AGREGA los podcasts del archivo a tu lista actual. Los podcasts existentes no se eliminan. Si hay duplicados, se mostrarán como entradas separadas.</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <h4>¿Puedo suscribirme a un canal de YouTube?</h4>
+            <p>Sí. Pega la URL del canal o playlist de YouTube al añadir un podcast. SAPO detectará automáticamente que es una URL de plataforma y la gestionará con yt-dlp, descargando los episodios en MP3. Consulta la sección <a href="#suscripciones-plataformas">Suscripciones de plataformas</a> para ver todas las plataformas compatibles y cómo obtener las URLs.</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <h4>¿Por qué una suscripción de YouTube da error de "bot" o "Sign in"?</h4>
+            <p>YouTube bloquea las descargas automatizadas sin autenticación. El administrador del sistema debe configurar cookies exportadas de un navegador con sesión iniciada en YouTube y colocarlas en el servidor. Una vez configuradas, las descargas funcionan con normalidad. Las cookies tienen fecha de caducidad y pueden necesitar renovarse cada cierto tiempo.</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <h4>¿Qué significa "Máx. episodios" en las suscripciones de plataformas?</h4>
+            <p>Indica cuántos episodios recientes se descargan como máximo en cada ejecución. yt-dlp descarga los más recientes primero. Los episodios ya descargados no se vuelven a descargar (se registran en un archivo de historial). Para programas diarios se recomienda 1-2; para semanales, 3-5.</p>
         </div>
     </div>
 
