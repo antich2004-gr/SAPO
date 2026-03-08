@@ -728,7 +728,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     <label for="signal-duration" style="display: block; margin-bottom: 5px; color: #4a5568; font-size: 14px;">
                                         Duración de transición (segundos):
                                     </label>
-                                    <input type="number" id="signal-duration" name="duration" min="0.2" max="10" step="0.1" value="1.5"
+                                    <input type="number" id="signal-duration" name="duration" min="0.2" max="10" step="0.1" value="0.2"
                                            onchange="onConfigChange('duration')"
                                            style="width: 150px; padding: 8px; font-size: 14px; border: 1px solid #cbd5e0; border-radius: 4px;">
                                     <small style="color: #718096; display: block; margin-top: 5px;">
@@ -741,11 +741,11 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     <label for="signal-attenuation" style="display: block; margin-bottom: 5px; color: #4a5568; font-size: 14px;">
                                         Atenuación de música (%):
                                     </label>
-                                    <input type="number" id="signal-attenuation" name="attenuation" min="0" max="100" step="5" value="30"
+                                    <input type="number" id="signal-attenuation" name="attenuation" min="0" max="100" step="5" value="60"
                                            onchange="onConfigChange('attenuation')"
                                            style="width: 150px; padding: 8px; font-size: 14px; border: 1px solid #cbd5e0; border-radius: 4px;">
                                     <small style="color: #718096; display: block; margin-top: 5px;">
-                                        Porcentaje al que se reduce el volumen de la música durante la señal (recomendado: 20-40%)
+                                        Porcentaje al que se reduce el volumen de la música durante la señal (recomendado: 60%)
                                     </small>
                                 </div>
                             </div>
