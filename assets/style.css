@@ -385,16 +385,19 @@ textarea {
 .podcast-list {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 8px;
 }
 
 .podcast-item {
     border: 1px solid var(--border-color);
     border-left: 3px solid transparent;
     border-radius: var(--border-radius);
-    padding: 15px;
+    padding: 10px 12px;
     background: white;
     transition: all 0.3s;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
 }
 
 .podcast-item:hover {
@@ -441,24 +444,43 @@ textarea {
 }
 
 .podcast-info {
-    margin-bottom: 10px;
+    flex: 1;
+    min-width: 0;
+    margin-bottom: 0;
 }
 
 .podcast-info strong {
     color: var(--primary-dark);
-    font-size: 1.1em;
+    font-size: 1em;
 }
 
 .podcast-info small {
     color: #666;
     display: block;
-    margin-top: 5px;
+    margin-top: 2px;
+    font-size: 0.8em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .podcast-actions {
     display: flex;
-    gap: 10px;
+    gap: 6px;
     flex-wrap: wrap;
+    flex-shrink: 0;
+    align-items: flex-start;
+}
+
+.podcast-actions .btn {
+    padding: 0.3rem 0.75rem;
+    font-size: 0.85em;
+}
+
+.last-episode {
+    font-size: 0.8em;
+    margin-top: 3px;
+    color: #555;
 }
 
 /* Estados de feed - Unificados con tema verde/negro */
@@ -753,12 +775,18 @@ table tbody tr:hover {
         text-align: center;
     }
 
-    .podcast-actions {
+    .podcast-item {
         flex-direction: column;
     }
 
-    .podcast-actions .btn {
+    .podcast-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
         width: 100%;
+    }
+
+    .podcast-actions .btn {
+        flex: 1;
     }
 
     table {
