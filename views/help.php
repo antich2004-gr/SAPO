@@ -603,8 +603,8 @@
         <h4 style="margin-top: 25px;">Configuración avanzada de mezcla</h4>
         <p>Controla cómo se integra la señal con la música en emisión:</p>
         <ul>
-            <li><strong>Duración de la transición (segundos):</strong> Tiempo que tarda la señal en fundirse con la música al entrar y salir. Valores entre 0,2 y 10 segundos. Un valor de 1,5 s es suave y natural.</li>
-            <li><strong>Atenuación de la música (%):</strong> Cuánto baja el volumen de la música mientras suena la señal. Se recomienda entre 20 % y 40 %. Con 100 % la música se silencia completamente.</li>
+            <li><strong>Duración de la transición (segundos):</strong> Tiempo que tarda la señal en fundirse con la música al entrar y salir. Valores entre 0,2 y 10 segundos. El valor recomendado es <strong>0,2 s</strong>.</li>
+            <li><strong>Atenuación de la música (%):</strong> Cuánto baja el volumen de la música mientras suena la señal. El valor recomendado es <strong>60 %</strong>. Con 100 % la música se silencia completamente.</li>
         </ul>
 
         <h4 style="margin-top: 25px;">Paso 3: Aplicar señales horarias</h4>
