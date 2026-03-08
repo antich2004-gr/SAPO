@@ -265,7 +265,7 @@ if [[ "$EJECUTAR_PODGET" -eq 1 ]]; then
                 --no-playlist-reverse \
                 "${ytdlp_cookies_arg[@]}" \
                 -o "$destino/%(title)s.%(ext)s" \
-                "$url" 2>&1 | grep -v "^\[download\] .*has already been recorded")
+                "$url" 2>&1 | grep -v "^\[download\] .*has already been recorded" || true)
             echo "$ytdlp_output"
             if echo "$ytdlp_output" | grep -qE "Sign in to confirm you're not a bot|cookies are no longer valid|account cookies.*no longer valid"; then
                 echo "  🔑 AVISO: Las cookies de YouTube han caducado o han sido invalidadas. Es necesario renovarlas."
