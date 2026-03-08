@@ -11,7 +11,7 @@ $cspNonce = base64_encode(random_bytes(16));
 
 // Headers de seguridad
 header("X-Content-Type-Options: nosniff");
-header("X-Frame-Options: ALLOW-FROM *");
+// X-Frame-Options omitido: frame-ancestors * en CSP cubre este caso correctamente
 header("X-XSS-Protection: 1; mode=block");
 header("Referrer-Policy: strict-origin-when-cross-origin");
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-$cspNonce'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors *; base-uri 'self'; form-action 'self'");

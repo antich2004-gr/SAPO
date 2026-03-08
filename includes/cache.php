@@ -39,7 +39,14 @@ function cacheGet($key, $ttl = 0) {
         return null;
     }
 
-    return unserialize($content);
+    $decoded = json_decode($content, true);
+    // Si json_decode falla (ej. archivo legacy con serialize), tratar como miss
+    if ($decoded === null && $content !== 'null') {
+        @unlink($cacheFile);
+        return null;
+    }
+
+    return $decoded;
 }
 
 /**
@@ -56,9 +63,9 @@ function cacheSet($key, $data) {
     }
 
     $cacheFile = CACHE_DIR . '/' . md5($key) . '.cache';
-    $serialized = serialize($data);
+    $encoded = json_encode($data, JSON_UNESCAPED_UNICODE);
 
-    return @file_put_contents($cacheFile, $serialized, LOCK_EX) !== false;
+    return @file_put_contents($cacheFile, $encoded, LOCK_EX) !== false;
 }
 
 /**
