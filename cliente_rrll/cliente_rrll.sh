@@ -219,7 +219,12 @@ if [[ "$EJECUTAR_PODGET" -eq 1 ]]; then
         fi
 
         local archive_file="$CONFIG_DIR/ytdlp_archive_${EMISORA}.txt"
+        # Cookies: primero busca una específica de la emisora, luego la global compartida
         local cookies_file="$CONFIG_DIR/youtube_cookies.txt"
+        local cookies_global="/etc/sapo/youtube_cookies.txt"
+        if [[ ! -f "$cookies_file" && -f "$cookies_global" ]]; then
+            cookies_file="$cookies_global"
+        fi
         local descargados=0
         local errores=0
 
