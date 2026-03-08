@@ -301,23 +301,46 @@ echo "📆 Renombrando descargas de hoy..."
 START=$(date -d "$HOY 00:00:00" +%s)
 END=$(date -d "$HOY 23:59:59" +%s)
 
-find "$PODCASTS_DIR" -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) -printf "%T@|%p\n" | while IFS='|' read -r timestamp file; do
+# Construir lista de directorios gestionados por yt-dlp para excluirlos del renombrado
+declare -A YTDLP_DIRS
+_YTDLP_FEEDS="$CONFIG_DIR/ytdlp_feeds.txt"
+if [[ -f "$_YTDLP_FEEDS" ]]; then
+    while IFS= read -r _linea || [[ -n "$_linea" ]]; do
+        [[ "$_linea" =~ ^[[:space:]]*# ]] && continue
+        [[ -z "${_linea// /}" ]] && continue
+        read -r _url _cat _nombre _max <<< "$_linea"
+        [[ -z "$_nombre" ]] && continue
+        if [[ "$_cat" == "-" || -z "$_cat" ]]; then
+            YTDLP_DIRS["$PODCASTS_DIR/$_nombre"]=1
+        else
+            YTDLP_DIRS["$PODCASTS_DIR/$_cat/$_nombre"]=1
+        fi
+    done < "$_YTDLP_FEEDS"
+fi
+
+while IFS='|' read -r timestamp file; do
     ts=${timestamp%.*}
     if (( ts >= START && ts <= END )); then
-        carpeta=$(basename "$(dirname "$file")")
+        dir="$(dirname "$file")"
+
+        # Saltarse archivos en directorios gestionados por yt-dlp
+        if [[ "${YTDLP_DIRS[$dir]+isset}" ]]; then
+            continue
+        fi
+
+        carpeta=$(basename "$dir")
         ext="${file##*.}"
         nuevo_nombre="${carpeta}${DIA}${MES}${ANO}.${ext}"
-        nuevo_path="$(dirname "$file")/$nuevo_nombre"
+        nuevo_path="$dir/$nuevo_nombre"
         fecha_actual=$(date +"%Y-%m-%d %H:%M:%S")
-        dir="$(dirname "$file")"
 
         if [[ "$file" != "$nuevo_path" && ! -e "$nuevo_path" ]]; then
             # 🗑️ Eliminar archivos de audio antiguos antes de renombrar
-            find "$dir" -maxdepth 1 -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) ! -samefile "$file" | while read -r antiguo; do
+            while IFS= read -r antiguo; do
                 echo "  🗑️ Eliminando por reemplazo: $(basename "$antiguo")"
                 rm -f "$antiguo"
                 echo "$fecha_actual|$antiguo|REEMPLAZO" >> "$ELIMINADOS_HISTORICO"
-            done
+            done < <(find "$dir" -maxdepth 1 -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) ! -samefile "$file")
 
             # ✔ Renombrar archivo descargado
             mv "$file" "$nuevo_path"
@@ -327,7 +350,7 @@ find "$PODCASTS_DIR" -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wa
             echo "  ⚠️ No renombrado: $nuevo_nombre ya existe"
         fi
     fi
-done
+done < <(find "$PODCASTS_DIR" -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) -printf "%T@|%p\n")
 
 # --- LIMPIEZA POR CADUCIDAD ---
 echo "🧹 Limpiando archivos por caducidad..."
