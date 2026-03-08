@@ -32,25 +32,65 @@ if [ ! -f "$SAPO_DB" ]; then
     exit 1
 fi
 
-# Leer emisoras activas desde db.json (usuarios no admin)
-mapfile -t EMISORAS < <(python3 -c "
-import json, sys
+# Leer emisoras, base_path y config de AzuraCast desde db.json
+read -r EMISORAS_BASE_DB AZ_API_URL AZ_API_KEY EMISORAS_LIST < <(python3 -c "
+import json
 with open('$SAPO_DB') as f:
     db = json.load(f)
-for u in db.get('users', []):
-    if not u.get('is_admin', False):
-        print(u['username'])
+cfg = db.get('config', {})
+base = cfg.get('base_path', '/mnt/emisoras')
+az_url = cfg.get('azuracast_api_url', '')
+az_key = cfg.get('azuracast_api_key', '')
+users = [u['username'] for u in db.get('users', []) if not u.get('is_admin', False)]
+print(base, az_url, az_key, ' '.join(users))
 " 2>/dev/null)
 
+# Usar base_path de db.json si está disponible, si no el valor por defecto
+[ -n "$EMISORAS_BASE_DB" ] && EMISORAS_BASE="$EMISORAS_BASE_DB"
+
+# Convertir lista de emisoras SAPO a array
+read -ra EMISORAS_SAPO <<< "$EMISORAS_LIST"
+
+# Obtener emisoras desde AzuraCast (/api/stations devuelve shortcode de cada emisora)
+EMISORAS_AZ=()
+if [ -n "$AZ_API_URL" ]; then
+    AZ_STATIONS_JSON=$(curl -sf \
+        ${AZ_API_KEY:+-H "X-API-Key: $AZ_API_KEY"} \
+        "${AZ_API_URL}/api/stations" 2>/dev/null)
+    if [ -n "$AZ_STATIONS_JSON" ]; then
+        mapfile -t EMISORAS_AZ < <(python3 -c "
+import json, sys
+stations = json.loads('''$AZ_STATIONS_JSON''')
+for s in stations:
+    sc = s.get('shortcode', '')
+    if sc:
+        print(sc)
+" 2>/dev/null)
+        echo "📡 AzuraCast: ${#EMISORAS_AZ[@]} emisoras encontradas"
+    else
+        echo "⚠️  AzuraCast: no se pudo conectar a ${AZ_API_URL}"
+    fi
+fi
+
+# Combinar y deduplicar emisoras de SAPO + AzuraCast
+declare -A _SEEN
+EMISORAS=()
+for e in "${EMISORAS_SAPO[@]}" "${EMISORAS_AZ[@]}"; do
+    if [ -z "${_SEEN[$e]+x}" ]; then
+        _SEEN[$e]=1
+        EMISORAS+=("$e")
+    fi
+done
+
 if [ ${#EMISORAS[@]} -eq 0 ]; then
-    echo "❌ No se encontraron emisoras activas en SAPO"
+    echo "❌ No se encontraron emisoras activas en SAPO ni en AzuraCast"
     exit 1
 fi
 
 EMISORAS_OK=()
 EMISORAS_ERROR=()
 
-echo "🚀 Ejecutando cliente_rrll.sh en todas las emisoras activas de SAPO..."
+echo "🚀 Ejecutando cliente_rrll.sh en todas las emisoras activas (SAPO + AzuraCast)..."
 echo "🗂️  Guardando logs en: $LOG_DIR"
 echo "📋 Emisoras encontradas: ${#EMISORAS[@]}"
 echo
