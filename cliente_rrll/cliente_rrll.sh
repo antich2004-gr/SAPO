@@ -67,12 +67,6 @@ if [[ -f "$SAPO_GLOBAL_JSON" ]]; then
     AZURACAST_API_KEY=$(jq -r '.config.azuracast_api_key // ""' "$SAPO_GLOBAL_JSON" 2>/dev/null)
 fi
 
-obtener_slug_azuracast() {
-    local nombre_script="$1"
-    local archivo_emisoras="$SCRIPT_DIR/emisoras.txt"
-    grep -E "^[^#]*:$nombre_script$" "$archivo_emisoras" | cut -d':' -f2
-}
-
 mostrar_playlists_vacias() {
     local emisora_slug="$1"
 
@@ -617,10 +611,7 @@ INFORME="$INFORMES_DIR/Informe_diario_${DIA}_${MES}_${ANO}.log"
     }
 ' "$LIQUIDSOAP_LOG"
 
-    slug_api=$(obtener_slug_azuracast "$EMISORA")
-    if [[ -n "$slug_api" ]]; then
-        mostrar_playlists_vacias "$slug_api"
-    fi
+    mostrar_playlists_vacias "$EMISORA"
 
     echo "✅ Finalizado correctamente."
 } > "$INFORME"
