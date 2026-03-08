@@ -257,7 +257,7 @@ foreach ($schedule as $event) {
     $eventData = [
         'title' => $displayTitle,
         'description' => $programInfo['description'] ?? '',
-        'image' => $programInfo['image_url'] ?? '',
+        'image' => $programInfo['image'] ?? $programInfo['image_url'] ?? '',
         'type' => $playlistType === 'music_block' ? 'music' : 'program',
         'url' => $programInfo['url'] ?? '',
         'social' => [
