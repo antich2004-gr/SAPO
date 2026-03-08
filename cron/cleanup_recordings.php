@@ -15,6 +15,7 @@ $baseDir = dirname(__DIR__);
 require_once $baseDir . '/config.php';
 require_once INCLUDES_DIR . '/database.php';
 require_once INCLUDES_DIR . '/recordings.php';
+require_once INCLUDES_DIR . '/categories.php';
 
 // Log de inicio
 $logFile = $baseDir . '/logs/recordings_cleanup.log';
