@@ -31,6 +31,8 @@
             <li><a href="#estado-feeds">Entender el estado de los feeds</a></li>
             <li><a href="#importar-exportar">Importar y exportar</a></li>
             <li><a href="#ultimas-descargas">Ver últimas descargas</a></li>
+            <li><a href="#senales-horarias">🔔 Señales horarias</a></li>
+            <li><a href="#grabaciones">🎙️ Grabaciones</a></li>
             <li><a href="#faq">Preguntas frecuentes (FAQ)</a></li>
         </ul>
     </div>
@@ -543,6 +545,140 @@
 
         <div style="background: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 15px 0;">
             <strong>📝 Nota:</strong> La información de descargas se actualiza cada vez que ejecutas el proceso de descarga desde SAPO.
+        </div>
+    </div>
+
+    <!-- Sección: Señales horarias -->
+    <div id="senales-horarias" style="margin-bottom: 40px;">
+        <h3>🔔 Señales horarias</h3>
+        <p>Las señales horarias son clips de audio que se reproducen automáticamente a horas fijas (en punto, cada media hora, cada cuarto de hora…) intercalándose de forma fluida con la música de tu emisora mediante Liquidsoap.</p>
+
+        <div style="background: #e6fffa; border-left: 4px solid #38b2ac; padding: 15px; margin: 15px 0;">
+            <strong>💡 Cómo funciona:</strong> Subes un archivo de audio (por ejemplo, una sintonía de "en punto"), configuras cada cuánto debe sonar y con qué suavidad se mezcla con la música. Al aplicar, SAPO genera la configuración de Liquidsoap y reinicia brevemente la emisora para activarla.
+        </div>
+
+        <h4 style="margin-top: 25px;">Paso 1: Subir el archivo de señal</h4>
+        <p>Arrastra o selecciona el archivo de audio que sonará como señal horaria.</p>
+        <ul>
+            <li><strong>Formatos admitidos:</strong> MP3, WAV, OGG, M4A</li>
+            <li><strong>Tamaño máximo:</strong> 10 MB</li>
+            <li>Solo se usa <strong>un archivo a la vez</strong>: subir uno nuevo reemplaza el anterior</li>
+        </ul>
+
+        <h4 style="margin-top: 25px;">Paso 2: Frecuencia de reproducción</h4>
+        <p>Elige cada cuánto se reproducirá la señal:</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+            <thead>
+                <tr style="background: #edf2f7;">
+                    <th style="padding: 8px 12px; text-align: left; border: 1px solid #e2e8f0;">Opción</th>
+                    <th style="padding: 8px 12px; text-align: left; border: 1px solid #e2e8f0;">Cuándo suena</th>
+                    <th style="padding: 8px 12px; text-align: left; border: 1px solid #e2e8f0;">Uso típico</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><strong>Cada hora</strong></td>
+                    <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">:00 (en punto)</td>
+                    <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Indicativo horario estándar</td>
+                </tr>
+                <tr style="background: #f7fafc;">
+                    <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><strong>Cada media hora</strong></td>
+                    <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">:00 y :30</td>
+                    <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Señales con más frecuencia</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><strong>Cada cuarto de hora</strong></td>
+                    <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">:00, :15, :30 y :45</td>
+                    <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Marcadores de cuarto de hora</td>
+                </tr>
+                <tr style="background: #f7fafc;">
+                    <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><strong>Cada 5 minutos</strong></td>
+                    <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Cada 5 min</td>
+                    <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Solo para pruebas</td>
+                </tr>
+            </tbody>
+        </table>
+        <p style="font-size: 13px; color: #718096;">La señal suena todos los días de la semana, sin excepción.</p>
+
+        <h4 style="margin-top: 25px;">Configuración avanzada de mezcla</h4>
+        <p>Controla cómo se integra la señal con la música en emisión:</p>
+        <ul>
+            <li><strong>Duración de la transición (segundos):</strong> Tiempo que tarda la señal en fundirse con la música al entrar y salir. Valores entre 0,2 y 10 segundos. Un valor de 1,5 s es suave y natural.</li>
+            <li><strong>Atenuación de la música (%):</strong> Cuánto baja el volumen de la música mientras suena la señal. Se recomienda entre 20 % y 40 %. Con 100 % la música se silencia completamente.</li>
+        </ul>
+
+        <h4 style="margin-top: 25px;">Paso 3: Aplicar señales horarias</h4>
+        <p>Haz clic en <strong>✅ Aplicar Señales Horarias</strong>. SAPO generará la configuración de Liquidsoap y la aplicará a tu emisora.</p>
+
+        <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 15px 0;">
+            <strong>⚠️ Aviso:</strong> Al aplicar, la emisora se reiniciará brevemente (3-5 segundos de corte). Esto es necesario para que Liquidsoap cargue la nueva configuración.
+        </div>
+
+        <p>Si la aplicación automática falla, puedes usar la opción <em>"Ver código generado"</em> para copiar el código Liquidsoap y pegarlo manualmente en <strong>AzuraCast → Estación → Editar → Avanzado → Custom Configuration</strong>.</p>
+
+        <div style="background: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 15px 0;">
+            <strong>📝 Nota:</strong> Los cambios en la señal (nuevo archivo o nueva frecuencia) siempre requieren volver a hacer clic en <em>Aplicar</em> para que surtan efecto.
+        </div>
+    </div>
+
+    <!-- Sección: Grabaciones -->
+    <div id="grabaciones" style="margin-bottom: 40px;">
+        <h3>🎙️ Grabaciones</h3>
+        <p>La sección de Grabaciones te permite gestionar el archivo de grabaciones de tu emisora en AzuraCast: consultar cuántas grabaciones tienes, cuánto espacio ocupan y configurar durante cuántos días se conservan antes de eliminarse automáticamente.</p>
+
+        <div style="background: #e6fffa; border-left: 4px solid #38b2ac; padding: 15px; margin: 15px 0;">
+            <strong>💡 Funcionamiento general:</strong> AzuraCast graba la emisión de forma continua. SAPO añade una capa de gestión: permite ver el espacio utilizado y eliminar grabaciones antiguas de forma automática o manual para no llenar el disco.
+        </div>
+
+        <h4 style="margin-top: 25px;">Configuración de retención</h4>
+        <p>El único parámetro a configurar es <strong>Días de retención</strong>: el número de días que se guardan las grabaciones antes de eliminarse.</p>
+        <ul>
+            <li><strong>Rango:</strong> 1 a 180 días (por defecto 30)</li>
+            <li>Las grabaciones <em>más antiguas</em> que este período se marcan como "antiguas" y pueden eliminarse</li>
+            <li>La eliminación automática se ejecuta cada 24 horas en segundo plano</li>
+        </ul>
+        <p>Haz clic en <strong>💾 Guardar configuración</strong> para aplicar el cambio.</p>
+
+        <h4 style="margin-top: 25px;">Estadísticas</h4>
+        <p>En el panel de estadísticas verás en tiempo real:</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+            <thead>
+                <tr style="background: #edf2f7;">
+                    <th style="padding: 8px 12px; text-align: left; border: 1px solid #e2e8f0;">Dato</th>
+                    <th style="padding: 8px 12px; text-align: left; border: 1px solid #e2e8f0;">Descripción</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><strong>Total de grabaciones</strong></td>
+                    <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Número total de archivos de grabación</td>
+                </tr>
+                <tr style="background: #f7fafc;">
+                    <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><strong>Espacio usado</strong></td>
+                    <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Espacio total en disco de todas las grabaciones</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><strong>Grabaciones antiguas</strong></td>
+                    <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Número de grabaciones que superan el período de retención</td>
+                </tr>
+                <tr style="background: #f7fafc;">
+                    <td style="padding: 8px 12px; border: 1px solid #e2e8f0;"><strong>Espacio a liberar</strong></td>
+                    <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Espacio que se recuperaría al eliminar las antiguas</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4 style="margin-top: 25px;">Acciones manuales</h4>
+        <ul>
+            <li><strong>🔄 Actualizar lista:</strong> Recarga la lista de grabaciones y las estadísticas</li>
+            <li><strong>🗑️ Eliminar grabaciones antiguas:</strong> Borra de inmediato todas las grabaciones que superan el período de retención. Pedirá confirmación antes de proceder.</li>
+        </ul>
+
+        <h4 style="margin-top: 25px;">Lista de grabaciones</h4>
+        <p>Bajo el panel de estadísticas aparece la lista completa de grabaciones. Por cada una se muestra el nombre, tamaño, fecha y antigüedad. Las que superan el período de retención aparecen resaltadas. Puedes eliminar grabaciones individuales con el botón de borrado de cada fila.</p>
+
+        <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 15px 0;">
+            <strong>⚠️ Importante:</strong> La eliminación de grabaciones es permanente e irreversible. Asegúrate de que no necesitas un archivo antes de borrarlo.
         </div>
     </div>
 
