@@ -15,14 +15,15 @@
 
     // Estilos del widget
     const WIDGET_STYLES = `
-        /* Reset scoped: evita que el CSS del sitio padre interfiera */
-        .sapo-widget,
-        .sapo-widget * {
-            box-sizing: border-box !important;
+        /* Reset base dentro del Shadow DOM */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         .sapo-widget {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
@@ -50,7 +51,7 @@
         }
 
         .sapo-days {
-            display: grid !important;
+            display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
             margin-bottom: 20px;
@@ -94,8 +95,8 @@
         }
 
         .sapo-program-header {
-            display: flex !important;
-            align-items: center !important;
+            display: flex;
+            align-items: center;
             gap: 10px;
             margin-bottom: 6px;
         }
@@ -147,37 +148,37 @@
         }
 
         .sapo-program-image {
-            width: 100% !important;
-            height: 120px !important;
-            object-fit: cover !important;
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
             border-radius: 6px;
             margin-top: 8px;
-            display: block !important;
+            display: block;
         }
 
         .sapo-program-social {
-            display: flex !important;
+            display: flex;
             gap: 8px;
             margin-top: 8px;
         }
 
         .sapo-program-social a {
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            width: 28px !important;
-            height: 28px !important;
-            border-radius: 50% !important;
-            background: #e5e7eb !important;
-            text-decoration: none !important;
-            color: inherit !important;
-            font-size: 14px !important;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            text-decoration: none;
+            color: inherit;
+            font-size: 14px;
             transition: all 0.2s;
         }
 
         .sapo-program-social a:hover {
             transform: scale(1.1);
-            background: #d1d5db !important;
+            background: #d1d5db;
         }
 
         .sapo-empty {
@@ -247,16 +248,6 @@
         }
     `;
 
-    // Inyectar estilos
-    function injectStyles() {
-        if (document.getElementById('sapo-widget-styles')) return;
-
-        const style = document.createElement('style');
-        style.id = 'sapo-widget-styles';
-        style.textContent = WIDGET_STYLES;
-        document.head.appendChild(style);
-    }
-
     // Obtener URL base del script
     function getScriptBaseUrl() {
         const scripts = document.getElementsByTagName('script');
@@ -274,8 +265,18 @@
         const baseUrl = getScriptBaseUrl();
         const apiUrl = `${baseUrl}/api_schedule.php?station=${encodeURIComponent(station)}`;
 
+        // Crear Shadow DOM para aislamiento total del CSS del sitio padre
+        const shadow = container.attachShadow({ mode: 'open' });
+
+        const style = document.createElement('style');
+        style.textContent = WIDGET_STYLES;
+        shadow.appendChild(style);
+
+        const root = document.createElement('div');
+        shadow.appendChild(root);
+
         // Mostrar loading
-        container.innerHTML = '<div class="sapo-loading">⏳ Cargando programación...</div>';
+        root.innerHTML = '<div class="sapo-loading">⏳ Cargando programación...</div>';
 
         try {
             const response = await fetch(apiUrl);
@@ -356,11 +357,11 @@
             html += `<div class="sapo-footer">Programación generada con SAPO</div>`;
             html += '</div>';
 
-            container.innerHTML = html;
+            root.innerHTML = html;
 
         } catch (error) {
             console.error('SAPO Widget Error:', error);
-            container.innerHTML = `
+            root.innerHTML = `
                 <div class="sapo-error">
                     <strong>❌ Error al cargar la programación</strong><br>
                     <small>${escapeHtml(error.message)}</small>
@@ -378,14 +379,13 @@
 
     // Inicializar widgets
     function initWidgets() {
-        injectStyles();
-
         const containers = document.querySelectorAll('[id^="sapo-widget"]');
         containers.forEach(container => {
             const station = container.getAttribute('data-station');
             if (!station) {
                 console.error('SAPO Widget: Missing data-station attribute');
-                container.innerHTML = '<div class="sapo-error">Error: Falta el atributo data-station</div>';
+                const s = container.attachShadow({ mode: 'open' });
+                s.innerHTML = '<div style="color:#dc2626;padding:10px;">Error: Falta el atributo data-station</div>';
                 return;
             }
 
