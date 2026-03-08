@@ -200,7 +200,7 @@ purgar_bloqueos_podget_antiguos() {
 }
 
 # --- DESCARGA DE PODCASTS (opcional con --sinpodget) ---
-PODGET_LOG="/tmp/podget_${EMISORA}.log"
+PODGET_LOG="$INFORMES_DIR/podget_${EMISORA}.log"
 if [[ "$EJECUTAR_PODGET" -eq 1 ]]; then
     echo "📅 Ejecutando podget para $EMISORA..."
 
@@ -219,6 +219,12 @@ if [[ "$EJECUTAR_PODGET" -eq 1 ]]; then
         fi
 
         local archive_file="$CONFIG_DIR/ytdlp_archive_${EMISORA}.txt"
+        # Cookies: primero busca una específica de la emisora, luego la global compartida
+        local cookies_file="$CONFIG_DIR/youtube_cookies.txt"
+        local cookies_global="/etc/sapo/youtube_cookies.txt"
+        if [[ ! -f "$cookies_file" && -f "$cookies_global" ]]; then
+            cookies_file="$cookies_global"
+        fi
         local descargados=0
         local errores=0
 
@@ -246,6 +252,9 @@ if [[ "$EJECUTAR_PODGET" -eq 1 ]]; then
 
             echo "  ⬇️  $nombre ($url) → $destino [máx. $max_ep ep.]"
 
+            local ytdlp_cookies_arg=()
+            [[ -f "$cookies_file" ]] && ytdlp_cookies_arg=(--cookies "$cookies_file")
+
             yt-dlp \
                 -x --audio-format mp3 \
                 --audio-quality 5 \
@@ -253,6 +262,7 @@ if [[ "$EJECUTAR_PODGET" -eq 1 ]]; then
                 --match-filter "duration > 60" \
                 --download-archive "$archive_file" \
                 --no-playlist-reverse \
+                "${ytdlp_cookies_arg[@]}" \
                 -o "$destino/%(title)s.%(ext)s" \
                 "$url" 2>&1 | grep -v "^\[download\] .*has already been recorded" \
                 || { echo "  ⚠️  Error al descargar $url"; ((errores++)) || true; }
