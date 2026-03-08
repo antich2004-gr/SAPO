@@ -75,10 +75,30 @@ for s in stations:
     fi
 fi
 
-# Combinar y deduplicar emisoras de SAPO + AzuraCast
+# Detectar emisoras en el sistema de ficheros (dirs con media/Suscripciones configurado)
+EMISORAS_FS=()
+EXCLUIR=("backups" "lost+found" "rrll")
+if [ -d "$EMISORAS_BASE" ]; then
+    while IFS= read -r -d '' dir; do
+        nombre=$(basename "$dir")
+        # Saltar directorios excluidos
+        skip=0
+        for ex in "${EXCLUIR[@]}"; do
+            [ "$nombre" = "$ex" ] && skip=1 && break
+        done
+        [ $skip -eq 1 ] && continue
+        # Solo incluir si tiene directorio de suscripciones
+        if [ -d "$dir/media/Suscripciones" ]; then
+            EMISORAS_FS+=("$nombre")
+        fi
+    done < <(find "$EMISORAS_BASE" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
+    echo "📂 Filesystem: ${#EMISORAS_FS[@]} emisoras con Suscripciones configuradas"
+fi
+
+# Combinar y deduplicar emisoras de SAPO + AzuraCast + Filesystem
 declare -A _SEEN
 EMISORAS=()
-for e in "${EMISORAS_SAPO[@]}" "${EMISORAS_AZ[@]}"; do
+for e in "${EMISORAS_SAPO[@]}" "${EMISORAS_AZ[@]}" "${EMISORAS_FS[@]}"; do
     if [ -z "${_SEEN[$e]+x}" ]; then
         _SEEN[$e]=1
         EMISORAS+=("$e")
@@ -86,14 +106,14 @@ for e in "${EMISORAS_SAPO[@]}" "${EMISORAS_AZ[@]}"; do
 done
 
 if [ ${#EMISORAS[@]} -eq 0 ]; then
-    echo "❌ No se encontraron emisoras activas en SAPO ni en AzuraCast"
+    echo "❌ No se encontraron emisoras activas en SAPO, AzuraCast ni en $EMISORAS_BASE"
     exit 1
 fi
 
 EMISORAS_OK=()
 EMISORAS_ERROR=()
 
-echo "🚀 Ejecutando cliente_rrll.sh en todas las emisoras activas (SAPO + AzuraCast)..."
+echo "🚀 Ejecutando cliente_rrll.sh en todas las emisoras activas (SAPO + AzuraCast + Filesystem)..."
 echo "🗂️  Guardando logs en: $LOG_DIR"
 echo "📋 Emisoras encontradas: ${#EMISORAS[@]}"
 echo
