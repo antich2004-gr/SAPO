@@ -213,8 +213,8 @@ foreach ($schedule as $event) {
     $programInfo = $programsData[$playlist] ?? null;
     $playlistType = $programInfo['playlist_type'] ?? 'program';
 
-    // Saltar jingles y programas ocultos
-    if ($playlistType === 'jingles') continue;
+    // Saltar jingles, bloques musicales y programas ocultos
+    if ($playlistType === 'jingles' || $playlistType === 'music_block') continue;
     if (!empty($programInfo['hidden_from_schedule'])) continue;
 
     // Calcular hora de fin
