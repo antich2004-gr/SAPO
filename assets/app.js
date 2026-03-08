@@ -246,15 +246,17 @@ function deleteCategory(categoryName) {
     if (!confirm('¿Eliminar la categoría "' + categoryName + '"?\n\nSolo se pueden eliminar categorías que no estén en uso.')) {
         return;
     }
-    
+
+    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
     const form = document.createElement('form');
     form.method = 'POST';
-    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
-    form.innerHTML = `
-        <input type="hidden" name="action" value="delete_category">
-        <input type="hidden" name="csrf_token" value="${csrfToken}">
-        <input type="hidden" name="category_name" value="${categoryName}">
-    `;
+    [['action', 'delete_category'], ['csrf_token', csrfToken], ['category_name', categoryName]].forEach(([name, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
+    });
     document.body.appendChild(form);
     form.submit();
 }
@@ -280,15 +282,16 @@ function renameCategoryPrompt(oldName) {
  * Renombrar categoría
  */
 function renameCategory(oldName, newName) {
+    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
     const form = document.createElement('form');
     form.method = 'POST';
-    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
-    form.innerHTML = `
-        <input type="hidden" name="action" value="rename_category">
-        <input type="hidden" name="csrf_token" value="${csrfToken}">
-        <input type="hidden" name="old_name" value="${oldName}">
-        <input type="hidden" name="new_name" value="${newName}">
-    `;
+    [['action', 'rename_category'], ['csrf_token', csrfToken], ['old_name', oldName], ['new_name', newName]].forEach(([name, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
+    });
     document.body.appendChild(form);
     form.submit();
 }
@@ -301,14 +304,16 @@ function deleteCategoryConfirm(categoryName) {
         return;
     }
 
+    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
     const form = document.createElement('form');
     form.method = 'POST';
-    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
-    form.innerHTML = `
-        <input type="hidden" name="action" value="delete_category">
-        <input type="hidden" name="csrf_token" value="${csrfToken}">
-        <input type="hidden" name="category" value="${categoryName}">
-    `;
+    [['action', 'delete_category'], ['csrf_token', csrfToken], ['category', categoryName]].forEach(([name, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
+    });
     document.body.appendChild(form);
     form.submit();
 }
@@ -1100,7 +1105,10 @@ async function refreshFeedsWithProgress() {
 
     } catch (error) {
         console.error('Error en actualización de feeds:', error);
-        document.getElementById('feedsProgressText').innerHTML = '<span style="color: #ef4444;">❌ Error: ' + error.message + '</span>';
+        const feedsErrSpan = document.createElement('span');
+        feedsErrSpan.style.color = '#ef4444';
+        feedsErrSpan.textContent = '❌ Error: ' + error.message;
+        document.getElementById('feedsProgressText').replaceChildren(feedsErrSpan);
         document.getElementById('feedsCloseButtonContainer').style.display = 'block';
     }
 }
@@ -1253,7 +1261,7 @@ function uploadFilesSequentially(files, index, progressFill, statusText, progres
         if (data.success) {
             uploadFilesSequentially(files, index + 1, progressFill, statusText, progressDiv);
         } else {
-            statusText.innerHTML = `<span style="color: #ef4444;">❌ Error: ${data.message || 'Error desconocido'}</span>`;
+            statusText.innerHTML = `<span style="color: #ef4444;">❌ Error: ${escapeHtml(data.message || 'Error desconocido')}</span>`;
             setTimeout(() => progressDiv.style.display = 'none', 3000);
         }
     })
@@ -1365,7 +1373,7 @@ function saveTimeSignalsConfig() {
                 statusDiv.innerHTML = '';
             }, 3000);
         } else {
-            statusDiv.innerHTML = `<div class="alert alert-error">❌ Error: ${data.message || 'Error desconocido'}</div>`;
+            statusDiv.innerHTML = `<div class="alert alert-error">❌ Error: ${escapeHtml(data.message || 'Error desconocido')}</div>`;
         }
     })
     .catch(error => {
@@ -1392,7 +1400,7 @@ function syncFromLiquidsoap() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            statusDiv.innerHTML = '<div class="alert alert-success">✅ ' + data.message + '</div>';
+            statusDiv.innerHTML = '<div class="alert alert-success">✅ ' + escapeHtml(data.message) + '</div>';
 
             // Actualizar el formulario con la configuración sincronizada
             if (data.config) {
@@ -1411,7 +1419,7 @@ function syncFromLiquidsoap() {
                 statusDiv.innerHTML = '';
             }, 4000);
         } else {
-            statusDiv.innerHTML = '<div class="alert alert-error">❌ ' + data.message + '</div>';
+            statusDiv.innerHTML = '<div class="alert alert-error">❌ ' + escapeHtml(data.message) + '</div>';
             setTimeout(() => {
                 statusDiv.innerHTML = '';
             }, 5000);
