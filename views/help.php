@@ -274,7 +274,6 @@
                 <ul style="margin: 10px 0 0 0; font-size: 14px;">
                     <li>Descarga el episodio tal cual lo publica el podcast</li>
                     <li>Estado del feed visible (activo/inactivo)</li>
-                    <li>No requiere cookies</li>
                 </ul>
             </div>
             <div style="background: #e6f7ff; border: 1px solid #667eea; border-radius: 8px; padding: 15px;">
@@ -282,7 +281,6 @@
                 <ul style="margin: 10px 0 0 0; font-size: 14px;">
                     <li>Convierte vídeos a MP3 automáticamente</li>
                     <li>Configura cuántos episodios máximos descargar</li>
-                    <li>Requiere cookies de YouTube para evitar bloqueos</li>
                     <li>No muestra estado de feed (badge <span style="background:#667eea;color:white;padding:1px 6px;border-radius:4px;font-size:12px;">📺 yt-dlp</span>)</li>
                 </ul>
             </div>
@@ -293,10 +291,6 @@
             <li><strong>Máx. episodios:</strong> Cuántos episodios recientes descargar en cada ejecución (recomendado: 1-3 para programas diarios, 5-10 para semanales)</li>
             <li><strong>Caducidad:</strong> Igual que en RSS, días que se conservan los archivos descargados</li>
         </ul>
-
-        <div style="background: #fffaf0; border-left: 4px solid #f6ad55; padding: 15px; margin: 15px 0;">
-            <strong>⚠️ YouTube y cookies:</strong> YouTube puede bloquear las descargas si detecta actividad automatizada. Para evitarlo, el administrador del sistema debe configurar cookies exportadas de un navegador con sesión iniciada en YouTube. Si ves errores de "Sign in to confirm you're not a bot", contacta al administrador.
-        </div>
 
         <div style="background: #fff5f5; border-left: 4px solid #f56565; padding: 15px; margin: 15px 0;">
             <strong>🔒 Aviso legal:</strong> Asegúrate de tener derecho a descargar el contenido que suscribes. Respeta los términos de servicio de cada plataforma y los derechos de autor del contenido.
@@ -648,12 +642,7 @@
 
         <div style="margin-bottom: 20px;">
             <h4>¿Puedo suscribirme a un canal de YouTube?</h4>
-            <p>Sí. Pega la URL del canal o playlist de YouTube al añadir un podcast. SAPO detectará automáticamente que es una URL de plataforma y la gestionará con yt-dlp, descargando los episodios en MP3. Consulta la sección <a href="#suscripciones-plataformas">Suscripciones de plataformas</a> para ver todas las plataformas compatibles y cómo obtener las URLs.</p>
-        </div>
-
-        <div style="margin-bottom: 20px;">
-            <h4>¿Por qué una suscripción de YouTube da error de "bot" o "Sign in"?</h4>
-            <p>YouTube bloquea las descargas automatizadas sin autenticación. El administrador del sistema debe configurar cookies exportadas de un navegador con sesión iniciada en YouTube y colocarlas en el servidor. Una vez configuradas, las descargas funcionan con normalidad. Las cookies tienen fecha de caducidad y pueden necesitar renovarse cada cierto tiempo.</p>
+            <p>Sí. Pega la URL del canal o playlist al añadir un podcast. SAPO lo detecta automáticamente y descarga los episodios en MP3. Consulta la sección <a href="#suscripciones-plataformas">Suscripciones de plataformas</a> para ver todas las plataformas compatibles y cómo obtener las URLs.</p>
         </div>
 
         <div style="margin-bottom: 20px;">
