@@ -8,13 +8,17 @@ $widgetColor = $azConfig['widget_color'] ?? '#3b82f6';
 // Determinar subsección activa
 $section = $_GET['section'] ?? 'coverage';
 
+// Detectar protocolo actual (HTTPS o HTTP)
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+$protocol = $isHttps ? 'https' : 'http';
+
 // Generar URL del widget
 $widgetUrl = '';
 $hasStationId = !empty($stationId) && $stationId !== '';
 if ($hasStationId) {
-    // Forzar HTTPS para que el iframe funcione en sitios HTTPS
     $host = $_SERVER['HTTP_HOST'];
-    $baseUrl = 'https://' . $host . dirname($_SERVER['PHP_SELF']);
+    $baseUrl = $protocol . '://' . $host . dirname($_SERVER['PHP_SELF']);
     $widgetUrl = rtrim($baseUrl, '/') . '/parrilla_widget.php?station=' . urlencode($username);
 }
 ?>
@@ -77,9 +81,9 @@ if ($hasStationId) {
                 </div>
             <?php else: ?>
                 <?php
-                // Generar URL del widget - Forzar HTTPS para que funcione en sitios HTTPS
+                // Generar URL del widget usando el protocolo actual
                 $host = $_SERVER['HTTP_HOST'];
-                $baseUrl = 'https://' . $host . dirname($_SERVER['PHP_SELF']);
+                $baseUrl = $protocol . '://' . $host . dirname($_SERVER['PHP_SELF']);
                 $widgetUrl = rtrim($baseUrl, '/') . '/parrilla_cards.php?station=' . urlencode($username);
                 ?>
 
@@ -226,9 +230,9 @@ if ($hasStationId) {
                 </div>
             <?php else: ?>
                 <?php
-                // Generar URL del widget - Forzar HTTPS para que funcione en sitios HTTPS
+                // Generar URL del widget usando el protocolo actual
                 $host = $_SERVER['HTTP_HOST'];
-                $baseUrl = 'https://' . $host . dirname($_SERVER['PHP_SELF']);
+                $baseUrl = $protocol . '://' . $host . dirname($_SERVER['PHP_SELF']);
                 $widgetUrl = rtrim($baseUrl, '/') . '/parrilla_cards.php?station=' . urlencode($username);
                 ?>
 
