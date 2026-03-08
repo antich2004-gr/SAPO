@@ -32,15 +32,21 @@ if [ ! -f "$SAPO_DB" ]; then
     exit 1
 fi
 
-# Leer emisoras activas desde db.json (usuarios no admin)
-mapfile -t EMISORAS < <(python3 -c "
-import json, sys
+# Leer emisoras activas y base_path desde db.json
+read -r EMISORAS_BASE_DB EMISORAS_LIST < <(python3 -c "
+import json
 with open('$SAPO_DB') as f:
     db = json.load(f)
-for u in db.get('users', []):
-    if not u.get('is_admin', False):
-        print(u['username'])
+base = db.get('config', {}).get('base_path', '/mnt/emisoras')
+users = [u['username'] for u in db.get('users', []) if not u.get('is_admin', False)]
+print(base, ' '.join(users))
 " 2>/dev/null)
+
+# Usar base_path de db.json si está disponible, si no el valor por defecto
+[ -n "$EMISORAS_BASE_DB" ] && EMISORAS_BASE="$EMISORAS_BASE_DB"
+
+# Convertir lista de emisoras a array
+read -ra EMISORAS <<< "$EMISORAS_LIST"
 
 if [ ${#EMISORAS[@]} -eq 0 ]; then
     echo "❌ No se encontraron emisoras activas en SAPO"
