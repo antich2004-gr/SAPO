@@ -136,7 +136,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
             'name'          => displayName($podcast['name']),
             'category'      => $podcast['category'],
             'type'          => $podcast['type'] ?? 'rss',
-            'max_episodios' => $podcast['max_episodios'] ?? 5,
+            'max_episodios' => $podcast['max_episodios'] ?? 1,
             'caducidad'     => $caducidades[$podcast['name']] ?? $defaultCaducidad,
             'duracion' => $duraciones[$podcast['name']] ?? '',
             'margen' => $margenes[$podcast['name']] ?? 5,
@@ -308,7 +308,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                 <span class="badge-ytdlp">📺 yt-dlp</span>
                                             <?php endif; ?>
                                         </strong>
-                                        <small>Categoría: <?php echo htmlEsc(displayName($podcast['category'])); ?> | Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días<?php if (($podcast['type'] ?? 'rss') === 'ytdlp'): ?> | Máx. <?php echo htmlEsc($podcast['max_episodios'] ?? 5); ?> episodios<?php endif; ?></small>
+                                        <small>Categoría: <?php echo htmlEsc(displayName($podcast['category'])); ?> | Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días<?php if (($podcast['type'] ?? 'rss') === 'ytdlp'): ?> | Máx. <?php echo htmlEsc($podcast['max_episodios'] ?? 1); ?> episodios<?php endif; ?></small>
                                         <small><?php echo htmlEsc($podcast['url']); ?></small>
 
                                         <div class="last-episode <?php echo $statusInfo['class']; ?>">
@@ -461,7 +461,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                             <span class="badge-ytdlp">📺 yt-dlp</span>
                                                         <?php endif; ?>
                                                     </strong>
-                                                    <small>Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días<?php if (($podcast['type'] ?? 'rss') === 'ytdlp'): ?> | Máx. <?php echo htmlEsc($podcast['max_episodios'] ?? 5); ?> episodios<?php endif; ?></small>
+                                                    <small>Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días<?php if (($podcast['type'] ?? 'rss') === 'ytdlp'): ?> | Máx. <?php echo htmlEsc($podcast['max_episodios'] ?? 1); ?> episodios<?php endif; ?></small>
                                                     <small><?php echo htmlEsc($podcast['url']); ?></small>
 
                                                     <div class="last-episode <?php echo $statusInfo['class']; ?>">
@@ -953,7 +953,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
                 <div class="form-group" id="max_episodios_group" style="display: none;">
                     <label>Máximo de episodios a descargar:</label>
-                    <input type="number" name="max_episodios" id="podcast_max_episodios" value="5" min="1" max="50">
+                    <input type="number" name="max_episodios" id="podcast_max_episodios" value="1" min="1" max="50">
                     <small style="color: #718096;">Número máximo de episodios recientes a descargar (1-50, por defecto: 5)</small>
                 </div>
 
@@ -1042,7 +1042,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
                 <div class="form-group" id="edit_max_episodios_group" style="display: none;">
                     <label>Máximo de episodios a descargar:</label>
-                    <input type="number" name="max_episodios" id="edit_podcast_max_episodios" value="5" min="1" max="50">
+                    <input type="number" name="max_episodios" id="edit_podcast_max_episodios" value="1" min="1" max="50">
                     <small style="color: #718096;">Número máximo de episodios recientes a descargar (1-50, por defecto: 5)</small>
                 </div>
 
@@ -1514,7 +1514,7 @@ function showEditPodcastModal(index) {
 
     // Mostrar/ocultar campo max_episodios según tipo
     const maxEpField = document.getElementById('edit_podcast_max_episodios');
-    if (maxEpField) maxEpField.value = podcast.max_episodios || 5;
+    if (maxEpField) maxEpField.value = podcast.max_episodios || 1;
     detectPodcastUrlType(podcast.url, 'edit');
 
     // Mostrar el modal
