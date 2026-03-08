@@ -411,34 +411,31 @@ for carpeta in "${!MAPA_DURACIONES[@]}"; do
     margen_min=${MAPA_MARGENES[$carpeta]:-5}
     umbral=$(( base_seg + margen_min * 60 ))
 
-    if [[ -n "${MAPA_BASE_SEG[$carpeta]+x}" ]]; then
-        # Carpeta tipo 1H:1H → recorrer subcarpetas de Podcast/1H/
-        echo "📂 Verificando subcarpetas de $carpeta (límite: $((umbral/60)) min)"
-        find "$PODCASTS_DIR/$carpeta" -mindepth 1 -maxdepth 1 -type d | while read -r subdir; do
-            find "$subdir" -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) | while read -r archivo; do
-                duracion=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$archivo" 2>/dev/null | cut -d. -f1)
-                if [[ -n "$duracion" && "$duracion" -gt "$umbral" ]]; then
-                    echo "⛔ $(basename "$archivo") en $(basename "$subdir") → ${duracion}s (excede)"
-                    fecha_actual=$(date +"%Y-%m-%d %H:%M:%S")
-                    echo "$fecha_actual|$archivo|EXCESO_DURACION" >> "$ELIMINADOS_HISTORICO"
-                    rm -f "$archivo"
-                fi
-            done
-        done
-    else
-        # Carpeta específica
-        ruta="$PODCASTS_DIR/$carpeta"
-        [[ -d "$ruta" ]] || continue
-        echo "📂 Verificando carpeta $carpeta (límite: $((umbral/60)) min)"
-        find "$ruta" -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) | while read -r archivo; do
+    ruta="$PODCASTS_DIR/$carpeta"
+    [[ -d "$ruta" ]] || continue
+
+    _verificar_duracion_en_dir() {
+        local dir="$1" etiqueta="$2"
+        find "$dir" -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) | while read -r archivo; do
             duracion=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$archivo" 2>/dev/null | cut -d. -f1)
             if [[ -n "$duracion" && "$duracion" -gt "$umbral" ]]; then
-                echo "⛔ $(basename "$archivo") → ${duracion}s (excede)"
+                echo "⛔ $(basename "$archivo") en $etiqueta → ${duracion}s (excede)"
                 fecha_actual=$(date +"%Y-%m-%d %H:%M:%S")
                 echo "$fecha_actual|$archivo|EXCESO_DURACION" >> "$ELIMINADOS_HISTORICO"
                 rm -f "$archivo"
             fi
         done
+    }
+
+    if find "$ruta" -mindepth 1 -maxdepth 1 -type d | grep -q .; then
+        # Tiene subcarpetas → verificar cada una
+        echo "📂 Verificando subcarpetas de $carpeta (límite: $((umbral/60)) min)"
+        find "$ruta" -mindepth 1 -maxdepth 1 -type d | while read -r subdir; do
+            _verificar_duracion_en_dir "$subdir" "$(basename "$subdir")"
+        done
+    else
+        echo "📂 Verificando carpeta $carpeta (límite: $((umbral/60)) min)"
+        _verificar_duracion_en_dir "$ruta" "$carpeta"
     fi
 done
 INFORME="$INFORMES_DIR/Informe_diario_${DIA}_${MES}_${ANO}.log"
