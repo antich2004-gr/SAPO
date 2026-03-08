@@ -816,6 +816,11 @@ function executePodget($username) {
         return ['success' => false, 'message' => 'El script no tiene permisos de ejecucion'];
     }
 
+    if (!is_writable($logDir)) {
+        error_log("[SAPO-Security] executePodget: Directorio de logs no escribible: $logDir | Usuario: $username");
+        return ['success' => false, 'message' => 'El directorio de logs no tiene permisos de escritura'];
+    }
+
     // SEGURIDAD: Logging de auditoría ANTES de ejecutar
     $userInfo = isset($_SESSION['user_id']) ? "ID: {$_SESSION['user_id']}, Session: {$_SESSION['username']}" : "No autenticado";
     $clientIP = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
@@ -841,7 +846,8 @@ function executePodget($username) {
     ];
 
     // Ejecutar proceso
-    $process = proc_open($cmd, $descriptorspec, $pipes);
+    error_clear_last();
+    $process = @proc_open($cmd, $descriptorspec, $pipes);
 
     if (is_resource($process)) {
         // Cerrar el proceso inmediatamente (background execution)
@@ -855,7 +861,9 @@ function executePodget($username) {
             'message' => 'Las descargas se estan ejecutando. Log: ' . $logFile
         ];
     } else {
-        error_log("[SAPO-Security] EXEC PODGET FAILED | Usuario: $username | Error al iniciar proceso");
+        $phpError = error_get_last();
+        $errorDetail = $phpError ? $phpError['message'] : 'sin detalles';
+        error_log("[SAPO-Security] EXEC PODGET FAILED | Usuario: $username | Error: $errorDetail | Cmd: " . implode(' ', $cmd));
 
         return [
             'success' => false,
