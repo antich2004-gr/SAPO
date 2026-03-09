@@ -834,6 +834,7 @@
 
 .card ul, .card ol {
     line-height: 1.8;
+    padding-left: 1.5rem;
 }
 
 /* Botón flotante para volver al índice */
