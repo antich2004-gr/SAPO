@@ -184,8 +184,8 @@ function checkPodgetStatus() {
 let _logPollTimer   = null;
 let _logOffset      = 0;
 let _logIdleCount   = 0;
-const LOG_POLL_MS   = 2000;  // cada 2 s
-const LOG_IDLE_MAX  = 150;   // parar tras 5 min sin datos nuevos (podget puede tardar)
+const LOG_POLL_MS   = 500;   // cada 500 ms para ver feeds aparecer en tiempo real
+const LOG_IDLE_MAX  = 600;   // parar tras 5 min sin datos nuevos (podget puede tardar)
 
 function startPodgetLogViewer() {
     const viewer  = document.getElementById('podget-log-viewer');
