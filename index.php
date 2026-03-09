@@ -1312,44 +1312,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit;
     }
 
-    // AJAX: Leer contenido del log (streaming incremental por offset)
-    if (isset($_GET['action']) && $_GET['action'] == 'get_podget_log' && isLoggedIn() && !isAdmin()) {
-        if (!checkRateLimit('get_podget_log', 120, 60)) {
-            http_response_code(429);
-            header('Content-Type: application/json');
-            echo json_encode(['error' => ERROR_RATE_LIMIT]);
-            exit;
-        }
-
-        $username = $_SESSION['username'];
-        $logFile = PROJECT_DIR . '/logs/podget_' . $username . '.log';
-        $offset = max(0, intval($_GET['offset'] ?? 0));
-
-        header('Content-Type: application/json');
-
-        if (!file_exists($logFile)) {
-            echo json_encode(['exists' => false, 'chunk' => '', 'offset' => 0, 'size' => 0]);
-            exit;
-        }
-
-        $size = filesize($logFile);
-        $chunk = '';
-        if ($size > $offset) {
-            $fh = fopen($logFile, 'rb');
-            fseek($fh, $offset);
-            $chunk = fread($fh, min($size - $offset, 65536)); // max 64 KB por poll
-            fclose($fh);
-        }
-
-        echo json_encode([
-            'exists' => true,
-            'chunk'  => $chunk,
-            'offset' => $offset + strlen($chunk),
-            'size'   => $size,
-        ]);
-        exit;
-    }
-
     // LOAD REPORT (AJAX)
     if ($action == 'load_report' && isLoggedIn() && !isAdmin()) {
         $days = intval($_POST['days'] ?? 7);
@@ -1384,6 +1346,44 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $message = "Se actualizaron $updated feeds correctamente";
     }
 
+}
+
+// AJAX: Leer contenido del log (GET, fuera del bloque POST)
+if (isset($_GET['action']) && $_GET['action'] == 'get_podget_log' && isLoggedIn() && !isAdmin()) {
+    if (!checkRateLimit('get_podget_log', 120, 60)) {
+        http_response_code(429);
+        header('Content-Type: application/json');
+        echo json_encode(['error' => ERROR_RATE_LIMIT]);
+        exit;
+    }
+
+    $username = $_SESSION['username'];
+    $logFile = PROJECT_DIR . '/logs/podget_' . $username . '.log';
+    $offset = max(0, intval($_GET['offset'] ?? 0));
+
+    header('Content-Type: application/json');
+
+    if (!file_exists($logFile)) {
+        echo json_encode(['exists' => false, 'chunk' => '', 'offset' => 0, 'size' => 0]);
+        exit;
+    }
+
+    $size = filesize($logFile);
+    $chunk = '';
+    if ($size > $offset) {
+        $fh = fopen($logFile, 'rb');
+        fseek($fh, $offset);
+        $chunk = fread($fh, min($size - $offset, 65536)); // max 64 KB por poll
+        fclose($fh);
+    }
+
+    echo json_encode([
+        'exists' => true,
+        'chunk'  => $chunk,
+        'offset' => $offset + strlen($chunk),
+        'size'   => $size,
+    ]);
+    exit;
 }
 
 // ========== ACCIONES POST PARA GESTOR DE CATEGORÍAS (con protección CSRF) ==========
