@@ -98,16 +98,13 @@ function executePodgetViaAjax() {
             // Hay un mensaje de error específico de SAPO
             statusDiv.innerHTML = '<div class="alert alert-error">❌ ' + errorDiv.textContent.trim() + '</div>';
         } else {
-            // El script se envió correctamente
+            // El script se envió correctamente — arrancar visor de log
             statusDiv.innerHTML = `
                 <div class="alert alert-success">
                     ✅ Descargas iniciadas correctamente.
-                    <br><br>
-                    <small style="color: #718096;">
-                        La descarga se ejecuta de fondo. Los nuevos archivos estarán disponibles en Radiobot en 5-10 min. aproximadamente.
-                    </small>
                 </div>
             `;
+            startPodgetLogViewer();
         }
     })
     .catch(error => {
@@ -180,6 +177,61 @@ function checkPodgetStatus() {
                 </div>
             `;
         });
+}
+
+// ─── Visor de log en tiempo real ─────────────────────────────────────────────
+
+let _logPollTimer   = null;
+let _logOffset      = 0;
+let _logIdleCount   = 0;
+const LOG_POLL_MS   = 2000;  // cada 2 s
+const LOG_IDLE_MAX  = 15;    // parar tras 30 s sin datos nuevos
+
+function startPodgetLogViewer() {
+    const viewer  = document.getElementById('podget-log-viewer');
+    const content = document.getElementById('podget-log-content');
+    const label   = document.getElementById('podget-log-status');
+    if (!viewer || !content) return;
+
+    // Resetear estado
+    if (_logPollTimer) clearInterval(_logPollTimer);
+    _logOffset   = 0;
+    _logIdleCount = 0;
+    content.textContent = '';
+    label.textContent   = '⏳ esperando datos…';
+    viewer.style.display = 'block';
+
+    _logPollTimer = setInterval(_pollPodgetLog, LOG_POLL_MS);
+}
+
+function _pollPodgetLog() {
+    const content = document.getElementById('podget-log-content');
+    const label   = document.getElementById('podget-log-status');
+    if (!content) { clearInterval(_logPollTimer); return; }
+
+    fetch(window.location.href + '?action=get_podget_log&offset=' + _logOffset + '&_=' + Date.now())
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+            if (!data || !data.exists) {
+                _logIdleCount++;
+            } else if (data.chunk && data.chunk.length > 0) {
+                _logOffset    = data.offset;
+                _logIdleCount = 0;
+                content.textContent += data.chunk;
+                // Auto-scroll al final
+                content.scrollTop = content.scrollHeight;
+                label.textContent = '🟢 activo — ' + new Date().toLocaleTimeString();
+            } else {
+                _logIdleCount++;
+                label.textContent = '⏳ sin datos nuevos (' + _logIdleCount + '/' + LOG_IDLE_MAX + ')';
+            }
+
+            if (_logIdleCount >= LOG_IDLE_MAX) {
+                clearInterval(_logPollTimer);
+                label.textContent = '✅ proceso finalizado';
+            }
+        })
+        .catch(() => { _logIdleCount++; });
 }
 
 /**
