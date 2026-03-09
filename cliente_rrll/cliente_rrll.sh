@@ -358,12 +358,27 @@ while IFS='|' read -r timestamp file; do
         fecha_actual=$(date +"%Y-%m-%d %H:%M:%S")
 
         if [[ "$file" != "$nuevo_path" && ! -e "$nuevo_path" ]]; then
-            # 🗑️ Eliminar archivos de audio antiguos antes de renombrar
-            while IFS= read -r antiguo; do
-                echo "  🗑️ Eliminando por reemplazo: $(basename "$antiguo")"
-                rm -f "$antiguo"
-                echo "$fecha_actual|$antiguo|REEMPLAZO" >> "$ELIMINADOS_HISTORICO"
-            done < <(find "$dir" -maxdepth 1 -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) ! -samefile "$file")
+            # 🗑️ Eliminar archivos de audio antiguos antes de renombrar (respetando max_episodios)
+            _carpeta_nombre=$(basename "$dir")
+            _max_ep_rename="${MAX_EPISODIOS_RSS[$_carpeta_nombre]:-1}"
+            if (( _max_ep_rename <= 1 )); then
+                # Comportamiento original: eliminar todos los anteriores
+                while IFS= read -r antiguo; do
+                    echo "  🗑️ Eliminando por reemplazo: $(basename "$antiguo")"
+                    rm -f "$antiguo"
+                    echo "$fecha_actual|$antiguo|REEMPLAZO" >> "$ELIMINADOS_HISTORICO"
+                done < <(find "$dir" -maxdepth 1 -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) ! -samefile "$file")
+            else
+                # Mantener los N-1 más recientes (el nuevo será el Nth)
+                mapfile -t _antiguos_arr < <(find "$dir" -maxdepth 1 -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) ! -samefile "$file" -printf "%T@|%p\n" | sort -n | awk -F'|' '{print $2}')
+                _keep_count=$(( _max_ep_rename - 1 ))
+                _total_antiguos=${#_antiguos_arr[@]}
+                for (( _i=0; _i < _total_antiguos - _keep_count && _i < _total_antiguos; _i++ )); do
+                    echo "  🗑️ Eliminando por reemplazo: $(basename "${_antiguos_arr[$_i]}")"
+                    rm -f "${_antiguos_arr[$_i]}"
+                    echo "$fecha_actual|${_antiguos_arr[$_i]}|REEMPLAZO" >> "$ELIMINADOS_HISTORICO"
+                done
+            fi
 
             # ✔ Renombrar archivo descargado
             mv "$file" "$nuevo_path"
@@ -393,6 +408,19 @@ if [[ -f "$CADUCIDADES_FILE" ]]; then
     done < "$CADUCIDADES_FILE"
 fi
 
+# --- MÁXIMO DE EPISODIOS POR PODCAST (RSS) ---
+declare -A MAX_EPISODIOS_RSS
+MAX_EPISODIOS_RSS_FILE="$CONFIG_DIR/max_episodios_rss.txt"
+if [[ -f "$MAX_EPISODIOS_RSS_FILE" ]]; then
+    while IFS=':' read -r _nombre _n; do
+        read -r _nombre <<< "$_nombre"
+        read -r _n <<< "$_n"
+        if [[ -n "$_nombre" && "$_n" =~ ^[0-9]+$ && "$_n" -ge 1 ]]; then
+            MAX_EPISODIOS_RSS["$_nombre"]=$_n
+        fi
+    done < "$MAX_EPISODIOS_RSS_FILE"
+fi
+
 while IFS= read -r subdir; do
     while IFS='|' read -r timestamp archivo; do
         ts=${timestamp%.*}
@@ -414,12 +442,13 @@ echo "🧹 Manteniendo solo el archivo más reciente por carpeta..."
 
 _eliminar_antiguos_en_dir() {
     local dir="$1"
+    local max_ep="${2:-1}"
     mapfile -t archivos < <(find "$dir" -maxdepth 1 -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) -printf "%T@|%p\n" | sort -n | awk -F'|' '{print $2}')
     local total=${#archivos[@]}
-    if (( total > 1 )); then
+    if (( total > max_ep )); then
         local fecha_actual
         fecha_actual=$(date +"%Y-%m-%d %H:%M:%S")
-        for (( i=0; i<total-1; i++ )); do
+        for (( i=0; i<total-max_ep; i++ )); do
             local archivo="${archivos[i]}"
             echo "  🗑️ Eliminando por antigüedad: $(basename "$archivo")"
             rm -f "$archivo"
@@ -428,16 +457,20 @@ _eliminar_antiguos_en_dir() {
     fi
 }
 
-find "$PODCASTS_DIR" -mindepth 1 -maxdepth 1 -type d | while read -r subdir; do
-    if find "$subdir" -mindepth 1 -maxdepth 1 -type d | grep -q .; then
-        # Tiene subcarpetas → procesar cada una
-        find "$subdir" -mindepth 1 -maxdepth 1 -type d | while read -r nested; do
-            _eliminar_antiguos_en_dir "$nested"
-        done
+while read -r subdir; do
+    _nombre_subdir=$(basename "$subdir")
+    _max_ep_subdir="${MAX_EPISODIOS_RSS[$_nombre_subdir]:-1}"
+    if find "$subdir" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | grep -q .; then
+        # Tiene subcarpetas (categoría) → procesar cada podcast dentro
+        while read -r nested; do
+            _nombre_nested=$(basename "$nested")
+            _max_ep_nested="${MAX_EPISODIOS_RSS[$_nombre_nested]:-1}"
+            _eliminar_antiguos_en_dir "$nested" "$_max_ep_nested"
+        done < <(find "$subdir" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
     else
-        _eliminar_antiguos_en_dir "$subdir"
+        _eliminar_antiguos_en_dir "$subdir" "$_max_ep_subdir"
     fi
-done
+done < <(find "$PODCASTS_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
 
 # --- VERIFICACIÓN DE DURACIÓN EN CARPETAS ASIGNADAS ---
 echo "⏱️ Verificando duración de archivos por carpeta..."

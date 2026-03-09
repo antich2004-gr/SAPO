@@ -308,7 +308,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                 <span class="badge-ytdlp">📺 yt-dlp</span>
                                             <?php endif; ?>
                                         </strong>
-                                        <small>Categoría: <?php echo htmlEsc(displayName($podcast['category'])); ?> | Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días<?php if (($podcast['type'] ?? 'rss') === 'ytdlp'): ?> | Máx. <?php echo htmlEsc($podcast['max_episodios'] ?? 1); ?> episodios<?php endif; ?></small>
+                                        <small>Categoría: <?php echo htmlEsc(displayName($podcast['category'])); ?> | Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días | Máx. <?php echo htmlEsc($podcast['max_episodios'] ?? 1); ?> episodios</small>
                                         <small><?php echo htmlEsc($podcast['url']); ?></small>
 
                                         <div class="last-episode <?php echo $statusInfo['class']; ?>">
@@ -461,7 +461,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                             <span class="badge-ytdlp">📺 yt-dlp</span>
                                                         <?php endif; ?>
                                                     </strong>
-                                                    <small>Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días<?php if (($podcast['type'] ?? 'rss') === 'ytdlp'): ?> | Máx. <?php echo htmlEsc($podcast['max_episodios'] ?? 1); ?> episodios<?php endif; ?></small>
+                                                    <small>Caducidad: <?php echo htmlEsc($podcastCaducidad); ?> días | Máx. <?php echo htmlEsc($podcast['max_episodios'] ?? 1); ?> episodios</small>
                                                     <small><?php echo htmlEsc($podcast['url']); ?></small>
 
                                                     <div class="last-episode <?php echo $statusInfo['class']; ?>">
@@ -889,10 +889,10 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     <small style="color: #718096;">Puedes usar espacios normales</small>
                 </div>
 
-                <div class="form-group" id="max_episodios_group" style="display: none;">
-                    <label>Máximo de episodios a descargar:</label>
+                <div class="form-group" id="max_episodios_group">
+                    <label>Máximo de episodios a mantener en carpeta:</label>
                     <input type="number" name="max_episodios" id="podcast_max_episodios" value="1" min="1" max="50">
-                    <small style="color: #718096;">Número máximo de episodios recientes a descargar (1-50, por defecto: 5)</small>
+                    <small style="color: #718096;">Episodios recientes que se conservan en la carpeta (1-50). Por defecto 1 (solo el último).</small>
                 </div>
 
                 <div class="form-group">
@@ -978,10 +978,10 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     <small style="color: #718096;">Puedes usar espacios normales</small>
                 </div>
 
-                <div class="form-group" id="edit_max_episodios_group" style="display: none;">
-                    <label>Máximo de episodios a descargar:</label>
+                <div class="form-group" id="edit_max_episodios_group">
+                    <label>Máximo de episodios a mantener en carpeta:</label>
                     <input type="number" name="max_episodios" id="edit_podcast_max_episodios" value="1" min="1" max="50">
-                    <small style="color: #718096;">Número máximo de episodios recientes a descargar (1-50, por defecto: 5)</small>
+                    <small style="color: #718096;">Episodios recientes que se conservan en la carpeta (1-50). Por defecto 1 (solo el último).</small>
                 </div>
 
                 <div class="form-group">
@@ -1394,12 +1394,9 @@ function isYtdlpUrl(url) {
 
 function detectPodcastUrlType(url, mode) {
     const isYtdlp = isYtdlpUrl(url);
-    const groupId    = mode === 'add' ? 'max_episodios_group'      : 'edit_max_episodios_group';
     const hintId     = mode === 'add' ? 'podcast_url_hint'         : 'edit_podcast_url_hint';
-    const group      = document.getElementById(groupId);
     const hint       = document.getElementById(hintId);
 
-    if (group) group.style.display = isYtdlp ? 'block' : 'none';
     if (hint) {
         if (isYtdlp) {
             hint.textContent = '📺 URL de plataforma detectada — se descargará con yt-dlp';
