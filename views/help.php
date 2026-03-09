@@ -298,9 +298,7 @@
             <li><strong>Caducidad:</strong> Igual que en RSS, días que se conservan los archivos descargados</li>
         </ul>
 
-        <div style="background: #fff5f5; border-left: 4px solid #f56565; padding: 15px; margin: 15px 0;">
-            <strong>🔒 Aviso legal:</strong> Asegúrate de tener derecho a descargar el contenido que suscribes. Respeta los términos de servicio de cada plataforma y los derechos de autor del contenido.
-        </div>
+
     </div>
 
     <!-- Sección: Buscar podcasts -->
