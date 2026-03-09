@@ -931,41 +931,26 @@ function executePodget($username) {
 
     error_log("[SAPO-Security] EXEC PODGET | Usuario objetivo: $username | Ejecutado por: $userInfo | IP: $clientIP | Timestamp: $timestamp");
 
-    // SEGURIDAD: Usar proc_open con array de argumentos (sin concatenación de strings)
-    // Esto previene command injection incluso si escapeshellarg() falla
-    $descriptorspec = [
-        0 => ["pipe", "r"],  // stdin
-        1 => ["file", $logFile, "w"],  // stdout -> log file
-        2 => ["file", $logFile, "a"]   // stderr -> log file (append)
-    ];
+    // Lanzar en background real con nohup para que el proceso sobreviva al timeout de PHP.
+    // proc_close() bloquea hasta que el hijo termina; con nohup+& el shell retorna
+    // inmediatamente y el script sigue corriendo de forma independiente.
+    // Seguridad: escapeshellarg() en todos los valores dinámicos.
+    $shellCmd = 'nohup /bin/bash '
+        . escapeshellarg($scriptPath)
+        . ' --emisora ' . escapeshellarg($username)
+        . ' > ' . escapeshellarg($logFile) . ' 2>&1 & echo $!';
 
-    // Comando como array (sin concatenación de strings = sin injection)
-    // PHP-FPM ya corre como radioslibres, no se necesita sudo
-    $cmd = [
-        '/bin/bash',
-        $scriptPath,
-        '--emisora', $username
-    ];
+    $pid = exec($shellCmd, $output, $returnCode);
 
-    // Ejecutar proceso
-    error_clear_last();
-    $process = @proc_open($cmd, $descriptorspec, $pipes);
-
-    if (is_resource($process)) {
-        // Cerrar el proceso inmediatamente (background execution)
-        // No esperamos a que termine
-        proc_close($process);
-
-        error_log("[SAPO-Security] EXEC PODGET iniciado correctamente | Usuario: $username | PID: (background)");
+    if ($pid !== '' && is_numeric(trim($pid))) {
+        error_log("[SAPO-Security] EXEC PODGET iniciado correctamente | Usuario: $username | PID: $pid");
 
         return [
             'success' => true,
             'message' => 'Las descargas se estan ejecutando. Log: ' . $logFile
         ];
     } else {
-        $phpError = error_get_last();
-        $errorDetail = $phpError ? $phpError['message'] : 'sin detalles';
-        error_log("[SAPO-Security] EXEC PODGET FAILED | Usuario: $username | Error: $errorDetail | Cmd: " . implode(' ', $cmd));
+        error_log("[SAPO-Security] EXEC PODGET FAILED | Usuario: $username | returnCode: $returnCode | cmd: $shellCmd");
 
         return [
             'success' => false,
