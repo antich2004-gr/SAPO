@@ -277,14 +277,14 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
             <div style="background: #f0fff4; border: 1px solid #48bb78; border-radius: 8px; padding: 15px;">
                 <strong>📡 RSS (podget)</strong>
-                <ul style="margin: 10px 0 0 0; font-size: 14px;">
+                <ul style="margin: 10px 0 0 0; padding-left: 18px; font-size: 14px;">
                     <li>Descarga el episodio tal cual lo publica el podcast</li>
                     <li>Estado del feed visible (activo/inactivo)</li>
                 </ul>
             </div>
             <div style="background: #e6f7ff; border: 1px solid #667eea; border-radius: 8px; padding: 15px;">
                 <strong>📺 yt-dlp (plataformas)</strong>
-                <ul style="margin: 10px 0 0 0; font-size: 14px;">
+                <ul style="margin: 10px 0 0 0; padding-left: 18px; font-size: 14px;">
                     <li>Convierte vídeos a MP3 automáticamente</li>
                     <li>Configura cuántos episodios máximos descargar</li>
                     <li>No muestra estado de feed (badge <span style="background:#667eea;color:white;padding:1px 6px;border-radius:4px;font-size:12px;">📺 yt-dlp</span>)</li>
