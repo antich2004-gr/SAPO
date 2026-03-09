@@ -663,21 +663,15 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     <!-- UPLOADER -->
                     <div class="time-signals-uploader">
                         <h5>Subir Archivos de Audio</h5>
-                        <div id="dropzone" class="dropzone">
-                            <div class="dropzone-content">
-                                <span class="dropzone-icon">📁</span>
-                                <p>Arrastra archivos aquí o haz clic para seleccionar</p>
-                                <p style="font-size: 12px; color: #718096;">Formatos: MP3, WAV, OGG, M4A (Max 10MB)</p>
+                        <form id="upload-time-signal-form">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <input type="file" id="time-signal-file" name="file" accept=".mp3,.wav,.ogg,.m4a"
+                                       style="padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px;">
+                                <button type="submit" class="btn btn-primary" style="padding: 8px 18px;">📤 Subir</button>
                             </div>
-                            <input type="file" id="file-input" accept=".mp3,.wav,.ogg,.m4a" multiple style="display: none;">
-                        </div>
-
-                        <div id="upload-progress" style="margin-top: 15px; display: none;">
-                            <div class="progress-bar">
-                                <div class="progress-fill" id="progress-fill"></div>
-                            </div>
-                            <p id="upload-status" style="margin-top: 10px; color: #4a5568;"></p>
-                        </div>
+                            <small style="color: #718096; display: block; margin-top: 6px;">Formatos: MP3, WAV, OGG, M4A · Máx. 10 MB</small>
+                            <div id="upload-status" style="margin-top: 10px;"></div>
+                        </form>
                     </div>
 
                     <!-- CONFIGURACIÓN DE HORARIOS -->
@@ -706,7 +700,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 <p style="margin: 0 0 10px 0; font-weight: 500; color: #2d3748;">
                                     2️⃣ Frecuencia de reproducción:
                                 </p>
-                                <select name="frequency" id="signal-frequency" required style="width: 100%; max-width: 400px; padding: 10px; font-size: 14px; border: 1px solid #cbd5e0; border-radius: 4px;" onchange="onFrequencyChange()">
+                                <select name="frequency" id="signal-frequency" required style="width: 100%; max-width: 400px; padding: 10px; font-size: 14px; border: 1px solid #cbd5e0; border-radius: 4px;">
                                     <option value="hourly">Cada hora (en punto: :00)</option>
                                     <option value="half-hourly">Cada media hora (:00 y :30)</option>
                                     <option value="quarter-hourly">Cada cuarto de hora (:00, :15, :30, :45)</option>
@@ -729,7 +723,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         Duración de transición (segundos):
                                     </label>
                                     <input type="number" id="signal-duration" name="duration" min="0.2" max="10" step="0.1" value="0.2"
-                                           onchange="onConfigChange('duration')"
                                            style="width: 150px; padding: 8px; font-size: 14px; border: 1px solid #cbd5e0; border-radius: 4px;">
                                     <small style="color: #718096; display: block; margin-top: 5px;">
                                         Tiempo que tarda la señal en mezclarse con la música (0.2 - 10 segundos)
@@ -742,7 +735,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         Atenuación de música (%):
                                     </label>
                                     <input type="number" id="signal-attenuation" name="attenuation" min="0" max="100" step="5" value="60"
-                                           onchange="onConfigChange('attenuation')"
                                            style="width: 150px; padding: 8px; font-size: 14px; border: 1px solid #cbd5e0; border-radius: 4px;">
                                     <small style="color: #718096; display: block; margin-top: 5px;">
                                         Porcentaje al que se reduce el volumen de la música durante la señal (recomendado: 60%)
@@ -759,32 +751,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     ✅ Aplicar Señales Horarias
                                 </button>
 
-                                <!-- Link para ver código (opcional) -->
-                                <div style="margin-top: 12px;">
-                                    <a href="javascript:void(0)" onclick="toggleGeneratedCode()" style="color: #4299e1; font-size: 13px; text-decoration: none;">
-                                        <span id="toggle-code-icon">▶</span> Ver código generado (opcional)
-                                    </a>
-                                </div>
-
-                                <!-- Área de código generado (colapsada) -->
-                                <div id="generated-code-container" style="display: none; margin-top: 15px;">
-                                    <textarea id="generated-code" readonly style="width: 100%; height: 300px; font-family: 'Courier New', monospace; font-size: 13px; padding: 15px; border: 1px solid #cbd5e0; border-radius: 4px; background: #1a202c; color: #48bb78; line-height: 1.5;"></textarea>
-
-                                    <div style="margin-top: 10px;">
-                                        <button type="button" class="btn btn-secondary" onclick="copyGeneratedCode()" style="padding: 8px 20px;">
-                                            📋 Copiar Código
-                                        </button>
-                                    </div>
-
-                                    <div style="margin-top: 15px; padding: 12px; background: #edf2f7; border-left: 3px solid #4299e1; border-radius: 4px;">
-                                        <p style="margin: 0; color: #2d3748; font-size: 13px;">
-                                            <strong>💡 Opción manual:</strong> Si la aplicación automática falla, copia el código y pégalo en:
-                                        </p>
-                                        <p style="margin: 5px 0 0 0; color: #4a5568; font-size: 13px; font-family: monospace;">
-                                            AzuraCast → Estación → Editar → Avanzado → Custom Configuration
-                                        </p>
-                                    </div>
-                                </div>
                             </div>
                         </form>
 
@@ -1559,7 +1525,7 @@ function loadTimeSignalFiles() {
 }
 
 /**
- * Subir archivo de señal horaria
+ * Subir archivo de señal horaria y aplicar automáticamente
  */
 document.getElementById('upload-time-signal-form')?.addEventListener('submit', function(e) {
     e.preventDefault();
@@ -1578,10 +1544,9 @@ document.getElementById('upload-time-signal-form')?.addEventListener('submit', f
     formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
     formData.append('file', fileInput.files[0]);
 
-    // Deshabilitar botón
     submitButton.disabled = true;
     submitButton.textContent = 'Subiendo...';
-    uploadStatus.innerHTML = '<p style="color: #3182ce;">Subiendo archivo...</p>';
+    uploadStatus.innerHTML = '<p style="color: #3182ce;">⏳ Subiendo archivo...</p>';
 
     fetch('', {
         method: 'POST',
@@ -1590,16 +1555,13 @@ document.getElementById('upload-time-signal-form')?.addEventListener('submit', f
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            uploadStatus.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
             fileInput.value = '';
-            loadTimeSignalFiles(); // Recargar lista
-
-            // Actualizar campo "Archivo activo"
+            loadTimeSignalFiles();
             document.getElementById('current-signal-file').textContent = data.filename || 'Archivo subido';
 
-            setTimeout(() => {
-                uploadStatus.innerHTML = '';
-            }, 3000);
+            // Aplicar automáticamente tras la subida
+            uploadStatus.innerHTML = '<p style="color: #3182ce;">⏳ Aplicando señales horarias...</p>';
+            doApplyTimeSignals(uploadStatus);
         } else {
             uploadStatus.innerHTML = '<div class="alert alert-danger">' + data.message + '</div>';
         }
@@ -1610,7 +1572,7 @@ document.getElementById('upload-time-signal-form')?.addEventListener('submit', f
     })
     .finally(() => {
         submitButton.disabled = false;
-        submitButton.textContent = '📤 Subir Archivo';
+        submitButton.textContent = '📤 Subir';
     });
 });
 
@@ -1657,49 +1619,23 @@ function loadTimeSignalsConfig(silent = false) {
         statusDiv.innerHTML = '<p style="color: #3182ce;">Cargando configuración...</p>';
     }
 
-    console.log('[DEBUG] loadTimeSignalsConfig: Iniciando...');
-
     fetch('?action=get_time_signals_config')
         .then(response => response.json())
         .then(data => {
-            console.log('[DEBUG] loadTimeSignalsConfig: Respuesta completa:', JSON.stringify(data, null, 2));
-
             if (data.success && data.config) {
                 const config = data.config;
-                console.log('[DEBUG] Config recibida:', config);
 
-                // Actualizar frecuencia
                 if (config.frequency) {
                     document.getElementById('signal-frequency').value = config.frequency;
-                    console.log('[DEBUG] ✅ Frecuencia:', config.frequency);
                 }
-
-                // Actualizar archivo activo
                 if (config.signal_file) {
                     document.getElementById('current-signal-file').textContent = config.signal_file;
-                    console.log('[DEBUG] ✅ Archivo:', config.signal_file);
                 }
-
-                // Actualizar duración y atenuación
                 if (config.duration !== undefined) {
                     document.getElementById('signal-duration').value = config.duration;
-                    console.log('[DEBUG] ✅ Duration:', config.duration);
-                } else {
-                    console.warn('[DEBUG] ⚠️ Duration NO en config');
                 }
-
                 if (config.attenuation !== undefined) {
                     document.getElementById('signal-attenuation').value = config.attenuation;
-                    console.log('[DEBUG] ✅ Attenuation:', config.attenuation);
-                } else {
-                    console.warn('[DEBUG] ⚠️ Attenuation NO en config');
-                }
-
-                // Actualizar offset (ajuste de tiempo)
-                if (config.offset_seconds !== undefined) {
-                    document.getElementById('signal-offset').value = config.offset_seconds;
-                } else {
-                    document.getElementById('signal-offset').value = 0; // Default
                 }
 
                 if (!silent) {
@@ -1726,187 +1662,14 @@ function loadTimeSignalsConfig(silent = false) {
 }
 
 /**
- * Sincronizar configuración desde Liquidsoap
+ * Enviar la petición de aplicar señales horarias (sin confirmación).
+ * @param {HTMLElement} statusEl - Elemento donde mostrar el estado (por defecto #config-status)
  */
-function syncFromLiquidsoap() {
-    const statusDiv = document.getElementById('config-status');
-    statusDiv.innerHTML = '<p style="color: #3182ce;">Sincronizando desde Liquidsoap...</p>';
-
-    fetch('?action=sync_time_signals_from_liquidsoap', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'csrf_token=<?php echo generateCSRFToken(); ?>'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            statusDiv.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
-
-            // Actualizar formulario con la configuración sincronizada
-            if (data.config) {
-                if (data.config.frequency) {
-                    document.getElementById('signal-frequency').value = data.config.frequency;
-                }
-                if (data.config.signal_file) {
-                    document.getElementById('current-signal-file').textContent = data.config.signal_file;
-                }
-                if (data.config.offset_seconds !== undefined) {
-                    document.getElementById('signal-offset').value = data.config.offset_seconds;
-                }
-                if (data.config.duration !== undefined) {
-                    document.getElementById('signal-duration').value = data.config.duration;
-                }
-                if (data.config.attenuation !== undefined) {
-                    document.getElementById('signal-attenuation').value = data.config.attenuation;
-                }
-            }
-
-            setTimeout(() => {
-                statusDiv.innerHTML = '';
-            }, 5000);
-        } else {
-            statusDiv.innerHTML = '<div class="alert alert-danger">' + data.message + '</div>';
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        statusDiv.innerHTML = '<div class="alert alert-danger">Error al sincronizar</div>';
-    });
-}
-
-/**
- * Detectar cambio de configuración y regenerar código si ya está visible
- */
-function onConfigChange(paramName) {
-    const codeContainer = document.getElementById('generated-code-container');
-
-    // Si el código ya está visible, regenerarlo automáticamente
-    if (codeContainer && codeContainer.style.display !== 'none') {
-        const statusDiv = document.getElementById('config-status');
-        statusDiv.innerHTML = '<div class="alert alert-info">Configuración actualizada. Regenerando código...</div>';
-
-        setTimeout(() => {
-            generateTimeSignalsCode();
-        }, 500);
-    }
-}
-
-// Alias para compatibilidad
-function onFrequencyChange() {
-    onConfigChange('frequency');
-}
-
-/**
- * Generar código Liquidsoap
- */
-function generateTimeSignalsCode() {
-    const statusDiv = document.getElementById('config-status');
+function doApplyTimeSignals(statusEl) {
+    const statusDiv = statusEl || document.getElementById('config-status');
     const frequency = document.getElementById('signal-frequency').value;
     const duration = document.getElementById('signal-duration').value;
     const attenuation = document.getElementById('signal-attenuation').value;
-
-    const formData = new FormData();
-    formData.append('action', 'generate_time_signals_code');
-    formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
-    formData.append('frequency', frequency);
-    formData.append('duration', duration);
-    formData.append('attenuation', attenuation);
-
-    statusDiv.innerHTML = '<p style="color: #3182ce;">Generando código...</p>';
-
-    fetch('', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Mostrar el código generado
-            document.getElementById('generated-code').value = data.code;
-            document.getElementById('generated-code-container').style.display = 'block';
-            document.getElementById('current-signal-file').textContent = data.signal_file;
-
-            statusDiv.innerHTML = '<div class="alert alert-success">Código generado correctamente. Puedes copiarlo o aplicarlo automáticamente.</div>';
-
-            setTimeout(() => {
-                statusDiv.innerHTML = '';
-            }, 5000);
-        } else {
-            statusDiv.innerHTML = '<div class="alert alert-danger">' + data.message + '</div>';
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        statusDiv.innerHTML = '<div class="alert alert-danger">Error al generar código</div>';
-    });
-}
-
-/**
- * Copiar código generado al portapapeles
- */
-function copyGeneratedCode() {
-    const codeTextarea = document.getElementById('generated-code');
-    const statusDiv = document.getElementById('config-status');
-
-    codeTextarea.select();
-    document.execCommand('copy');
-
-    statusDiv.innerHTML = '<div class="alert alert-success">✅ Código copiado al portapapeles</div>';
-
-    setTimeout(() => {
-        statusDiv.innerHTML = '';
-    }, 3000);
-}
-
-/**
- * Toggle mostrar/ocultar código generado
- */
-function toggleGeneratedCode() {
-    const container = document.getElementById('generated-code-container');
-    const icon = document.getElementById('toggle-code-icon');
-    const codeTextarea = document.getElementById('generated-code');
-
-    if (container.style.display === 'none') {
-        // Si el textarea está vacío, generar código primero
-        if (!codeTextarea.value.trim()) {
-            generateTimeSignalsCode();
-        }
-        container.style.display = 'block';
-        icon.textContent = '▼';
-    } else {
-        container.style.display = 'none';
-        icon.textContent = '▶';
-    }
-}
-
-/**
- * Aplicar señales horarias directamente (genera y aplica en un solo paso)
- */
-function applyTimeSignalsDirectly() {
-    const statusDiv = document.getElementById('config-status');
-    const frequency = document.getElementById('signal-frequency').value;
-    const duration = document.getElementById('signal-duration').value;
-    const attenuation = document.getElementById('signal-attenuation').value;
-    const offsetSeconds = document.getElementById('signal-offset').value;
-
-    // Mostrar diálogo de confirmación
-    const confirmMessage =
-        "⚠️ AVISO IMPORTANTE\n\n" +
-        "Esta acción reiniciará la emisora para aplicar los cambios.\n\n" +
-        "• Duración estimada: 3-5 segundos\n" +
-        "• Habrá un corte breve en la transmisión\n" +
-        "• Las señales horarias se activarán automáticamente\n\n" +
-        "¿Deseas continuar?";
-
-    if (!confirm(confirmMessage)) {
-        statusDiv.innerHTML = '<div class="alert alert-info">❌ Operación cancelada</div>';
-        setTimeout(() => {
-            statusDiv.innerHTML = '';
-        }, 3000);
-        return;
-    }
 
     const formData = new FormData();
     formData.append('action', 'apply_time_signals_via_api');
@@ -1914,9 +1677,7 @@ function applyTimeSignalsDirectly() {
     formData.append('frequency', frequency);
     formData.append('duration', duration);
     formData.append('attenuation', attenuation);
-    formData.append('offset_seconds', offsetSeconds);
-
-    statusDiv.innerHTML = '<p style="color: #3182ce;">⏳ Aplicando señales horarias y reiniciando emisora...</p>';
+    formData.append('offset_seconds', '0');
 
     fetch('', {
         method: 'POST',
@@ -1925,19 +1686,11 @@ function applyTimeSignalsDirectly() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Guardar código generado por si el usuario quiere verlo
-            if (data.code) {
-                document.getElementById('generated-code').value = data.code;
-            }
-
             statusDiv.innerHTML = '<div class="alert alert-success">✅ ' + data.message + '</div>';
-
-            setTimeout(() => {
-                statusDiv.innerHTML = '';
-            }, 5000);
         } else {
             statusDiv.innerHTML = '<div class="alert alert-danger">❌ ' + data.message + '</div>';
         }
+        setTimeout(() => { statusDiv.innerHTML = ''; }, 5000);
     })
     .catch(error => {
         console.error('Error:', error);
@@ -1946,71 +1699,29 @@ function applyTimeSignalsDirectly() {
 }
 
 /**
- * Aplicar señales horarias vía API de AzuraCast
+ * Aplicar señales horarias (botón manual — pide confirmación)
  */
-function applyTimeSignalsViaAPI() {
+function applyTimeSignalsDirectly() {
     const statusDiv = document.getElementById('config-status');
-    const frequency = document.getElementById('signal-frequency').value;
-    const duration = document.getElementById('signal-duration').value;
-    const attenuation = document.getElementById('signal-attenuation').value;
-    const offsetSeconds = document.getElementById('signal-offset').value;
 
-    // Mostrar diálogo de confirmación
     const confirmMessage =
         "⚠️ AVISO IMPORTANTE\n\n" +
         "Esta acción reiniciará la emisora para aplicar los cambios.\n\n" +
         "• Duración estimada: 3-5 segundos\n" +
-        "• Habrá un corte breve en la transmisión\n" +
-        "• Las señales horarias se activarán automáticamente\n\n" +
+        "• Habrá un corte breve en la transmisión\n\n" +
         "¿Deseas continuar?";
 
     if (!confirm(confirmMessage)) {
-        statusDiv.innerHTML = '<div class="alert alert-info">❌ Operación cancelada. Puedes copiar el código manualmente si lo prefieres.</div>';
-        setTimeout(() => {
-            statusDiv.innerHTML = '';
-        }, 4000);
+        statusDiv.innerHTML = '<div class="alert alert-info">❌ Operación cancelada</div>';
+        setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
         return;
     }
 
-    const formData = new FormData();
-    formData.append('action', 'apply_time_signals_via_api');
-    formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
-    formData.append('frequency', frequency);
-    formData.append('duration', duration);
-    formData.append('attenuation', attenuation);
-    formData.append('offset_seconds', offsetSeconds);
-
-    statusDiv.innerHTML = '<p style="color: #3182ce;">⏳ Aplicando vía API de AzuraCast y reiniciando emisora...</p>';
-
-    fetch('', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            statusDiv.innerHTML = '<div class="alert alert-success">✅ ' + data.message + '</div>';
-
-            setTimeout(() => {
-                statusDiv.innerHTML = '';
-            }, 5000);
-        } else {
-            statusDiv.innerHTML = '<div class="alert alert-danger">❌ ' + data.message + '<br><small>Puedes copiar el código manualmente y pegarlo en AzuraCast.</small></div>';
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        statusDiv.innerHTML = '<div class="alert alert-danger">❌ Error al aplicar. Puedes copiar el código manualmente.</div>';
-    });
+    statusDiv.innerHTML = '<p style="color: #3182ce;">⏳ Aplicando señales horarias y reiniciando emisora...</p>';
+    doApplyTimeSignals(statusDiv);
 }
 
-/**
- * Cargar configuración inicial: intenta desde Liquidsoap primero, luego desde JSON guardado
- */
 function loadInitialConfig() {
-    console.log('[DEBUG] loadInitialConfig: Cargando configuración desde config.json...');
-
-    // Cargar directamente desde config.json (más confiable que Liquidsoap)
     loadTimeSignalsConfig(true);
 }
 
