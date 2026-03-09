@@ -272,6 +272,85 @@ function deleteCaducidad($username, $podcastName) {
     return writeCaducidades($username, $caducidades);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// MÁX. EPISODIOS RSS — max_episodios_rss.txt
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getMaxEpisodiosRssPath($username) {
+    $config = getConfig();
+    $basePath = $config['base_path'];
+    $subsFolder = $config['subscriptions_folder'];
+
+    if (empty($basePath)) {
+        return false;
+    }
+
+    $path = $basePath . DIRECTORY_SEPARATOR . $username . DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . $subsFolder . DIRECTORY_SEPARATOR . 'max_episodios_rss.txt';
+
+    $realBasePath = realpath($basePath);
+    $realPath = realpath(dirname($path));
+
+    if ($realPath === false) {
+        if (strpos($username, '..') !== false || strpos($username, DIRECTORY_SEPARATOR) !== false) {
+            return false;
+        }
+    } elseif ($realBasePath !== false && strpos($realPath, $realBasePath) !== 0) {
+        return false;
+    }
+
+    return $path;
+}
+
+function readMaxEpisodiosRss($username) {
+    $path = getMaxEpisodiosRssPath($username);
+    if (!$path || !file_exists($path)) return [];
+
+    $data = [];
+    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if (empty($line) || $line[0] == '#') continue;
+        $parts = explode(':', $line, 2);
+        if (count($parts) == 2) {
+            $nombre = trim($parts[0]);
+            $n = intval(trim($parts[1]));
+            $data[$nombre] = max(1, $n);
+        }
+    }
+    return $data;
+}
+
+function writeMaxEpisodiosRss($username, $data) {
+    $path = getMaxEpisodiosRssPath($username);
+    if (!$path) return false;
+
+    $dir = dirname($path);
+    if (!is_dir($dir)) {
+        if (!mkdir($dir, 0755, true)) return false;
+    }
+
+    $content = "# Máx. episodios RSS por podcast - Generado por SAPO\n";
+    $content .= "# Formato: nombre_podcast:numero\n\n";
+
+    foreach ($data as $podcastName => $n) {
+        $content .= $podcastName . ':' . max(1, intval($n)) . "\n";
+    }
+
+    return file_put_contents($path, $content) !== false;
+}
+
+function setMaxEpisodiosRss($username, $podcastName, $n) {
+    $data = readMaxEpisodiosRss($username);
+    $data[$podcastName] = max(1, intval($n));
+    return writeMaxEpisodiosRss($username, $data);
+}
+
+function deleteMaxEpisodiosRss($username, $podcastName) {
+    $data = readMaxEpisodiosRss($username);
+    unset($data[$podcastName]);
+    return writeMaxEpisodiosRss($username, $data);
+}
+
 /**
  * Sincronizar caducidades.txt con todos los podcasts
  * Asegura que todos los podcasts tienen una caducidad definida
@@ -363,6 +442,13 @@ function readServerList($username) {
             }
         }
     }
+
+    // Añadir max_episodios a cada entrada RSS
+    $maxEpisodiosMap = readMaxEpisodiosRss($username);
+    foreach ($podcasts as &$podcast) {
+        $podcast['max_episodios'] = $maxEpisodiosMap[$podcast['name']] ?? 1;
+    }
+    unset($podcast);
 
     // Mezclar con ytdlp_feeds.txt
     return array_merge($podcasts, readYtdlpFeeds($username));
@@ -474,6 +560,11 @@ function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracio
             $duraciones[$sanitizedName] = $duracion;
             $margenes[$sanitizedName] = (int)$margen;
             writeDuraciones($username, $duraciones, $margenes);
+        }
+
+        // Guardar max_episodios para RSS
+        if (!isYtdlpUrl($url)) {
+            setMaxEpisodiosRss($username, $sanitizedName, $max_episodios);
         }
 
         return [
@@ -665,6 +756,17 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
     }
     writeDuraciones($username, $duraciones, $margenesArr);
 
+    // ── Máx. episodios RSS ────────────────────────────────────────────────────
+    if ($newType === 'rss') {
+        if ($oldName !== $sanitizedName) {
+            deleteMaxEpisodiosRss($username, $oldName);
+        }
+        setMaxEpisodiosRss($username, $sanitizedName, $max_episodios);
+    } elseif ($typeChanged && $oldType === 'rss') {
+        // Cambió de RSS a ytdlp → limpiar entrada RSS
+        deleteMaxEpisodiosRss($username, $oldName);
+    }
+
     $result = [
         'success'            => true,
         'message'            => 'Podcast actualizado correctamente',
@@ -740,6 +842,7 @@ function deletePodcast($username, $index) {
 
     if (writeServerList($username, $rssFeeds)) {
         deleteCaducidad($username, $deletedName);
+        deleteMaxEpisodiosRss($username, $deletedName);
         return ['success' => true, 'message' => 'Podcast eliminado correctamente'];
     }
     return ['success' => false, 'error' => 'Error al eliminar el podcast'];
