@@ -935,9 +935,12 @@ function executePodget($username) {
     // proc_close() bloquea hasta que el hijo termina; con nohup+& el shell retorna
     // inmediatamente y el script sigue corriendo de forma independiente.
     // Seguridad: escapeshellarg() en todos los valores dinámicos.
-    // 'cd /tmp' evita que find falle al intentar restaurar el cwd de PHP-FPM
-    // (/home/fide u otro directorio inaccesible para radioslibres)
-    $shellCmd = 'cd /tmp && nohup /bin/bash '
+    // PHP-FPM arranca con entorno mínimo (sin HOME, PATH incompleto); se fijan
+    // explícitamente para que el script y sus herramientas funcionen igual que
+    // en una sesión de terminal. 'cd /tmp' evita el error de find al restaurar
+    // el cwd de PHP-FPM (/home/fide u otro directorio inaccesible).
+    $shellCmd = 'export HOME=/tmp PATH=/usr/local/bin:/usr/bin:/bin'
+        . ' && cd /tmp && nohup /bin/bash '
         . escapeshellarg($scriptPath)
         . ' --emisora ' . escapeshellarg($username)
         . ' > ' . escapeshellarg($logFile) . ' 2>&1 & echo $!';
