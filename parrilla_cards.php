@@ -182,11 +182,17 @@ $programsData = $programsDB['programs'] ?? [];
 $eventsByDay = [1 => [], 2 => [], 3 => [], 4 => [], 5 => [], 6 => [], 0 => []];
 $musicBlocksByDay = [1 => [], 2 => [], 3 => [], 4 => [], 5 => [], 6 => [], 0 => []];
 
-// PRIMERO: Añadir programas en directo (live) manuales de SAPO
+// PRIMERO: Añadir programas con schedule_slots configurados manualmente (live y no-live con slots)
 foreach ($programsData as $programKey => $programInfo) {
-    if (($programInfo['playlist_type'] ?? '') === 'live') {
-        // Obtener nombre original del programa (sin sufijo ::live)
-        $programName = $programInfo['original_name'] ?? getProgramNameFromKey($programKey);
+    $playlistType = $programInfo['playlist_type'] ?? 'program';
+    $hasManualSlots = !empty($programInfo['schedule_slots']);
+
+    if ($playlistType !== 'live' && !$hasManualSlots) continue;
+    if ($playlistType === 'jingles') continue;
+    if (!empty($programInfo['hidden_from_schedule'])) continue;
+
+    // Obtener nombre original del programa (sin sufijo ::live)
+    $programName = $programInfo['original_name'] ?? getProgramNameFromKey($programKey);
 
         // ====== SOPORTE PARA HORARIOS MÚLTIPLES (schedule_slots) ======
         $slots = [];
@@ -249,11 +255,10 @@ foreach ($programsData as $programKey => $programInfo) {
                     'social_mastodon' => $programInfo['social_mastodon'] ?? '',
                     'social_bluesky' => $programInfo['social_bluesky'] ?? '',
                     'social_facebook' => $programInfo['social_facebook'] ?? '',
-                    'playlist_type' => 'live'
+                    'playlist_type' => $playlistType
                 ];
             }
         }
-    }
 }
 
 // SEGUNDO: Añadir eventos de Radiobot
@@ -294,6 +299,12 @@ foreach ($schedule as $event) {
     }
     if (!empty($programInfo['hidden_from_schedule'])) {
         if ($isTracked) $traceLog[] = ['stage' => '2_filtered', 'reason' => 'hidden_from_schedule'];
+        continue;
+    }
+
+    // Si tiene schedule_slots configurados manualmente, ya fue procesado en el primer loop
+    if ($programInfo !== null && !empty($programInfo['schedule_slots'])) {
+        if ($isTracked) $traceLog[] = ['stage' => '2_filtered', 'reason' => 'has_manual_slots'];
         continue;
     }
 
