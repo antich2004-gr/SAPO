@@ -939,11 +939,15 @@ function executePodget($username) {
     // explícitamente para que el script y sus herramientas funcionen igual que
     // en una sesión de terminal. 'cd /tmp' evita el error de find al restaurar
     // el cwd de PHP-FPM (/home/fide u otro directorio inaccesible).
+    // Pre-crear el log desde PHP (garantiza que el archivo existe y es escribible
+    // antes de que el proceso hijo intente redirigir a él).
+    file_put_contents($logFile, date('[Y-m-d H:i:s]') . " Iniciando descargas para $username...\n", FILE_APPEND);
+
     $shellCmd = 'export HOME=/tmp PATH=/usr/local/bin:/usr/bin:/bin'
         . ' && cd /tmp && nohup /bin/bash '
         . escapeshellarg($scriptPath)
         . ' --emisora ' . escapeshellarg($username)
-        . ' > ' . escapeshellarg($logFile) . ' 2>&1 & echo $!';
+        . ' >> ' . escapeshellarg($logFile) . ' 2>&1 & echo $!';
 
     $pid = exec($shellCmd, $output, $returnCode);
 
