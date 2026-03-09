@@ -185,7 +185,7 @@ let _logPollTimer   = null;
 let _logOffset      = 0;
 let _logIdleCount   = 0;
 const LOG_POLL_MS   = 2000;  // cada 2 s
-const LOG_IDLE_MAX  = 15;    // parar tras 30 s sin datos nuevos
+const LOG_IDLE_MAX  = 150;   // parar tras 5 min sin datos nuevos (podget puede tardar)
 
 function startPodgetLogViewer() {
     const viewer  = document.getElementById('podget-log-viewer');
@@ -223,12 +223,13 @@ function _pollPodgetLog() {
                 label.textContent = '🟢 activo — ' + new Date().toLocaleTimeString();
             } else {
                 _logIdleCount++;
-                label.textContent = '⏳ sin datos nuevos (' + _logIdleCount + '/' + LOG_IDLE_MAX + ')';
+                const secsLeft = Math.round(((LOG_IDLE_MAX - _logIdleCount) * LOG_POLL_MS) / 1000);
+                label.textContent = '⏳ script en ejecución, sin salida nueva… (cierra en ' + secsLeft + 's si no hay actividad)';
             }
 
             if (_logIdleCount >= LOG_IDLE_MAX) {
                 clearInterval(_logPollTimer);
-                label.textContent = '✅ proceso finalizado';
+                label.textContent = '⏹ monitoreo detenido (sin actividad 5 min)';
             }
         })
         .catch(() => { _logIdleCount++; });

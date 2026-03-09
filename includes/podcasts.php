@@ -948,10 +948,8 @@ function executePodget($username) {
         return ['success' => false, 'message' => "Sin permisos de escritura en logs/. Ejecuta en el servidor: chmod 775 /var/www/html/logs && chown www-data:www-data /var/www/html/logs"];
     }
 
-    // -x: traza de bash para diagnosticar por qué el script no produce output en el log.
-    // ELIMINAR el flag -x cuando esté resuelto.
     $shellCmd = 'export HOME=/tmp PATH=/usr/local/bin:/usr/bin:/bin'
-        . ' && cd /tmp && nohup /bin/bash -x '
+        . ' && cd /tmp && nohup /bin/bash '
         . escapeshellarg($scriptPath)
         . ' --emisora ' . escapeshellarg($username)
         . ' >> ' . escapeshellarg($logFile) . ' 2>&1 & echo $!';
