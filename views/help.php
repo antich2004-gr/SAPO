@@ -636,10 +636,10 @@
     <!-- Sección: Grabaciones -->
     <div id="grabaciones" style="margin-bottom: 40px;">
         <h3>🎙️ Grabaciones</h3>
-        <p>La sección de Grabaciones te permite gestionar el archivo de grabaciones de tu emisora en AzuraCast: consultar cuántas grabaciones tienes, cuánto espacio ocupan y configurar durante cuántos días se conservan antes de eliminarse automáticamente.</p>
+        <p>La sección de Grabaciones te permite gestionar el archivo de grabaciones de tu emisora en Radiobot: consultar cuántas grabaciones tienes, cuánto espacio ocupan y configurar durante cuántos días se conservan antes de eliminarse automáticamente.</p>
 
         <div style="background: #e6fffa; border-left: 4px solid #38b2ac; padding: 15px; margin: 15px 0;">
-            <strong>💡 Funcionamiento general:</strong> AzuraCast graba la emisión de forma continua. SAPO añade una capa de gestión: permite ver el espacio utilizado y eliminar grabaciones antiguas de forma automática o manual para no llenar el disco.
+            <strong>💡 Funcionamiento general:</strong> Radiobot graba automáticamente todas las emisiones que se lanzan en directo vía Butt desde el estudio. SAPO añade una capa de gestión: permite ver el espacio utilizado y eliminar grabaciones antiguas de forma automática o manual para no llenar el disco.
         </div>
 
         <h4 style="margin-top: 25px;">Configuración de retención</h4>
