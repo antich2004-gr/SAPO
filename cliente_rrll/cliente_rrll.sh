@@ -301,9 +301,7 @@ if [[ "$EJECUTAR_PODGET" -eq 1 ]]; then
     _descargar_ytdlp_feeds
 
     purgar_bloqueos_podget_antiguos
-    cd "$CONFIG_DIR"
-    podget -d . -c "podgetrc.$EMISORA" | tee "$PODGET_LOG"
-    cd - >/dev/null
+    ( cd "$CONFIG_DIR" && podget -d . -c "podgetrc.$EMISORA" ) | tee "$PODGET_LOG"
 else
     echo "⏭️  Saltando ejecución de podget (--sinpodget activado)"
     echo "" > "$PODGET_LOG"
