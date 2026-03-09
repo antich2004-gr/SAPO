@@ -941,7 +941,12 @@ function executePodget($username) {
     // el cwd de PHP-FPM (/home/fide u otro directorio inaccesible).
     // Pre-crear el log desde PHP (garantiza que el archivo existe y es escribible
     // antes de que el proceso hijo intente redirigir a él).
-    file_put_contents($logFile, date('[Y-m-d H:i:s]') . " Iniciando descargas para $username...\n", FILE_APPEND);
+    $written = file_put_contents($logFile, date('[Y-m-d H:i:s]') . " Iniciando descargas para $username...\n", FILE_APPEND);
+    if ($written === false) {
+        $webUser = function_exists('posix_geteuid') ? (posix_getpwuid(posix_geteuid())['name'] ?? posix_geteuid()) : 'desconocido';
+        error_log("[SAPO] No se pudo escribir el log $logFile (usuario web: $webUser, permisos dir: " . decoct(fileperms($logDir) & 0777) . ")");
+        return ['success' => false, 'message' => "Sin permisos de escritura en logs/. Ejecuta en el servidor: chmod 775 /var/www/html/logs && chown www-data:www-data /var/www/html/logs"];
+    }
 
     $shellCmd = 'export HOME=/tmp PATH=/usr/local/bin:/usr/bin:/bin'
         . ' && cd /tmp && nohup /bin/bash '
