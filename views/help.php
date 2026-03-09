@@ -628,8 +628,6 @@
             <strong>⚠️ Aviso:</strong> Al aplicar, la emisora se reiniciará brevemente (3-5 segundos de corte). Esto es necesario para que Liquidsoap cargue la nueva configuración.
         </div>
 
-        <p>Si la aplicación automática falla, puedes usar la opción <em>"Ver código generado"</em> para copiar el código Liquidsoap y pegarlo manualmente en <strong>AzuraCast → Estación → Editar → Avanzado → Custom Configuration</strong>.</p>
-
         <div style="background: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 15px 0;">
             <strong>📝 Nota:</strong> Los cambios en la señal (nuevo archivo o nueva frecuencia) siempre requieren volver a hacer clic en <em>Aplicar</em> para que surtan efecto.
         </div>
