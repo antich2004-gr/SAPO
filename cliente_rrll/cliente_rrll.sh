@@ -331,6 +331,19 @@ ANO=$(date +"%Y")
 HOY=$(date +"%Y-%m-%d")
 now=$(date +%s)
 
+# --- MÁXIMO DE EPISODIOS POR PODCAST (RSS) ---
+declare -A MAX_EPISODIOS_RSS
+MAX_EPISODIOS_RSS_FILE="$CONFIG_DIR/max_episodios_rss.txt"
+if [[ -f "$MAX_EPISODIOS_RSS_FILE" ]]; then
+    while IFS=':' read -r _nombre _n; do
+        read -r _nombre <<< "$_nombre"
+        read -r _n <<< "$_n"
+        if [[ -n "$_nombre" && "$_n" =~ ^[0-9]+$ && "$_n" -ge 1 ]]; then
+            MAX_EPISODIOS_RSS["$_nombre"]=$_n
+        fi
+    done < "$MAX_EPISODIOS_RSS_FILE"
+fi
+
 echo "📆 Renombrando descargas de hoy..."
 
 START=$(date -d "$HOY 00:00:00" +%s)
@@ -369,12 +382,12 @@ while IFS='|' read -r timestamp file; do
         nuevo_path="$dir/$nuevo_nombre"
         fecha_actual=$(date +"%Y-%m-%d %H:%M:%S")
 
-        if [[ "$file" != "$nuevo_path" && ! -e "$nuevo_path" ]]; then
+        if [[ "$file" != "$nuevo_path" ]]; then
             # 🗑️ Eliminar archivos de audio antiguos antes de renombrar (respetando max_episodios)
             _carpeta_nombre=$(basename "$dir")
             _max_ep_rename="${MAX_EPISODIOS_RSS[$_carpeta_nombre]:-1}"
             if (( _max_ep_rename <= 1 )); then
-                # Comportamiento original: eliminar todos los anteriores
+                # Comportamiento original: eliminar todos los anteriores (incluido nuevo_path si ya existe)
                 while IFS= read -r antiguo; do
                     echo "  🗑️ Eliminando por reemplazo: $(basename "$antiguo")"
                     rm -f "$antiguo"
@@ -392,12 +405,10 @@ while IFS='|' read -r timestamp file; do
                 done
             fi
 
-            # ✔ Renombrar archivo descargado
-            mv "$file" "$nuevo_path"
+            # ✔ Renombrar archivo descargado (sobreescribe si ya existía uno anterior del mismo día)
+            mv -f "$file" "$nuevo_path"
             echo "  ✔ Renombrado: $(basename "$file") → $nuevo_nombre"
             echo "$fecha_actual|$nuevo_path|RENOMBRADO" >> "$RENOMBRADOS_HISTORICO"
-        else
-            echo "  ⚠️ No renombrado: $nuevo_nombre ya existe"
         fi
     fi
 done < <(find "$PODCASTS_DIR" -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) -printf "%T@|%p\n")
@@ -418,19 +429,6 @@ if [[ -f "$CADUCIDADES_FILE" ]]; then
             CADUCIDADES["$carpeta"]=$dias
         fi
     done < "$CADUCIDADES_FILE"
-fi
-
-# --- MÁXIMO DE EPISODIOS POR PODCAST (RSS) ---
-declare -A MAX_EPISODIOS_RSS
-MAX_EPISODIOS_RSS_FILE="$CONFIG_DIR/max_episodios_rss.txt"
-if [[ -f "$MAX_EPISODIOS_RSS_FILE" ]]; then
-    while IFS=':' read -r _nombre _n; do
-        read -r _nombre <<< "$_nombre"
-        read -r _n <<< "$_n"
-        if [[ -n "$_nombre" && "$_n" =~ ^[0-9]+$ && "$_n" -ge 1 ]]; then
-            MAX_EPISODIOS_RSS["$_nombre"]=$_n
-        fi
-    done < "$MAX_EPISODIOS_RSS_FILE"
 fi
 
 while IFS= read -r subdir; do
