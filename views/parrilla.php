@@ -879,11 +879,30 @@ if ($hasStationId) {
                     .stale-programs-title {
                         font-weight: 600;
                         color: #92400e;
-                        margin-bottom: 12px;
+                        margin-bottom: 0;
                         display: flex;
                         align-items: center;
                         gap: 8px;
                         font-size: 14px;
+                        cursor: pointer;
+                        user-select: none;
+                    }
+                    .stale-programs-title .stale-chevron {
+                        margin-left: auto;
+                        transition: transform 0.2s;
+                        font-style: normal;
+                    }
+                    .stale-programs-title.collapsed .stale-chevron {
+                        transform: rotate(-90deg);
+                    }
+                    .stale-programs-body {
+                        margin-top: 12px;
+                    }
+                    .stale-programs-body.collapsed {
+                        display: none;
+                    }
+                    .stale-programs-panel:has(.stale-programs-body.collapsed) {
+                        padding-bottom: 16px;
                     }
                     .stale-program-item {
                         background: white;
@@ -1066,9 +1085,11 @@ if ($hasStationId) {
                     <!-- Programas críticos: Sin archivos -->
                     <?php if (!empty($criticalPrograms)): ?>
                     <div class="stale-programs-panel" style="border-color: #dc2626; background: #fee2e2;">
-                        <div class="stale-programs-title" style="color: #991b1b;">
-                            ❌ Programas sin contenido - Carpeta vacía (><?php echo count($criticalPrograms); ?>)
+                        <div class="stale-programs-title" style="color: #991b1b;" onclick="toggleStalePanel(this)">
+                            ❌ Programas sin contenido - Carpeta vacía (<?php echo count($criticalPrograms); ?>)
+                            <i class="stale-chevron">▾</i>
                         </div>
+                        <div class="stale-programs-body">
                         <p style="font-size: 12px; color: #991b1b; margin-bottom: 12px;">
                             <strong>Estos programas NO tienen archivos en Radiobot y no podrán emitir.</strong>
                             La carpeta de la playlist está vacía. Necesitan que se les añadan archivos.
@@ -1081,15 +1102,18 @@ if ($hasStationId) {
                             </div>
                         </div>
                         <?php endforeach; ?>
+                        </div>
                     </div>
                     <?php endif; ?>
 
                     <!-- Programas advertencia: RSS antiguo pero con archivos -->
                     <?php if (!empty($warningPrograms)): ?>
                     <div class="stale-programs-panel">
-                        <div class="stale-programs-title">
-                            ⚠️ Programas con RSS sin actualizar (><?php echo count($warningPrograms); ?>)
+                        <div class="stale-programs-title" onclick="toggleStalePanel(this)">
+                            ⚠️ Programas con RSS sin actualizar (<?php echo count($warningPrograms); ?>)
+                            <i class="stale-chevron">▾</i>
                         </div>
+                        <div class="stale-programs-body collapsed">
                         <p style="font-size: 12px; color: #92400e; margin-bottom: 12px;">
                             Estos programas tienen archivos en Radiobot pero su RSS lleva más de 30 días sin publicar episodios nuevos.
                             Aparecen marcados con rayas diagonales amarillas en el timeline.
@@ -1104,9 +1128,17 @@ if ($hasStationId) {
                             </div>
                         </div>
                         <?php endforeach; ?>
+                        </div>
                     </div>
                     <?php endif; ?>
                 <?php endif; ?>
+                <script>
+                function toggleStalePanel(titleEl) {
+                    const body = titleEl.nextElementSibling;
+                    const collapsed = body.classList.toggle('collapsed');
+                    titleEl.classList.toggle('collapsed', collapsed);
+                }
+                </script>
 
                 <!-- Resumen semanal -->
                 <?php
