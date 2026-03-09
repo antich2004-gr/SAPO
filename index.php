@@ -1358,8 +1358,8 @@ if (isset($_GET['action']) && $_GET['action'] == 'get_podget_log' && isLoggedIn(
     }
 
     $username = $_SESSION['username'];
-    // Log interno del script (escrito por tee dentro de cliente_rrll.sh)
-    $logFile = '/mnt/emisoras/' . $username . '/media/Informes/podget_' . $username . '.log';
+    // Mismo archivo que PHP trunca y el exec redirige: captura todo el stdout del script
+    $logFile = PROJECT_DIR . '/logs/podget_' . $username . '.log';
     $offset = max(0, intval($_GET['offset'] ?? 0));
 
     header('Content-Type: application/json');
