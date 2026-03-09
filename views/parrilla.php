@@ -493,60 +493,65 @@ if ($hasStationId) {
                     0 => ['music_block' => [], 'program' => [], 'live' => []]
                 ];
 
-                // Primero: Añadir programas en directo (live) manuales
+                // Primero: Añadir programas con schedule_slots configurados manualmente (live y no-live)
                 foreach ($programsData as $programKey => $programInfo) {
-                    if (($programInfo['playlist_type'] ?? '') === 'live') {
-                        if (!empty($programInfo['hidden_from_schedule'])) continue;
+                    $playlistType = $programInfo['playlist_type'] ?? 'program';
 
-                        // Obtener nombre original del programa (sin sufijo ::live)
-                        $programName = $programInfo['original_name'] ?? getProgramNameFromKey($programKey);
+                    // Solo procesar programas live O programas con schedule_slots configurados
+                    $hasManualSlots = !empty($programInfo['schedule_slots']);
+                    if ($playlistType !== 'live' && !$hasManualSlots) continue;
+                    if ($playlistType === 'jingles') continue;
+                    if (!empty($programInfo['hidden_from_schedule'])) continue;
 
-                        // ====== SOPORTE PARA HORARIOS MÚLTIPLES (schedule_slots) ======
-                        $slots = [];
+                    // Obtener nombre original del programa (sin sufijo ::live)
+                    $programName = $programInfo['original_name'] ?? getProgramNameFromKey($programKey);
 
-                        // PRIORIDAD 1: Leer schedule_slots (formato nuevo con múltiples horarios)
-                        if (!empty($programInfo['schedule_slots'])) {
-                            $slots = $programInfo['schedule_slots'];
-                        }
-                        // PRIORIDAD 2: Migrar desde formato antiguo (retrocompatibilidad)
-                        elseif (!empty($programInfo['schedule_days']) && !empty($programInfo['schedule_start_time'])) {
-                            $slots = [[
-                                'days' => $programInfo['schedule_days'],
-                                'start_time' => $programInfo['schedule_start_time'],
-                                'duration' => (int)($programInfo['schedule_duration'] ?? 60)
-                            ]];
-                        }
+                    // ====== SOPORTE PARA HORARIOS MÚLTIPLES (schedule_slots) ======
+                    $slots = [];
 
-                        // Procesar cada bloque de horario
-                        foreach ($slots as $slot) {
-                            $scheduleDays = $slot['days'] ?? [];
-                            $startTime = $slot['start_time'] ?? '';
-                            $duration = (int)($slot['duration'] ?? 60);
+                    // PRIORIDAD 1: Leer schedule_slots (formato nuevo con múltiples horarios)
+                    if (!empty($programInfo['schedule_slots'])) {
+                        $slots = $programInfo['schedule_slots'];
+                    }
+                    // PRIORIDAD 2: Migrar desde formato antiguo (retrocompatibilidad)
+                    elseif (!empty($programInfo['schedule_days']) && !empty($programInfo['schedule_start_time'])) {
+                        $slots = [[
+                            'days' => $programInfo['schedule_days'],
+                            'start_time' => $programInfo['schedule_start_time'],
+                            'duration' => (int)($programInfo['schedule_duration'] ?? 60)
+                        ]];
+                    }
 
-                            if (empty($scheduleDays) || empty($startTime)) continue;
+                    // Procesar cada bloque de horario
+                    $typeKey = ($playlistType === 'live') ? 'live' : 'program';
+                    foreach ($slots as $slot) {
+                        $scheduleDays = $slot['days'] ?? [];
+                        $startTime = $slot['start_time'] ?? '';
+                        $duration = (int)($slot['duration'] ?? 60);
 
-                            foreach ($scheduleDays as $day) {
-                                // Convertir día a integer para evitar problemas con el valor '0' (domingo)
-                                $day = (int)$day;
+                        if (empty($scheduleDays) || empty($startTime)) continue;
 
-                                $startDateTime = DateTime::createFromFormat('H:i', $startTime);
+                        foreach ($scheduleDays as $day) {
+                            // Convertir día a integer para evitar problemas con el valor '0' (domingo)
+                            $day = (int)$day;
 
-                                // Validar que el parsing fue exitoso
-                                if ($startDateTime === false) {
-                                    continue; // Saltar este día si la hora es inválida
-                                }
+                            $startDateTime = DateTime::createFromFormat('H:i', $startTime);
 
-                                $endDateTime = clone $startDateTime;
-                                $endDateTime->modify("+{$duration} minutes");
-
-                                $contentByDay[$day]['live'][] = [
-                                    'title' => $programInfo['display_title'] ?: $programName,
-                                    'start_time' => $startDateTime->format('H:i'),
-                                    'end_time' => $endDateTime->format('H:i'),
-                                    'start_minutes' => (int)$startDateTime->format('H') * 60 + (int)$startDateTime->format('i'),
-                                    'end_minutes' => (int)$endDateTime->format('H') * 60 + (int)$endDateTime->format('i')
-                                ];
+                            // Validar que el parsing fue exitoso
+                            if ($startDateTime === false) {
+                                continue; // Saltar este día si la hora es inválida
                             }
+
+                            $endDateTime = clone $startDateTime;
+                            $endDateTime->modify("+{$duration} minutes");
+
+                            $contentByDay[$day][$typeKey][] = [
+                                'title' => $programInfo['display_title'] ?: $programName,
+                                'start_time' => $startDateTime->format('H:i'),
+                                'end_time' => $endDateTime->format('H:i'),
+                                'start_minutes' => (int)$startDateTime->format('H') * 60 + (int)$startDateTime->format('i'),
+                                'end_minutes' => (int)$endDateTime->format('H') * 60 + (int)$endDateTime->format('i')
+                            ];
                         }
                     }
                 }
@@ -569,6 +574,10 @@ if ($hasStationId) {
                     // Omitir jingles y ocultos
                     if ($playlistType === 'jingles') continue;
                     if (!empty($programInfo['hidden_from_schedule'])) continue;
+
+                    // Si el programa tiene schedule_slots configurados manualmente, ya fue procesado
+                    // en el primer loop — omitir aquí para evitar duplicados
+                    if ($programInfo !== null && !empty($programInfo['schedule_slots'])) continue;
 
                     // Bloques musicales siempre usan la duración de Radiobot (tienen hora inicio/fin)
                     // Programas y directos pueden usar duración personalizada de SAPO

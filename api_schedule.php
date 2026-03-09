@@ -93,11 +93,16 @@ foreach ([1, 2, 3, 4, 5, 6, 0] as $day) {
     ];
 }
 
-// ====== AÑADIR PROGRAMAS MANUALES (LIVE) ======
+// ====== AÑADIR PROGRAMAS CON SCHEDULE_SLOTS (LIVE Y NO-LIVE CON SLOTS CONFIGURADOS) ======
 foreach ($programsData as $programKey => $programInfo) {
-    if (($programInfo['playlist_type'] ?? '') === 'live') {
-        // Saltar programas ocultos
-        if (!empty($programInfo['hidden_from_schedule'])) continue;
+    $playlistType = $programInfo['playlist_type'] ?? 'program';
+    $hasManualSlots = !empty($programInfo['schedule_slots']);
+
+    if ($playlistType !== 'live' && !$hasManualSlots) continue;
+    if ($playlistType === 'jingles') continue;
+
+    // Saltar programas ocultos
+    if (!empty($programInfo['hidden_from_schedule'])) continue;
 
         // ====== SOPORTE PARA HORARIOS MÚLTIPLES (schedule_slots) ======
         // Obtener slots de horarios con retrocompatibilidad
@@ -191,8 +196,8 @@ foreach ($programsData as $programKey => $programInfo) {
                 }
             }
         }
-    }
 }
+
 
 // ====== AÑADIR EVENTOS DE AZURACAST ======
 foreach ($schedule as $event) {
@@ -216,6 +221,9 @@ foreach ($schedule as $event) {
     // Saltar jingles, bloques musicales y programas ocultos
     if ($playlistType === 'jingles' || $playlistType === 'music_block') continue;
     if (!empty($programInfo['hidden_from_schedule'])) continue;
+
+    // Si tiene schedule_slots configurados manualmente, ya fue procesado en el primer loop
+    if ($programInfo !== null && !empty($programInfo['schedule_slots'])) continue;
 
     // Calcular hora de fin
     $customDuration = isset($programInfo['schedule_duration']) ? (int)$programInfo['schedule_duration'] : 0;
