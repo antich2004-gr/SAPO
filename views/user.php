@@ -596,6 +596,19 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     
                     <div id="podget-status" style="margin-top: 20px;"></div>
 
+                    <!-- VISOR DE LOG EN TIEMPO REAL -->
+                    <div id="podget-log-viewer" style="display:none; margin-top: 20px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 8px;">
+                            <strong style="color:#4a5568;">📋 Log en tiempo real</strong>
+                            <span id="podget-log-status" style="font-size:12px; color:#718096;"></span>
+                        </div>
+                        <pre id="podget-log-content" style="
+                            background:#1a202c; color:#68d391; font-size:12px; line-height:1.5;
+                            padding:16px; border-radius:8px; max-height:400px; overflow-y:auto;
+                            white-space:pre-wrap; word-break:break-all; margin:0;
+                        "></pre>
+                    </div>
+
                     <!-- ÚLTIMOS EPISODIOS DESCARGADOS -->
                     <div style="margin-top: 40px; border-top: 2px solid #e2e8f0; padding-top: 30px;">
                         <h4>🎙️ Últimos Episodios Descargados (esta semana)</h4>
