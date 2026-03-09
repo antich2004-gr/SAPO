@@ -939,13 +939,13 @@ function executePodget($username) {
     // explícitamente para que el script y sus herramientas funcionen igual que
     // en una sesión de terminal. 'cd /tmp' evita el error de find al restaurar
     // el cwd de PHP-FPM (/home/fide u otro directorio inaccesible).
-    // Pre-crear el log desde PHP (garantiza que el archivo existe y es escribible
-    // antes de que el proceso hijo intente redirigir a él).
-    $written = file_put_contents($logFile, date('[Y-m-d H:i:s]') . " Iniciando descargas para $username...\n", FILE_APPEND);
+    // Limpiar el log al inicio de cada run para que el visor siempre empiece
+    // desde 0 y muestre solo el output del run actual (sin mezclar con el anterior).
+    $written = file_put_contents($logFile, date('[Y-m-d H:i:s]') . " Iniciando descargas para $username...\n");
     if ($written === false) {
         $webUser = function_exists('posix_geteuid') ? (posix_getpwuid(posix_geteuid())['name'] ?? posix_geteuid()) : 'desconocido';
         error_log("[SAPO] No se pudo escribir el log $logFile (usuario web: $webUser, permisos dir: " . decoct(fileperms($logDir) & 0777) . ")");
-        return ['success' => false, 'message' => "Sin permisos de escritura en logs/. Ejecuta en el servidor: chmod 775 /var/www/html/logs && chown www-data:www-data /var/www/html/logs"];
+        return ['success' => false, 'message' => "Sin permisos de escritura en logs. Revisa permisos de $logFile"];
     }
 
     $shellCmd = 'export HOME=/tmp PATH=/usr/local/bin:/usr/bin:/bin'

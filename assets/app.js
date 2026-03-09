@@ -194,24 +194,13 @@ function startPodgetLogViewer() {
     if (!viewer || !content) return;
 
     if (_logPollTimer) clearInterval(_logPollTimer);
+    _logOffset    = 0;
     _logIdleCount = 0;
     content.textContent = '';
     label.textContent   = '⏳ esperando inicio del script…';
     viewer.style.display = 'block';
 
-    // Capturar tamaño actual del log (run anterior) para ignorarlo y
-    // solo mostrar output del run recién lanzado.
-    fetch(window.location.href + '?action=get_podget_log&offset=0&_=' + Date.now())
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
-            // Empezar desde el final del archivo actual; si no existe, desde 0.
-            _logOffset = (data && data.exists) ? data.size : 0;
-            _logPollTimer = setInterval(_pollPodgetLog, LOG_POLL_MS);
-        })
-        .catch(() => {
-            _logOffset = 0;
-            _logPollTimer = setInterval(_pollPodgetLog, LOG_POLL_MS);
-        });
+    _logPollTimer = setInterval(_pollPodgetLog, LOG_POLL_MS);
 }
 
 function _pollPodgetLog() {
