@@ -193,15 +193,25 @@ function startPodgetLogViewer() {
     const label   = document.getElementById('podget-log-status');
     if (!viewer || !content) return;
 
-    // Resetear estado
     if (_logPollTimer) clearInterval(_logPollTimer);
-    _logOffset   = 0;
     _logIdleCount = 0;
     content.textContent = '';
-    label.textContent   = '⏳ esperando datos…';
+    label.textContent   = '⏳ esperando inicio del script…';
     viewer.style.display = 'block';
 
-    _logPollTimer = setInterval(_pollPodgetLog, LOG_POLL_MS);
+    // Capturar tamaño actual del log (run anterior) para ignorarlo y
+    // solo mostrar output del run recién lanzado.
+    fetch(window.location.href + '?action=get_podget_log&offset=0&_=' + Date.now())
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+            // Empezar desde el final del archivo actual; si no existe, desde 0.
+            _logOffset = (data && data.exists) ? data.size : 0;
+            _logPollTimer = setInterval(_pollPodgetLog, LOG_POLL_MS);
+        })
+        .catch(() => {
+            _logOffset = 0;
+            _logPollTimer = setInterval(_pollPodgetLog, LOG_POLL_MS);
+        });
 }
 
 function _pollPodgetLog() {
@@ -214,17 +224,22 @@ function _pollPodgetLog() {
         .then(data => {
             if (!data || !data.exists) {
                 _logIdleCount++;
+            } else if (data.size < _logOffset) {
+                // El archivo fue truncado (tee inició nuevo run): resetear
+                _logOffset = 0;
+                content.textContent = '';
+                _logIdleCount = 0;
+                label.textContent = '🔄 nuevo run detectado…';
             } else if (data.chunk && data.chunk.length > 0) {
                 _logOffset    = data.offset;
                 _logIdleCount = 0;
                 content.textContent += data.chunk;
-                // Auto-scroll al final
                 content.scrollTop = content.scrollHeight;
                 label.textContent = '🟢 activo — ' + new Date().toLocaleTimeString();
             } else {
                 _logIdleCount++;
                 const secsLeft = Math.round(((LOG_IDLE_MAX - _logIdleCount) * LOG_POLL_MS) / 1000);
-                label.textContent = '⏳ script en ejecución, sin salida nueva… (cierra en ' + secsLeft + 's si no hay actividad)';
+                label.textContent = '⏳ script en ejecución… (cierra en ' + secsLeft + 's si no hay actividad)';
             }
 
             if (_logIdleCount >= LOG_IDLE_MAX) {
