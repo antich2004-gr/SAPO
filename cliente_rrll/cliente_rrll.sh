@@ -260,6 +260,10 @@ if [[ "$EJECUTAR_PODGET" -eq 1 ]]; then
             local ytdlp_cookies_arg=()
             [[ -f "$cookies_file" ]] && ytdlp_cookies_arg=(--cookies "$cookies_file")
 
+            # Marca de tiempo para detectar archivos nuevos tras la descarga
+            local ts_ref
+            ts_ref=$(mktemp)
+
             local ytdlp_output
             ytdlp_output=$(yt-dlp \
                 -x --audio-format mp3 \
@@ -279,6 +283,14 @@ if [[ "$EJECUTAR_PODGET" -eq 1 ]]; then
                 echo "  ⚠️  Error al descargar $url"
                 ((errores++)) || true
             fi
+
+            # Registrar archivos nuevos descargados en el histórico
+            while IFS= read -r nuevo_archivo; do
+                local fecha_ytdlp
+                fecha_ytdlp=$(date +"%Y-%m-%d %H:%M:%S")
+                echo "$fecha_ytdlp|$nuevo_archivo|YTDLP" >> "$RENOMBRADOS_HISTORICO"
+            done < <(find "$destino" -maxdepth 1 -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) -newer "$ts_ref" 2>/dev/null)
+            rm -f "$ts_ref"
 
             ((descargados++)) || true
         done < "$feeds_file"
@@ -553,7 +565,9 @@ INFORME="$INFORMES_DIR/Informe_diario_${DIA}_${MES}_${ANO}.log"
     total_caducidad=$(awk -F'|' -v fecha="$HOY" 'index($1, fecha) == 1 && $3 == "CADUCIDAD"' "$ELIMINADOS_HISTORICO" | wc -l)
     total_reemplazo=$(awk -F'|' -v fecha="$HOY" 'index($1, fecha) == 1 && $3 == "REEMPLAZO"' "$ELIMINADOS_HISTORICO" | wc -l)
 
-    echo "• $total_descargados podcasts descargados"
+    total_ytdlp=$(awk -F'|' -v fecha="$HOY" 'index($1, fecha) == 1 && $3 == "YTDLP"' "$RENOMBRADOS_HISTORICO" | wc -l)
+    total_rss=$(( total_descargados - total_ytdlp ))
+    echo "• $total_descargados podcasts descargados ($total_rss vía RSS/podget, $total_ytdlp vía yt-dlp)"
     echo "• $total_eliminados archivos eliminados ($total_caducidad por caducidad, $total_reemplazo por reemplazo)"
     echo
 
