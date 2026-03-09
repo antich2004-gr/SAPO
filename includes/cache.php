@@ -114,6 +114,44 @@ function cacheInvalidateUser($username) {
 }
 
 /**
+ * Purgar toda la caché pública de una emisora (parrilla y widgets).
+ * Borra todos los archivos .cache del directorio (TTLs son cortos, se regeneran solos).
+ *
+ * @param string $username Nombre de usuario/emisora
+ * @return int Número de archivos eliminados
+ */
+function cachePurgeStation($username) {
+    $count = 0;
+
+    // Claves de caché conocidas
+    $knownKeys = [
+        "api_schedule_{$username}",
+        "schedule_{$username}",
+        "parrilla_html_{$username}",
+        "programs_{$username}",
+    ];
+    foreach ($knownKeys as $key) {
+        $file = CACHE_DIR . '/' . md5($key) . '.cache';
+        if (file_exists($file) && @unlink($file)) {
+            $count++;
+        }
+    }
+
+    // La clave parrilla_html_ incluye parámetros de widget (md5 dinámico),
+    // así que purgar todo el directorio garantiza que se limpie completamente.
+    $files = glob(CACHE_DIR . '/*.cache');
+    if ($files !== false) {
+        foreach ($files as $file) {
+            if (@unlink($file)) {
+                $count++;
+            }
+        }
+    }
+
+    return $count;
+}
+
+/**
  * Limpiar cachés antiguos (más de 24 horas)
  * Útil para ejecutar periódicamente via cron
  *

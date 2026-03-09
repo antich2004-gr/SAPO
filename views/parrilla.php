@@ -28,6 +28,9 @@ if ($hasStationId) {
         <h2>📺 Parrilla de Programación</h2>
         <div style="text-align: right;">
             <p style="margin: 0 0 10px 0; color: #4a5568; font-size: 14px;">Conectado como <strong><?php echo htmlEsc($_SESSION['station_name']); ?></strong></p>
+            <button onclick="clearPublicCache(this)" class="btn btn-secondary" style="margin-right: 10px;" title="Vacía la caché de la página pública de la parrilla y los widgets">
+                <span class="btn-icon">🗑️</span> Vaciar caché
+            </button>
             <a href="?page=help_parrilla" class="btn btn-secondary" style="margin-right: 10px;">
                 <span class="btn-icon">❓</span> Ayuda
             </a>
@@ -36,6 +39,30 @@ if ($hasStationId) {
             </a>
         </div>
     </div>
+    <script>
+    function clearPublicCache(btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="btn-icon">⏳</span> Vaciando...';
+        const formData = new FormData();
+        formData.append('action', 'clear_public_cache');
+        formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
+        fetch('', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(data => {
+                btn.innerHTML = data.success
+                    ? '<span class="btn-icon">✅</span> Caché vaciada'
+                    : '<span class="btn-icon">❌</span> Error';
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="btn-icon">🗑️</span> Vaciar caché';
+                }, 3000);
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="btn-icon">🗑️</span> Vaciar caché';
+            });
+    }
+    </script>
 
     <!-- Navegación por pestañas -->
     <div style="border-bottom: 2px solid #e0e0e0; margin-bottom: 20px;">
