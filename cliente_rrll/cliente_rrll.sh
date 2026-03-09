@@ -10,6 +10,7 @@ export LANG="es_ES.UTF-8"
 EJECUTAR_PODGET=1
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR" || exit 1  # evita "find: Failed to restore initial working directory"
 
 # --- PARSEAR PARÁMETROS ---
 while [[ "$#" -gt 0 ]]; do
