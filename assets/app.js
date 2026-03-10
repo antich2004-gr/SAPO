@@ -132,7 +132,7 @@ function checkPodgetStatus() {
     
     statusDiv.innerHTML = '<div class="alert alert-info">🔍 Verificando estado del log...</div>';
     
-    fetch(window.location.href + '?action=check_podget_status&_=' + Date.now())
+    fetch(window.location.origin + window.location.pathname + '?action=check_podget_status&_=' + Date.now())
         .then(response => {
             if (!response.ok) {
                 throw new Error('Error HTTP: ' + response.status);
@@ -208,7 +208,7 @@ function _pollPodgetLog() {
     const label   = document.getElementById('podget-log-status');
     if (!content) { clearInterval(_logPollTimer); return; }
 
-    fetch(window.location.href + '?action=get_podget_log&offset=' + _logOffset + '&_=' + Date.now())
+    fetch(window.location.origin + window.location.pathname + '?action=get_podget_log&offset=' + _logOffset + '&_=' + Date.now())
         .then(r => r.ok ? r.json() : null)
         .then(data => {
             if (!data || !data.exists) {

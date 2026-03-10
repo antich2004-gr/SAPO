@@ -1369,6 +1369,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'get_podget_log' && isLoggedIn(
         exit;
     }
 
+    clearstatcache(true, $logFile);
     $size = filesize($logFile);
     $chunk = '';
     if ($size > $offset) {
