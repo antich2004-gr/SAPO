@@ -941,41 +941,43 @@ function executePodget($username) {
     // el cwd de PHP-FPM (/home/fide u otro directorio inaccesible).
     // Limpiar el log al inicio de cada run para que el visor siempre empiece
     // desde 0 y muestre solo el output del run actual (sin mezclar con el anterior).
-    $written = file_put_contents($logFile, date('[Y-m-d H:i:s]') . " Iniciando descargas para $username...\n");
+    $written = file_put_contents($logFile, date('[Y-m-d H:i:s]') . " Descarga programada para $username. Esperando que el runner del host la inicie...\n");
     if ($written === false) {
         $webUser = function_exists('posix_geteuid') ? (posix_getpwuid(posix_geteuid())['name'] ?? posix_geteuid()) : 'desconocido';
         error_log("[SAPO] No se pudo escribir el log $logFile (usuario web: $webUser, permisos dir: " . decoct(fileperms($logDir) & 0777) . ")");
         return ['success' => false, 'message' => "Sin permisos de escritura en logs. Revisa permisos de $logFile"];
     }
 
-    // SAPO_LOG_FILE: el script detecta esta variable y hace 'exec >> $SAPO_LOG_FILE 2>&1'
-    // internamente.  Además, redirigimos stdout/stderr del nohup directamente al log
-    // (doble protección: si el exec del script falla, el output aún va al fichero).
-    // PATH ampliado con /sbin para que podget y demás herramientas se encuentren.
-    $shellCmd = 'export HOME=/tmp PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
-        . ' SAPO_LOG_FILE=' . escapeshellarg($logFile)
-        . ' && nohup /bin/bash '
-        . escapeshellarg($scriptPath)
-        . ' --emisora ' . escapeshellarg($username)
-        . ' </dev/null >>' . escapeshellarg($logFile) . ' 2>&1 & echo $!';
+    // ARQUITECTURA HOST-RUNNER:
+    // PHP corre dentro del contenedor Docker de AzuraCast (usuario 'azuracast'),
+    // pero cliente_rrll.sh necesita correr en el HOST donde están podget y demás
+    // herramientas. Solución: PHP escribe un archivo trigger en el directorio de
+    // logs (compartido entre contenedor y host via volumen). Un cron en el HOST
+    // ejecuta sapo_host_runner.sh cada minuto, detecta los triggers y lanza el
+    // script directamente en el host.
+    //
+    // Cron recomendado en el host:
+    //   * * * * * root /var/www/html/sapo_host_runner.sh
+    $triggerFile = $logDir . '/.sapo_trigger_' . $username;
+    $triggerContent = json_encode([
+        'emisora'      => $username,
+        'logfile'      => $logFile,
+        'requested_at' => date('Y-m-d H:i:s'),
+        'requested_by' => $_SESSION['username'] ?? 'unknown',
+    ], JSON_UNESCAPED_UNICODE);
 
-    $pid = exec($shellCmd, $output, $returnCode);
-
-    if ($pid !== '' && is_numeric(trim($pid))) {
-        error_log("[SAPO-Security] EXEC PODGET iniciado correctamente | Usuario: $username | PID: $pid");
-
-        return [
-            'success' => true,
-            'message' => 'Las descargas se estan ejecutando. Log: ' . $logFile
-        ];
-    } else {
-        error_log("[SAPO-Security] EXEC PODGET FAILED | Usuario: $username | returnCode: $returnCode | cmd: $shellCmd");
-
-        return [
-            'success' => false,
-            'message' => 'Error al iniciar el proceso de descarga'
-        ];
+    $triggerWritten = file_put_contents($triggerFile, $triggerContent . "\n");
+    if ($triggerWritten === false) {
+        error_log("[SAPO-Security] EXEC PODGET: no se pudo escribir trigger $triggerFile | Usuario: $username");
+        return ['success' => false, 'message' => 'No se pudo crear el archivo de trigger. Revisa permisos en ' . $logDir];
     }
+
+    error_log("[SAPO-Security] EXEC PODGET trigger escrito | Usuario: $username | Trigger: $triggerFile");
+
+    return [
+        'success' => true,
+        'message' => 'Descarga programada. El runner del host la iniciará en breve. Log: ' . $logFile,
+    ];
 }
 
 
