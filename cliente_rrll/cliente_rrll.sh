@@ -33,12 +33,6 @@ if [[ -z "$PODGET_BIN" ]]; then
         fi
     done
 fi
-# DIAGNÓSTICO TEMPORAL: ver qué ocurre en el entorno web
-echo "[DIAG] id=$(id -un) PATH=$PATH"
-echo "[DIAG] command_v=$(command -v podget 2>&1 || true)"
-echo "[DIAG] test_bin=$([ -x /bin/podget ] && echo OK || echo NO)"
-echo "[DIAG] test_usrbin=$([ -x /usr/bin/podget ] && echo OK || echo NO)"
-echo "[DIAG] PODGET_BIN='${PODGET_BIN:-}'"
 
 echo "🚀 cliente_rrll.sh iniciado — $(date) — EMISORA pendiente de parsear"
 
@@ -336,7 +330,11 @@ if [[ "$EJECUTAR_PODGET" -eq 1 ]]; then
 
     purgar_bloqueos_podget_antiguos
     if [[ -z "${PODGET_BIN:-}" ]]; then
-        echo "❌ podget no encontrado. Instálalo con: apt install podget"
+        echo "❌ podget no encontrado (ejecutando como '$(id -un)' en $(hostname))."
+        echo "   Si este script corre dentro de un contenedor Docker (p.ej. AzuraCast),"
+        echo "   instala podget dentro del contenedor:"
+        echo "     docker exec -it <nombre_contenedor> apt-get install -y podget"
+        echo "   En el host: apt install podget"
     else
         ( cd "$CONFIG_DIR" && stdbuf -oL "$PODGET_BIN" -d . -c "podgetrc.$EMISORA" ) | tee "$PODGET_LOG"
     fi
