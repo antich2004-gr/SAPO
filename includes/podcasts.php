@@ -949,14 +949,15 @@ function executePodget($username) {
     }
 
     // SAPO_LOG_FILE: el script detecta esta variable y hace 'exec >> $SAPO_LOG_FILE 2>&1'
-    // internamente, lo que garantiza la redirección independientemente de cómo PHP-FPM
-    // gestione los FDs del proceso hijo lanzado con exec().
+    // internamente.  Además, redirigimos stdout/stderr del nohup directamente al log
+    // (doble protección: si el exec del script falla, el output aún va al fichero).
+    // stdbuf -oL fuerza line-buffering para que el log se actualice en tiempo real.
     $shellCmd = 'export HOME=/tmp PATH=/usr/local/bin:/usr/bin:/bin'
         . ' SAPO_LOG_FILE=' . escapeshellarg($logFile)
-        . ' && nohup /bin/bash '
+        . ' && nohup stdbuf -oL /bin/bash '
         . escapeshellarg($scriptPath)
         . ' --emisora ' . escapeshellarg($username)
-        . ' </dev/null >/dev/null 2>&1 & echo $!';
+        . ' </dev/null >>' . escapeshellarg($logFile) . ' 2>&1 & echo $!';
 
     $pid = exec($shellCmd, $output, $returnCode);
 
