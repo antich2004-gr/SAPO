@@ -783,6 +783,11 @@
         </div>
 
         <div style="margin-bottom: 20px;">
+            <h4>¿Al importar un serverlist.txt se pisan las suscripciones existentes?</h4>
+            <p>No. La importación es aditiva: solo se añaden los podcasts cuya URL no existe todavía en tu lista. Los que ya tienes no se modifican ni se eliminan. Si ningún podcast del archivo importado es nuevo, la operación no hará ningún cambio.</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
             <h4>¿Qué formato tiene el archivo serverlist.txt?</h4>
             <p>Es un archivo de texto plano que contiene la configuración de tus podcasts en el formato que usa Radiobot/podget. Puedes exportarlo desde SAPO para hacer respaldos o compartir tu lista de podcasts.</p>
         </div>
