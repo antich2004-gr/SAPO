@@ -793,11 +793,6 @@
         </div>
 
         <div style="margin-bottom: 20px;">
-            <h4>¿Pierdo mis podcasts actuales al importar un serverlist.txt?</h4>
-            <p>No, la importación AGREGA los podcasts del archivo a tu lista actual. Los podcasts existentes no se eliminan. Si hay duplicados, se mostrarán como entradas separadas.</p>
-        </div>
-
-        <div style="margin-bottom: 20px;">
             <h4>¿Puedo suscribirme a un canal de YouTube?</h4>
             <p>Sí. Pega la URL del canal o playlist al añadir un podcast. SAPO lo detecta automáticamente y descarga los episodios en MP3. Consulta la sección <a href="#suscripciones-plataformas">Suscripciones de plataformas</a> para ver todas las plataformas compatibles y cómo obtener las URLs.</p>
         </div>
