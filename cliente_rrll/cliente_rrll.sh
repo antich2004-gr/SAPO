@@ -9,10 +9,15 @@
 # la redirección, independientemente de cómo el proceso padre abra/cierre FDs.
 [[ -n "${SAPO_LOG_FILE:-}" ]] && exec >> "${SAPO_LOG_FILE}" 2>&1
 
+# Trap ERR: registrar qué comando falla antes de que set -e mate el script
+trap 'echo "[SAPO-ERROR] Fallo en línea $LINENO (exit=$?): $BASH_COMMAND" >&2' ERR
+
 set -euo pipefail
 umask 002
 export LANG="es_ES.UTF-8"
 EJECUTAR_PODGET=1
+
+echo "🚀 cliente_rrll.sh iniciado — $(date) — EMISORA pendiente de parsear"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR" || exit 1  # evita "find: Failed to restore initial working directory"
@@ -69,8 +74,8 @@ SAPO_GLOBAL_JSON="$SCRIPT_DIR/../db/global.json"
 AZURACAST_API_URL=""
 AZURACAST_API_KEY=""
 if [[ -f "$SAPO_GLOBAL_JSON" ]]; then
-    AZURACAST_API_URL=$(jq -r '.config.azuracast_api_url // ""' "$SAPO_GLOBAL_JSON" 2>/dev/null)
-    AZURACAST_API_KEY=$(jq -r '.config.azuracast_api_key // ""' "$SAPO_GLOBAL_JSON" 2>/dev/null)
+    AZURACAST_API_URL=$(jq -r '.config.azuracast_api_url // ""' "$SAPO_GLOBAL_JSON" 2>/dev/null) || AZURACAST_API_URL=""
+    AZURACAST_API_KEY=$(jq -r '.config.azuracast_api_key // ""' "$SAPO_GLOBAL_JSON" 2>/dev/null) || AZURACAST_API_KEY=""
 fi
 
 mostrar_playlists_vacias() {
