@@ -698,6 +698,11 @@
         <h3>❓ Preguntas frecuentes (FAQ)</h3>
 
         <div style="margin-bottom: 20px;">
+            <h4>¿Qué pasa si tengo más de un episodio en la misma carpeta?</h4>
+            <p>La cantidad de episodios que se almacenan por podcast se configura con el campo <strong>"Número de episodios"</strong> al dar de alta o editar el podcast. Si hay varios episodios disponibles en la carpeta, Radiobot reproducirá uno al azar.</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
             <h4>¿Puedo tener podcasts sin categoría?</h4>
             <p>No, todos los podcasts deben tener una categoría asignada. Si no especificas una, se asignará automáticamente a "Sin_categoria".</p>
         </div>
