@@ -127,6 +127,7 @@
                     <li><strong>Caducidad:</strong> Días a conservar episodios (1-365 días). Se rellena automáticamente con la caducidad por defecto configurada</li>
                     <li><strong>Duración máxima:</strong> Límite de duración de episodios (opcional). Los episodios que excedan este tiempo serán eliminados automáticamente</li>
                     <li><strong>Margen de tolerancia:</strong> Tiempo extra permitido sobre la duración máxima antes de eliminar el episodio (5, 10 o 15 minutos). Por defecto: 5 minutos</li>
+                    <li><strong>Número de episodios:</strong> Cantidad de episodios que se almacenan por podcast. Recomendado: 1. Máximo: 50</li>
                 </ul>
             </li>
             <li>Haz clic en <strong>"Agregar Podcast"</strong></li>
