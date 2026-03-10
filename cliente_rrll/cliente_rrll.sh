@@ -15,6 +15,39 @@ trap 'echo "[SAPO-ERROR] Fallo en línea $LINENO (exit=$?): $BASH_COMMAND" >&2' 
 set -euo pipefail
 umask 002
 export LANG="es_ES.UTF-8"
+
+# --- MODO RUNNER (para cron en el host) ---
+# Uso: cliente_rrll.sh --runner
+# Detecta archivos trigger escritos por PHP (que corre dentro del contenedor
+# Docker de AzuraCast) y lanza las descargas en el host donde están las
+# herramientas (podget, etc.).
+# Cron recomendado: * * * * * root /var/www/html/cliente_rrll/cliente_rrll.sh --runner
+if [[ "${1:-}" == "--runner" ]]; then
+    _dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    _trigger_dir="$(dirname "$_dir")/logs"
+    _script="${BASH_SOURCE[0]}"
+    _valid_emisora() { [[ "$1" =~ ^[a-zA-Z0-9_-]{1,64}$ ]]; }
+    for _t in "$_trigger_dir"/.sapo_trigger_*; do
+        [ -f "$_t" ] || continue
+        _emisora="${_t##*/.sapo_trigger_}"
+        if ! _valid_emisora "$_emisora"; then
+            echo "[runner] Nombre de emisora inválido en trigger: $_emisora" >&2
+            rm -f "$_t"
+            continue
+        fi
+        _log="$_trigger_dir/podget_${_emisora}.log"
+        rm -f "$_t"
+        if [ -f "/tmp/cliente_descarga_${_emisora}.lock" ]; then
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] runner: $_emisora ya en ejecución, omitiendo." >> "$_log"
+            continue
+        fi
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] runner: iniciando descarga para $_emisora..." >> "$_log"
+        SAPO_LOG_FILE="$_log" nohup /bin/bash "$_script" \
+            --emisora "$_emisora" </dev/null >> "$_log" 2>&1 &
+    done
+    exit 0
+fi
+
 EJECUTAR_PODGET=1
 
 # Resolver ruta absoluta de podget.
@@ -52,6 +85,7 @@ while [[ "$#" -gt 0 ]]; do
             ;;
         --help)
             echo "Uso: $0 --emisora NOMBRE [--sinpodget]"
+            echo "     $0 --runner   (procesa triggers del contenedor; usar en cron del host)"
             exit 0
             ;;
         *)
