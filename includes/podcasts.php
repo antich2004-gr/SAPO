@@ -948,11 +948,15 @@ function executePodget($username) {
         return ['success' => false, 'message' => "Sin permisos de escritura en logs. Revisa permisos de $logFile"];
     }
 
+    // SAPO_LOG_FILE: el script detecta esta variable y hace 'exec >> $SAPO_LOG_FILE 2>&1'
+    // internamente, lo que garantiza la redirección independientemente de cómo PHP-FPM
+    // gestione los FDs del proceso hijo lanzado con exec().
     $shellCmd = 'export HOME=/tmp PATH=/usr/local/bin:/usr/bin:/bin'
-        . ' && cd /tmp && nohup /bin/bash '
+        . ' SAPO_LOG_FILE=' . escapeshellarg($logFile)
+        . ' && nohup /bin/bash '
         . escapeshellarg($scriptPath)
         . ' --emisora ' . escapeshellarg($username)
-        . ' >> ' . escapeshellarg($logFile) . ' 2>&1 & echo $!';
+        . ' </dev/null >/dev/null 2>&1 & echo $!';
 
     $pid = exec($shellCmd, $output, $returnCode);
 

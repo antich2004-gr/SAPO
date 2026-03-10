@@ -4,6 +4,11 @@
 # Estado: BETA
 # Última modificación: 13-05-2025
 
+# Si SAPO_LOG_FILE está definido (lanzado desde la web), redirigir stdout+stderr
+# al fichero de log ANTES de cualquier output. Así el propio script gestiona
+# la redirección, independientemente de cómo el proceso padre abra/cierre FDs.
+[[ -n "${SAPO_LOG_FILE:-}" ]] && exec >> "${SAPO_LOG_FILE}" 2>&1
+
 set -euo pipefail
 umask 002
 export LANG="es_ES.UTF-8"
