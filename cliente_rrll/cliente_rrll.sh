@@ -26,6 +26,13 @@ if [[ -z "$PODGET_BIN" ]]; then
         [[ -x "$_p" ]] && PODGET_BIN="$_p" && break
     done
 fi
+# DEBUG: diagnosticar problema de localización de podget
+echo "[DEBUG] PATH=$PATH"
+echo "[DEBUG] command -v podget => $(command -v podget 2>&1 || true)"
+echo "[DEBUG] ls -la /bin/podget => $(ls -la /bin/podget 2>&1 || true)"
+echo "[DEBUG] ls -la /usr/bin/podget => $(ls -la /usr/bin/podget 2>&1 || true)"
+echo "[DEBUG] PODGET_BIN=$PODGET_BIN"
+echo "[DEBUG] id => $(id)"
 
 echo "🚀 cliente_rrll.sh iniciado — $(date) — EMISORA pendiente de parsear"
 
