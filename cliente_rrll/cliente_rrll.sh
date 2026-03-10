@@ -17,6 +17,16 @@ umask 002
 export LANG="es_ES.UTF-8"
 EJECUTAR_PODGET=1
 
+# Resolver ruta absoluta de podget (PHP-FPM usa PATH reducido y stdbuf
+# no siempre hereda el PATH completo para resolver comandos).
+PODGET_BIN="$(command -v podget 2>/dev/null || true)"
+if [[ -z "$PODGET_BIN" ]]; then
+    # Buscar en ubicaciones típicas de Debian
+    for _p in /bin/podget /usr/bin/podget /usr/local/bin/podget; do
+        [[ -x "$_p" ]] && PODGET_BIN="$_p" && break
+    done
+fi
+
 echo "🚀 cliente_rrll.sh iniciado — $(date) — EMISORA pendiente de parsear"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -312,7 +322,11 @@ if [[ "$EJECUTAR_PODGET" -eq 1 ]]; then
     _descargar_ytdlp_feeds
 
     purgar_bloqueos_podget_antiguos
-    ( cd "$CONFIG_DIR" && stdbuf -oL podget -d . -c "podgetrc.$EMISORA" ) | tee "$PODGET_LOG"
+    if [[ -z "${PODGET_BIN:-}" ]]; then
+        echo "❌ podget no encontrado. Instálalo con: apt install podget"
+    else
+        ( cd "$CONFIG_DIR" && stdbuf -oL "$PODGET_BIN" -d . -c "podgetrc.$EMISORA" ) | tee "$PODGET_LOG"
+    fi
 else
     echo "⏭️  Saltando ejecución de podget (--sinpodget activado)"
     echo "" > "$PODGET_LOG"

@@ -951,10 +951,10 @@ function executePodget($username) {
     // SAPO_LOG_FILE: el script detecta esta variable y hace 'exec >> $SAPO_LOG_FILE 2>&1'
     // internamente.  Además, redirigimos stdout/stderr del nohup directamente al log
     // (doble protección: si el exec del script falla, el output aún va al fichero).
-    // stdbuf -oL fuerza line-buffering para que el log se actualice en tiempo real.
-    $shellCmd = 'export HOME=/tmp PATH=/usr/local/bin:/usr/bin:/bin'
+    // PATH ampliado con /sbin para que podget y demás herramientas se encuentren.
+    $shellCmd = 'export HOME=/tmp PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
         . ' SAPO_LOG_FILE=' . escapeshellarg($logFile)
-        . ' && nohup stdbuf -oL /bin/bash '
+        . ' && nohup /bin/bash '
         . escapeshellarg($scriptPath)
         . ' --emisora ' . escapeshellarg($username)
         . ' </dev/null >>' . escapeshellarg($logFile) . ' 2>&1 & echo $!';
