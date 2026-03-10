@@ -19,16 +19,26 @@ EJECUTAR_PODGET=1
 
 # Resolver ruta absoluta de podget.
 # PHP-FPM usa un PATH muy reducido; ampliamos explícitamente antes de buscar.
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH:-}"
 PODGET_BIN="$(command -v podget 2>/dev/null || true)"
 if [[ -z "$PODGET_BIN" ]]; then
     # Fallback: buscar en todas las ubicaciones habituales de Debian/Ubuntu
+    # Se usa if/fi en lugar de && para evitar conflictos con set -e
     for _p in /usr/local/sbin/podget /usr/local/bin/podget \
                /usr/sbin/podget /usr/bin/podget \
                /sbin/podget /bin/podget; do
-        [[ -x "$_p" ]] && PODGET_BIN="$_p" && break
+        if [ -x "$_p" ]; then
+            PODGET_BIN="$_p"
+            break
+        fi
     done
 fi
+# DIAGNÓSTICO TEMPORAL: ver qué ocurre en el entorno web
+echo "[DIAG] id=$(id -un) PATH=$PATH"
+echo "[DIAG] command_v=$(command -v podget 2>&1 || true)"
+echo "[DIAG] test_bin=$([ -x /bin/podget ] && echo OK || echo NO)"
+echo "[DIAG] test_usrbin=$([ -x /usr/bin/podget ] && echo OK || echo NO)"
+echo "[DIAG] PODGET_BIN='${PODGET_BIN:-}'"
 
 echo "🚀 cliente_rrll.sh iniciado — $(date) — EMISORA pendiente de parsear"
 
