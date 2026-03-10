@@ -17,22 +17,18 @@ umask 002
 export LANG="es_ES.UTF-8"
 EJECUTAR_PODGET=1
 
-# Resolver ruta absoluta de podget (PHP-FPM usa PATH reducido y stdbuf
-# no siempre hereda el PATH completo para resolver comandos).
+# Resolver ruta absoluta de podget.
+# PHP-FPM usa un PATH muy reducido; ampliamos explícitamente antes de buscar.
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
 PODGET_BIN="$(command -v podget 2>/dev/null || true)"
 if [[ -z "$PODGET_BIN" ]]; then
-    # Buscar en ubicaciones típicas de Debian
-    for _p in /bin/podget /usr/bin/podget /usr/local/bin/podget; do
+    # Fallback: buscar en todas las ubicaciones habituales de Debian/Ubuntu
+    for _p in /usr/local/sbin/podget /usr/local/bin/podget \
+               /usr/sbin/podget /usr/bin/podget \
+               /sbin/podget /bin/podget; do
         [[ -x "$_p" ]] && PODGET_BIN="$_p" && break
     done
 fi
-# DEBUG: diagnosticar problema de localización de podget
-echo "[DEBUG] PATH=$PATH"
-echo "[DEBUG] command -v podget => $(command -v podget 2>&1 || true)"
-echo "[DEBUG] ls -la /bin/podget => $(ls -la /bin/podget 2>&1 || true)"
-echo "[DEBUG] ls -la /usr/bin/podget => $(ls -la /usr/bin/podget 2>&1 || true)"
-echo "[DEBUG] PODGET_BIN=$PODGET_BIN"
-echo "[DEBUG] id => $(id)"
 
 echo "🚀 cliente_rrll.sh iniciado — $(date) — EMISORA pendiente de parsear"
 
