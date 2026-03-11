@@ -253,7 +253,7 @@ mostrar_estadisticas_oyentes() {
         "$AZURACAST_API_URL/station/$station_id/listeners" 2>/dev/null) || true
     total_unicos=""
     if [[ -n "$listeners_json" ]] && echo "$listeners_json" | jq -e 'type == "array"' >/dev/null 2>&1; then
-        total_unicos=$(echo "$listeners_json" | jq 'length' 2>/dev/null) || total_unicos=""
+        total_unicos=$(echo "$listeners_json" | jq '[.[] | select(.mount_is_local == false)] | length' 2>/dev/null) || total_unicos=""
     fi
 
     echo "  Pico de oyentes: $pico"
