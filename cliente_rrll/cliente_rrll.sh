@@ -196,40 +196,41 @@ mostrar_estado_servidor() {
 
     if [[ -z "$AZURACAST_API_URL" || -z "$AZURACAST_API_KEY" ]]; then
         echo "  ⚠️  API no configurada."
-        return
+        return 0
     fi
 
     local station_id
-    station_id=$(_obtener_station_id "$emisora_slug")
+    station_id=$(_obtener_station_id "$emisora_slug") || true
 
     if [[ -z "$station_id" || "$station_id" == "null" ]]; then
         echo "  ⚠️  Station ID no configurado para $emisora_slug."
-        return
+        return 0
     fi
 
     local json
-    json=$(curl -s --max-time 10 -H "X-API-Key: $AZURACAST_API_KEY" "$AZURACAST_API_URL/nowplaying/$station_id" 2>/dev/null)
+    json=$(curl -s --max-time 10 -H "X-API-Key: $AZURACAST_API_KEY" "$AZURACAST_API_URL/nowplaying/$station_id" 2>/dev/null) || true
 
     if [[ -z "$json" ]]; then
         echo "  ❌ No se pudo conectar con la API."
-        return
+        return 0
     fi
 
-    if ! jq -e '.station' <<< "$json" >/dev/null 2>&1; then
+    # Validar que la respuesta contiene datos de estación
+    if ! echo "$json" | jq -e '.station' >/dev/null 2>&1; then
         echo "  ⚠️  Respuesta de API no válida."
-        return
+        return 0
     fi
 
     local is_online
-    is_online=$(jq -r 'if .live.is_live then "EN DIRECTO" elif .listeners.current >= 0 then "ONLINE" else "OFFLINE" end' <<< "$json" 2>/dev/null)
+    is_online=$(echo "$json" | jq -r 'if .live.is_live then "EN DIRECTO" elif .listeners.current >= 0 then "ONLINE" else "OFFLINE" end' 2>/dev/null) || is_online="DESCONOCIDO"
 
     local song_title
-    song_title=$(jq -r '.now_playing.song.title // "Desconocido"' <<< "$json" 2>/dev/null)
+    song_title=$(echo "$json" | jq -r '.now_playing.song.title // "Desconocido"' 2>/dev/null) || song_title="Desconocido"
     local song_artist
-    song_artist=$(jq -r '.now_playing.song.artist // ""' <<< "$json" 2>/dev/null)
+    song_artist=$(echo "$json" | jq -r '.now_playing.song.artist // ""' 2>/dev/null) || song_artist=""
 
     echo "  Estado: $is_online"
-    if [[ -n "$song_artist" && "$song_artist" != "null" ]]; then
+    if [[ -n "$song_artist" && "$song_artist" != "null" && "$song_artist" != "" ]]; then
         echo "  Reproduciendo: $song_artist - $song_title"
     else
         echo "  Reproduciendo: $song_title"
@@ -244,45 +245,48 @@ mostrar_estadisticas_oyentes() {
 
     if [[ -z "$AZURACAST_API_URL" || -z "$AZURACAST_API_KEY" ]]; then
         echo "  ⚠️  API no configurada."
-        return
+        return 0
     fi
 
     local station_id
-    station_id=$(_obtener_station_id "$emisora_slug")
+    station_id=$(_obtener_station_id "$emisora_slug") || true
 
     if [[ -z "$station_id" || "$station_id" == "null" ]]; then
         echo "  ⚠️  Station ID no configurado para $emisora_slug."
-        return
+        return 0
     fi
 
     local json
-    json=$(curl -s --max-time 10 -H "X-API-Key: $AZURACAST_API_KEY" "$AZURACAST_API_URL/nowplaying/$station_id" 2>/dev/null)
+    json=$(curl -s --max-time 10 -H "X-API-Key: $AZURACAST_API_KEY" "$AZURACAST_API_URL/nowplaying/$station_id" 2>/dev/null) || true
 
     if [[ -z "$json" ]]; then
         echo "  ❌ No se pudo conectar con la API."
-        return
+        return 0
     fi
 
-    if ! jq -e '.listeners' <<< "$json" >/dev/null 2>&1; then
+    # Validar que la respuesta contiene datos de oyentes
+    if ! echo "$json" | jq -e '.listeners' >/dev/null 2>&1; then
         echo "  ⚠️  Respuesta de API no válida."
-        return
+        return 0
     fi
 
     local total unique
-    total=$(jq -r '.listeners.total // 0' <<< "$json" 2>/dev/null)
-    unique=$(jq -r '.listeners.unique // 0' <<< "$json" 2>/dev/null)
+    total=$(echo "$json" | jq -r '.listeners.total // 0' 2>/dev/null) || total=0
+    unique=$(echo "$json" | jq -r '.listeners.unique // 0' 2>/dev/null) || unique=0
 
     echo "  Oyentes actuales: $total (únicos: $unique)"
 
-    # Obtener historial de oyentes si la API lo soporta (station listeners endpoint)
+    # Obtener listado de oyentes conectados si la API lo soporta
     local history_json
     history_json=$(curl -s --max-time 10 -H "X-API-Key: $AZURACAST_API_KEY" \
-        "$AZURACAST_API_URL/station/$station_id/listeners" 2>/dev/null)
+        "$AZURACAST_API_URL/station/$station_id/listeners" 2>/dev/null) || true
 
-    if jq -e 'type == "array"' <<< "$history_json" >/dev/null 2>&1; then
+    if [[ -n "$history_json" ]] && echo "$history_json" | jq -e 'type == "array"' >/dev/null 2>&1; then
         local total_conectados
-        total_conectados=$(jq 'length' <<< "$history_json" 2>/dev/null)
-        echo "  Conexiones activas: $total_conectados"
+        total_conectados=$(echo "$history_json" | jq 'length' 2>/dev/null) || total_conectados=""
+        if [[ -n "$total_conectados" ]]; then
+            echo "  Conexiones activas: $total_conectados"
+        fi
     fi
 }
 
