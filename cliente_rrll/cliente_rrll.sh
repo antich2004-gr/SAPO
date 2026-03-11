@@ -243,22 +243,8 @@ mostrar_estadisticas_oyentes() {
     pico=$(echo "$history_json" | jq '[.[].listeners_start // 0] | max' 2>/dev/null) || pico=0
     media=$(echo "$history_json" | jq '([.[].listeners_start // 0] | add) / length | floor' 2>/dev/null) || media=0
 
-    # Oyentes totales únicos del día (conexiones diferentes)
-    local listeners_json total_unicos
-    listeners_json=$(curl -s --max-time 15 \
-        -H "X-API-Key: $AZURACAST_API_KEY" \
-        --get \
-        --data-urlencode "start=$start_dt" \
-        --data-urlencode "end=$end_dt" \
-        "$AZURACAST_API_URL/station/$station_id/listeners" 2>/dev/null) || true
-    total_unicos=""
-    if [[ -n "$listeners_json" ]] && echo "$listeners_json" | jq -e 'type == "array"' >/dev/null 2>&1; then
-        total_unicos=$(echo "$listeners_json" | jq '[.[] | select(.mount_is_local == false)] | length' 2>/dev/null) || total_unicos=""
-    fi
-
     echo "  Pico de oyentes: $pico"
     echo "  Media de oyentes: $media"
-    [[ -n "$total_unicos" ]] && echo "  Oyentes totales del día: $total_unicos"
 }
 
 # --- VARIABLES DE DIRECTORIO ---
