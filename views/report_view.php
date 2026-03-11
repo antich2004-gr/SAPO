@@ -40,37 +40,15 @@
     </div>
 
     <!-- Estado del Servidor y Oyentes -->
-    <?php if (!empty($report['estado_servidor']) || !empty($report['estadisticas_oyentes'])): ?>
+    <?php if (!empty($report['estadisticas_oyentes'])): ?>
     <div class="stats-grid" style="margin-top: 15px;">
-        <?php if (!empty($report['estado_servidor'])): ?>
-        <div class="stat-card <?php echo ($report['estado_servidor']['estado'] ?? '') === 'OFFLINE' ? 'stat-warning' : 'stat-success'; ?>">
-            <div class="stat-number" style="font-size: 1.2em;">
-                <?php echo htmlEsc($report['estado_servidor']['estado'] ?? 'N/A'); ?>
-            </div>
-            <div class="stat-label">Estado del servidor</div>
-            <?php if (!empty($report['estado_servidor']['reproduciendo'])): ?>
-            <div class="stat-average" title="<?php echo htmlEsc($report['estado_servidor']['reproduciendo']); ?>">
-                <?php
-                $nowPlaying = $report['estado_servidor']['reproduciendo'];
-                echo htmlEsc(mb_strlen($nowPlaying) > 40 ? mb_substr($nowPlaying, 0, 40) . '...' : $nowPlaying);
-                ?>
-            </div>
-            <?php endif; ?>
-        </div>
-        <?php endif; ?>
-
-        <?php if (!empty($report['estadisticas_oyentes'])): ?>
         <div class="stat-card stat-info">
-            <div class="stat-number"><?php echo htmlEsc($report['estadisticas_oyentes']['total'] ?? 0); ?></div>
-            <div class="stat-label">Oyentes actuales</div>
+            <div class="stat-number"><?php echo htmlEsc($report['estadisticas_oyentes']['pico'] ?? 0); ?></div>
+            <div class="stat-label">Pico de oyentes (hoy)</div>
             <div class="stat-average">
-                <?php echo htmlEsc($report['estadisticas_oyentes']['unique'] ?? 0); ?> únicos
-                <?php if (isset($report['estadisticas_oyentes']['conexiones'])): ?>
-                    • <?php echo htmlEsc($report['estadisticas_oyentes']['conexiones']); ?> conexiones
-                <?php endif; ?>
+                Media: <?php echo htmlEsc($report['estadisticas_oyentes']['media'] ?? 0); ?> oyentes
             </div>
         </div>
-        <?php endif; ?>
     </div>
     <?php endif; ?>
 

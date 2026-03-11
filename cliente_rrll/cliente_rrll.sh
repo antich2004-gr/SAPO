@@ -188,60 +188,11 @@ _obtener_station_id() {
     fi
 }
 
-mostrar_estado_servidor() {
-    local emisora_slug="$1"
-
-    echo
-    echo "📶 Estado del servidor de streaming:"
-
-    if [[ -z "$AZURACAST_API_URL" || -z "$AZURACAST_API_KEY" ]]; then
-        echo "  ⚠️  API no configurada."
-        return 0
-    fi
-
-    local station_id
-    station_id=$(_obtener_station_id "$emisora_slug") || true
-
-    if [[ -z "$station_id" || "$station_id" == "null" ]]; then
-        echo "  ⚠️  Station ID no configurado para $emisora_slug."
-        return 0
-    fi
-
-    local json
-    json=$(curl -s --max-time 10 -H "X-API-Key: $AZURACAST_API_KEY" "$AZURACAST_API_URL/nowplaying/$station_id" 2>/dev/null) || true
-
-    if [[ -z "$json" ]]; then
-        echo "  ❌ No se pudo conectar con la API."
-        return 0
-    fi
-
-    # Validar que la respuesta contiene datos de estación
-    if ! echo "$json" | jq -e '.station' >/dev/null 2>&1; then
-        echo "  ⚠️  Respuesta de API no válida."
-        return 0
-    fi
-
-    local is_online
-    is_online=$(echo "$json" | jq -r 'if .live.is_live then "EN DIRECTO" elif .listeners.current >= 0 then "ONLINE" else "OFFLINE" end' 2>/dev/null) || is_online="DESCONOCIDO"
-
-    local song_title
-    song_title=$(echo "$json" | jq -r '.now_playing.song.title // "Desconocido"' 2>/dev/null) || song_title="Desconocido"
-    local song_artist
-    song_artist=$(echo "$json" | jq -r '.now_playing.song.artist // ""' 2>/dev/null) || song_artist=""
-
-    echo "  Estado: $is_online"
-    if [[ -n "$song_artist" && "$song_artist" != "null" && "$song_artist" != "" ]]; then
-        echo "  Reproduciendo: $song_artist - $song_title"
-    else
-        echo "  Reproduciendo: $song_title"
-    fi
-}
-
 mostrar_estadisticas_oyentes() {
     local emisora_slug="$1"
 
     echo
-    echo "👥 Estadísticas de oyentes:"
+    echo "👥 Estadísticas de oyentes (hoy):"
 
     if [[ -z "$AZURACAST_API_URL" || -z "$AZURACAST_API_KEY" ]]; then
         echo "  ⚠️  API no configurada."
@@ -256,38 +207,39 @@ mostrar_estadisticas_oyentes() {
         return 0
     fi
 
-    local json
-    json=$(curl -s --max-time 10 -H "X-API-Key: $AZURACAST_API_KEY" "$AZURACAST_API_URL/nowplaying/$station_id" 2>/dev/null) || true
+    # Rango del día: desde medianoche hasta ahora
+    local start_ts end_ts
+    start_ts=$(date -d "$(date +%Y-%m-%d) 00:00:00" +%s 2>/dev/null) || start_ts=$(date +%s)
+    end_ts=$(date +%s)
 
-    if [[ -z "$json" ]]; then
+    local history_json
+    history_json=$(curl -s --max-time 15 -H "X-API-Key: $AZURACAST_API_KEY" \
+        "$AZURACAST_API_URL/station/$station_id/history?start=${start_ts}&end=${end_ts}" 2>/dev/null) || true
+
+    if [[ -z "$history_json" ]]; then
         echo "  ❌ No se pudo conectar con la API."
         return 0
     fi
 
-    # Validar que la respuesta contiene datos de oyentes
-    if ! echo "$json" | jq -e '.listeners' >/dev/null 2>&1; then
+    if ! echo "$history_json" | jq -e 'type == "array"' >/dev/null 2>&1; then
         echo "  ⚠️  Respuesta de API no válida."
         return 0
     fi
 
-    local total unique
-    total=$(echo "$json" | jq -r '.listeners.total // 0' 2>/dev/null) || total=0
-    unique=$(echo "$json" | jq -r '.listeners.unique // 0' 2>/dev/null) || unique=0
+    # Calcular pico y media a partir de listeners_start de cada entrada
+    local pico media entradas
+    entradas=$(echo "$history_json" | jq 'length' 2>/dev/null) || entradas=0
 
-    echo "  Oyentes actuales: $total (únicos: $unique)"
-
-    # Obtener listado de oyentes conectados si la API lo soporta
-    local history_json
-    history_json=$(curl -s --max-time 10 -H "X-API-Key: $AZURACAST_API_KEY" \
-        "$AZURACAST_API_URL/station/$station_id/listeners" 2>/dev/null) || true
-
-    if [[ -n "$history_json" ]] && echo "$history_json" | jq -e 'type == "array"' >/dev/null 2>&1; then
-        local total_conectados
-        total_conectados=$(echo "$history_json" | jq 'length' 2>/dev/null) || total_conectados=""
-        if [[ -n "$total_conectados" ]]; then
-            echo "  Conexiones activas: $total_conectados"
-        fi
+    if [[ "$entradas" -eq 0 ]]; then
+        echo "  Sin datos de oyentes para hoy."
+        return 0
     fi
+
+    pico=$(echo "$history_json" | jq '[.[].listeners_start // 0] | max' 2>/dev/null) || pico=0
+    media=$(echo "$history_json" | jq '([.[].listeners_start // 0] | add) / length | floor' 2>/dev/null) || media=0
+
+    echo "  Pico de oyentes: $pico"
+    echo "  Media de oyentes: $media"
 }
 
 # --- VARIABLES DE DIRECTORIO ---
@@ -936,8 +888,6 @@ INFORME="$INFORMES_DIR/Informe_diario_${DIA}_${MES}_${ANO}.log"
 ' "$LIQUIDSOAP_LOG"
 
     mostrar_playlists_vacias "$EMISORA"
-
-    mostrar_estado_servidor "$EMISORA"
 
     mostrar_estadisticas_oyentes "$EMISORA"
 
