@@ -49,6 +49,8 @@ if [[ "${1:-}" == "--runner" ]]; then
 fi
 
 EJECUTAR_PODGET=1
+RENEW_COOKIES=0
+RENEW_COOKIES_BROWSER="firefox"
 
 # Resolver ruta absoluta de podget.
 # PHP-FPM usa un PATH muy reducido; ampliamos explícitamente antes de buscar.
@@ -83,8 +85,18 @@ while [[ "$#" -gt 0 ]]; do
             EJECUTAR_PODGET=0
             shift
             ;;
+        --renew-cookies)
+            RENEW_COOKIES=1
+            if [[ -n "${2:-}" && "${2}" != --* ]]; then
+                RENEW_COOKIES_BROWSER="$2"
+                shift 2
+            else
+                shift
+            fi
+            ;;
         --help)
             echo "Uso: $0 --emisora NOMBRE [--sinpodget]"
+            echo "     $0 --renew-cookies [firefox|chrome|chromium] [--emisora NOMBRE]"
             echo "     $0 --runner   (procesa triggers del contenedor; usar en cron del host)"
             exit 0
             ;;
@@ -95,6 +107,45 @@ while [[ "$#" -gt 0 ]]; do
             ;;
     esac
 done
+
+if [[ "$RENEW_COOKIES" -eq 1 ]]; then
+    if ! command -v yt-dlp &>/dev/null; then
+        echo "❌ yt-dlp no está instalado."
+        exit 1
+    fi
+    # Determinar ruta del archivo de cookies a actualizar
+    if [[ -n "${EMISORA:-}" ]]; then
+        CONFIG_DIR_COOKIES="/etc/sapo/${EMISORA}"
+        COOKIES_TARGET="${CONFIG_DIR_COOKIES}/youtube_cookies.txt"
+    else
+        COOKIES_TARGET="/etc/sapo/youtube_cookies.txt"
+    fi
+    COOKIES_TMP="${COOKIES_TARGET}.tmp"
+    echo "🔑 Renovando cookies de YouTube desde el navegador: ${RENEW_COOKIES_BROWSER}"
+    echo "   Destino: ${COOKIES_TARGET}"
+    # yt-dlp extrae las cookies del navegador y las vuelca al archivo de cookies
+    if yt-dlp \
+        --cookies-from-browser "${RENEW_COOKIES_BROWSER}" \
+        --cookies "${COOKIES_TMP}" \
+        --skip-download \
+        -o /dev/null \
+        "https://www.youtube.com/watch?v=dQw4w9WgXcQ" 2>&1; then
+        if [[ -s "${COOKIES_TMP}" ]]; then
+            mv "${COOKIES_TMP}" "${COOKIES_TARGET}"
+            chmod 600 "${COOKIES_TARGET}"
+            echo "✅ Cookies renovadas correctamente → ${COOKIES_TARGET}"
+        else
+            rm -f "${COOKIES_TMP}"
+            echo "❌ yt-dlp no generó archivo de cookies. Comprueba que ${RENEW_COOKIES_BROWSER} tiene sesión activa de YouTube."
+            exit 1
+        fi
+    else
+        rm -f "${COOKIES_TMP}"
+        echo "❌ Error al extraer cookies desde ${RENEW_COOKIES_BROWSER}."
+        exit 1
+    fi
+    exit 0
+fi
 
 if [[ -z "${EMISORA:-}" ]]; then
     echo "❌ Error: debe indicar la emisora usando --emisora."
