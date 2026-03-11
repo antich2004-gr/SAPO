@@ -200,8 +200,7 @@ if command -v apache2 &>/dev/null || command -v httpd &>/dev/null; then
     done
 
     # AllowOverride
-    CONF_FILES=$(find /etc/apache2 /etc/httpd -name "*.conf" 2>/dev/null | head -20)
-    if echo "$CONF_FILES" | xargs grep -l "AllowOverride All" 2>/dev/null | head -1 | grep -q .; then
+    if grep -rl "AllowOverride All" /etc/apache2 /etc/httpd 2>/dev/null | head -1 | grep -q .; then
         ok "AllowOverride All encontrado en alguna configuración de Apache"
     else
         warn "No se encontró 'AllowOverride All' en configuraciones Apache. El .htaccess de SAPO no funcionará sin esto."
