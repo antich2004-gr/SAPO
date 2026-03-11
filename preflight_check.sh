@@ -112,7 +112,8 @@ check_bin() {
     local bin="$1"
     local required="${2:-required}"
     if command -v "$bin" &>/dev/null; then
-        ok "${bin}: $(command -v "$bin") ($(${bin} --version 2>&1 | head -1 || echo 'ok'))"
+        BIN_VER=$(timeout 2 "$bin" --version 2>&1 | head -1 || echo 'ok')
+        ok "${bin}: $(command -v "$bin") (${BIN_VER})"
     elif [[ "$required" == "optional" ]]; then
         warn "${bin}: no encontrado (opcional, algunas funciones no estarán disponibles)"
     else
