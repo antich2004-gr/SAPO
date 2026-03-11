@@ -137,11 +137,25 @@ mostrar_playlists_vacias() {
         return
     fi
 
+    # Leer station_id desde el archivo de usuario (igual que hace el código PHP)
+    local user_json_file="$SCRIPT_DIR/../db/users/${emisora_slug}.json"
+    local station_id=""
+    if [[ -f "$user_json_file" ]]; then
+        station_id=$(jq -r '.azuracast.station_id // empty' "$user_json_file" 2>/dev/null)
+    fi
+
+    if [[ -z "$station_id" || "$station_id" == "null" ]]; then
+        echo
+        echo "📄 Listas de reproducción vacías (según API):"
+        echo "  ⚠️  Station ID no configurado para $emisora_slug. Configúralo en el panel de administración."
+        return
+    fi
+
     echo
     echo "📄 Listas de reproducción vacías (según API):"
 
     local json
-    json=$(curl -s -H "X-API-Key: $AZURACAST_API_KEY" "$AZURACAST_API_URL/station/$emisora_slug/playlists")
+    json=$(curl -s -H "X-API-Key: $AZURACAST_API_KEY" "$AZURACAST_API_URL/station/$station_id/playlists")
 
     if [[ -z "$json" || "$json" == "[]" ]]; then
         echo "  ❌ No se pudieron obtener listas para $emisora_slug."
