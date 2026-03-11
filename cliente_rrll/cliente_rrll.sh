@@ -463,6 +463,7 @@ if [[ "$EJECUTAR_PODGET" -eq 1 ]]; then
             ytdlp_output=$(yt-dlp \
                 -x --audio-format mp3 \
                 --audio-quality 5 \
+                --no-mtime \
                 --playlist-end "$max_ep" \
                 --match-filter "duration > 60" \
                 --download-archive "$archive_file" \
