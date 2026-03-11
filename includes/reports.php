@@ -209,6 +209,8 @@ function parseReportFile($filepath) {
                 $report['estadisticas_oyentes']['pico'] = intval($matches[1]);
             } elseif (preg_match('/^Media de oyentes:\s*(\d+)/', $trimmed, $matches)) {
                 $report['estadisticas_oyentes']['media'] = intval($matches[1]);
+            } elseif (preg_match('/^Oyentes totales del día:\s*(\d+)/', $trimmed, $matches)) {
+                $report['estadisticas_oyentes']['total_dia'] = intval($matches[1]);
             }
         }
     }

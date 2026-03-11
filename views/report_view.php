@@ -47,6 +47,9 @@
             <div class="stat-label">Pico de oyentes (hoy)</div>
             <div class="stat-average">
                 Media: <?php echo htmlEsc($report['estadisticas_oyentes']['media'] ?? 0); ?> oyentes
+                <?php if (isset($report['estadisticas_oyentes']['total_dia'])): ?>
+                    · <?php echo htmlEsc($report['estadisticas_oyentes']['total_dia']); ?> únicos totales
+                <?php endif; ?>
             </div>
         </div>
     </div>
