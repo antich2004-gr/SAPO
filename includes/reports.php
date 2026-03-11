@@ -86,7 +86,9 @@ function parseReportFile($filepath) {
         'eliminados_anteriores' => [],
         'carpetas_vacias' => [],
         'errores_podget' => [],
-        'emisiones_directo' => []
+        'emisiones_directo' => [],
+        'estado_servidor' => [],
+        'estadisticas_oyentes' => []
     ];
     
     $lines = explode("\n", $content);
@@ -134,6 +136,14 @@ function parseReportFile($filepath) {
         }
         if (strpos($line, 'Emisiones en directo:') !== false) {
             $section = 'emisiones';
+            continue;
+        }
+        if (strpos($line, 'Estado del servidor de streaming:') !== false) {
+            $section = 'estado_servidor';
+            continue;
+        }
+        if (strpos($line, 'Estadísticas de oyentes:') !== false || strpos($line, 'Estadísticas de oyentes:') !== false) {
+            $section = 'estadisticas_oyentes';
             continue;
         }
         
@@ -197,6 +207,25 @@ function parseReportFile($filepath) {
         if ($section === 'emisiones' && !empty($line) && $line[0] === ' ' && $line !== '  Ninguna emisión en directo') {
             $report['emisiones_directo'][] = trim($line);
         }
+
+        if ($section === 'estado_servidor' && !empty($line) && $line[0] === ' ') {
+            $trimmed = trim($line);
+            if (preg_match('/^Estado:\s*(.+)$/', $trimmed, $matches)) {
+                $report['estado_servidor']['estado'] = trim($matches[1]);
+            } elseif (preg_match('/^Reproduciendo:\s*(.+)$/', $trimmed, $matches)) {
+                $report['estado_servidor']['reproduciendo'] = trim($matches[1]);
+            }
+        }
+
+        if ($section === 'estadisticas_oyentes' && !empty($line) && $line[0] === ' ') {
+            $trimmed = trim($line);
+            if (preg_match('/^Oyentes actuales:\s*(\d+)\s*\(únicos:\s*(\d+)\)/', $trimmed, $matches)) {
+                $report['estadisticas_oyentes']['total'] = intval($matches[1]);
+                $report['estadisticas_oyentes']['unique'] = intval($matches[2]);
+            } elseif (preg_match('/^Conexiones activas:\s*(\d+)/', $trimmed, $matches)) {
+                $report['estadisticas_oyentes']['conexiones'] = intval($matches[1]);
+            }
+        }
     }
     
     return $report;
@@ -242,7 +271,9 @@ function generatePeriodReport($username, $days = 7) {
         'eliminados_por_dia' => [],
         'errores_totales' => [],
         'carpetas_vacias' => [],
-        'top_podcasts' => []
+        'top_podcasts' => [],
+        'estado_servidor' => [],
+        'estadisticas_oyentes' => []
     ];
     
     $podcastsCount = [];
@@ -299,6 +330,14 @@ function generatePeriodReport($username, $days = 7) {
         // Última versión de carpetas vacías
         if (!empty($reportData['carpetas_vacias'])) {
             $consolidatedReport['carpetas_vacias'] = $reportData['carpetas_vacias'];
+        }
+
+        // Última versión de estado servidor y oyentes
+        if (!empty($reportData['estado_servidor'])) {
+            $consolidatedReport['estado_servidor'] = $reportData['estado_servidor'];
+        }
+        if (!empty($reportData['estadisticas_oyentes'])) {
+            $consolidatedReport['estadisticas_oyentes'] = $reportData['estadisticas_oyentes'];
         }
     }
     
