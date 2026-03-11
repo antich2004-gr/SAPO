@@ -30,9 +30,9 @@ PASS=0
 WARN=0
 FAIL=0
 
-ok()   { echo -e "  ${GRN}[OK]${RST}   $1"; ((PASS++)); }
-warn() { echo -e "  ${YLW}[WARN]${RST} $1"; ((WARN++)); }
-fail() { echo -e "  ${RED}[FAIL]${RST} $1"; ((FAIL++)); }
+ok()   { echo -e "  ${GRN}[OK]${RST}   $1"; PASS=$((PASS+1)); }
+warn() { echo -e "  ${YLW}[WARN]${RST} $1"; WARN=$((WARN+1)); }
+fail() { echo -e "  ${RED}[FAIL]${RST} $1"; FAIL=$((FAIL+1)); }
 info() { echo -e "  ${BLU}[INFO]${RST} $1"; }
 h1()   { echo; echo -e "${BOLD}${CYN}━━━  $1  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RST}"; }
 h2()   { echo -e "\n  ${BOLD}$1${RST}"; }
@@ -288,6 +288,10 @@ if [[ -z "$API_URL" ]]; then
 fi
 
 if [[ -n "$API_URL" ]]; then
+    # Limpiar trailing slash y sufijos de documentación comunes
+    API_URL="${API_URL%/}"
+    API_URL="${API_URL%/docs/api}"
+    API_URL="${API_URL%/api/docs}"
     # Verificar que la URL responde
     HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "${API_URL}/status" 2>/dev/null || echo "000")
     if [[ "$HTTP_CODE" == "200" ]]; then
@@ -376,10 +380,10 @@ if [[ -d "$BASE_PATH" ]]; then
                     W=""
                     [[ -w "$FULL" ]] && W="${GRN}rw${RST}" || W="${YLW}ro${RST}"
                     echo -e "      ${GRN}[OK]${RST}   ${subdir} [${W}]"
-                    ((PASS++))
+                    PASS=$((PASS+1))
                 else
                     echo -e "      ${YLW}[WARN]${RST} ${subdir} — no existe (se creará en primer uso)"
-                    ((WARN++))
+                    WARN=$((WARN+1))
                 fi
             done
         done
