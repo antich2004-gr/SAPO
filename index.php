@@ -606,7 +606,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                         if ($lastUpdate > 0) {
                             $hours_passed = (time() - $lastUpdate) / 3600;
-                            if ($hours_passed >= 8) {
+                            if ($hours_passed >= 24) {
                                 $redirect_url .= '?auto_refresh_feeds=1';
                             }
                         } else {
