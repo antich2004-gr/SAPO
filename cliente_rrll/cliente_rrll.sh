@@ -208,13 +208,18 @@ mostrar_estadisticas_oyentes() {
     fi
 
     # Rango del día: desde medianoche hasta ahora
-    local start_ts end_ts
-    start_ts=$(date -d "$(date +%Y-%m-%d) 00:00:00" +%s 2>/dev/null) || start_ts=$(date +%s)
-    end_ts=$(date +%s)
+    # AzuraCast espera formato de fecha ISO, no Unix timestamp
+    local start_dt end_dt
+    start_dt="$(date +%Y-%m-%d)T00:00:00"
+    end_dt="$(date '+%Y-%m-%dT%H:%M:%S')"
 
     local history_json
-    history_json=$(curl -s --max-time 15 -H "X-API-Key: $AZURACAST_API_KEY" \
-        "$AZURACAST_API_URL/station/$station_id/history?start=${start_ts}&end=${end_ts}" 2>/dev/null) || true
+    history_json=$(curl -s --max-time 15 \
+        -H "X-API-Key: $AZURACAST_API_KEY" \
+        --get \
+        --data-urlencode "start=$start_dt" \
+        --data-urlencode "end=$end_dt" \
+        "$AZURACAST_API_URL/station/$station_id/history" 2>/dev/null) || true
 
     if [[ -z "$history_json" ]]; then
         echo "  ❌ No se pudo conectar con la API."
