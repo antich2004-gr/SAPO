@@ -305,7 +305,18 @@ function runAudioQualityScan() {
         method: 'POST',
         body: formData
     })
-    .then(r => r.json())
+    .then(r => {
+        if (!r.ok) {
+            return r.text().then(t => { throw new Error('HTTP ' + r.status + ': ' + t.substring(0, 300)); });
+        }
+        return r.text().then(t => {
+            try {
+                return JSON.parse(t);
+            } catch (e) {
+                throw new Error('Respuesta no válida del servidor: ' + t.substring(0, 300));
+            }
+        });
+    })
     .then(data => {
         progress.style.display = 'none';
         btn.disabled = false;
@@ -317,11 +328,12 @@ function runAudioQualityScan() {
                 (data.message || 'Error al realizar el análisis.') + '</div>';
         }
     })
-    .catch(() => {
+    .catch(err => {
         progress.style.display = 'none';
         btn.disabled = false;
         result.style.display = 'block';
-        result.innerHTML = '<div class="alert alert-danger">Error de comunicación con el servidor.</div>';
+        result.innerHTML = '<div class="alert alert-danger"><strong>Error:</strong> ' +
+            err.message.replace(/</g, '&lt;') + '</div>';
     });
 }
 </script>

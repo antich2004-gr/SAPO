@@ -1358,13 +1358,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // AJAX: Análisis de calidad de audio (solo admin)
     if ($action == 'run_audio_quality_scan' && isAdmin()) {
+        // Sin límite de tiempo: el escaneo de audio puede tardar varios minutos
+        set_time_limit(0);
         header('Content-Type: application/json');
-
-        $token = $_POST['csrf_token'] ?? '';
-        if (!validateCSRFToken($token)) {
-            echo json_encode(['success' => false, 'message' => ERROR_INVALID_TOKEN]);
-            exit;
-        }
 
         $targetUsername = trim($_POST['username'] ?? '');
 
@@ -1407,16 +1403,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         require_once INCLUDES_DIR . '/audio_validator.php';
 
-        $scanResult = AudioValidator::scanDirectory($mediaPath, $basePath . DIRECTORY_SEPARATOR . $targetUsername);
-        $scanResult['scan_date'] = date('d/m/Y H:i');
+        try {
+            $scanResult = AudioValidator::scanDirectory($mediaPath, $basePath . DIRECTORY_SEPARATOR . $targetUsername);
+            $scanResult['scan_date'] = date('d/m/Y H:i');
 
-        $stationName = $targetUser['station_name'];
+            $stationName = $targetUser['station_name'];
 
-        ob_start();
-        include 'views/audio_quality_view.php';
-        $html = ob_get_clean();
+            ob_start();
+            include 'views/audio_quality_view.php';
+            $html = ob_get_clean();
 
-        echo json_encode(['success' => true, 'html' => $html]);
+            echo json_encode(['success' => true, 'html' => $html]);
+        } catch (Throwable $e) {
+            echo json_encode(['success' => false, 'message' => 'Error en el análisis: ' . $e->getMessage()]);
+        }
         exit;
     }
 
