@@ -8,10 +8,10 @@
 declare -A EMISORAS
 
 # Formato: EMISORAS["nombre_emisora"]="ruta_log;correo1,correo2;nombre_amigable"
-EMISORAS["galapagar"]="/mnt/emisoras/galapagar/Informes;fide@afoot.es,radiogalapagar@gmail.com;Radio Galapagar"
-EMISORAS["rvk"]="/mnt/emisoras/rvk/Informes;fide@afoot.es;Radio Vallekas"
-EMISORAS["cable"]="/mnt/emisoras/cable/Informes;fide@afoot.es,fberlin@radiocable.com;Radio Cable"
-EMISORAS["sonora"]="/mnt/emisoras/sonora/Informes;fide@afoot.es,sonora.asoc@uc3m.es;Sonora"
+EMISORAS["galapagar"]="/mnt/emisoras/galapagar/media/Informes;fide@afoot.es,radiogalapagar@gmail.com;Radio Galapagar"
+EMISORAS["rvk"]="/mnt/emisoras/rvk/media/Informes;fide@afoot.es;Radio Vallekas"
+EMISORAS["cable"]="/mnt/emisoras/cable/media/Informes;fide@afoot.es,fberlin@radiocable.com;Radio Cable"
+EMISORAS["sonora"]="/mnt/emisoras/sonora/media/Informes;fide@afoot.es,sonora.asoc@uc3m.es;Sonora"
 # =========================
 # Envío de informes
 # =========================

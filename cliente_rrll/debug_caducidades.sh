@@ -18,10 +18,9 @@ if [[ -z "$EMISORA" ]]; then
     exit 1
 fi
 
-BASE_DIR="/mnt/emisoras/$EMISORA"
-MEDIA_DIR="$BASE_DIR/media"
+BASE_DIR="/mnt/emisoras/$EMISORA/media"
 CONFIG_DIR="$BASE_DIR/Suscripciones"
-PODCASTS_DIR="$MEDIA_DIR/Podcasts"
+PODCASTS_DIR="$BASE_DIR/Podcasts"
 CADUCIDADES_FILE="$CONFIG_DIR/caducidades.txt"
 DEFAULT_DIAS=30
 
