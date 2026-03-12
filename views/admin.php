@@ -125,9 +125,30 @@ $users = getAllUsers();
             </button>
         </div>
 
+        <!-- Checks opcionales (lentos) -->
+        <div style="margin-bottom: 15px; padding: 12px; background: #f7fafc; border-radius: 6px; border: 1px solid #e2e8f0;">
+            <p style="margin: 0 0 8px 0; font-size: 13px; color: #4a5568;">
+                <strong>Checks rápidos</strong> (siempre activos): metadatos, bitrate, duración, codec, sample rate, integridad
+            </p>
+            <p style="margin: 0 0 8px 0; font-size: 13px; color: #718096;">
+                <strong>Checks opcionales</strong> — procesan el contenido del audio, pueden tardar varios minutos:
+            </p>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+                    <input type="checkbox" id="checkSilences"> Detectar silencios
+                </label>
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+                    <input type="checkbox" id="checkLoudness"> Nivel de volumen (LUFS/EBU R128)
+                </label>
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+                    <input type="checkbox" id="checkClipping"> Saturación (clipping)
+                </label>
+            </div>
+        </div>
+
         <div id="audioQualityProgress" style="display: none; color: #718096; font-size: 14px; margin-bottom: 10px;">
-            <span style="display: inline-block; animation: spin 1s linear infinite; margin-right: 6px;">&#8987;</span>
-            Analizando archivos de audio… Esto puede tardar varios minutos dependiendo del tamaño de la librería.
+            <span style="display: inline-block; margin-right: 6px;">&#8987;</span>
+            Analizando archivos de audio… Esto puede tardar varios minutos con los checks opcionales activados.
         </div>
 
         <div id="audioQualityResult" style="display: none;"></div>
@@ -300,6 +321,9 @@ function runAudioQualityScan() {
     formData.append('action', 'run_audio_quality_scan');
     formData.append('username', username);
     formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+    if (document.getElementById('checkSilences').checked) formData.append('check_silences', '1');
+    if (document.getElementById('checkLoudness').checked) formData.append('check_loudness', '1');
+    if (document.getElementById('checkClipping').checked) formData.append('check_clipping', '1');
 
     fetch('', {
         method: 'POST',

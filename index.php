@@ -1396,16 +1396,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             exit;
         }
 
-        $podcastsFolder = $config['podcasts_folder'] ?? 'Podcasts';
-        $mediaPath      = $basePath . DIRECTORY_SEPARATOR . $targetUsername
-                        . DIRECTORY_SEPARATOR . 'media'
-                        . DIRECTORY_SEPARATOR . $podcastsFolder;
+        // Escanear la carpeta media/ completa, excluyendo subcarpetas de podcasts
+        // (los podcasts son archivos muy largos y no son el objetivo del análisis de calidad)
+        $podcastsFolder       = $config['podcasts_folder']       ?? 'Podcasts';
+        $subscriptionsFolder  = $config['subscriptions_folder']  ?? 'Suscripciones';
+        $mediaPath = $basePath . DIRECTORY_SEPARATOR . $targetUsername . DIRECTORY_SEPARATOR . 'media';
+
+        // Carpetas a excluir del escaneo
+        $excludeFolders = [
+            $mediaPath . DIRECTORY_SEPARATOR . $podcastsFolder,
+            $mediaPath . DIRECTORY_SEPARATOR . $subscriptionsFolder,
+            $mediaPath . DIRECTORY_SEPARATOR . 'Informes',
+        ];
 
         require_once INCLUDES_DIR . '/audio_validator.php';
 
+        // Checks lentos opcionales (pueden causar timeout si hay muchos archivos)
+        $slowOptions = [
+            'silences' => !empty($_POST['check_silences']),
+            'loudness' => !empty($_POST['check_loudness']),
+            'clipping' => !empty($_POST['check_clipping']),
+        ];
+
         try {
-            $scanResult = AudioValidator::scanDirectory($mediaPath, $basePath . DIRECTORY_SEPARATOR . $targetUsername);
-            $scanResult['scan_date'] = date('d/m/Y H:i');
+            $scanResult = AudioValidator::scanDirectory($mediaPath, $basePath . DIRECTORY_SEPARATOR . $targetUsername, $slowOptions, $excludeFolders);
+            $scanResult['scan_date']    = date('d/m/Y H:i');
+            $scanResult['slow_options'] = $slowOptions;
 
             $stationName = $targetUser['station_name'];
 
