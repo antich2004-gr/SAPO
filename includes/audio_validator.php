@@ -68,12 +68,13 @@ class AudioValidator {
     /**
      * Escanea un directorio de forma recursiva y analiza todos los audios.
      *
-     * @param string $directory  Directorio a escanear
-     * @param string $basePath   Prefijo a eliminar de las rutas en el informe
-     * @param array  $options    Checks lentos a activar (silences, loudness, clipping)
+     * @param string $directory      Directorio a escanear
+     * @param string $basePath       Prefijo a eliminar de las rutas en el informe
+     * @param array  $options        Checks lentos a activar (silences, loudness, clipping)
+     * @param array  $excludeFolders Rutas absolutas de subcarpetas a excluir
      * @return array
      */
-    public static function scanDirectory(string $directory, string $basePath = '', array $options = []): array {
+    public static function scanDirectory(string $directory, string $basePath = '', array $options = [], array $excludeFolders = []): array {
         $result = [
             'files'         => [],
             'total_scanned' => 0,
@@ -86,16 +87,42 @@ class AudioValidator {
 
         $extensions = ['mp3', 'ogg', 'wav', 'm4a', 'flac', 'aac'];
 
+        // Normalizar rutas de exclusión (sin barra final)
+        $excludeNorm = array_map(fn($p) => rtrim(realpath($p) ?: $p, '/\\'), $excludeFolders);
+
         try {
             $iterator = new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($directory, RecursiveDirectoryIterator::SKIP_DOTS)
+                new RecursiveDirectoryIterator($directory, RecursiveDirectoryIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::SELF_FIRST
             );
         } catch (Exception $e) {
             return $result;
         }
 
         foreach ($iterator as $file) {
-            if (!$file->isFile()) continue;
+            // Saltar directorios excluidos y todo su contenido
+            if ($file->isDir()) {
+                $dirReal = rtrim(realpath($file->getPathname()) ?: $file->getPathname(), '/\\');
+                foreach ($excludeNorm as $excl) {
+                    if ($dirReal === $excl || str_starts_with($dirReal, $excl . DIRECTORY_SEPARATOR)) {
+                        $iterator->next();
+                        continue 2;
+                    }
+                }
+                continue;
+            }
+
+            // Verificar que el archivo no está dentro de una carpeta excluida
+            $fileReal = realpath($file->getPathname()) ?: $file->getPathname();
+            $skip = false;
+            foreach ($excludeNorm as $excl) {
+                if (str_starts_with($fileReal, $excl . DIRECTORY_SEPARATOR)) {
+                    $skip = true;
+                    break;
+                }
+            }
+            if ($skip) continue;
+
             $ext = strtolower($file->getExtension());
             if (!in_array($ext, $extensions)) continue;
 
