@@ -14,7 +14,7 @@ function getReportsPath($username) {
         return false;
     }
 
-    return $basePath . DIRECTORY_SEPARATOR . $username . DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . 'Informes';
+    return $basePath . DIRECTORY_SEPARATOR . $username . DIRECTORY_SEPARATOR . 'Informes';
 }
 
 function getAvailableReports($username) {

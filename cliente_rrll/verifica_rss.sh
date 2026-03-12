@@ -12,7 +12,7 @@ echo "📡 Informe de errores RSS – $(date)" | tee "$INFORME"
 echo | tee -a "$INFORME"
 
 for EMISORA in /mnt/emisoras/*; do
-    SERVERLIST="$EMISORA/media/Suscripciones/serverlist.txt"
+    SERVERLIST="$EMISORA/Suscripciones/serverlist.txt"
     if [[ -f "$SERVERLIST" ]]; then
         echo "🔎 Revisando ${EMISORA##*/}" | tee -a "$INFORME"
         grep -vE '^\s*#|^\s*$' "$SERVERLIST" | while read -r URL; do

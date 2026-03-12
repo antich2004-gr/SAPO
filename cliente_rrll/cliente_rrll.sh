@@ -299,7 +299,8 @@ mostrar_estadisticas_oyentes() {
 }
 
 # --- VARIABLES DE DIRECTORIO ---
-BASE_DIR="/mnt/emisoras/$EMISORA/media"
+BASE_DIR="/mnt/emisoras/$EMISORA"
+MEDIA_DIR="$BASE_DIR/media"
 CONFIG_DIR="$BASE_DIR/Suscripciones"
 INFORMES_DIR="$BASE_DIR/Informes"
 LIQUIDSOAP_LOG="/mnt/emisoras/$EMISORA/config/liquidsoap.log"
@@ -323,7 +324,7 @@ _leer_dir_podcast() {
 }
 
 _dir_podcast_rc=$(_leer_dir_podcast)
-PODCASTS_DIR="${_dir_podcast_rc:-$BASE_DIR/Podcasts}"
+PODCASTS_DIR="${_dir_podcast_rc:-$MEDIA_DIR/Podcasts}"
 
 echo "📂 Directorio de podcasts: $PODCASTS_DIR"
 

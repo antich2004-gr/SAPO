@@ -88,7 +88,7 @@ if [ -d "$EMISORAS_BASE" ]; then
         done
         [ $skip -eq 1 ] && continue
         # Solo incluir si tiene directorio de suscripciones
-        if [ -d "$dir/media/Suscripciones" ]; then
+        if [ -d "$dir/Suscripciones" ]; then
             EMISORAS_FS+=("$nombre")
         fi
     done < <(find "$EMISORAS_BASE" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)

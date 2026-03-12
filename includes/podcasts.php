@@ -11,7 +11,7 @@ function getServerListPath($username) {
     }
 
     // Construir la ruta
-    $path = $basePath . DIRECTORY_SEPARATOR . $username . DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . $subsFolder . DIRECTORY_SEPARATOR . 'serverlist.txt';
+    $path = $basePath . DIRECTORY_SEPARATOR . $username . DIRECTORY_SEPARATOR . $subsFolder . DIRECTORY_SEPARATOR . 'serverlist.txt';
 
     // Validar que la ruta este dentro del base_path (prevenir path traversal)
     $realBasePath = realpath($basePath);
@@ -43,7 +43,7 @@ function getCaducidadesPath($username) {
     }
 
     // Construir la ruta
-    $path = $basePath . DIRECTORY_SEPARATOR . $username . DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . $subsFolder . DIRECTORY_SEPARATOR . 'caducidades.txt';
+    $path = $basePath . DIRECTORY_SEPARATOR . $username . DIRECTORY_SEPARATOR . $subsFolder . DIRECTORY_SEPARATOR . 'caducidades.txt';
 
     // Validar que la ruta este dentro del base_path (prevenir path traversal)
     $realBasePath = realpath($basePath);
@@ -107,7 +107,7 @@ function getYtdlpFeedsPath($username) {
         return false;
     }
 
-    $path = $basePath . DIRECTORY_SEPARATOR . $username . DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . $subsFolder . DIRECTORY_SEPARATOR . 'ytdlp_feeds.txt';
+    $path = $basePath . DIRECTORY_SEPARATOR . $username . DIRECTORY_SEPARATOR . $subsFolder . DIRECTORY_SEPARATOR . 'ytdlp_feeds.txt';
 
     $realBasePath = realpath($basePath);
     $realPath = realpath(dirname($path));
@@ -285,7 +285,7 @@ function getMaxEpisodiosRssPath($username) {
         return false;
     }
 
-    $path = $basePath . DIRECTORY_SEPARATOR . $username . DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . $subsFolder . DIRECTORY_SEPARATOR . 'max_episodios_rss.txt';
+    $path = $basePath . DIRECTORY_SEPARATOR . $username . DIRECTORY_SEPARATOR . $subsFolder . DIRECTORY_SEPARATOR . 'max_episodios_rss.txt';
 
     $realBasePath = realpath($basePath);
     $realPath = realpath(dirname($path));
@@ -1090,7 +1090,7 @@ function getDuracionesPath($username) {
 
     $userSlug = slugify($username);
     return $basePath . DIRECTORY_SEPARATOR . $userSlug . DIRECTORY_SEPARATOR .
-           'media' . DIRECTORY_SEPARATOR . $subscriptionsFolder . DIRECTORY_SEPARATOR .
+           $subscriptionsFolder . DIRECTORY_SEPARATOR .
            'duraciones.txt';
 }
 
