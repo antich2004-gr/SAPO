@@ -422,10 +422,29 @@ if ($hasStationId) {
                 // FEATURE: Detectar programas sin contenido (RSS antiguo O carpeta vacía)
                 $stalePrograms = [];
 
-                // Obtener conteo de archivos de cada playlist desde Azuracast
-                // NOTA: Funcionalidad deshabilitada - getPlaylistFileCounts() devuelve false
+                // Obtener conteo de canciones de cada playlist desde Azuracast API
                 $playlistFileCounts = [];
                 $dataIsReliable = false;
+                $allPlaylists = getAzuracastPlaylists($username);
+                if (is_array($allPlaylists)) {
+                    foreach ($allPlaylists as $pl) {
+                        $plName = $pl['name'] ?? null;
+                        if ($plName !== null) {
+                            $playlistFileCounts[$plName] = (int)($pl['num_songs'] ?? -1);
+                        }
+                    }
+                    $dataIsReliable = true;
+                }
+
+                // Playlists de AzuraCast con 0 canciones (independientemente de los programas)
+                $emptyPlaylists = [];
+                if ($dataIsReliable) {
+                    foreach ($allPlaylists as $pl) {
+                        if ((int)($pl['num_songs'] ?? -1) === 0) {
+                            $emptyPlaylists[] = $pl['name'];
+                        }
+                    }
+                }
 
                 foreach ($programsData as $programKey => $programInfo) {
                     // Obtener nombre original del programa
@@ -1168,6 +1187,28 @@ if ($hasStationId) {
                         </div>
                     </div>
                     <?php endif; ?>
+                <!-- Playlists de AzuraCast sin contenido (0 canciones) -->
+                <?php if (!empty($emptyPlaylists)): ?>
+                <div class="stale-programs-panel">
+                    <div class="stale-programs-title" onclick="toggleStalePanel(this)">
+                        📭 Playlists sin contenido en Radiobot (<?php echo count($emptyPlaylists); ?>)
+                        <i class="stale-chevron">▾</i>
+                    </div>
+                    <div class="stale-programs-body collapsed">
+                    <p style="font-size: 12px; color: #92400e; margin-bottom: 12px;">
+                        Estas playlists existen en Radiobot pero no tienen ninguna canción asignada.
+                    </p>
+                    <?php foreach ($emptyPlaylists as $plName): ?>
+                    <div class="stale-program-item">
+                        <div class="stale-program-name">
+                            🎵 <?php echo htmlspecialchars($plName); ?>
+                        </div>
+                        <div class="stale-program-message">Sin canciones en Radiobot</div>
+                    </div>
+                    <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
                 <?php endif; ?>
                 <script>
                 function toggleStalePanel(titleEl) {
