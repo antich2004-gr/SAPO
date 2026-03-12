@@ -1914,7 +1914,11 @@ if ($hasStationId) {
                                 <option value="">-- Seleccionar playlist --</option>
                                 <?php foreach ($playlists as $playlist): ?>
                                     <option value="<?php echo htmlspecialchars($playlist['short_name'] ?? $playlist['name']); ?>">
-                                        <?php echo htmlspecialchars($playlist['name']); ?>
+                                        <?php
+                                        $label = $playlist['name'];
+                                        if (($playlist['num_songs'] ?? -1) === 0) $label .= ' ⚠️ Sin contenido';
+                                        echo htmlspecialchars($label);
+                                        ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -1981,9 +1985,12 @@ if ($hasStationId) {
                     const stationShortName = '<?php echo htmlspecialchars($stationShortName); ?>';
                     const playlistOptions = `
                         <option value="">-- Seleccionar playlist --</option>
-                        <?php foreach ($playlists as $playlist): ?>
+                        <?php foreach ($playlists as $playlist):
+                            $label = $playlist['name'];
+                            if (($playlist['num_songs'] ?? -1) === 0) $label .= ' ⚠️ Sin contenido';
+                        ?>
                             <option value="<?php echo htmlspecialchars($playlist['short_name'] ?? $playlist['name']); ?>">
-                                <?php echo htmlspecialchars($playlist['name']); ?>
+                                <?php echo htmlspecialchars($label); ?>
                             </option>
                         <?php endforeach; ?>
                     `;
