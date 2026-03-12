@@ -631,6 +631,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit;
     }
 
+    // IMPERSONAR USUARIO (solo admin)
+    if ($action == 'impersonate_user' && isAdmin()) {
+        $token = $_POST['csrf_token'] ?? '';
+        if (validateCSRFToken($token)) {
+            $userId = intval($_POST['user_id'] ?? 0);
+            $user = findUserById($userId);
+            if ($user && !($user['is_admin'] ?? false)) {
+                startImpersonating($user);
+                header('Location: ' . basename($_SERVER['PHP_SELF']));
+                exit;
+            }
+        }
+    }
+
+    // DEJAR DE IMPERSONAR
+    if ($action == 'stop_impersonating' && isImpersonating()) {
+        $token = $_POST['csrf_token'] ?? '';
+        if (validateCSRFToken($token)) {
+            stopImpersonating();
+            header('Location: ' . basename($_SERVER['PHP_SELF']));
+            exit;
+        }
+    }
+
     // SAVE CONFIG (admin)
     if ($action == 'save_config' && isAdmin()) {
         $basePath = trim($_POST['base_path'] ?? '');
