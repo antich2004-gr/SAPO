@@ -1637,9 +1637,7 @@ if ($hasStationId) {
                 if ($playlists === false) $playlists = [];
 
                 // DEBUG TEMPORAL
-                if (!empty($playlists)) {
-                    error_log("SAPO DEBUG playlists: " . json_encode(array_map(fn($p) => array_intersect_key($p, array_flip(['name','num_songs','num_tracks','song_count','is_enabled'])), $playlists)));
-                }
+                echo "<!-- SAPO DEBUG playlists: " . htmlspecialchars(json_encode(array_map(fn($p) => array_intersect_key($p, array_flip(['name','num_songs','num_tracks','song_count','is_enabled'])), $playlists))) . " -->";
 
                 // Obtener configuración actual de Liquidsoap
                 $liquidsoapConfig = getAzuracastLiquidsoapConfig($username);
