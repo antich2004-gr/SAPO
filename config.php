@@ -11,7 +11,7 @@ ini_set('log_errors', 1);
 error_reporting(E_ALL);
 
 // Constantes
-define('DB_FILE', 'db.json');
+define('DB_FILE', dirname(__FILE__) . '/db.json');
 define('MAX_LOGIN_ATTEMPTS', 5);
 define('LOCKOUT_TIME', 900); // 15 minutos
 define('SESSION_TIMEOUT', 1800); // 30 minutos
