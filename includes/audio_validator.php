@@ -16,35 +16,51 @@ class AudioValidator {
     const CLIPPING_ERROR_THRESHOLD = 100; // muestras saturadas para error (vs warning)
 
     /**
-     * Analiza un archivo de audio y devuelve un array de issues.
-     * Cada issue: ['type' => string, 'severity' => 'error|warning', 'detail' => string]
+     * Analiza un archivo de audio.
+     *
+     * $options controla qué checks lentos ejecutar:
+     *   'silences'  => true/false   (ffmpeg silencedetect — lento)
+     *   'loudness'  => true/false   (ffmpeg loudnorm EBU R128 — muy lento)
+     *   'clipping'  => true/false   (ffmpeg astats — lento)
+     *
+     * Los checks rápidos (ffprobe: metadatos, bitrate, duración, codec,
+     * sample rate e integridad) siempre se ejecutan y usan UNA sola llamada.
      *
      * @param string $filepath Ruta absoluta al archivo
-     * @return array Lista de problemas encontrados
+     * @param array  $options  Checks lentos a activar
+     * @return array Lista de issues encontrados
      */
-    public static function analyze(string $filepath): array {
+    public static function analyze(string $filepath, array $options = []): array {
         if (!file_exists($filepath)) {
             return [['type' => 'file_not_found', 'severity' => 'error', 'detail' => 'Archivo no encontrado']];
         }
 
         $issues = [];
-        $issues = array_merge($issues, self::checkIntegrity($filepath));
 
-        // Si el archivo está corrupto, no seguir analizando
-        foreach ($issues as $issue) {
-            if ($issue['type'] === 'integrity_error') {
+        // ── Check de integridad (una llamada ffmpeg rápida) ──────────────
+        $integrity = self::checkIntegrity($filepath);
+        $issues    = array_merge($issues, $integrity);
+
+        // Si el archivo está corrupto no seguimos
+        foreach ($integrity as $i) {
+            if ($i['type'] === 'integrity_error') {
                 return $issues;
             }
         }
 
-        $issues = array_merge($issues, self::checkMetadata($filepath));
-        $issues = array_merge($issues, self::checkBitrate($filepath));
-        $issues = array_merge($issues, self::checkDuration($filepath));
-        $issues = array_merge($issues, self::checkCodecFormat($filepath));
-        $issues = array_merge($issues, self::checkSampleRate($filepath));
-        $issues = array_merge($issues, self::checkSilences($filepath));
-        $issues = array_merge($issues, self::checkLoudness($filepath));
-        $issues = array_merge($issues, self::checkClipping($filepath));
+        // ── Todos los checks rápidos en UNA sola llamada ffprobe ─────────
+        $issues = array_merge($issues, self::checkFastProbe($filepath));
+
+        // ── Checks opcionales (lentos, requieren procesar el audio) ──────
+        if (!empty($options['silences'])) {
+            $issues = array_merge($issues, self::checkSilences($filepath));
+        }
+        if (!empty($options['loudness'])) {
+            $issues = array_merge($issues, self::checkLoudness($filepath));
+        }
+        if (!empty($options['clipping'])) {
+            $issues = array_merge($issues, self::checkClipping($filepath));
+        }
 
         return $issues;
     }
@@ -52,11 +68,12 @@ class AudioValidator {
     /**
      * Escanea un directorio de forma recursiva y analiza todos los audios.
      *
-     * @param string $directory Directorio a escanear
-     * @param string $basePath  Prefijo a eliminar de las rutas en el informe
-     * @return array  ['files' => [...], 'total_scanned' => int, 'total_issues' => int]
+     * @param string $directory  Directorio a escanear
+     * @param string $basePath   Prefijo a eliminar de las rutas en el informe
+     * @param array  $options    Checks lentos a activar (silences, loudness, clipping)
+     * @return array
      */
-    public static function scanDirectory(string $directory, string $basePath = ''): array {
+    public static function scanDirectory(string $directory, string $basePath = '', array $options = []): array {
         $result = [
             'files'         => [],
             'total_scanned' => 0,
@@ -83,7 +100,7 @@ class AudioValidator {
             if (!in_array($ext, $extensions)) continue;
 
             $filepath = $file->getPathname();
-            $issues   = self::analyze($filepath);
+            $issues   = self::analyze($filepath, $options);
 
             $result['total_scanned']++;
 
@@ -123,18 +140,19 @@ class AudioValidator {
     }
 
     // ---------------------------------------------------------------
-    // CHECK: Integridad del archivo (lo primero)
+    // CHECK RÁPIDO: integridad del archivo (una llamada ffmpeg breve)
     // ---------------------------------------------------------------
     private static function checkIntegrity(string $file): array {
         $issues = [];
         $cmd    = sprintf('ffmpeg -v error -i %s -f null - 2>&1', escapeshellarg($file));
-        $output = shell_exec($cmd);
+        $output = shell_exec($cmd) ?? '';
 
-        if (!empty(trim($output ?? ''))) {
-            // Filtrar líneas de error relevantes (ignorar warnings menores)
+        if (!empty(trim($output))) {
             $lines = array_filter(explode("\n", trim($output)), function ($l) {
-                return stripos($l, 'error') !== false || stripos($l, 'invalid') !== false
-                    || stripos($l, 'corrupt') !== false || stripos($l, 'truncat') !== false;
+                return stripos($l, 'error') !== false
+                    || stripos($l, 'invalid') !== false
+                    || stripos($l, 'corrupt') !== false
+                    || stripos($l, 'truncat') !== false;
             });
             if (!empty($lines)) {
                 $detail = trim(implode(' | ', array_slice(array_values($lines), 0, 2)));
@@ -149,27 +167,31 @@ class AudioValidator {
     }
 
     // ---------------------------------------------------------------
-    // CHECK: Metadatos (title, artist obligatorios; album, date recomendados)
+    // CHECKS RÁPIDOS: una sola llamada ffprobe para todo
+    // (metadatos, bitrate, duración, codec, sample rate)
     // ---------------------------------------------------------------
-    private static function checkMetadata(string $file): array {
+    private static function checkFastProbe(string $file): array {
         $issues = [];
-        $cmd    = sprintf(
-            'ffprobe -v quiet -print_format json -show_format %s 2>/dev/null',
+
+        $cmd  = sprintf(
+            'ffprobe -v quiet -print_format json -show_format -show_streams %s 2>/dev/null',
             escapeshellarg($file)
         );
-        $data = json_decode(shell_exec($cmd) ?? '{}', true);
-        $tags = $data['format']['tags'] ?? [];
+        $json = shell_exec($cmd) ?? '{}';
+        $data = json_decode($json, true) ?? [];
 
-        // Normalizar claves a minúsculas
+        $format  = $data['format']  ?? [];
+        $streams = $data['streams'] ?? [];
+        $tags    = $format['tags']  ?? [];
+
+        // Normalizar claves de tags a minúsculas
         $normalizedTags = [];
         foreach ($tags as $k => $v) {
             $normalizedTags[strtolower($k)] = $v;
         }
 
-        $required    = ['title', 'artist'];
-        $recommended = ['album', 'date'];
-
-        foreach ($required as $tag) {
+        // ── Metadatos ──────────────────────────────────────────────
+        foreach (['title', 'artist'] as $tag) {
             if (empty($normalizedTags[$tag])) {
                 $issues[] = [
                     'type'     => 'missing_metadata',
@@ -178,7 +200,7 @@ class AudioValidator {
                 ];
             }
         }
-        foreach ($recommended as $tag) {
+        foreach (['album', 'date'] as $tag) {
             if (empty($normalizedTags[$tag])) {
                 $issues[] = [
                     'type'     => 'missing_metadata',
@@ -187,131 +209,91 @@ class AudioValidator {
                 ];
             }
         }
-        return $issues;
-    }
 
-    // ---------------------------------------------------------------
-    // CHECK: Bitrate
-    // ---------------------------------------------------------------
-    private static function checkBitrate(string $file): array {
-        $issues = [];
-        $cmd    = sprintf(
-            'ffprobe -v quiet -print_format json -show_format %s 2>/dev/null',
-            escapeshellarg($file)
-        );
-        $data    = json_decode(shell_exec($cmd) ?? '{}', true);
-        $bitrate = intval(($data['format']['bit_rate'] ?? 0) / 1000);
-
-        if ($bitrate <= 0) return $issues;
-
-        if ($bitrate < self::BITRATE_MIN_KBPS) {
-            $issues[] = [
-                'type'     => 'low_bitrate',
-                'severity' => 'error',
-                'detail'   => "Bitrate muy bajo: {$bitrate} kbps (mínimo recomendado: " . self::BITRATE_MIN_KBPS . " kbps)",
-            ];
-        } elseif ($bitrate > self::BITRATE_MAX_KBPS) {
-            $issues[] = [
-                'type'     => 'high_bitrate',
-                'severity' => 'warning',
-                'detail'   => "Bitrate alto: {$bitrate} kbps (máximo recomendado: " . self::BITRATE_MAX_KBPS . " kbps)",
-            ];
+        // ── Bitrate ────────────────────────────────────────────────
+        $bitrate = intval(($format['bit_rate'] ?? 0) / 1000);
+        if ($bitrate > 0) {
+            if ($bitrate < self::BITRATE_MIN_KBPS) {
+                $issues[] = [
+                    'type'     => 'low_bitrate',
+                    'severity' => 'error',
+                    'detail'   => "Bitrate muy bajo: {$bitrate} kbps (mínimo recomendado: " . self::BITRATE_MIN_KBPS . " kbps)",
+                ];
+            } elseif ($bitrate > self::BITRATE_MAX_KBPS) {
+                $issues[] = [
+                    'type'     => 'high_bitrate',
+                    'severity' => 'warning',
+                    'detail'   => "Bitrate alto: {$bitrate} kbps (máximo recomendado: " . self::BITRATE_MAX_KBPS . " kbps)",
+                ];
+            }
         }
-        return $issues;
-    }
 
-    // ---------------------------------------------------------------
-    // CHECK: Duración anómala
-    // ---------------------------------------------------------------
-    private static function checkDuration(string $file): array {
-        $issues = [];
-        $cmd    = sprintf(
-            'ffprobe -v quiet -print_format json -show_format %s 2>/dev/null',
-            escapeshellarg($file)
-        );
-        $data     = json_decode(shell_exec($cmd) ?? '{}', true);
-        $duration = floatval($data['format']['duration'] ?? 0);
-
-        if ($duration <= 0) return $issues;
-
-        if ($duration < self::DURATION_MIN_SECONDS) {
-            $issues[] = [
-                'type'     => 'duration_too_short',
-                'severity' => 'error',
-                'detail'   => sprintf("Duración anómalamente corta: %.1fs", $duration),
-            ];
-        } elseif ($duration > self::DURATION_MAX_SECONDS) {
-            $issues[] = [
-                'type'     => 'duration_too_long',
-                'severity' => 'warning',
-                'detail'   => "Duración muy larga: " . gmdate('H:i:s', (int) $duration),
-            ];
+        // ── Duración ───────────────────────────────────────────────
+        $duration = floatval($format['duration'] ?? 0);
+        if ($duration > 0) {
+            if ($duration < self::DURATION_MIN_SECONDS) {
+                $issues[] = [
+                    'type'     => 'duration_too_short',
+                    'severity' => 'error',
+                    'detail'   => sprintf("Duración anómalamente corta: %.1fs", $duration),
+                ];
+            } elseif ($duration > self::DURATION_MAX_SECONDS) {
+                $issues[] = [
+                    'type'     => 'duration_too_long',
+                    'severity' => 'warning',
+                    'detail'   => "Duración muy larga: " . gmdate('H:i:s', (int) $duration),
+                ];
+            }
         }
-        return $issues;
-    }
 
-    // ---------------------------------------------------------------
-    // CHECK: Codec vs extensión
-    // ---------------------------------------------------------------
-    private static function checkCodecFormat(string $file): array {
-        $issues = [];
-        $cmd    = sprintf(
-            'ffprobe -v quiet -print_format json -show_streams %s 2>/dev/null',
-            escapeshellarg($file)
-        );
-        $data  = json_decode(shell_exec($cmd) ?? '{}', true);
-        $codec = $data['streams'][0]['codec_name'] ?? '';
-        $ext   = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-
-        if (empty($codec) || empty($ext)) return $issues;
-
-        // Mapeo extensión → codecs aceptables
-        $acceptedCodecs = [
-            'mp3'  => ['mp3', 'mp3float'],
-            'ogg'  => ['vorbis', 'opus'],
-            'wav'  => ['pcm_s16le', 'pcm_s24le', 'pcm_s32le', 'pcm_f32le', 'pcm_u8'],
-            'm4a'  => ['aac', 'alac'],
-            'flac' => ['flac'],
-            'aac'  => ['aac'],
-        ];
-
-        if (isset($acceptedCodecs[$ext]) && !in_array($codec, $acceptedCodecs[$ext])) {
-            $issues[] = [
-                'type'     => 'codec_mismatch',
-                'severity' => 'error',
-                'detail'   => "Extensión .$ext pero codec detectado: $codec",
-            ];
+        // ── Codec vs extensión y sample rate (primer stream de audio) ──
+        $audioStream = null;
+        foreach ($streams as $s) {
+            if (($s['codec_type'] ?? '') === 'audio') {
+                $audioStream = $s;
+                break;
+            }
         }
-        return $issues;
-    }
 
-    // ---------------------------------------------------------------
-    // CHECK: Sample rate
-    // ---------------------------------------------------------------
-    private static function checkSampleRate(string $file): array {
-        $issues   = [];
-        $cmd      = sprintf(
-            'ffprobe -v quiet -print_format json -show_streams %s 2>/dev/null',
-            escapeshellarg($file)
-        );
-        $data = json_decode(shell_exec($cmd) ?? '{}', true);
-        $rate = intval($data['streams'][0]['sample_rate'] ?? 0);
+        if ($audioStream) {
+            $codec = $audioStream['codec_name'] ?? '';
+            $ext   = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 
-        if ($rate <= 0) return $issues;
-
-        $standard = [44100, 48000, 22050, 32000];
-        if (!in_array($rate, $standard)) {
-            $issues[] = [
-                'type'     => 'unusual_sample_rate',
-                'severity' => $rate < 22050 ? 'error' : 'warning',
-                'detail'   => "Sample rate inusual: {$rate} Hz (estándar: 44100 / 48000 Hz)",
+            // Codec vs extensión
+            $acceptedCodecs = [
+                'mp3'  => ['mp3', 'mp3float'],
+                'ogg'  => ['vorbis', 'opus'],
+                'wav'  => ['pcm_s16le', 'pcm_s24le', 'pcm_s32le', 'pcm_f32le', 'pcm_u8'],
+                'm4a'  => ['aac', 'alac'],
+                'flac' => ['flac'],
+                'aac'  => ['aac'],
             ];
+            if (!empty($codec) && isset($acceptedCodecs[$ext])
+                && !in_array($codec, $acceptedCodecs[$ext])) {
+                $issues[] = [
+                    'type'     => 'codec_mismatch',
+                    'severity' => 'error',
+                    'detail'   => "Extensión .$ext pero codec detectado: $codec",
+                ];
+            }
+
+            // Sample rate
+            $rate     = intval($audioStream['sample_rate'] ?? 0);
+            $standard = [44100, 48000, 22050, 32000];
+            if ($rate > 0 && !in_array($rate, $standard)) {
+                $issues[] = [
+                    'type'     => 'unusual_sample_rate',
+                    'severity' => $rate < 22050 ? 'error' : 'warning',
+                    'detail'   => "Sample rate inusual: {$rate} Hz (estándar: 44100 / 48000 Hz)",
+                ];
+            }
         }
+
         return $issues;
     }
 
     // ---------------------------------------------------------------
-    // CHECK: Silencios al inicio, al final e internos
+    // CHECK LENTO: Silencios al inicio, al final e internos
     // ---------------------------------------------------------------
     private static function checkSilences(string $file): array {
         $issues    = [];
@@ -329,7 +311,6 @@ class AudioValidator {
         preg_match_all('/silence_start: ([\d.]+)/', $output, $starts);
         preg_match_all('/silence_end: ([\d.]+) \| silence_duration: ([\d.]+)/', $output, $ends);
 
-        // Duración total del archivo
         preg_match('/Duration:\s+(\d+):(\d+):([\d.]+)/', $output, $durMatch);
         $totalDuration = isset($durMatch[1])
             ? ($durMatch[1] * 3600 + $durMatch[2] * 60 + floatval($durMatch[3]))
@@ -342,21 +323,18 @@ class AudioValidator {
             $end      = floatval($ends[1][$i] ?? $totalDuration);
             $duration = floatval($ends[2][$i] ?? ($totalDuration - $start));
 
-            // Silencio al inicio: empieza antes del primer segundo
             if ($start < 1.0) {
                 $issues[] = [
                     'type'     => 'leading_silence',
                     'severity' => 'warning',
                     'detail'   => sprintf("Silencio al inicio: %.2fs", $duration),
                 ];
-            // Silencio al final: termina cerca del final del archivo
             } elseif ($totalDuration > 0 && ($totalDuration - $end) < 1.0) {
                 $issues[] = [
                     'type'     => 'trailing_silence',
                     'severity' => 'warning',
                     'detail'   => sprintf("Silencio al final: %.2fs", $duration),
                 ];
-            // Silencio interno
             } else {
                 $issues[] = [
                     'type'     => 'internal_silence',
@@ -373,7 +351,7 @@ class AudioValidator {
     }
 
     // ---------------------------------------------------------------
-    // CHECK: Loudness EBU R128 (-23 LUFS objetivo de radiodifusión)
+    // CHECK LENTO: Loudness EBU R128 (-23 LUFS objetivo radiodifusión)
     // ---------------------------------------------------------------
     private static function checkLoudness(string $file): array {
         $issues = [];
@@ -383,12 +361,11 @@ class AudioValidator {
         );
         $output = shell_exec($cmd) ?? '';
 
-        // ffmpeg escupe el JSON al final del stderr
         if (preg_match('/\{[^}]+\}/s', $output, $match)) {
-            $data = json_decode($match[0], true);
-            $lufs = floatval($data['input_i'] ?? 0);
+            $info = json_decode($match[0], true);
+            $lufs = floatval($info['input_i'] ?? 0);
 
-            if ($lufs < -70 || $lufs >= 0) return $issues; // valores inválidos
+            if ($lufs < -70 || $lufs >= 0) return $issues;
 
             $diff = abs($lufs - self::LUFS_TARGET);
             if ($diff > self::LUFS_TOLERANCE) {
@@ -408,7 +385,7 @@ class AudioValidator {
     }
 
     // ---------------------------------------------------------------
-    // CHECK: Clipping / saturación
+    // CHECK LENTO: Clipping / saturación
     // ---------------------------------------------------------------
     private static function checkClipping(string $file): array {
         $issues = [];

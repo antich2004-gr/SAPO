@@ -1403,9 +1403,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         require_once INCLUDES_DIR . '/audio_validator.php';
 
+        // Checks lentos opcionales (pueden causar timeout si hay muchos archivos)
+        $slowOptions = [
+            'silences' => !empty($_POST['check_silences']),
+            'loudness' => !empty($_POST['check_loudness']),
+            'clipping' => !empty($_POST['check_clipping']),
+        ];
+
         try {
-            $scanResult = AudioValidator::scanDirectory($mediaPath, $basePath . DIRECTORY_SEPARATOR . $targetUsername);
-            $scanResult['scan_date'] = date('d/m/Y H:i');
+            $scanResult = AudioValidator::scanDirectory($mediaPath, $basePath . DIRECTORY_SEPARATOR . $targetUsername, $slowOptions);
+            $scanResult['scan_date']    = date('d/m/Y H:i');
+            $scanResult['slow_options'] = $slowOptions;
 
             $stationName = $targetUser['station_name'];
 
