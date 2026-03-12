@@ -1356,6 +1356,70 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit;
     }
 
+    // AJAX: Análisis de calidad de audio (solo admin)
+    if ($action == 'run_audio_quality_scan' && isAdmin()) {
+        header('Content-Type: application/json');
+
+        $token = $_POST['csrf_token'] ?? '';
+        if (!validateCSRFToken($token)) {
+            echo json_encode(['success' => false, 'message' => ERROR_INVALID_TOKEN]);
+            exit;
+        }
+
+        $targetUsername = trim($_POST['username'] ?? '');
+
+        // Validar que el username existe y no es admin
+        $allUsers = getAllUsers();
+        $targetUser = null;
+        foreach ($allUsers as $u) {
+            if ($u['username'] === $targetUsername && !($u['is_admin'] ?? false)) {
+                $targetUser = $u;
+                break;
+            }
+        }
+
+        if (!$targetUser) {
+            echo json_encode(['success' => false, 'message' => 'Emisora no válida o no encontrada.']);
+            exit;
+        }
+
+        // Obtener ruta de medios de la emisora
+        $config   = getConfig();
+        $basePath = rtrim($config['base_path'] ?? '', '/\\');
+
+        if (empty($basePath)) {
+            echo json_encode(['success' => false, 'message' => 'La ruta base no está configurada en el panel de administración.']);
+            exit;
+        }
+
+        // Validar path traversal en username
+        if (strpos($targetUsername, '..') !== false
+            || strpos($targetUsername, '/') !== false
+            || strpos($targetUsername, DIRECTORY_SEPARATOR) !== false) {
+            echo json_encode(['success' => false, 'message' => 'Nombre de usuario no válido.']);
+            exit;
+        }
+
+        $podcastsFolder = $config['podcasts_folder'] ?? 'Podcasts';
+        $mediaPath      = $basePath . DIRECTORY_SEPARATOR . $targetUsername
+                        . DIRECTORY_SEPARATOR . 'media'
+                        . DIRECTORY_SEPARATOR . $podcastsFolder;
+
+        require_once INCLUDES_DIR . '/audio_validator.php';
+
+        $scanResult = AudioValidator::scanDirectory($mediaPath, $basePath . DIRECTORY_SEPARATOR . $targetUsername);
+        $scanResult['scan_date'] = date('d/m/Y H:i');
+
+        $stationName = $targetUser['station_name'];
+
+        ob_start();
+        include 'views/audio_quality_view.php';
+        $html = ob_get_clean();
+
+        echo json_encode(['success' => true, 'html' => $html]);
+        exit;
+    }
+
     // REFRESH FEEDS
     if ($action == 'refresh_feeds' && isLoggedIn() && !isAdmin()) {
         $updated = refreshAllFeeds($_SESSION['username']);

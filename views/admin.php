@@ -95,6 +95,44 @@ $users = getAllUsers();
         </form>
     </div>
     
+    <!-- ============================================================
+         SECCIÓN: Calidad de Audio (solo admin)
+         ============================================================ -->
+    <div class="section">
+        <h3>Análisis de Calidad de Audio</h3>
+        <p style="color: #4a5568; font-size: 14px; margin-bottom: 15px;">
+            Analiza los archivos de audio de una emisora y genera un informe con silencios, metadatos incompletos,
+            bitrates incorrectos, saturación (clipping), nivel de volumen (LUFS) y otros problemas de calidad.
+        </p>
+
+        <div style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 15px;">
+            <div class="form-group" style="margin: 0; flex: 1; min-width: 200px;">
+                <label style="font-size: 13px; margin-bottom: 5px;">Emisora a analizar:</label>
+                <select id="audioQualityStation" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 4px;">
+                    <option value="">-- Selecciona una emisora --</option>
+                    <?php foreach ($users as $u): if ($u['is_admin'] ?? false) continue; ?>
+                    <option value="<?php echo htmlEsc($u['username']); ?>"
+                            data-station="<?php echo htmlEsc($u['station_name']); ?>">
+                        <?php echo htmlEsc($u['station_name']); ?> (<?php echo htmlEsc($u['username']); ?>)
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <button type="button" class="btn btn-primary" id="btnRunAudioQuality"
+                    onclick="runAudioQualityScan()"
+                    style="white-space: nowrap;">
+                <span class="btn-icon">&#128266;</span> Analizar
+            </button>
+        </div>
+
+        <div id="audioQualityProgress" style="display: none; color: #718096; font-size: 14px; margin-bottom: 10px;">
+            <span style="display: inline-block; animation: spin 1s linear infinite; margin-right: 6px;">&#8987;</span>
+            Analizando archivos de audio… Esto puede tardar varios minutos dependiendo del tamaño de la librería.
+        </div>
+
+        <div id="audioQualityResult" style="display: none;"></div>
+    </div>
+
     <div class="user-list">
         <h3>Usuarios Registrados</h3>
         <?php
@@ -239,4 +277,51 @@ document.getElementById('passwordModal').addEventListener('click', function(e) {
         hidePasswordModal();
     }
 });
+
+// ---- Análisis de calidad de audio ----
+function runAudioQualityScan() {
+    const select = document.getElementById('audioQualityStation');
+    const username = select.value;
+    if (!username) {
+        alert('Selecciona una emisora primero.');
+        return;
+    }
+
+    const btn      = document.getElementById('btnRunAudioQuality');
+    const progress = document.getElementById('audioQualityProgress');
+    const result   = document.getElementById('audioQualityResult');
+
+    btn.disabled      = true;
+    progress.style.display = 'block';
+    result.style.display   = 'none';
+    result.innerHTML       = '';
+
+    const formData = new FormData();
+    formData.append('action', 'run_audio_quality_scan');
+    formData.append('username', username);
+    formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+
+    fetch('', {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        progress.style.display = 'none';
+        btn.disabled = false;
+        result.style.display = 'block';
+        if (data.success) {
+            result.innerHTML = data.html;
+        } else {
+            result.innerHTML = '<div class="alert alert-danger">' +
+                (data.message || 'Error al realizar el análisis.') + '</div>';
+        }
+    })
+    .catch(() => {
+        progress.style.display = 'none';
+        btn.disabled = false;
+        result.style.display = 'block';
+        result.innerHTML = '<div class="alert alert-danger">Error de comunicación con el servidor.</div>';
+    });
+}
 </script>
