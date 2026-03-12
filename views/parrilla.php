@@ -1416,10 +1416,11 @@ if ($hasStationId) {
                                 $overlapMinutes = $overlapEnd - $overlapStart;
                                 $totalOverlapMinutes += $overlapMinutes;
 
-                                // Guardar segmento para visualización
+                                // Guardar segmento para visualización con info de los programas solapados
                                 $overlapSegments[] = [
                                     'start' => $overlapStart > 1440 ? $overlapStart - 1440 : $overlapStart,
-                                    'end' => $overlapEnd > 1440 ? $overlapEnd - 1440 : $overlapEnd
+                                    'end'   => $overlapEnd > 1440 ? $overlapEnd - 1440 : $overlapEnd,
+                                    'programs' => $a['title'] . ' (' . $a['start_time'] . '–' . $a['end_time'] . ') · ' . $b['title'] . ' (' . $b['start_time'] . '–' . $b['end_time'] . ')'
                                 ];
                             }
                         }
@@ -1563,7 +1564,7 @@ if ($hasStationId) {
                                 ?>
                                     <div class="coverage-timeline-segment overlap"
                                          style="left: <?php echo $leftPct; ?>%; width: <?php echo $widthPct; ?>%;"
-                                         title="⚠️ Solapamiento">
+                                         title="⚠️ Solapamiento: <?php echo htmlspecialchars($overlap['programs']); ?>">
                                     </div>
                                 <?php endforeach; ?>
                                 <!-- Rayitas de hora -->
