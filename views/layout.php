@@ -18,6 +18,17 @@
         <div class="subtitle">Sistema de Automatización de Podcasts</div>
     </div>
 
+    <?php if (isImpersonating()): ?>
+    <div style="background: #1e40af; color: white; padding: 10px 20px; margin-bottom: 15px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+        <span>👤 Viendo como <strong><?php echo htmlEsc($_SESSION['station_name']); ?></strong> (<?php echo htmlEsc($_SESSION['username']); ?>)</span>
+        <form method="POST" style="margin: 0;">
+            <input type="hidden" name="action" value="stop_impersonating">
+            <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+            <button type="submit" style="background: white; color: #1e40af; border: none; padding: 5px 14px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px;">← Volver a Admin</button>
+        </form>
+    </div>
+    <?php endif; ?>
+
     <?php if (!empty($message)): ?>
         <div class="alert alert-success"><?php echo htmlEsc($message); ?></div>
     <?php endif; ?>

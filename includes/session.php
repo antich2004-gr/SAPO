@@ -75,3 +75,35 @@ function requireAdmin() {
         exit;
     }
 }
+
+function isImpersonating() {
+    return isset($_SESSION['impersonating_admin_id']);
+}
+
+function startImpersonating($user) {
+    $_SESSION['impersonating_admin_id']           = $_SESSION['user_id'];
+    $_SESSION['impersonating_admin_username']      = $_SESSION['username'];
+    $_SESSION['impersonating_admin_station_name']  = $_SESSION['station_name'];
+
+    $_SESSION['user_id']      = $user['id'];
+    $_SESSION['username']     = $user['username'];
+    $_SESSION['station_name'] = $user['station_name'];
+    $_SESSION['is_admin']     = false;
+
+    unset($_SESSION['csrf_token']);
+    session_regenerate_id(true);
+}
+
+function stopImpersonating() {
+    $_SESSION['user_id']      = $_SESSION['impersonating_admin_id'];
+    $_SESSION['username']     = $_SESSION['impersonating_admin_username'];
+    $_SESSION['station_name'] = $_SESSION['impersonating_admin_station_name'];
+    $_SESSION['is_admin']     = true;
+
+    unset($_SESSION['impersonating_admin_id']);
+    unset($_SESSION['impersonating_admin_username']);
+    unset($_SESSION['impersonating_admin_station_name']);
+
+    unset($_SESSION['csrf_token']);
+    session_regenerate_id(true);
+}

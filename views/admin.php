@@ -140,11 +140,17 @@ $users = getAllUsers();
                     </div>
                     <?php endif; ?>
                 </div>
-                <div style="display: flex; gap: 10px;">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <button type="button" class="btn btn-warning" onclick="showPasswordModal('<?php echo htmlEsc($user['username']); ?>', '<?php echo htmlEsc($user['station_name']); ?>')">
                         <span class="btn-icon">🔑</span> Cambiar Contraseña
                     </button>
                     <?php if (!$isAdminUser): ?>
+                    <form method="POST" style="display: inline;">
+                        <input type="hidden" name="action" value="impersonate_user">
+                        <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                        <input type="hidden" name="user_id" value="<?php echo htmlEsc($user['id']); ?>">
+                        <button type="submit" class="btn btn-primary"><span class="btn-icon">👤</span> Entrar como</button>
+                    </form>
                     <form method="POST" style="display: inline;">
                         <input type="hidden" name="action" value="delete_user">
                         <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
