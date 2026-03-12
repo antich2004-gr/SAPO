@@ -1145,7 +1145,7 @@ if ($hasStationId) {
                             ❌ Programas sin contenido - Carpeta vacía (<?php echo count($criticalPrograms); ?>)
                             <i class="stale-chevron">▾</i>
                         </div>
-                        <div class="stale-programs-body">
+                        <div class="stale-programs-body collapsed">
                         <p style="font-size: 12px; color: #991b1b; margin-bottom: 12px;">
                             <strong>Estos programas NO tienen archivos en Radiobot y no podrán emitir.</strong>
                             La carpeta de la playlist está vacía. Necesitan que se les añadan archivos.
