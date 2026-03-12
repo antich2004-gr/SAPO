@@ -596,7 +596,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 if ($result['success']) {
                     loginUser($result['user']);
 
-                    // Verificar si han pasado más de 8 horas desde la última actualización de feeds
+                    // Verificar si han pasado más de 24 horas desde la última actualización de feeds
                     $redirect_url = basename($_SERVER['PHP_SELF']);
 
                     // Solo verificar para usuarios no-admin
