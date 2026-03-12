@@ -924,9 +924,10 @@ if ($hasStationId) {
                         user-select: none;
                     }
                     .stale-programs-title .stale-chevron {
-                        margin-left: auto;
+                        font-size: 1.4em;
                         transition: transform 0.2s;
                         font-style: normal;
+                        order: -1;
                     }
                     .stale-programs-title.collapsed .stale-chevron {
                         transform: rotate(-90deg);
