@@ -295,9 +295,9 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     Estos podcasts llevan más de 30 días sin publicar episodios nuevos en su RSS.
                                 </p>
                                 <?php foreach ($dashboardAlerts['warning'] as $alert): ?>
-                                <div class="stale-program-item">
-                                    <div class="stale-program-name">📻 <?php echo htmlEsc($alert['title']); ?></div>
-                                    <div class="stale-program-message"><?php echo htmlEsc($alert['message']); ?></div>
+                                <div style="font-size:12px; padding:3px 0; border-bottom:1px solid #fde68a; display:flex; justify-content:space-between; gap:12px;">
+                                    <span>📻 <?php echo htmlEsc($alert['title']); ?></span>
+                                    <span style="color:#b45309; white-space:nowrap;"><?php echo htmlEsc($alert['message']); ?></span>
                                 </div>
                                 <?php endforeach; ?>
                             </div>
