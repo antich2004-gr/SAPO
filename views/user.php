@@ -82,6 +82,28 @@ $currentPage = min($currentPage, max(1, $totalPages)); // Asegurar que la págin
 $offset = ($currentPage - 1) * $itemsPerPage;
 $podcastsPaginated = array_slice($podcasts, $offset, $itemsPerPage);
 
+// ── Dashboard: conteo de podcasts por estado de RSS ──────────────────────────
+$podcastCounts = ['green' => 0, 'yellow' => 0, 'red' => 0, 'unknown' => 0];
+$dashboardAlerts = ['warning' => []]; // RSS sin actualizar (>30 días)
+foreach ($podcasts as $podcast) {
+    if (($podcast['type'] ?? 'rss') === 'ytdlp') {
+        $podcastCounts['green']++;
+        continue;
+    }
+    $fi  = getCachedFeedInfo($podcast['url']);
+    $si  = formatFeedStatus($fi['timestamp']);
+    $cls = $si['class'] ?? 'unknown';
+    if (array_key_exists($cls, $podcastCounts)) $podcastCounts[$cls]++;
+    else $podcastCounts['unknown']++;
+    if (in_array($cls, ['yellow', 'red'])) {
+        $days = $si['days'] ?? 0;
+        $dashboardAlerts['warning'][] = [
+            'title'   => displayName($podcast['name']),
+            'message' => "RSS sin actualizar ({$days} días)",
+        ];
+    }
+}
+
 // Detectar si estamos editando
 $isEditing = isset($_GET['edit']) && is_numeric($_GET['edit']);
 $editIndex = $isEditing ? intval($_GET['edit']) : null;
@@ -89,10 +111,9 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
 <div class="card">
     <div class="nav-buttons">
-        <h2>Mis Podcasts</h2>
+        <div></div>
         <div style="text-align: right;">
             <p style="margin: 0 0 10px 0; color: #4a5568; font-size: 14px;">Conectado como <strong><?php echo htmlEsc($_SESSION['station_name']); ?></strong></p>
-            <a href="?page=parrilla" class="btn btn-primary" style="margin-right: 10px;"><span class="btn-icon">📺</span> Parrilla</a>
             <a href="?page=help" class="btn btn-secondary" style="margin-right: 10px;"><span class="btn-icon">📖</span> Ayuda</a>
             <form method="POST" style="display: inline;">
                 <input type="hidden" name="action" value="logout">
@@ -160,16 +181,215 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
         
         <div class="tabs-container">
             <div class="tabs-header">
-                <button class="tab-button active" data-tab="podcasts" onclick="switchTab('podcasts')">Mis Podcasts</button>
-                <button class="tab-button" data-tab="importar" onclick="switchTab('importar')">Importar/Exportar</button>
-                <button class="tab-button" data-tab="descargas" onclick="switchTab('descargas')">Descargas</button>
+                <button class="tab-button active" data-tab="misapo" onclick="switchTab('misapo'); loadDashboardStats()">Mi SAPO</button>
+                <button class="tab-button" data-tab="podcasts" onclick="switchTab('podcasts')">Mis Podcasts</button>
                 <button class="tab-button" data-tab="config" onclick="switchTab('config')">Señales horarias</button>
                 <button class="tab-button" data-tab="recordings" onclick="switchTab('recordings'); loadRecordings()">🎙️ Grabaciones</button>
+                <button class="tab-button" data-tab="parrilla-link" onclick="window.location='?page=parrilla'">Asistente Parrilla</button>
             </div>
             
             <div class="tabs-content">
+                <!-- PESTAÑA 0: MI SAPO (dashboard) -->
+                <div id="tab-misapo" class="tab-panel active">
+
+                    <!-- ① ALERTAS -->
+                    <?php if (!empty($dashboardAlerts['warning'])): ?>
+                    <div style="margin-bottom: 30px;">
+                        <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #2d3748; display: flex; align-items: center; gap: 8px;">
+                            <span style="background:#e53e3e;color:white;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">!</span>
+                            Alertas
+                        </h3>
+                        <div class="stale-programs-panel">
+                            <div class="stale-programs-title" onclick="toggleStalePanel(this)">
+                                ⚠️ Programas con RSS sin actualizar (<?php echo count($dashboardAlerts['warning']); ?>)
+                                <i class="stale-chevron">▾</i>
+                            </div>
+                            <div class="stale-programs-body collapsed">
+                                <p style="font-size: 12px; color: #92400e; margin-bottom: 12px;">
+                                    Estos podcasts llevan más de 30 días sin publicar episodios nuevos en su RSS.
+                                </p>
+                                <?php foreach ($dashboardAlerts['warning'] as $alert): ?>
+                                <div class="stale-program-item">
+                                    <div class="stale-program-name">📻 <?php echo htmlEsc($alert['title']); ?></div>
+                                    <div class="stale-program-message"><?php echo htmlEsc($alert['message']); ?></div>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- ② INFO -->
+                    <div style="margin-bottom: 30px;">
+                        <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #2d3748; display: flex; align-items: center; gap: 8px;">
+                            <span style="background:#3182ce;color:white;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">i</span>
+                            Info
+                        </h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+
+                            <!-- Podcasts suscritos -->
+                            <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; background: #fff;">
+                                <div style="display: flex; align-items: center; gap: 20px;">
+                                    <div>
+                                        <div style="font-size: 13px; color: #4a5568; font-weight: 600; margin-bottom: 8px;">Podcast suscritos</div>
+                                        <div style="font-size: 52px; font-weight: 800; color: #1a202c; line-height: 1;"><?php echo count($podcasts); ?></div>
+                                    </div>
+                                    <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                                        <div style="display: flex; align-items: center; justify-content: space-between; background: #38a169; color: white; border-radius: 6px; padding: 6px 12px;">
+                                            <span style="font-size: 12px;">&lt;30d</span>
+                                            <strong style="font-size: 18px;"><?php echo $podcastCounts['green']; ?></strong>
+                                        </div>
+                                        <div style="display: flex; align-items: center; justify-content: space-between; background: #d97706; color: white; border-radius: 6px; padding: 6px 12px;">
+                                            <span style="font-size: 12px;">30 a 60d</span>
+                                            <strong style="font-size: 18px;"><?php echo $podcastCounts['yellow']; ?></strong>
+                                        </div>
+                                        <div style="display: flex; align-items: center; justify-content: space-between; background: #e53e3e; color: white; border-radius: 6px; padding: 6px 12px;">
+                                            <span style="font-size: 12px;">&gt;60d</span>
+                                            <strong style="font-size: 18px;"><?php echo $podcastCounts['red']; ?></strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Grabaciones almacenadas -->
+                            <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; background: #fff;">
+                                <div style="display: flex; align-items: center; gap: 20px;">
+                                    <div>
+                                        <div style="font-size: 13px; color: #4a5568; font-weight: 600; margin-bottom: 8px;">Grabaciones almacenadas</div>
+                                        <div id="db-total-count" style="font-size: 52px; font-weight: 800; color: #1a202c; line-height: 1;">-</div>
+                                    </div>
+                                    <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                                        <div style="display: flex; align-items: center; justify-content: space-between; background: #718096; color: white; border-radius: 6px; padding: 6px 12px;">
+                                            <span style="font-size: 12px;">Espacio usado</span>
+                                            <strong style="font-size: 13px;" id="db-total-size">-</strong>
+                                        </div>
+                                        <div style="display: flex; align-items: center; justify-content: space-between; background: #e53e3e; color: white; border-radius: 6px; padding: 6px 12px;">
+                                            <span style="font-size: 12px;">Grabaciones antiguas</span>
+                                            <strong style="font-size: 13px;" id="db-old-count">-</strong>
+                                        </div>
+                                        <div style="display: flex; align-items: center; justify-content: space-between; background: #e53e3e; color: white; border-radius: 6px; padding: 6px 12px;">
+                                            <span style="font-size: 12px;">Espacio a liberar</span>
+                                            <strong style="font-size: 13px;" id="db-old-size">-</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- ③ HERRAMIENTAS -->
+                    <div style="margin-bottom: 30px;">
+                        <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #2d3748; display: flex; align-items: center; gap: 8px;">
+                            <span style="background:#d97706;color:white;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;line-height:1;">⚙</span>
+                            Herramientas
+                        </h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+
+                            <!-- Ejecutar descargas -->
+                            <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; background: #fff;">
+                                <div style="font-size: 14px; font-weight: 600; color: #2d3748; margin-bottom: 6px;">Ejecutar Descargas</div>
+                                <p style="color: #718096; font-size: 13px; margin: 0 0 15px 0;">
+                                    Forzar ahora la descarga de nuevos episodios de todos tus podcasts suscritos
+                                </p>
+                                <button type="button" class="btn btn-success" onclick="executePodgetViaAjax();">
+                                    <span class="btn-icon">🚀</span> Ejecutar descargas para <?php echo htmlEsc($_SESSION['station_name']); ?>
+                                </button>
+                                <div id="podget-status" style="margin-top: 15px;"></div>
+                                <div id="podget-log-viewer" style="display:none; margin-top: 15px;">
+                                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 8px;">
+                                        <strong style="color:#4a5568; font-size:13px;">📋 Log en tiempo real</strong>
+                                        <span id="podget-log-status" style="font-size:12px; color:#718096;"></span>
+                                    </div>
+                                    <pre id="podget-log-content" style="
+                                        background:#1a202c; color:#68d391; font-size:12px; line-height:1.5;
+                                        padding:16px; border-radius:8px; max-height:300px; overflow-y:auto;
+                                        white-space:pre-wrap; word-break:break-all; margin:0;
+                                    "></pre>
+                                </div>
+                            </div>
+
+                            <!-- Importar / Exportar -->
+                            <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; background: #fff;">
+                                <div style="font-size: 14px; font-weight: 600; color: #2d3748; margin-bottom: 12px;">Importar podcasts</div>
+                                <p style="color: #718096; font-size: 13px; margin: 0 0 10px 0;">Seleccionar archivo...</p>
+                                <form method="POST" enctype="multipart/form-data" style="margin-bottom: 20px;">
+                                    <input type="hidden" name="action" value="import_serverlist">
+                                    <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                        <div class="file-input-wrapper">
+                                            <label class="file-label" for="serverlist_file_dash">Seleccionar archivo...</label>
+                                            <input type="file" name="serverlist_file" id="serverlist_file_dash" accept=".txt" required onchange="showFileName(this)">
+                                        </div>
+                                        <span class="selected-file" id="fileName_dash"></span>
+                                        <button type="submit" class="btn btn-success"><span class="btn-icon">📥</span> Importar</button>
+                                    </div>
+                                </form>
+                                <div style="font-size: 14px; font-weight: 600; color: #2d3748; margin-bottom: 10px;">Exportar podcasts</div>
+                                <form method="POST">
+                                    <input type="hidden" name="action" value="export_serverlist">
+                                    <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                                    <button type="submit" class="btn btn-primary"><span class="btn-icon">📤</span> Descargar mi serverlist.txt</button>
+                                </form>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- ④ ÚLTIMOS EPISODIOS DESCARGADOS -->
+                    <div>
+                        <h3 style="margin: 0 0 5px 0; font-size: 16px; color: #2d3748; display: flex; align-items: center; gap: 8px;">
+                            <span style="background:#d97706;color:white;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;line-height:1;">●</span>
+                            Últimos episodios descargados
+                        </h3>
+                        <h4 style="margin: 0 0 4px 0; font-size: 14px; color: #4a5568;">🎙️ Últimos Episodios Descargados (esta semana)</h4>
+                        <p style="color: #718096; font-size: 13px; margin: 0 0 15px 0;">Listado de los episodios descargados en los últimos 7 días</p>
+                        <?php
+                        $allEpisodesDash = [];
+                        $reportsDash = getAvailableReports($_SESSION['username']);
+                        if (!empty($reportsDash)) {
+                            $cutoffDate = strtotime("-7 days");
+                            foreach ($reportsDash as $reportInfo) {
+                                if ($reportInfo['timestamp'] >= $cutoffDate) {
+                                    $reportData = parseReportFile($reportInfo['file']);
+                                    if ($reportData && !empty($reportData['podcasts_hoy'])) {
+                                        foreach ($reportData['podcasts_hoy'] as $ep) {
+                                            $ep['report_date'] = $reportInfo['display_date'];
+                                            $allEpisodesDash[] = $ep;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (!empty($allEpisodesDash)):
+                        ?>
+                        <div style="background: #f7fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <?php foreach (array_slice($allEpisodesDash, 0, 30) as $ep):
+                                $parts = explode(' ', $ep['fecha']);
+                                $epDate = $parts[0] ?? '';
+                                $epTime = $parts[1] ?? '';
+                            ?>
+                            <div style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #2d3748;">
+                                <?php echo htmlEsc($epDate) . ' - ' . htmlEsc($epTime) . ' - ' . htmlEsc($ep['podcast']) . ' - ' . htmlEsc($ep['archivo']); ?>
+                            </div>
+                            <?php endforeach; ?>
+                            <?php if (count($allEpisodesDash) > 30): ?>
+                            <div style="text-align: center; padding: 20px; color: #718096; font-size: 14px;">
+                                ... y <?php echo htmlEsc(count($allEpisodesDash) - 30); ?> episodios más
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                        <?php else: ?>
+                        <div class="alert alert-info">
+                            No hay episodios descargados en los últimos 7 días. Los informes se generan automáticamente cuando ejecutas las descargas.
+                        </div>
+                        <?php endif; ?>
+                    </div>
+
+                </div><!-- /tab-misapo -->
+
                 <!-- PESTAÑA 1: MIS PODCASTS -->
-                <div id="tab-podcasts" class="tab-panel active">
+                <div id="tab-podcasts" class="tab-panel">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 10px;">
                         <h3 style="margin: 0;">Podcasts Suscritos</h3>
                         <button type="button" class="btn btn-success" onclick="showAddPodcastModal()">
@@ -559,112 +779,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     <?php endif; ?>
                 </div>
                 
-                <!-- PESTAÑA 2: IMPORTAR/EXPORTAR -->
-                <div id="tab-importar" class="tab-panel">
-                    <p style="color: #718096; margin-bottom: 15px;">Importa podcasts desde un archivo serverlist.txt o exporta tu lista actual.</p>
-                    
-                    <h4 style="margin-top: 30px; margin-bottom: 15px;">Importar podcasts</h4>
-                    <form method="POST" enctype="multipart/form-data">
-                        <input type="hidden" name="action" value="import_serverlist">
-                        <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                        <div class="file-input-wrapper">
-                            <label class="file-label" for="serverlist_file">
-                                Seleccionar archivo...
-                            </label>
-                            <input type="file" name="serverlist_file" id="serverlist_file" accept=".txt" required onchange="showFileName(this)">
-                        </div>
-                        <span class="selected-file" id="fileName"></span>
-                        <button type="submit" class="btn btn-success"><span class="btn-icon">📥</span> Importar</button>
-                    </form>
-                    
-                    <h4 style="margin-top: 30px; margin-bottom: 15px;">Exportar podcasts</h4>
-                    <form method="POST">
-                        <input type="hidden" name="action" value="export_serverlist">
-                        <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                        <button type="submit" class="btn btn-primary"><span class="btn-icon">📤</span> Descargar mi serverlist.txt</button>
-                    </form>
-                </div>
-                
-                <!-- PESTAÑA 3: DESCARGAS -->
-                <div id="tab-descargas" class="tab-panel">
-                    <h4>Ejecutar Descargas</h4>
-                    <p style="color: #718096; margin-bottom: 20px;">Descarga los nuevos episodios de todos tus podcasts suscritos en el servidor.</p>
-                    
-                    <button type="button" class="btn btn-info" style="font-size: 16px; padding: 15px 30px;" onclick="executePodgetViaAjax();">
-                        <span class="btn-icon">🚀</span> Ejecutar descargas para <?php echo htmlEsc($_SESSION['station_name']); ?>
-                    </button>
-                    
-                    <div id="podget-status" style="margin-top: 20px;"></div>
-
-                    <!-- VISOR DE LOG EN TIEMPO REAL -->
-                    <div id="podget-log-viewer" style="display:none; margin-top: 20px;">
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 8px;">
-                            <strong style="color:#4a5568;">📋 Log en tiempo real</strong>
-                            <span id="podget-log-status" style="font-size:12px; color:#718096;"></span>
-                        </div>
-                        <pre id="podget-log-content" style="
-                            background:#1a202c; color:#68d391; font-size:12px; line-height:1.5;
-                            padding:16px; border-radius:8px; max-height:400px; overflow-y:auto;
-                            white-space:pre-wrap; word-break:break-all; margin:0;
-                        "></pre>
-                    </div>
-
-                    <!-- ÚLTIMOS EPISODIOS DESCARGADOS -->
-                    <div style="margin-top: 40px; border-top: 2px solid #e2e8f0; padding-top: 30px;">
-                        <h4>🎙️ Últimos Episodios Descargados (esta semana)</h4>
-                        <p style="color: #718096; margin-bottom: 20px;">Listado de los episodios descargados en los últimos 7 días</p>
-
-                        <?php
-                        // Cargar informes de los últimos 7 días
-                        $allEpisodes = [];
-                        $reports = getAvailableReports($_SESSION['username']);
-
-                        if (!empty($reports)) {
-                            $cutoffDate = strtotime("-7 days");
-                            foreach ($reports as $reportInfo) {
-                                if ($reportInfo['timestamp'] >= $cutoffDate) {
-                                    $reportData = parseReportFile($reportInfo['file']);
-                                    if ($reportData && !empty($reportData['podcasts_hoy'])) {
-                                        foreach ($reportData['podcasts_hoy'] as $episode) {
-                                            $episode['report_date'] = $reportInfo['display_date'];
-                                            $allEpisodes[] = $episode;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        if (!empty($allEpisodes)):
-                        ?>
-                            <div style="background: #f7fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                                <?php foreach (array_slice($allEpisodes, 0, 30) as $episode): ?>
-                                    <?php
-                                    // Dividir fecha en fecha y hora: "09-11-2025 11:01:48"
-                                    $parts = explode(' ', $episode['fecha']);
-                                    $date = isset($parts[0]) ? $parts[0] : '';
-                                    $time = isset($parts[1]) ? $parts[1] : '';
-                                    ?>
-                                    <div style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #2d3748;">
-                                        <?php
-                                        echo htmlEsc($date) . ' - ' . htmlEsc($time) . ' - ' .
-                                             htmlEsc($episode['podcast']) . ' - ' . htmlEsc($episode['archivo']);
-                                        ?>
-                                    </div>
-                                <?php endforeach; ?>
-
-                                <?php if (count($allEpisodes) > 30): ?>
-                                    <div style="text-align: center; padding: 20px; color: #718096; font-size: 14px;">
-                                        ... y <?php echo htmlEsc(count($allEpisodes) - 30); ?> episodios más
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        <?php else: ?>
-                            <div class="alert alert-info">
-                                No hay episodios descargados en los últimos 7 días. Los informes se generan automáticamente cuando ejecutas las descargas.
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
 
                 <!-- PESTAÑA 4: CONFIGURACIÓN -->
                 <div id="tab-config" class="tab-panel">
@@ -1802,6 +1916,28 @@ function saveRecordingsConfig() {
 }
 
 /**
+ * Cargar estadísticas de grabaciones en el dashboard (Mi SAPO)
+ */
+let dashboardStatsLoaded = false;
+function loadDashboardStats() {
+    if (dashboardStatsLoaded) return;
+    fetch('?action=get_recordings_stats')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.stats) {
+                const s = data.stats;
+                const el = id => document.getElementById(id);
+                if (el('db-total-count')) el('db-total-count').textContent = s.total_count;
+                if (el('db-total-size'))  el('db-total-size').textContent  = s.total_size_formatted;
+                if (el('db-old-count'))   el('db-old-count').textContent   = s.old_count;
+                if (el('db-old-size'))    el('db-old-size').textContent    = s.old_size_formatted;
+                dashboardStatsLoaded = true;
+            }
+        })
+        .catch(() => {});
+}
+
+/**
  * Cargar estadísticas de grabaciones
  */
 function loadRecordingsStats() {
@@ -2007,11 +2143,12 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Si la página carga con la pestaña de grabaciones activa (ej: recarga de página), cargar datos
+/// Cargar datos del panel activo al iniciar
 document.addEventListener('DOMContentLoaded', function() {
     const activeTab = document.querySelector('.tab-panel.active');
-    if (activeTab && activeTab.id === 'tab-recordings') {
-        loadRecordings();
+    if (activeTab) {
+        if (activeTab.id === 'tab-recordings') loadRecordings();
+        if (activeTab.id === 'tab-misapo')     loadDashboardStats();
     }
 });
 
