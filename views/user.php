@@ -113,10 +113,10 @@ foreach ($podcasts as $podcast) {
 $azPlaylists = getAzuracastPlaylists($_SESSION['username']);
 if (is_array($azPlaylists)) {
     foreach ($azPlaylists as $pl) {
-        if (($pl['num_songs'] ?? -1) === 0) {
+        if (($pl['num_songs'] ?? -1) === 0 && ($pl['is_enabled'] ?? true)) {
             $dashboardAlerts['critical'][] = [
                 'title'   => $pl['name'] ?? '(sin nombre)',
-                'message' => '❌ Carpeta vacía - sin archivos',
+                'message' => '❌ Lista vacía - sin archivos',
             ];
         }
     }
@@ -290,7 +290,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         <div class="stale-programs-panel" style="border-color:#dc2626;background:#fee2e2;margin-bottom:10px;">
                             <div class="stale-programs-title" style="color:#991b1b;" onclick="toggleStalePanel(this)">
                                 <i class="stale-chevron">▾</i>
-                                ❌ Programas sin contenido - Carpeta vacía (<?php echo count($dashboardAlerts['critical']); ?>)
+                                ❌ Programas sin contenido - Lista vacía (<?php echo count($dashboardAlerts['critical']); ?>)
                             </div>
                             <div class="stale-programs-body collapsed">
                                 <p style="font-size:12px;color:#991b1b;margin-bottom:12px;">

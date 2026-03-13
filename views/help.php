@@ -22,6 +22,7 @@
             <li><a href="#introduccion">¿Qué es SAPO?</a></li>
             <li><a href="#como-funciona">¿Cómo funciona con Radiobot?</a></li>
             <li><a href="#primeros-pasos">Primeros pasos</a></li>
+            <li><a href="#mi-sapo">🏠 Mi SAPO (Dashboard)</a></li>
             <li><a href="#gestionar-podcasts">Gestionar podcasts</a></li>
             <li><a href="#suscripciones-plataformas">📺 Suscripciones de plataformas (YouTube, SoundCloud...)</a></li>
             <li><a href="#buscar-podcasts">Buscar podcasts</a></li>
@@ -104,12 +105,65 @@
         <p>Si eres administrador, puedes crear usuarios desde el panel de administración.</p>
 
         <h4>2. Panel principal</h4>
-        <p>Una vez dentro verás tres pestañas:</p>
+        <p>Una vez dentro verás cinco pestañas en el menú superior:</p>
         <ul>
+            <li><strong>🏠 Mi SAPO:</strong> Dashboard principal con alertas, resumen de podcasts y grabaciones, herramientas (descargas e importar/exportar) y últimos episodios descargados</li>
             <li><strong>🎙️ Mis Podcasts:</strong> Lista, gestión y búsqueda de tus podcasts suscritos</li>
-            <li><strong>📥 Importar/Exportar:</strong> Importar y exportar tu lista de podcasts (serverlist.txt)</li>
-            <li><strong>⬇️ Descargas:</strong> Ejecutar el proceso de descarga y ver últimas descargas realizadas</li>
+            <li><strong>🔔 Señales horarias:</strong> Configurar clips de audio que suenan a horas fijas</li>
+            <li><strong>🎙️ Grabaciones:</strong> Gestionar el archivo de grabaciones de emisiones en directo</li>
+            <li><strong>📅 Asistente Parrilla:</strong> Acceso directo al asistente de parrilla de programación</li>
         </ul>
+    </div>
+
+    <!-- Sección: Mi SAPO -->
+    <div id="mi-sapo" style="margin-bottom: 40px;">
+        <h3>🏠 Mi SAPO (Dashboard)</h3>
+        <p>La pestaña <strong>"Mi SAPO"</strong> es la pantalla de inicio y el centro de control de la aplicación. Al entrar, verás un resumen completo del estado de tu emisora dividido en cuatro bloques:</p>
+
+        <h4 style="margin-top: 25px;">① Alertas</h4>
+        <p>Panel de alertas que se muestra solo cuando hay situaciones que requieren atención. Se organiza en dos acordeones desplegables:</p>
+        <ul>
+            <li>
+                <strong style="color:#991b1b;">❌ Listas vacías (carpeta sin archivos):</strong> Programas que están configurados en Radiobot pero cuya carpeta no contiene ningún archivo de audio. Estos programas <strong>no podrán emitirse</strong>. Haz clic en el título del acordeón para desplegar la lista de programas afectados.
+            </li>
+            <li>
+                <strong style="color:#92400e;">⚠️ Programas con RSS sin actualizar:</strong> Podcasts cuyo feed RSS lleva más de 30 días sin publicar nuevos episodios. Puede indicar que el podcast está inactivo o que la URL del feed ha cambiado.
+            </li>
+        </ul>
+        <div style="background: #e6fffa; border-left: 4px solid #38b2ac; padding: 15px; margin: 15px 0;">
+            <strong>💡 Tip:</strong> Si no hay ninguna alerta activa, este bloque no se muestra. Un panel de alertas vacío significa que todo está en orden.
+        </div>
+
+        <h4 style="margin-top: 25px;">② Información</h4>
+        <p>Dos tarjetas de resumen con estadísticas en tiempo real:</p>
+        <ul>
+            <li>
+                <strong>Estado de Podcasts:</strong> Muestra el número total de podcasts y una barra de colores proporcional según el estado de cada feed RSS:
+                <ul>
+                    <li><span style="color:#276749;">■ Verde</span> — Activos (último episodio hace ≤ 30 días)</li>
+                    <li><span style="color:#744210;">■ Ámbar</span> — Poco activos (31–90 días)</li>
+                    <li><span style="color:#822727;">■ Rojo</span> — Inactivos (más de 90 días)</li>
+                </ul>
+                Pasa el ratón sobre cada franja de color para ver la lista de podcasts en ese estado.
+            </li>
+            <li>
+                <strong>Grabaciones almacenadas:</strong> Número total de grabaciones, espacio en disco usado, y cuántas grabaciones son antiguas (superan el período de retención configurado).
+            </li>
+        </ul>
+
+        <h4 style="margin-top: 25px;">③ Herramientas</h4>
+        <p>Acceso rápido a las dos operaciones más habituales:</p>
+        <ul>
+            <li>
+                <strong>Ejecutar descargas:</strong> Lanza el proceso de descarga de nuevos episodios. Incluye un enlace para ver el log de podget con el resultado de la última ejecución.
+            </li>
+            <li>
+                <strong>Importar / Exportar:</strong> Permite exportar tu lista de podcasts a un archivo <code>serverlist.txt</code> o importar una lista existente para añadir podcasts en bloque.
+            </li>
+        </ul>
+
+        <h4 style="margin-top: 25px;">④ Últimos episodios descargados</h4>
+        <p>Listado de los episodios de podcast descargados más recientemente, con nombre del podcast, archivo y fecha de descarga. Útil para comprobar de un vistazo que las descargas están funcionando correctamente.</p>
     </div>
 
     <!-- Sección: Gestionar podcasts -->
@@ -431,8 +485,8 @@
 
         <h4>Ejecutar descargas</h4>
         <ol>
-            <li>Ve a la pestaña <strong>"Descargas"</strong></li>
-            <li>Haz clic en <strong>"▶️ Ejecutar Descargas"</strong></li>
+            <li>Ve a la pestaña <strong>"Mi SAPO"</strong></li>
+            <li>En la sección <strong>"Herramientas"</strong>, haz clic en <strong>"▶️ Ejecutar Descargas"</strong></li>
             <li>Confirma la acción</li>
             <li>El proceso se ejecuta en segundo plano</li>
         </ol>
@@ -504,22 +558,21 @@
     <!-- Sección: Importar y exportar -->
     <div id="importar-exportar" style="margin-bottom: 40px;">
         <h3>📥 Importar y exportar</h3>
-        <p>La pestaña <strong>"Importar/Exportar"</strong> te permite hacer respaldos de tu configuración o migrar podcasts entre instalaciones.</p>
+        <p>La sección <strong>"Importar/Exportar"</strong> está disponible en <strong>Mi SAPO &gt; Herramientas</strong>. Te permite hacer respaldos de tu configuración o migrar podcasts entre instalaciones.</p>
 
         <h4>📤 Exportar tu lista de podcasts</h4>
         <p>Descarga un archivo <code>serverlist.txt</code> con todos tus podcasts configurados.</p>
         <ol>
-            <li>Ve a la pestaña <strong>"Importar/Exportar"</strong></li>
-            <li>En la sección "Exportar podcasts", haz clic en <strong>"📤 Descargar mi serverlist.txt"</strong></li>
+            <li>Ve a la pestaña <strong>"Mi SAPO"</strong> y localiza la sección <strong>"Herramientas"</strong></li>
+            <li>En el bloque "Importar / Exportar", haz clic en <strong>"📤 Descargar mi serverlist.txt"</strong></li>
             <li>El archivo se descargará automáticamente a tu computadora</li>
         </ol>
 
         <h4>📥 Importar una lista de podcasts</h4>
         <p>Sube un archivo <code>serverlist.txt</code> existente para agregar múltiples podcasts de una vez.</p>
         <ol>
-            <li>Ve a la pestaña <strong>"Importar/Exportar"</strong></li>
-            <li>En la sección "Importar podcasts", haz clic en <strong>"Seleccionar archivo..."</strong></li>
-            <li>Elige tu archivo <code>serverlist.txt</code></li>
+            <li>Ve a la pestaña <strong>"Mi SAPO"</strong> y localiza la sección <strong>"Herramientas"</strong></li>
+            <li>En el bloque "Importar / Exportar", selecciona tu archivo <code>serverlist.txt</code></li>
             <li>Haz clic en <strong>"📥 Importar"</strong></li>
         </ol>
 
@@ -540,7 +593,7 @@
     <!-- Sección: Ver últimas descargas -->
     <div id="ultimas-descargas" style="margin-bottom: 40px;">
         <h3>📋 Ver últimas descargas</h3>
-        <p>En la pestaña <strong>"Descargas"</strong>, además de ejecutar las descargas, puedes ver un listado de los episodios descargados recientemente.</p>
+        <p>En la pestaña <strong>"Mi SAPO"</strong>, en el bloque <strong>"Últimos episodios descargados"</strong>, puedes ver un listado de los episodios descargados recientemente.</p>
 
         <h4>¿Qué muestra?</h4>
         <ul>
