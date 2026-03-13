@@ -256,19 +256,25 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         const collapsed = body.classList.toggle('collapsed');
                         titleEl.classList.toggle('collapsed', collapsed);
                     }
-                    document.addEventListener('mouseover', function(e) {
+                    document.addEventListener('mouseenter', function(e) {
                         const bar = e.target.closest('.podcast-status-bar');
                         if (!bar) return;
                         const popup = bar.querySelector('.status-bar-popup');
                         if (!popup) return;
-                        const rect = bar.getBoundingClientRect();
-                        popup.style.top  = Math.round(rect.top + rect.height / 2 - popup.offsetHeight / 2) + 'px';
-                        popup.style.left = Math.round(rect.right + 10) + 'px';
-                        // Reajustar si se sale por abajo
-                        const bottom = popup.getBoundingClientRect().bottom;
-                        if (bottom > window.innerHeight - 8) {
-                            popup.style.top = Math.round(window.innerHeight - 8 - popup.offsetHeight) + 'px';
-                        }
+                        // Posicionar junto al cursor al entrar en la franja
+                        const place = () => {
+                            const mEvent = window._lastMouseEvent;
+                            if (!mEvent) return;
+                            const x = mEvent.clientX + 14;
+                            const y = mEvent.clientY - popup.offsetHeight / 2;
+                            popup.style.left = Math.min(x, window.innerWidth  - popup.offsetWidth  - 8) + 'px';
+                            popup.style.top  = Math.max(8, Math.min(y, window.innerHeight - popup.offsetHeight - 8)) + 'px';
+                        };
+                        // offsetHeight está disponible porque el hover CSS ya lo mostró
+                        setTimeout(place, 0);
+                    }, true);
+                    document.addEventListener('mousemove', function(e) {
+                        window._lastMouseEvent = e;
                     });
                     </script>
 
