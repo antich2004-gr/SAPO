@@ -409,7 +409,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                 <span style="font-size:12px;"><?php echo $bar['label']; ?></span>
                                                 <strong style="font-size:18px;"><?php echo $podcastCounts[$bar['key']]; ?></strong>
                                             </div>
-                                            <?php if (!empty($names)): ?>
+                                            <?php if (!empty($names) && $bar['key'] !== 'recent'): ?>
                                             <div class="status-bar-popup">
                                                 <?php foreach ($names as $n): ?>
                                                 <div><?php echo htmlEsc($n); ?></div>
