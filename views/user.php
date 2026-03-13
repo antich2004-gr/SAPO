@@ -231,7 +231,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             user-select: none;
                         }
                         .stale-programs-title .stale-chevron {
-                            margin-left: auto;
+                            margin-left: 0;
                             font-style: normal;
                             font-size: 18px;
                             line-height: 1;
@@ -287,8 +287,8 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         </h3>
                         <div class="stale-programs-panel">
                             <div class="stale-programs-title" onclick="toggleStalePanel(this)">
-                                ⚠️ Programas con RSS sin actualizar (<?php echo count($dashboardAlerts['warning']); ?>)
                                 <i class="stale-chevron">▾</i>
+                                ⚠️ Programas con RSS sin actualizar (<?php echo count($dashboardAlerts['warning']); ?>)
                             </div>
                             <div class="stale-programs-body collapsed">
                                 <p style="font-size: 12px; color: #92400e; margin-bottom: 12px;">
