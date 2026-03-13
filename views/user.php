@@ -363,6 +363,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 Logs de descargas (últimos 10 días)
                             </div>
                             <div class="stale-programs-body collapsed">
+                                <p style="font-size:12px;color:#92400e;margin:0 0 10px 0;">Aquí tienes los logs de descargas de los últimos 10 días. Logs con más antigüedad en el correo electrónico vinculado a tu emisora.</p>
                                 <?php if (empty($recentReports)): ?>
                                 <div style="font-size:13px;color:#92400e;padding:6px 0;">No hay informes disponibles.</div>
                                 <?php else: ?>
