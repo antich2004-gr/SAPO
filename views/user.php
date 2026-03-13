@@ -288,7 +288,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     </script>
 
                     <!-- Modal informes diarios -->
-                    <div id="report-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;" onclick="if(event.target===this)closeReportModal()">
+                    <div id="report-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:flex-start;justify-content:center;padding-top:5vh;overflow-y:auto;" onclick="if(event.target===this)closeReportModal()">
                         <div style="background:#fff;border-radius:10px;max-width:720px;width:95%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3);">
                             <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e2e8f0;flex-shrink:0;">
                                 <strong id="report-modal-date" style="font-size:15px;color:#2d3748;"></strong>
