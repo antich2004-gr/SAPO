@@ -850,6 +850,21 @@
             <p>Sí. Pega la URL del canal o playlist al añadir un podcast. SAPO lo detecta automáticamente y descarga los episodios en MP3. Consulta la sección <a href="#suscripciones-plataformas">Suscripciones de plataformas</a> para ver todas las plataformas compatibles y cómo obtener las URLs.</p>
         </div>
 
+        <div style="margin-bottom: 20px;">
+            <h4>¿Qué información muestra el dashboard de Mi SAPO?</h4>
+            <p>El dashboard muestra un resumen del estado de tu emisora: alertas de podcasts sin contenido o con RSS sin actualizar, el estado general de todos tus feeds (activos, poco activos, inactivos), los últimos episodios descargados y los logs de descarga de los últimos 10 días.</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <h4>¿Cómo puedo consultar logs de más de 10 días de antigüedad?</h4>
+            <p>En Mi SAPO se muestran los logs de los últimos 10 días. Todos estos y los anteriores los puedes consultar en el correo vinculado a tu emisora, donde los recibes diariamente. Para cambiar la cuenta de correo a la que se envían, contacta con el administrador del sistema.</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <h4>¿Qué significan las alertas del dashboard?</h4>
+            <p>Hay dos tipos de alerta: <strong>Programas sin contenido</strong> (en rojo) indica podcasts cuya playlist en Radiobot está vacía y no emitirá nada; <strong>Programas con RSS sin actualizar</strong> (en amarillo) indica podcasts cuyo feed lleva más de 30 días sin publicar episodios nuevos, lo que puede significar que el podcast está inactivo o que la URL ha cambiado.</p>
+        </div>
+
     </div>
 
     <!-- Pie de página -->
