@@ -18,7 +18,9 @@ function getRecordingsDir($username) {
         $userData = getUserDB($username);
         $folder = trim($userData['azuracast']['recordings_folder'] ?? '');
         if (empty($folder)) {
-            $folder = $username;
+            // Intentar obtener el short_name de AzuraCast para usar como nombre de carpeta
+            $stationInfo = getStationInfo($username);
+            $folder = $stationInfo['short_name'] ?? $username;
         }
         $path = "{$mountBase}/{$folder}/recordings";
         error_log("RECORDINGS: Ruta desde mount base: $path");
