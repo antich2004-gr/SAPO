@@ -578,7 +578,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             🔄 Actualizar estado de feeds
                         </button>
 
-                        <form method="POST" style="display: flex; gap: 10px; align-items: center; margin: 0;">
+                        <form method="POST" style="display: flex; gap: 10px; align-items: center; margin: 0; flex-wrap: wrap;">
                             <input type="hidden" name="action" value="set_default_caducidad">
                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                             <label style="margin: 0; white-space: nowrap; font-size: 14px;">Caducidad por defecto:</label>
