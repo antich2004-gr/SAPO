@@ -1175,8 +1175,16 @@ async function refreshFeedsWithProgress() {
 
 // Iniciar actualización al cargar la página (si es login reciente)
 document.addEventListener('DOMContentLoaded', function() {
-    // Verificar si se debe actualizar automáticamente
+    // Verificar si se debe abrir una pestaña concreta (e.g. paginación)
     const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    if (tabParam) {
+        switchTab(tabParam);
+        if (tabParam === 'recordings') loadRecordings();
+        if (tabParam === 'config') { loadTimeSignalsFiles(); loadTimeSignalsConfig(); }
+    }
+
+    // Verificar si se debe actualizar automáticamente
     if (urlParams.get('auto_refresh_feeds') === '1') {
         // Pequeña espera para que el usuario vea la página
         setTimeout(() => {

@@ -753,7 +753,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 </div>
                                 <div class="pagination-buttons">
                                     <?php if ($currentPage > 1): ?>
-                                        <a href="?p=<?php echo htmlEsc($currentPage - 1); ?>" class="btn btn-secondary pagination-btn">← Anterior</a>
+                                        <a href="?p=<?php echo htmlEsc($currentPage - 1); ?>&tab=podcasts" class="btn btn-secondary pagination-btn">← Anterior</a>
                                     <?php endif; ?>
 
                                     <?php
@@ -762,14 +762,14 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     $endPage = min($totalPages, $currentPage + 2);
 
                                     if ($startPage > 1): ?>
-                                        <a href="?p=1" class="btn btn-secondary pagination-btn">1</a>
+                                        <a href="?p=1&tab=podcasts" class="btn btn-secondary pagination-btn">1</a>
                                         <?php if ($startPage > 2): ?>
                                             <span style="padding: 0 5px; color: #718096;">...</span>
                                         <?php endif; ?>
                                     <?php endif; ?>
 
                                     <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
-                                        <a href="?p=<?php echo htmlEsc($i); ?>"
+                                        <a href="?p=<?php echo htmlEsc($i); ?>&tab=podcasts"
                                            class="btn btn-secondary pagination-btn <?php echo $i === $currentPage ? 'active' : ''; ?>">
                                             <?php echo htmlEsc($i); ?>
                                         </a>
@@ -779,11 +779,11 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         <?php if ($endPage < $totalPages - 1): ?>
                                             <span style="padding: 0 5px; color: #718096;">...</span>
                                         <?php endif; ?>
-                                        <a href="?p=<?php echo htmlEsc($totalPages); ?>" class="btn btn-secondary pagination-btn"><?php echo htmlEsc($totalPages); ?></a>
+                                        <a href="?p=<?php echo htmlEsc($totalPages); ?>&tab=podcasts" class="btn btn-secondary pagination-btn"><?php echo htmlEsc($totalPages); ?></a>
                                     <?php endif; ?>
 
                                     <?php if ($currentPage < $totalPages): ?>
-                                        <a href="?p=<?php echo htmlEsc($currentPage + 1); ?>" class="btn btn-secondary pagination-btn">Siguiente →</a>
+                                        <a href="?p=<?php echo htmlEsc($currentPage + 1); ?>&tab=podcasts" class="btn btn-secondary pagination-btn">Siguiente →</a>
                                     <?php endif; ?>
                                 </div>
                             </div>
