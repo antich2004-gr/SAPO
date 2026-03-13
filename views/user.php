@@ -83,11 +83,12 @@ $offset = ($currentPage - 1) * $itemsPerPage;
 $podcastsPaginated = array_slice($podcasts, $offset, $itemsPerPage);
 
 // ── Dashboard: conteo de podcasts por estado de RSS ──────────────────────────
-$podcastCounts = ['green' => 0, 'yellow' => 0, 'red' => 0, 'unknown' => 0];
-$dashboardAlerts = ['warning' => []]; // RSS sin actualizar (>30 días)
+// formatFeedStatus devuelve class: 'recent' | 'old' | 'inactive' | 'unknown'
+$podcastCounts = ['recent' => 0, 'old' => 0, 'inactive' => 0, 'unknown' => 0];
+$dashboardAlerts = ['warning' => []];
 foreach ($podcasts as $podcast) {
     if (($podcast['type'] ?? 'rss') === 'ytdlp') {
-        $podcastCounts['green']++;
+        $podcastCounts['recent']++;
         continue;
     }
     $fi  = getCachedFeedInfo($podcast['url']);
@@ -95,7 +96,7 @@ foreach ($podcasts as $podcast) {
     $cls = $si['class'] ?? 'unknown';
     if (array_key_exists($cls, $podcastCounts)) $podcastCounts[$cls]++;
     else $podcastCounts['unknown']++;
-    if (in_array($cls, ['yellow', 'red'])) {
+    if (in_array($cls, ['old', 'inactive'])) {
         $days = $si['days'] ?? 0;
         $dashboardAlerts['warning'][] = [
             'title'   => displayName($podcast['name']),
@@ -237,15 +238,15 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
                                         <div style="display: flex; align-items: center; justify-content: space-between; background: #38a169; color: white; border-radius: 6px; padding: 6px 12px;">
                                             <span style="font-size: 12px;">&lt;30d</span>
-                                            <strong style="font-size: 18px;"><?php echo $podcastCounts['green']; ?></strong>
+                                            <strong style="font-size: 18px;"><?php echo $podcastCounts['recent']; ?></strong>
                                         </div>
                                         <div style="display: flex; align-items: center; justify-content: space-between; background: #d97706; color: white; border-radius: 6px; padding: 6px 12px;">
                                             <span style="font-size: 12px;">30 a 60d</span>
-                                            <strong style="font-size: 18px;"><?php echo $podcastCounts['yellow']; ?></strong>
+                                            <strong style="font-size: 18px;"><?php echo $podcastCounts['old']; ?></strong>
                                         </div>
                                         <div style="display: flex; align-items: center; justify-content: space-between; background: #e53e3e; color: white; border-radius: 6px; padding: 6px 12px;">
                                             <span style="font-size: 12px;">&gt;60d</span>
-                                            <strong style="font-size: 18px;"><?php echo $podcastCounts['red']; ?></strong>
+                                            <strong style="font-size: 18px;"><?php echo $podcastCounts['inactive']; ?></strong>
                                         </div>
                                     </div>
                                 </div>
