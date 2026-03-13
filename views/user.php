@@ -369,12 +369,15 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 <?php else: ?>
                                 <?php foreach ($recentReports as $rep):
                                     $rawContent = file_get_contents($rep['file']);
-                                    $jsonContent = json_encode($rawContent !== false ? $rawContent : '(Sin contenido)');
+                                    $safeContent = htmlspecialchars($rawContent !== false ? $rawContent : '(Sin contenido)', ENT_QUOTES, 'UTF-8');
+                                    $safeDate    = htmlEsc($rep['display_date']);
                                 ?>
-                                <div onclick="openReportModal(<?php echo $jsonContent; ?>, '<?php echo htmlEsc($rep['display_date']); ?>')"
+                                <div data-content="<?php echo $safeContent; ?>"
+                                     data-date="<?php echo $safeDate; ?>"
+                                     onclick="openReportModal(this.dataset.content, this.dataset.date)"
                                      style="font-size:13px;padding:7px 0;border-bottom:1px solid #fde68a;cursor:pointer;display:flex;justify-content:space-between;gap:12px;align-items:center;">
-                                    <span>📄 Informe <?php echo htmlEsc($rep['display_date']); ?></span>
-                                    <span style="color:#d97706;font-size:11px;">Ver →</span>
+                                    <span>📄 Informe <?php echo $safeDate; ?></span>
+                                    <span style="background:#d97706;color:#fff;font-size:11px;font-weight:600;padding:3px 10px;border-radius:4px;white-space:nowrap;">Ver →</span>
                                 </div>
                                 <?php endforeach; ?>
                                 <?php endif; ?>
