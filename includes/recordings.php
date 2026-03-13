@@ -6,56 +6,77 @@
 
 /**
  * Obtener directorio de grabaciones de la emisora.
- * Si está configurada una ruta base de montaje (recordings_mount_base),
- * usa /recordings_mount_base/{recordings_folder}/recordings.
- * Si no, intenta obtener la ruta desde la API de AzuraCast.
+ * Siempre consulta la API de AzuraCast para obtener la ruta real de grabaciones
+ * de cada estación. Si hay recordings_mount_base configurado, combina el
+ * nombre de carpeta obtenido de la API con esa base de montaje.
+ * recordings_folder en la config del usuario actúa como override explícito.
  */
 function getRecordingsDir($username) {
-    $config = getConfig();
+    $config   = getConfig();
     $mountBase = rtrim($config['recordings_mount_base'] ?? '', '/');
 
-    if (!empty($mountBase)) {
-        $userData = getUserDB($username);
-        $folder = trim($userData['azuracast']['recordings_folder'] ?? '');
-        if (empty($folder)) {
-            // Intentar obtener el short_name de AzuraCast para usar como nombre de carpeta
-            $stationInfo = getStationInfo($username);
-            $folder = $stationInfo['short_name'] ?? $username;
-        }
-        $path = "{$mountBase}/{$folder}/recordings";
-        error_log("RECORDINGS: Ruta desde mount base: $path");
+    // Override explícito: si el admin configuró recordings_folder, usarlo directamente
+    $userData       = getUserDB($username);
+    $explicitFolder = trim($userData['azuracast']['recordings_folder'] ?? '');
+    if (!empty($explicitFolder) && !empty($mountBase)) {
+        $path = "{$mountBase}/{$explicitFolder}/recordings";
+        error_log("RECORDINGS: Ruta desde recordings_folder explícito: $path");
         return $path;
     }
 
-    // Fallback: derivar ruta desde la API de AzuraCast
+    // Consultar AzuraCast API para obtener la ruta real de la estación
     $stationInfo = getStationInfo($username);
 
-    if ($stationInfo === null) {
-        error_log("RECORDINGS: No se pudo obtener info de la estación para usuario: $username");
-        return "/var/azuracast/stations/{$username}/recordings";
+    if ($stationInfo !== null) {
+        $recStorageLoc = $stationInfo['recordings_storage_location'] ?? null;
+        $apiPath = (is_array($recStorageLoc) && !empty($recStorageLoc['path']))
+            ? rtrim($recStorageLoc['path'], '/')
+            : null;
+
+        if (!empty($mountBase)) {
+            // Con mount base: extraer el nombre de carpeta de la estación desde
+            // el path que devuelve AzuraCast y combinar con la base de montaje.
+            // Ej: /var/azuracast/stations/miestacion/recordings → miestacion
+            if (!empty($apiPath)) {
+                $stationFolder = basename(dirname($apiPath));
+                $path = "{$mountBase}/{$stationFolder}/recordings";
+                error_log("RECORDINGS: Ruta desde API + mount base: $path (carpeta: $stationFolder)");
+                return $path;
+            }
+            // Si la API no devuelve path, usar short_name como último recurso
+            $shortName = $stationInfo['short_name'] ?? null;
+            if (!empty($shortName)) {
+                $path = "{$mountBase}/{$shortName}/recordings";
+                error_log("RECORDINGS: Ruta desde short_name + mount base: $path");
+                return $path;
+            }
+        } else {
+            // Sin mount base: usar el path directo de la API
+            if (!empty($apiPath)) {
+                error_log("RECORDINGS: Ruta desde recordings_storage_location.path: $apiPath");
+                return $apiPath;
+            }
+            $radioBaseDir = $stationInfo['radio_base_dir'] ?? null;
+            if (!empty($radioBaseDir)) {
+                $path = rtrim($radioBaseDir, '/') . '/recordings';
+                error_log("RECORDINGS: Ruta desde radio_base_dir: $path");
+                return $path;
+            }
+            $shortName = $stationInfo['short_name'] ?? null;
+            if (!empty($shortName)) {
+                $path = "/var/azuracast/stations/{$shortName}/recordings";
+                error_log("RECORDINGS: Ruta desde short_name: $path");
+                return $path;
+            }
+        }
     }
 
-    $recStorageLoc = $stationInfo['recordings_storage_location'] ?? null;
-    if (is_array($recStorageLoc) && !empty($recStorageLoc['path'])) {
-        error_log("RECORDINGS: Ruta desde recordings_storage_location.path: " . $recStorageLoc['path']);
-        return rtrim($recStorageLoc['path'], '/');
+    // Último recurso si la API no responde
+    error_log("RECORDINGS: Fallback final para usuario: $username");
+    if (!empty($mountBase)) {
+        $folder = !empty($explicitFolder) ? $explicitFolder : $username;
+        return "{$mountBase}/{$folder}/recordings";
     }
-
-    $radioBaseDir = $stationInfo['radio_base_dir'] ?? null;
-    if (!empty($radioBaseDir)) {
-        $path = rtrim($radioBaseDir, '/') . '/recordings';
-        error_log("RECORDINGS: Ruta desde radio_base_dir: $path");
-        return $path;
-    }
-
-    $shortName = $stationInfo['short_name'] ?? null;
-    if (!empty($shortName)) {
-        $path = "/var/azuracast/stations/{$shortName}/recordings";
-        error_log("RECORDINGS: Ruta desde short_name: $path");
-        return $path;
-    }
-
-    error_log("RECORDINGS: Fallback username para usuario: $username");
     return "/var/azuracast/stations/{$username}/recordings";
 }
 
