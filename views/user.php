@@ -193,10 +193,42 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 <!-- PESTAÑA 0: MI SAPO (dashboard) -->
                 <div id="tab-misapo" class="tab-panel active">
                     <style>
-                        .stale-programs-body.collapsed { display: none; }
-                        .stale-programs-body { margin-top: 12px; }
-                        .stale-programs-panel:has(.stale-programs-body.collapsed) { padding-bottom: 16px; }
+                        .stale-programs-panel {
+                            border: 2px solid #f59e0b;
+                            border-radius: 8px;
+                            padding: 16px;
+                            margin-bottom: 12px;
+                            background: #fffbeb;
+                        }
+                        .stale-programs-title {
+                            font-weight: 600;
+                            color: #92400e;
+                            display: flex;
+                            align-items: center;
+                            gap: 8px;
+                            font-size: 14px;
+                            cursor: pointer;
+                            user-select: none;
+                        }
+                        .stale-programs-title .stale-chevron {
+                            margin-left: auto;
+                            font-style: normal;
+                            font-size: 18px;
+                            line-height: 1;
+                            transition: transform 0.2s;
+                            background: #f59e0b;
+                            color: white;
+                            border-radius: 4px;
+                            width: 22px;
+                            height: 22px;
+                            display: inline-flex;
+                            align-items: center;
+                            justify-content: center;
+                        }
                         .stale-programs-title.collapsed .stale-chevron { transform: rotate(-90deg); }
+                        .stale-programs-body { margin-top: 12px; }
+                        .stale-programs-body.collapsed { display: none; }
+                        .stale-programs-panel:has(.stale-programs-body.collapsed) { padding-bottom: 16px; }
                     </style>
                     <script>
                     function toggleStalePanel(titleEl) {
