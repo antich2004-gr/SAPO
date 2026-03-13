@@ -141,8 +141,8 @@
                 <strong>Estado de Podcasts:</strong> Muestra el número total de podcasts y una barra de colores proporcional según el estado de cada feed RSS:
                 <ul>
                     <li><span style="color:#276749;">■ Verde</span> — Activos (último episodio hace ≤ 30 días)</li>
-                    <li><span style="color:#744210;">■ Ámbar</span> — Poco activos (31–90 días)</li>
-                    <li><span style="color:#822727;">■ Rojo</span> — Inactivos (más de 90 días)</li>
+                    <li><span style="color:#744210;">■ Ámbar</span> — Poco activos (31–60 días)</li>
+                    <li><span style="color:#822727;">■ Rojo</span> — Inactivos (más de 60 días)</li>
                 </ul>
                 Pasa el ratón sobre cada franja de color para ver la lista de podcasts en ese estado.
             </li>
@@ -457,8 +457,8 @@
             <li><strong>Filtrar por actividad:</strong> Filtra según el estado del feed:
                 <ul>
                     <li>✅ <strong>Activo</strong> — último episodio hace ≤ 30 días</li>
-                    <li>⚠️ <strong>Poco activo</strong> — último episodio hace 31-90 días</li>
-                    <li>❌ <strong>Inactivo</strong> — último episodio hace más de 90 días</li>
+                    <li>⚠️ <strong>Poco activo</strong> — último episodio hace 31-60 días</li>
+                    <li>❌ <strong>Inactivo</strong> — último episodio hace más de 60 días</li>
                     <li>❓ <strong>No responde</strong> — no se pudo consultar el feed</li>
                 </ul>
             </li>
@@ -538,10 +538,10 @@
             <div style="padding: 10px 0;">Último episodio hace <strong>≤ 30 días</strong>. El podcast se actualiza regularmente.</div>
 
             <div style="background: #fff3cd; padding: 10px 20px; border-radius: 6px; font-weight: bold;">🟠 Poco activo</div>
-            <div style="padding: 10px 0;">Último episodio hace <strong>31-90 días</strong>. Actualizaciones poco frecuentes.</div>
+            <div style="padding: 10px 0;">Último episodio hace <strong>31-60 días</strong>. Actualizaciones poco frecuentes.</div>
 
             <div style="background: #f8d7da; padding: 10px 20px; border-radius: 6px; font-weight: bold;">🔴 Inactivo</div>
-            <div style="padding: 10px 0;">Último episodio hace <strong>más de 90 días</strong>. Posiblemente abandonado.</div>
+            <div style="padding: 10px 0;">Último episodio hace <strong>más de 60 días</strong>. Posiblemente abandonado.</div>
 
             <div style="background: #e2e8f0; padding: 10px 20px; border-radius: 6px; font-weight: bold;">⚪ Desconocido</div>
             <div style="padding: 10px 0;">No se pudo obtener información. Puede ser un error temporal.</div>
