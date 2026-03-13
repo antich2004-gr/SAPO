@@ -86,7 +86,7 @@ $podcastsPaginated = array_slice($podcasts, $offset, $itemsPerPage);
 // formatFeedStatus devuelve class: 'recent' | 'old' | 'inactive' | 'unknown'
 $podcastCounts = ['recent' => 0, 'old' => 0, 'inactive' => 0, 'unknown' => 0];
 $podcastByStatus = ['recent' => [], 'old' => [], 'inactive' => []];
-$dashboardAlerts = ['warning' => []];
+$dashboardAlerts = ['critical' => [], 'warning' => []];
 foreach ($podcasts as $podcast) {
     $name = displayName($podcast['name']);
     if (($podcast['type'] ?? 'rss') === 'ytdlp') {
@@ -106,6 +106,19 @@ foreach ($podcasts as $podcast) {
             'title'   => $name,
             'message' => "RSS sin actualizar ({$days} días)",
         ];
+    }
+}
+
+// ── Dashboard: carpetas vacías en AzuraCast ───────────────────────────────────
+$azPlaylists = getAzuracastPlaylists($_SESSION['username']);
+if (is_array($azPlaylists)) {
+    foreach ($azPlaylists as $pl) {
+        if (($pl['num_songs'] ?? -1) === 0) {
+            $dashboardAlerts['critical'][] = [
+                'title'   => $pl['name'] ?? '(sin nombre)',
+                'message' => '❌ Carpeta vacía - sin archivos',
+            ];
+        }
     }
 }
 
@@ -266,12 +279,34 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     </script>
 
                     <!-- ① ALERTAS -->
-                    <?php if (!empty($dashboardAlerts['warning'])): ?>
+                    <?php if (!empty($dashboardAlerts['critical']) || !empty($dashboardAlerts['warning'])): ?>
                     <div style="margin-bottom: 30px;">
                         <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #2d3748; display: flex; align-items: center; gap: 8px;">
                             <span style="background:#e53e3e;color:white;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">!</span>
                             Alertas
                         </h3>
+
+                        <?php if (!empty($dashboardAlerts['critical'])): ?>
+                        <div class="stale-programs-panel" style="border-color:#dc2626;background:#fee2e2;margin-bottom:10px;">
+                            <div class="stale-programs-title" style="color:#991b1b;" onclick="toggleStalePanel(this)">
+                                <i class="stale-chevron">▾</i>
+                                ❌ Programas sin contenido - Carpeta vacía (<?php echo count($dashboardAlerts['critical']); ?>)
+                            </div>
+                            <div class="stale-programs-body collapsed">
+                                <p style="font-size:12px;color:#991b1b;margin-bottom:12px;">
+                                    <strong>Estos programas NO tienen archivos en Radiobot y no podrán emitir.</strong>
+                                </p>
+                                <?php foreach ($dashboardAlerts['critical'] as $alert): ?>
+                                <div style="font-size:12px;padding:3px 0;border-bottom:1px solid #fca5a5;display:flex;justify-content:space-between;gap:12px;">
+                                    <span>📻 <?php echo htmlEsc($alert['title']); ?></span>
+                                    <span style="color:#dc2626;white-space:nowrap;"><?php echo htmlEsc($alert['message']); ?></span>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if (!empty($dashboardAlerts['warning'])): ?>
                         <div class="stale-programs-panel">
                             <div class="stale-programs-title" onclick="toggleStalePanel(this)">
                                 <i class="stale-chevron">▾</i>
@@ -289,6 +324,8 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 <?php endforeach; ?>
                             </div>
                         </div>
+                        <?php endif; ?>
+
                     </div>
                     <?php endif; ?>
 
@@ -401,11 +438,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     <input type="hidden" name="action" value="import_serverlist">
                                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                        <div class="file-input-wrapper">
-                                            <label class="file-label" for="serverlist_file_dash">Seleccionar archivo...</label>
-                                            <input type="file" name="serverlist_file" id="serverlist_file_dash" accept=".txt" required onchange="showFileName(this)">
-                                        </div>
-                                        <span class="selected-file" id="fileName_dash"></span>
+                                        <input type="file" name="serverlist_file" id="serverlist_file_dash" accept=".txt" required onchange="showFileName(this)">
                                         <button type="submit" class="btn btn-success"><span class="btn-icon">📥</span> Importar</button>
                                     </div>
                                 </form>
