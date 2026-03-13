@@ -85,10 +85,13 @@ $podcastsPaginated = array_slice($podcasts, $offset, $itemsPerPage);
 // ── Dashboard: conteo de podcasts por estado de RSS ──────────────────────────
 // formatFeedStatus devuelve class: 'recent' | 'old' | 'inactive' | 'unknown'
 $podcastCounts = ['recent' => 0, 'old' => 0, 'inactive' => 0, 'unknown' => 0];
+$podcastByStatus = ['recent' => [], 'old' => [], 'inactive' => []];
 $dashboardAlerts = ['warning' => []];
 foreach ($podcasts as $podcast) {
+    $name = displayName($podcast['name']);
     if (($podcast['type'] ?? 'rss') === 'ytdlp') {
         $podcastCounts['recent']++;
+        $podcastByStatus['recent'][] = $name;
         continue;
     }
     $fi  = getCachedFeedInfo($podcast['url']);
@@ -96,10 +99,11 @@ foreach ($podcasts as $podcast) {
     $cls = $si['class'] ?? 'unknown';
     if (array_key_exists($cls, $podcastCounts)) $podcastCounts[$cls]++;
     else $podcastCounts['unknown']++;
+    if (isset($podcastByStatus[$cls])) $podcastByStatus[$cls][] = $name;
     if (in_array($cls, ['old', 'inactive'])) {
         $days = $si['days'] ?? 0;
         $dashboardAlerts['warning'][] = [
-            'title'   => displayName($podcast['name']),
+            'title'   => $name,
             'message' => "RSS sin actualizar ({$days} días)",
         ];
     }
@@ -193,6 +197,32 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 <!-- PESTAÑA 0: MI SAPO (dashboard) -->
                 <div id="tab-misapo" class="tab-panel active">
                     <style>
+                        .podcast-status-bar { isolation: isolate; }
+                        .status-bar-popup {
+                            display: none;
+                            position: absolute;
+                            right: 0; top: calc(100% + 6px);
+                            background: #1a202c;
+                            color: #e2e8f0;
+                            font-size: 12px;
+                            line-height: 1.7;
+                            padding: 8px 12px;
+                            border-radius: 6px;
+                            white-space: nowrap;
+                            z-index: 100;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                            min-width: 180px;
+                            max-height: 260px;
+                            overflow-y: auto;
+                        }
+                        .status-bar-popup::before {
+                            content: '';
+                            position: absolute;
+                            bottom: 100%; right: 18px;
+                            border: 6px solid transparent;
+                            border-bottom-color: #1a202c;
+                        }
+                        .podcast-status-bar:hover .status-bar-popup { display: block; }
                         .stale-programs-panel {
                             border: 2px solid #f59e0b;
                             border-radius: 8px;
@@ -280,19 +310,31 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         <div style="font-size: 13px; color: #4a5568; font-weight: 600; margin-bottom: 8px;">Podcast suscritos</div>
                                         <div style="font-size: 52px; font-weight: 800; color: #1a202c; line-height: 1;"><?php echo count($podcasts); ?></div>
                                     </div>
-                                    <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
-                                        <div style="display: flex; align-items: center; justify-content: space-between; background: #38a169; color: white; border-radius: 6px; padding: 6px 12px;">
-                                            <span style="font-size: 12px;">&lt;30d</span>
-                                            <strong style="font-size: 18px;"><?php echo $podcastCounts['recent']; ?></strong>
+                                    <div style="flex: 1; display: flex; flex-direction: column; gap: 6px; position: relative;">
+                                        <?php
+                                        $bars = [
+                                            ['key' => 'recent',   'label' => '&lt;30d',    'bg' => '#38a169'],
+                                            ['key' => 'old',      'label' => '30 a 60d', 'bg' => '#d97706'],
+                                            ['key' => 'inactive', 'label' => '&gt;60d',    'bg' => '#e53e3e'],
+                                        ];
+                                        foreach ($bars as $bar):
+                                            $names = $podcastByStatus[$bar['key']];
+                                            $tooltip = implode('&#10;', array_map('htmlspecialchars', $names));
+                                        ?>
+                                        <div class="podcast-status-bar"
+                                             style="display:flex;align-items:center;justify-content:space-between;background:<?php echo $bar['bg']; ?>;color:white;border-radius:6px;padding:6px 12px;cursor:default;position:relative;"
+                                             <?php if (!empty($names)): ?>data-tooltip="<?php echo $tooltip; ?>"<?php endif; ?>>
+                                            <span style="font-size:12px;"><?php echo $bar['label']; ?></span>
+                                            <strong style="font-size:18px;"><?php echo $podcastCounts[$bar['key']]; ?></strong>
+                                            <?php if (!empty($names)): ?>
+                                            <div class="status-bar-popup">
+                                                <?php foreach ($names as $n): ?>
+                                                <div><?php echo htmlEsc($n); ?></div>
+                                                <?php endforeach; ?>
+                                            </div>
+                                            <?php endif; ?>
                                         </div>
-                                        <div style="display: flex; align-items: center; justify-content: space-between; background: #d97706; color: white; border-radius: 6px; padding: 6px 12px;">
-                                            <span style="font-size: 12px;">30 a 60d</span>
-                                            <strong style="font-size: 18px;"><?php echo $podcastCounts['old']; ?></strong>
-                                        </div>
-                                        <div style="display: flex; align-items: center; justify-content: space-between; background: #e53e3e; color: white; border-radius: 6px; padding: 6px 12px;">
-                                            <span style="font-size: 12px;">&gt;60d</span>
-                                            <strong style="font-size: 18px;"><?php echo $podcastCounts['inactive']; ?></strong>
-                                        </div>
+                                        <?php endforeach; ?>
                                     </div>
                                 </div>
                             </div>
