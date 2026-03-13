@@ -41,10 +41,9 @@ function switchTab(tabName) {
  */
 function showFileName(input) {
     const fileName = input.files[0]?.name || '';
-    const fileNameSpan = document.getElementById('fileName');
-    if (fileNameSpan) {
-        fileNameSpan.textContent = fileName ? fileName : '';
-    }
+    // Buscar el span .selected-file hermano dentro del mismo contenedor
+    const span = input.closest('div, form')?.querySelector('.selected-file') || document.getElementById('fileName');
+    if (span) span.textContent = fileName;
 }
 
 /**
