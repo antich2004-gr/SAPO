@@ -100,7 +100,7 @@ foreach ($podcasts as $podcast) {
     if (array_key_exists($cls, $podcastCounts)) $podcastCounts[$cls]++;
     else $podcastCounts['unknown']++;
     if (isset($podcastByStatus[$cls])) $podcastByStatus[$cls][] = $name;
-    if (in_array($cls, ['old', 'inactive'])) {
+    if (in_array($cls, ['old', 'inactive']) && empty($podcast['paused'])) {
         $days = $si['days'] ?? 0;
         $dashboardAlerts['warning'][] = [
             'title'   => $name,
