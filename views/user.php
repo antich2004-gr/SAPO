@@ -276,7 +276,27 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         const collapsed = body.classList.toggle('collapsed');
                         titleEl.classList.toggle('collapsed', collapsed);
                     }
+                    function openReportModal(content, date) {
+                        const modal = document.getElementById('report-modal');
+                        document.getElementById('report-modal-date').textContent = 'Informe ' + date;
+                        document.getElementById('report-modal-content').textContent = content;
+                        modal.style.display = 'flex';
+                    }
+                    function closeReportModal() {
+                        document.getElementById('report-modal').style.display = 'none';
+                    }
                     </script>
+
+                    <!-- Modal informes diarios -->
+                    <div id="report-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;" onclick="if(event.target===this)closeReportModal()">
+                        <div style="background:#fff;border-radius:10px;max-width:720px;width:95%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+                            <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e2e8f0;flex-shrink:0;">
+                                <strong id="report-modal-date" style="font-size:15px;color:#2d3748;"></strong>
+                                <button onclick="closeReportModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#718096;line-height:1;padding:0 4px;">✕</button>
+                            </div>
+                            <pre id="report-modal-content" style="margin:0;padding:16px 20px;overflow:auto;font-size:12px;font-family:monospace;white-space:pre-wrap;word-break:break-word;color:#2d3748;flex:1;"></pre>
+                        </div>
+                    </div>
 
                     <!-- ① ALERTAS -->
                     <?php if (!empty($dashboardAlerts['critical']) || !empty($dashboardAlerts['warning'])): ?>
@@ -335,6 +355,31 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             <span style="background:#3182ce;color:white;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">i</span>
                             Info
                         </h3>
+                        <!-- Logs de descargas -->
+                        <?php $recentReports = array_slice(getAvailableReports($_SESSION['username']), 0, 10); ?>
+                        <div class="stale-programs-panel" style="border-color:#d97706;background:#fffbeb;margin-bottom:16px;">
+                            <div class="stale-programs-title" style="color:#92400e;" onclick="toggleStalePanel(this)">
+                                <i class="stale-chevron">▾</i>
+                                Logs de descargas (últimos 10 días)
+                            </div>
+                            <div class="stale-programs-body collapsed">
+                                <?php if (empty($recentReports)): ?>
+                                <div style="font-size:13px;color:#92400e;padding:6px 0;">No hay informes disponibles.</div>
+                                <?php else: ?>
+                                <?php foreach ($recentReports as $rep):
+                                    $rawContent = file_get_contents($rep['file']);
+                                    $jsonContent = json_encode($rawContent !== false ? $rawContent : '(Sin contenido)');
+                                ?>
+                                <div onclick="openReportModal(<?php echo $jsonContent; ?>, '<?php echo htmlEsc($rep['display_date']); ?>')"
+                                     style="font-size:13px;padding:7px 0;border-bottom:1px solid #fde68a;cursor:pointer;display:flex;justify-content:space-between;gap:12px;align-items:center;">
+                                    <span>📄 Informe <?php echo htmlEsc($rep['display_date']); ?></span>
+                                    <span style="color:#d97706;font-size:11px;">Ver →</span>
+                                </div>
+                                <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
 
                             <!-- Podcasts suscritos -->
