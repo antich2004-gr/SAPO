@@ -410,7 +410,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             <!-- Importar / Exportar -->
                             <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; background: #fff;">
                                 <div style="font-size: 14px; font-weight: 600; color: #2d3748; margin-bottom: 12px;">Importar podcasts</div>
-                                <p style="color: #718096; font-size: 13px; margin: 0 0 10px 0;">Seleccionar archivo...</p>
                                 <form method="POST" enctype="multipart/form-data" style="margin-bottom: 20px;">
                                     <input type="hidden" name="action" value="import_serverlist">
                                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
@@ -440,8 +439,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             <span style="background:#d97706;color:white;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;line-height:1;">●</span>
                             Últimos episodios descargados
                         </h3>
-                        <h4 style="margin: 0 0 4px 0; font-size: 14px; color: #4a5568;">🎙️ Últimos Episodios Descargados (esta semana)</h4>
-                        <p style="color: #718096; font-size: 13px; margin: 0 0 15px 0;">Listado de los episodios descargados en los últimos 7 días</p>
+                        <p style="color: #4a5568; font-size: 13px; margin: 0 0 15px 0;">Lista de los episodios descargados en los últimos 7 días</p>
                         <?php
                         $allEpisodesDash = [];
                         $reportsDash = getAvailableReports($_SESSION['username']);
