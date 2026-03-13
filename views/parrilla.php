@@ -1226,6 +1226,10 @@ if ($hasStationId) {
                         <div style="width: 20px; height: 20px; border-radius: 3px; background: repeating-linear-gradient(135deg, #f59e0b, #f59e0b 4px, #fbbf24 4px, #fbbf24 8px);"></div>
                         <span>Sin episodios >30 días</span>
                     </div>
+                    <div class="legend-item">
+                        <div style="width: 20px; height: 20px; border-radius: 3px; background: repeating-linear-gradient(45deg, #dc2626, #dc2626 3px, #fca5a5 3px, #fca5a5 6px);"></div>
+                        <span>Solapamiento</span>
+                    </div>
                 </div>
 
                 <?php
