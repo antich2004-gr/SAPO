@@ -105,9 +105,12 @@ foreach ($podcasts as $podcast) {
         $dashboardAlerts['warning'][] = [
             'title'   => $name,
             'message' => "RSS sin actualizar ({$days} días)",
+            'days'    => $days,
         ];
     }
 }
+
+usort($dashboardAlerts['warning'], fn($a, $b) => $a['days'] <=> $b['days']);
 
 // ── Dashboard: carpetas vacías en AzuraCast ───────────────────────────────────
 $azPlaylists = getAzuracastPlaylists($_SESSION['username']);
@@ -357,13 +360,13 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         </h3>
                         <!-- Logs de descargas -->
                         <?php $recentReports = array_slice(getAvailableReports($_SESSION['username']), 0, 10); ?>
-                        <div class="stale-programs-panel" style="border-color:#d97706;background:#fffbeb;margin-bottom:16px;">
-                            <div class="stale-programs-title" style="color:#92400e;" onclick="toggleStalePanel(this)">
+                        <div class="stale-programs-panel" style="border-color:#3182ce;background:#ebf8ff;margin-bottom:16px;">
+                            <div class="stale-programs-title" style="color:#1a365d;" onclick="toggleStalePanel(this)">
                                 <i class="stale-chevron">▾</i>
                                 Logs de descargas (últimos 10 días)
                             </div>
                             <div class="stale-programs-body collapsed">
-                                <p style="font-size:12px;color:#92400e;margin:0 0 10px 0;">Aquí tienes los logs de descargas de los últimos 10 días. Logs con más antigüedad en el correo electrónico vinculado a tu emisora.</p>
+                                <p style="font-size:12px;color:#2c5282;margin:0 0 10px 0;">Aquí tienes los logs de descargas de los últimos 10 días. Logs con más antigüedad en el correo electrónico vinculado a tu emisora.</p>
                                 <?php if (empty($recentReports)): ?>
                                 <div style="font-size:13px;color:#92400e;padding:6px 0;">No hay informes disponibles.</div>
                                 <?php else: ?>
