@@ -197,10 +197,13 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 <!-- PESTAÑA 0: MI SAPO (dashboard) -->
                 <div id="tab-misapo" class="tab-panel active">
                     <style>
-                        .podcast-status-bar { isolation: isolate; }
+                        .podcast-status-bar-wrap { position: relative; }
                         .status-bar-popup {
                             display: none;
-                            position: fixed;
+                            position: absolute;
+                            left: calc(100% + 14px);
+                            top: 50%;
+                            transform: translateY(-50%);
                             background: #1a202c;
                             color: #e2e8f0;
                             font-size: 12px;
@@ -212,7 +215,11 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
                             min-width: 180px;
                         }
-                        .podcast-status-bar:hover .status-bar-popup { display: block; }
+                        .podcast-status-bar-wrap:hover .status-bar-popup { display: block; }
+                        .podcast-status-bar-wrap:last-child:hover .status-bar-popup,
+                        .podcast-status-bar-wrap:nth-last-child(2):hover .status-bar-popup {
+                            top: auto; bottom: 0; transform: none;
+                        }
                         .stale-programs-panel {
                             border: 2px solid #f59e0b;
                             border-radius: 8px;
@@ -256,26 +263,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         const collapsed = body.classList.toggle('collapsed');
                         titleEl.classList.toggle('collapsed', collapsed);
                     }
-                    document.addEventListener('mouseenter', function(e) {
-                        const bar = e.target.closest('.podcast-status-bar');
-                        if (!bar) return;
-                        const popup = bar.querySelector('.status-bar-popup');
-                        if (!popup) return;
-                        // Posicionar junto al cursor al entrar en la franja
-                        const place = () => {
-                            const mEvent = window._lastMouseEvent;
-                            if (!mEvent) return;
-                            const x = mEvent.clientX + 14;
-                            const y = mEvent.clientY - popup.offsetHeight / 2;
-                            popup.style.left = Math.min(x, window.innerWidth  - popup.offsetWidth  - 8) + 'px';
-                            popup.style.top  = Math.max(8, Math.min(y, window.innerHeight - popup.offsetHeight - 8)) + 'px';
-                        };
-                        // offsetHeight está disponible porque el hover CSS ya lo mostró
-                        setTimeout(place, 0);
-                    }, true);
-                    document.addEventListener('mousemove', function(e) {
-                        window._lastMouseEvent = e;
-                    });
                     </script>
 
                     <!-- ① ALERTAS -->
@@ -314,13 +301,13 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
 
                             <!-- Podcasts suscritos -->
-                            <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; background: #fff;">
+                            <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; background: #fff; overflow: visible; position: relative;">
                                 <div style="display: flex; align-items: center; gap: 20px;">
                                     <div>
                                         <div style="font-size: 13px; color: #4a5568; font-weight: 600; margin-bottom: 8px;">Podcast suscritos</div>
                                         <div style="font-size: 52px; font-weight: 800; color: #1a202c; line-height: 1;"><?php echo count($podcasts); ?></div>
                                     </div>
-                                    <div style="flex: 1; display: flex; flex-direction: column; gap: 6px; position: relative;">
+                                    <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
                                         <?php
                                         $bars = [
                                             ['key' => 'recent',   'label' => '&lt;30d',    'bg' => '#38a169'],
@@ -329,13 +316,13 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         ];
                                         foreach ($bars as $bar):
                                             $names = $podcastByStatus[$bar['key']];
-                                            $tooltip = implode('&#10;', array_map('htmlspecialchars', $names));
                                         ?>
-                                        <div class="podcast-status-bar"
-                                             style="display:flex;align-items:center;justify-content:space-between;background:<?php echo $bar['bg']; ?>;color:white;border-radius:6px;padding:6px 12px;cursor:default;position:relative;"
-                                             <?php if (!empty($names)): ?>data-tooltip="<?php echo $tooltip; ?>"<?php endif; ?>>
-                                            <span style="font-size:12px;"><?php echo $bar['label']; ?></span>
-                                            <strong style="font-size:18px;"><?php echo $podcastCounts[$bar['key']]; ?></strong>
+                                        <div class="podcast-status-bar-wrap">
+                                            <div class="podcast-status-bar"
+                                                 style="display:flex;align-items:center;justify-content:space-between;background:<?php echo $bar['bg']; ?>;color:white;border-radius:6px;padding:6px 12px;cursor:default;">
+                                                <span style="font-size:12px;"><?php echo $bar['label']; ?></span>
+                                                <strong style="font-size:18px;"><?php echo $podcastCounts[$bar['key']]; ?></strong>
+                                            </div>
                                             <?php if (!empty($names)): ?>
                                             <div class="status-bar-popup">
                                                 <?php foreach ($names as $n): ?>
