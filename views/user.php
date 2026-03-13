@@ -200,10 +200,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         .podcast-status-bar { isolation: isolate; }
                         .status-bar-popup {
                             display: none;
-                            position: absolute;
-                            left: calc(100% + 10px);
-                            top: 50%;
-                            transform: translateY(-50%);
+                            position: fixed;
                             background: #1a202c;
                             color: #e2e8f0;
                             font-size: 12px;
@@ -211,19 +208,9 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             padding: 8px 12px;
                             border-radius: 6px;
                             white-space: nowrap;
-                            z-index: 100;
+                            z-index: 9999;
                             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
                             min-width: 180px;
-                            max-height: 260px;
-                            overflow-y: auto;
-                        }
-                        .status-bar-popup::before {
-                            content: '';
-                            position: absolute;
-                            right: 100%; top: 50%;
-                            transform: translateY(-50%);
-                            border: 6px solid transparent;
-                            border-right-color: #1a202c;
                         }
                         .podcast-status-bar:hover .status-bar-popup { display: block; }
                         .stale-programs-panel {
@@ -269,6 +256,20 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         const collapsed = body.classList.toggle('collapsed');
                         titleEl.classList.toggle('collapsed', collapsed);
                     }
+                    document.addEventListener('mouseover', function(e) {
+                        const bar = e.target.closest('.podcast-status-bar');
+                        if (!bar) return;
+                        const popup = bar.querySelector('.status-bar-popup');
+                        if (!popup) return;
+                        const rect = bar.getBoundingClientRect();
+                        popup.style.top  = Math.round(rect.top + rect.height / 2 - popup.offsetHeight / 2) + 'px';
+                        popup.style.left = Math.round(rect.right + 10) + 'px';
+                        // Reajustar si se sale por abajo
+                        const bottom = popup.getBoundingClientRect().bottom;
+                        if (bottom > window.innerHeight - 8) {
+                            popup.style.top = Math.round(window.innerHeight - 8 - popup.offsetHeight) + 'px';
+                        }
+                    });
                     </script>
 
                     <!-- ① ALERTAS -->
