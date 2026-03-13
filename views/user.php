@@ -201,7 +201,9 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         .status-bar-popup {
                             display: none;
                             position: absolute;
-                            right: 0; top: calc(100% + 6px);
+                            left: calc(100% + 10px);
+                            top: 50%;
+                            transform: translateY(-50%);
                             background: #1a202c;
                             color: #e2e8f0;
                             font-size: 12px;
@@ -218,9 +220,10 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         .status-bar-popup::before {
                             content: '';
                             position: absolute;
-                            bottom: 100%; right: 18px;
+                            right: 100%; top: 50%;
+                            transform: translateY(-50%);
                             border: 6px solid transparent;
-                            border-bottom-color: #1a202c;
+                            border-right-color: #1a202c;
                         }
                         .podcast-status-bar:hover .status-bar-popup { display: block; }
                         .stale-programs-panel {
