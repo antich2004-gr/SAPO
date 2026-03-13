@@ -865,6 +865,11 @@
             <p>Hay dos tipos de alerta: <strong>Programas sin contenido</strong> (en rojo) indica podcasts cuya playlist en Radiobot está vacía y no emitirá nada; <strong>Programas con RSS sin actualizar</strong> (en amarillo) indica podcasts cuyo feed lleva más de 30 días sin publicar episodios nuevos, lo que puede significar que el podcast está inactivo o que la URL ha cambiado.</p>
         </div>
 
+        <div style="margin-bottom: 20px;">
+            <h4>¿Puedo descargar grabaciones antiguas desde Radiobot?</h4>
+            <p>No. Solo puedes descargar las grabaciones que estén almacenadas en Radiobot en el momento en que vayas a descargarlas. Puedes configurar el tiempo de retención, es decir, los días que se almacenan en Radiobot (por defecto 30 días, máximo 180 días). Cuando se supera ese tiempo las grabaciones se borran automáticamente y no se pueden recuperar.</p>
+        </div>
+
     </div>
 
     <!-- Pie de página -->
