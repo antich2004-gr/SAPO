@@ -633,7 +633,7 @@
 
         <h4 style="margin-top: 25px;">Paso 2: Frecuencia de reproducción</h4>
         <p>Elige cada cuánto se reproducirá la señal:</p>
-        <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+        <div style="overflow-x: auto;"><table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
             <thead>
                 <tr style="background: #edf2f7;">
                     <th style="padding: 8px 12px; text-align: left; border: 1px solid #e2e8f0;">Opción</th>
@@ -663,7 +663,7 @@
                     <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Solo para pruebas</td>
                 </tr>
             </tbody>
-        </table>
+        </table></div>
         <p style="font-size: 13px; color: #718096;">La señal suena todos los días de la semana, sin excepción.</p>
 
         <h4 style="margin-top: 25px;">Configuración avanzada de mezcla</h4>
@@ -705,7 +705,7 @@
 
         <h4 style="margin-top: 25px;">Estadísticas</h4>
         <p>En el panel de estadísticas verás en tiempo real:</p>
-        <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+        <div style="overflow-x: auto;"><table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
             <thead>
                 <tr style="background: #edf2f7;">
                     <th style="padding: 8px 12px; text-align: left; border: 1px solid #e2e8f0;">Dato</th>
@@ -730,7 +730,7 @@
                     <td style="padding: 8px 12px; border: 1px solid #e2e8f0;">Espacio que se recuperaría al eliminar las antiguas</td>
                 </tr>
             </tbody>
-        </table>
+        </table></div>
 
         <h4 style="margin-top: 25px;">Acciones manuales</h4>
         <ul>

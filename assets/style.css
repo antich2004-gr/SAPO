@@ -743,22 +743,27 @@ table tbody tr:hover {
     background: var(--primary-green-dark);
 }
 
-/* Responsive */
+/* Responsive — tablet (≤768px) */
 @media (max-width: 768px) {
     body {
         padding: 10px;
     }
 
+    .header {
+        padding: 14px 16px;
+    }
+
     .header h1 {
-        font-size: 2rem;
+        font-size: 1.6rem;
     }
 
     .header .subtitle {
-        font-size: 1rem;
+        font-size: 0.9rem;
     }
 
     .card {
-        padding: 20px;
+        padding: 14px;
+        margin-bottom: 10px;
     }
 
     .nav-buttons {
@@ -772,8 +777,17 @@ table tbody tr:hover {
 
     .tab {
         flex: 1;
-        min-width: 100px;
+        min-width: 80px;
         text-align: center;
+        padding: 8px 10px;
+    }
+
+    .tab-button {
+        padding: 8px 12px;
+    }
+
+    .tabs-content {
+        padding: 14px;
     }
 
     .podcast-item {
@@ -791,12 +805,80 @@ table tbody tr:hover {
     }
 
     table {
-        font-size: 14px;
+        font-size: 13px;
     }
 
     table thead th,
     table tbody td {
-        padding: 10px 8px;
+        padding: 8px 6px;
+    }
+
+    /* Tablas con scroll horizontal si no caben */
+    .table-responsive,
+    table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    table thead,
+    table tbody,
+    table tfoot {
+        display: table;
+        width: 100%;
+    }
+}
+
+/* Responsive — móvil pequeño (≤480px) */
+@media (max-width: 480px) {
+    body {
+        padding: 8px;
+    }
+
+    .header {
+        padding: 12px;
+    }
+
+    .header h1 {
+        font-size: 1.3rem;
+    }
+
+    .card {
+        padding: 12px;
+        border-radius: 6px;
+    }
+
+    h2 { font-size: 1.1rem; }
+    h3 { font-size: 1rem; }
+
+    .btn {
+        font-size: 12px;
+        padding: 0.35rem 0.75rem;
+    }
+
+    .tab-button {
+        padding: 7px 10px;
+        font-size: 13px;
+    }
+
+    .tabs-content {
+        padding: 12px;
+    }
+
+    /* Formularios: campos uno encima del otro */
+    .form-group {
+        margin-bottom: 10px;
+    }
+
+    /* Nav buttons apilados */
+    .nav-buttons {
+        gap: 8px;
+    }
+
+    /* Paginación más compacta */
+    .pagination a,
+    .pagination span {
+        padding: 6px 9px;
+        font-size: 13px;
     }
 }
 

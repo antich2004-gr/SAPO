@@ -42,7 +42,7 @@ $users = getAllUsers();
             <!-- Bloque: API de Radiobot -->
             <div style="background:#f7fafc;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:16px;">
                 <h4 style="margin:0 0 14px 0;font-size:14px;color:#4a5568;text-transform:uppercase;letter-spacing:.05em;">🔗 API de Radiobot</h4>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
                     <div class="form-group" style="margin:0;">
                         <label>URL de la API</label>
                         <input type="text" name="azuracast_api_url" value="<?php echo htmlEsc($config['azuracast_api_url'] ?? ''); ?>" placeholder="https://tu-servidor.com/api" maxlength="255">
@@ -57,7 +57,7 @@ $users = getAllUsers();
             <!-- Bloque: Rutas del servidor -->
             <div style="background:#f7fafc;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:16px;">
                 <h4 style="margin:0 0 14px 0;font-size:14px;color:#4a5568;text-transform:uppercase;letter-spacing:.05em;">📁 Rutas del servidor</h4>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
                     <div class="form-group" style="margin:0;">
                         <label>Ruta base de emisoras <small style="font-weight:400;color:#718096;">(ej: /mnt/emisoras)</small></label>
                         <input type="text" name="base_path" value="<?php echo htmlEsc($config['base_path']); ?>" required placeholder="/mnt/emisoras" maxlength="255">
@@ -75,7 +75,7 @@ $users = getAllUsers();
                 <summary style="cursor:pointer;font-size:13px;font-weight:600;color:#92400e;user-select:none;">
                     🔧 Configuración avanzada de carpetas
                 </summary>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:14px;">
                     <div class="form-group" style="margin:0;">
                         <label>Carpeta de suscripciones <small style="font-weight:400;color:#718096;">(donde estará serverlist.txt)</small></label>
                         <input type="text" name="subscriptions_folder" value="<?php echo htmlEsc($config['subscriptions_folder']); ?>" required placeholder="Suscripciones" maxlength="100">
@@ -100,7 +100,7 @@ $users = getAllUsers();
         <form method="POST">
             <input type="hidden" name="action" value="create_user">
             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:14px;align-items:end;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;align-items:end;">
                 <div class="form-group" style="margin:0;">
                     <label>Nombre de usuario <small style="font-weight:400;color:#718096;">(slug)</small></label>
                     <input type="text" name="new_username" required placeholder="radio_ejemplo" pattern="[a-z0-9_]+" title="Solo minúsculas, números y guiones bajos" maxlength="50">
@@ -181,7 +181,7 @@ $users = getAllUsers();
                     <input type="hidden" name="action" value="update_azuracast_config">
                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                     <input type="hidden" name="username" value="<?php echo htmlEsc($user['username']); ?>">
-                    <div style="display:grid;grid-template-columns:180px 120px auto;gap:10px;align-items:end;">
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;align-items:end;">
                         <div class="form-group" style="margin:0;">
                             <label style="font-size:12px;margin-bottom:4px;">Station ID Radiobot</label>
                             <input type="number" name="station_id" value="<?php echo htmlEsc($azuracastConfig['station_id'] ?? ''); ?>" placeholder="ej: 34" style="padding:6px;">
