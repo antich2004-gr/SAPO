@@ -482,6 +482,11 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 }
                             }
 
+                            // Si hay filtros activos, activar la pestaña Mis Podcasts
+                            if (shouldApplyFilter) {
+                                switchTab('podcasts');
+                            }
+
                             // Aplicar filtro inmediatamente después de restaurar valores
                             if (shouldApplyFilter && typeof applyFiltersWithoutReload === 'function') {
                                 // Usar versión que no recarga para evitar loop infinito
