@@ -35,7 +35,7 @@ if ($hasStationId) {
                 <span class="btn-icon">❓</span> Ayuda
             </a>
             <a href="<?php echo basename($_SERVER['PHP_SELF']); ?>" class="btn btn-secondary">
-                <span class="btn-icon">◀️</span> Volver al Dashboard
+                <span class="btn-icon">◀️</span> Volver a Mi SAPO
             </a>
         </div>
     </div>
