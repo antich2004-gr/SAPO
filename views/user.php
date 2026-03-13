@@ -192,6 +192,19 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
             <div class="tabs-content">
                 <!-- PESTAÑA 0: MI SAPO (dashboard) -->
                 <div id="tab-misapo" class="tab-panel active">
+                    <style>
+                        .stale-programs-body.collapsed { display: none; }
+                        .stale-programs-body { margin-top: 12px; }
+                        .stale-programs-panel:has(.stale-programs-body.collapsed) { padding-bottom: 16px; }
+                        .stale-programs-title.collapsed .stale-chevron { transform: rotate(-90deg); }
+                    </style>
+                    <script>
+                    function toggleStalePanel(titleEl) {
+                        const body = titleEl.nextElementSibling;
+                        const collapsed = body.classList.toggle('collapsed');
+                        titleEl.classList.toggle('collapsed', collapsed);
+                    }
+                    </script>
 
                     <!-- ① ALERTAS -->
                     <?php if (!empty($dashboardAlerts['warning'])): ?>
