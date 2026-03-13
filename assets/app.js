@@ -390,9 +390,13 @@ function applyFilters() {
     const groupedView = document.getElementById('grouped-view');
     const allPaginationControls = document.querySelectorAll('.pagination-controls');
 
-    // Si no hay filtros activos, restaurar vista original
+    // Si no hay filtros activos, restaurar vista original sin recargar
     if (selectedCategory === '' && selectedActivity === '') {
-        window.location = window.location.pathname;
+        const url = new URL(window.location);
+        url.searchParams.delete('filter_activity');
+        url.searchParams.delete('filter_category');
+        history.replaceState({}, '', url.toString());
+        if (typeof applyFiltersWithoutReload === 'function') applyFiltersWithoutReload();
         return;
     }
 
