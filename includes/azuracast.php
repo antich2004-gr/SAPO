@@ -870,7 +870,7 @@ function getStationStorageAlert($username, $thresholdBytes = 524288000) {
     // ── Método 1: datos embebidos en /admin/station/{id} ─────────────────────
     foreach (['media_storage_location', 'recordings_storage_location'] as $locKey) {
         $loc = $station[$locKey] ?? null;
-        [$quotaBytes, $usedBytes] = $extractStorageBytes($loc);
+        [$quotaBytes, $usedBytes] = $extractStorageBytes(is_array($loc) ? $loc : null);
         if ($quotaBytes !== null && $usedBytes !== null && $quotaBytes > 0) {
             $freeBytes = $quotaBytes - $usedBytes;
             if ($freeBytes >= $thresholdBytes) return null;
