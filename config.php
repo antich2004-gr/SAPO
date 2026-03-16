@@ -2,8 +2,8 @@
 // config.php - Configuración central de SAPO
 
 // Versión de SAPO
-define('SAPO_VERSION', '1.25');
-define('SAPO_VERSION_DATE', '2026-03-08');
+define('SAPO_VERSION', '1.26');
+define('SAPO_VERSION_DATE', '2026-03-16');
 
 // Seguridad
 ini_set('display_errors', 0);
