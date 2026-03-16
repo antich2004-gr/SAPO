@@ -131,6 +131,15 @@ if (is_array($azPlaylists)) {
     }
 }
 
+// ── Dashboard: alerta de espacio en disco ─────────────────────────────────────
+$storageAlert = getStationStorageAlert($_SESSION['username']);
+if ($storageAlert !== null) {
+    $dashboardAlerts['critical'][] = [
+        'title'   => 'Espacio en disco bajo',
+        'message' => "⚠️ Solo quedan {$storageAlert['free_fmt']} libres de {$storageAlert['quota_fmt']} asignados (usado: {$storageAlert['used_fmt']})",
+    ];
+}
+
 // Detectar si estamos editando
 $isEditing = isset($_GET['edit']) && is_numeric($_GET['edit']);
 $editIndex = $isEditing ? intval($_GET['edit']) : null;

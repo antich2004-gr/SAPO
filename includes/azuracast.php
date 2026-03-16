@@ -798,3 +798,64 @@ function updateAzuracastLiquidsoapConfig($username, $configData) {
         return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
     }
 }
+
+/**
+ * Comprueba el espacio de almacenamiento de la emisora en AzuraCast.
+ * Devuelve un array con los datos si queda menos de $thresholdBytes libres,
+ * o null si no se puede determinar o hay espacio suficiente.
+ *
+ * @param string $username
+ * @param int    $thresholdBytes  Umbral en bytes (por defecto 500 MB)
+ * @return array|null  ['quota_bytes', 'used_bytes', 'free_bytes', 'quota_fmt', 'used_fmt', 'free_fmt']
+ */
+function getStationStorageAlert($username, $thresholdBytes = 524288000) {
+    $config   = getConfig();
+    $apiUrl   = $config['azuracast_api_url'] ?? '';
+    $apiKey   = $config['azuracast_api_key'] ?? '';
+
+    if (empty($apiUrl) || empty($apiKey)) return null;
+
+    $userData  = getUserDB($username);
+    $stationId = $userData['azuracast']['station_id'] ?? null;
+    if (empty($stationId)) return null;
+
+    $endpoint = rtrim($apiUrl, '/') . '/admin/station/' . $stationId;
+    $context  = stream_context_create([
+        'http' => ['method' => 'GET', 'timeout' => 8, 'header' => "X-API-Key: {$apiKey}\r\n"]
+    ]);
+    $response = @file_get_contents($endpoint, false, $context);
+    if ($response === false) return null;
+
+    $station = json_decode($response, true);
+    if (!is_array($station)) return null;
+
+    // Intentar media_storage_location primero, luego recordings_storage_location
+    $storageLoc = $station['media_storage_location'] ?? $station['recordings_storage_location'] ?? null;
+    if (!is_array($storageLoc)) return null;
+
+    $quotaBytes = isset($storageLoc['storageQuotaBytes']) && $storageLoc['storageQuotaBytes'] !== null
+        ? (int)$storageLoc['storageQuotaBytes'] : null;
+    $usedBytes  = isset($storageLoc['storageUsedBytes'])  && $storageLoc['storageUsedBytes']  !== null
+        ? (int)$storageLoc['storageUsedBytes']  : null;
+
+    // Sin cuota definida no podemos calcular el espacio libre
+    if ($quotaBytes === null || $usedBytes === null || $quotaBytes <= 0) return null;
+
+    $freeBytes = $quotaBytes - $usedBytes;
+    if ($freeBytes >= $thresholdBytes) return null;   // Suficiente espacio, sin alerta
+
+    $fmt = function(int $bytes): string {
+        if ($bytes >= 1073741824) return round($bytes / 1073741824, 2) . ' GB';
+        if ($bytes >= 1048576)    return round($bytes / 1048576, 1)    . ' MB';
+        return round($bytes / 1024, 0) . ' KB';
+    };
+
+    return [
+        'quota_bytes' => $quotaBytes,
+        'used_bytes'  => $usedBytes,
+        'free_bytes'  => $freeBytes,
+        'quota_fmt'   => $fmt($quotaBytes),
+        'used_fmt'    => $fmt($usedBytes),
+        'free_fmt'    => $fmt(max(0, $freeBytes)),
+    ];
+}
