@@ -330,11 +330,11 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         <!-- Alertas de espacio en disco -->
                         <?php if (is_array($storageAlert)): ?>
                             <?php foreach ($storageAlert as $sa): ?>
-                            <div style="margin-bottom:10px;padding:12px 16px;background:#fff3cd;border:1px solid #f59e0b;border-radius:8px;display:flex;align-items:center;gap:10px;">
+                            <div style="margin-bottom:10px;padding:12px 16px;background:#fee2e2;border:1px solid #dc2626;border-radius:8px;display:flex;align-items:center;gap:10px;">
                                 <span style="font-size:20px;">💾</span>
                                 <div>
-                                    <strong style="color:#92400e;">Espacio en disco bajo — <?php echo htmlEsc($sa['label']); ?></strong><br>
-                                    <span style="font-size:13px;color:#78350f;">Solo quedan <strong><?php echo htmlEsc($sa['free_fmt']); ?></strong> libres de <?php echo htmlEsc($sa['quota_fmt']); ?> asignados (usado: <?php echo htmlEsc($sa['used_fmt']); ?>)</span>
+                                    <strong style="color:#991b1b;">Espacio en disco bajo — <?php echo htmlEsc($sa['label']); ?></strong><br>
+                                    <span style="font-size:13px;color:#7f1d1d;">Solo quedan <strong><?php echo htmlEsc($sa['free_fmt']); ?></strong> libres de <?php echo htmlEsc($sa['quota_fmt']); ?> asignados (usado: <?php echo htmlEsc($sa['used_fmt']); ?>)</span>
                                 </div>
                             </div>
                             <?php endforeach; ?>
