@@ -484,22 +484,21 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             </div>
 
                             <!-- Importar / Exportar -->
-                            <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; background: #fff;">
-                                <div style="font-size: 14px; font-weight: 600; color: #2d3748; margin-bottom: 12px;">Importar podcasts</div>
-                                <form method="POST" enctype="multipart/form-data" style="margin-bottom: 20px;">
-                                    <input type="hidden" name="action" value="import_serverlist">
-                                    <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 20px; background: #fff;">
+                                <div style="font-size: 14px; font-weight: 600; color: #2d3748; margin-bottom: 10px;">Importar / Exportar podcasts</div>
+                                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                                    <form method="POST" enctype="multipart/form-data" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0;">
+                                        <input type="hidden" name="action" value="import_serverlist">
+                                        <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                                         <input type="file" name="serverlist_file" id="serverlist_file_dash" accept=".txt" required onchange="showFileName(this)">
                                         <button type="submit" class="btn btn-success"><span class="btn-icon">📥</span> Importar</button>
-                                    </div>
-                                </form>
-                                <div style="font-size: 14px; font-weight: 600; color: #2d3748; margin-bottom: 10px;">Exportar podcasts</div>
-                                <form method="POST">
-                                    <input type="hidden" name="action" value="export_serverlist">
-                                    <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                                    <button type="submit" class="btn btn-primary"><span class="btn-icon">📤</span> Descargar mi serverlist.txt</button>
-                                </form>
+                                    </form>
+                                    <form method="POST" style="margin:0;">
+                                        <input type="hidden" name="action" value="export_serverlist">
+                                        <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                                        <button type="submit" class="btn btn-primary"><span class="btn-icon">📤</span> Exportar</button>
+                                    </form>
+                                </div>
                             </div>
 
                         </div>
