@@ -8,6 +8,7 @@ $margenes = readMargenes($_SESSION['username']);
 $duracionesOptions = getDuracionesOptions();
 $margenesOptions = getMargenesOptions();
 $defaultCaducidad = getDefaultCaducidad($_SESSION['username']);
+$recordingsRetentionDays = getRecordingsConfig($_SESSION['username'])['retention_days'];
 
 // Sincronizar caducidades si hay podcasts sin caducidad definida
 if (!empty($podcasts)) {
@@ -451,7 +452,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
                                         <div style="display: flex; align-items: center; justify-content: space-between; background: #718096; color: white; border-radius: 6px; padding: 6px 12px; min-height: 36px;">
                                             <span style="font-size: 12px;">Días de retención</span>
-                                            <strong style="font-size:18px;"><?php echo htmlEsc($defaultCaducidad); ?></strong>
+                                            <strong style="font-size:18px;"><?php echo htmlEsc($recordingsRetentionDays); ?></strong>
                                         </div>
                                         <div style="display: flex; align-items: center; justify-content: space-between; background: #718096; color: white; border-radius: 6px; padding: 6px 12px; min-height: 36px;">
                                             <span style="font-size: 12px;">Espacio usado</span>
