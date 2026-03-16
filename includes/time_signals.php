@@ -2,11 +2,21 @@
 // includes/time_signals.php - Funciones para gestión de señales horarias
 
 /**
+ * Obtener ruta base de las estaciones (host o contenedor)
+ */
+function getStationsBasePath() {
+    $config = getConfig();
+    $mountBase = rtrim($config['recordings_mount_base'] ?? '', '/');
+    return !empty($mountBase) ? $mountBase : '/var/azuracast/stations';
+}
+
+/**
  * Obtener directorio de señales horarias del usuario
  * Guardamos directamente en el directorio media de la emisora
  */
 function getTimeSignalsDir($username) {
-    $dir = "/var/azuracast/stations/{$username}/media/senales_horarias";
+    $base = getStationsBasePath();
+    $dir = "{$base}/{$username}/media/senales_horarias";
 
     if (!is_dir($dir)) {
         @mkdir($dir, 0777, true);
@@ -22,7 +32,8 @@ function getTimeSignalsDir($username) {
  * Obtener ruta del archivo liquidsoap.liq de la emisora
  */
 function getLiquidsoapFilePath($username) {
-    return "/var/azuracast/stations/{$username}/config/liquidsoap.liq";
+    $base = getStationsBasePath();
+    return "{$base}/{$username}/config/liquidsoap.liq";
 }
 
 /**
