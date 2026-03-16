@@ -200,8 +200,9 @@ function uploadTimeSignal($username, $file) {
 
     // Verificar que el directorio sea escribible
     if (!is_writable($dir)) {
-        error_log("Directorio no escribible: $dir");
-        return ['success' => false, 'message' => 'Directorio no tiene permisos de escritura'];
+        $info = "dir=$dir | exists=" . (is_dir($dir)?'si':'no') . " | perms=" . (is_dir($dir)?substr(sprintf('%o',fileperms($dir)),-4):'N/A') . " | whoami=" . trim(shell_exec('id'));
+        error_log("Directorio no escribible: $info");
+        return ['success' => false, 'message' => 'Directorio no tiene permisos de escritura: ' . $info];
     }
 
     // Verificar que el archivo temporal exista
