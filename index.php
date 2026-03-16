@@ -596,6 +596,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 if ($result['success']) {
                     loginUser($result['user']);
 
+                    // Comprobar espacio en disco al iniciar sesión y guardar en sesión
+                    $_SESSION['storage_alert'] = getStationStorageAlert($username);
+
                     // Verificar si han pasado más de 24 horas desde la última actualización de feeds
                     $redirect_url = basename($_SERVER['PHP_SELF']);
 

@@ -132,8 +132,8 @@ if (is_array($azPlaylists)) {
     }
 }
 
-// ── Dashboard: alerta de espacio en disco ─────────────────────────────────────
-$storageAlert = getStationStorageAlert($_SESSION['username']);
+// ── Dashboard: alerta de espacio en disco (calculada al iniciar sesión) ───────
+$storageAlert = $_SESSION['storage_alert'] ?? null;
 if ($storageAlert !== null) {
     $dashboardAlerts['critical'][] = [
         'title'   => 'Espacio en disco bajo',
