@@ -817,7 +817,28 @@ function getStationStorageAlert($username, $thresholdBytes = 524288000) {
 
     $userData  = getUserDB($username);
     $stationId = $userData['azuracast']['station_id'] ?? null;
-    if (empty($stationId)) return null;
+
+    // Si no hay station_id configurado, intentar auto-detectar por short_name
+    if (empty($stationId)) {
+        $context0 = stream_context_create([
+            'http' => ['method' => 'GET', 'timeout' => 3, 'header' => "X-API-Key: {$apiKey}\r\n"]
+        ]);
+        $listResp = @file_get_contents(rtrim($apiUrl, '/') . '/admin/stations', false, $context0);
+        if ($listResp !== false) {
+            $stations = json_decode($listResp, true);
+            if (is_array($stations)) {
+                $uLower = strtolower($username);
+                foreach ($stations as $s) {
+                    $sn = strtolower($s['short_name'] ?? '');
+                    if ($sn === $uLower || strpos($sn, $uLower) !== false || strpos($uLower, $sn) !== false) {
+                        $stationId = $s['id'] ?? null;
+                        if (!empty($stationId)) break;
+                    }
+                }
+            }
+        }
+        if (empty($stationId)) return null;
+    }
 
     $endpoint = rtrim($apiUrl, '/') . '/admin/station/' . $stationId;
     $context  = stream_context_create([
@@ -868,7 +889,14 @@ function getStationStorageAlert($username, $thresholdBytes = 524288000) {
     // El objeto embebido puede no tener los bytes — llamar al endpoint propio
     foreach (['media_storage_location', 'recordings_storage_location'] as $locKey) {
         $loc = $station[$locKey] ?? null;
-        $locId = is_array($loc) ? ($loc['id'] ?? null) : null;
+        // La API puede devolver el ID como entero o como objeto con campo 'id'
+        if (is_array($loc)) {
+            $locId = $loc['id'] ?? null;
+        } elseif (is_numeric($loc) && $loc > 0) {
+            $locId = (int)$loc;
+        } else {
+            $locId = null;
+        }
         if (empty($locId)) continue;
 
         $locEndpoint = rtrim($apiUrl, '/') . '/admin/storage_location/' . $locId;
