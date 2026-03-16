@@ -415,7 +415,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         ?>
                                         <div class="podcast-status-bar-wrap">
                                             <div class="podcast-status-bar"
-                                                 style="display:flex;align-items:center;justify-content:space-between;background:<?php echo $bar['bg']; ?>;color:white;border-radius:6px;padding:6px 12px;cursor:default;">
+                                                 style="display:flex;align-items:center;justify-content:space-between;background:<?php echo $bar['bg']; ?>;color:white;border-radius:6px;padding:6px 12px;min-height:36px;cursor:default;">
                                                 <span style="font-size:12px;"><?php echo $bar['label']; ?></span>
                                                 <strong style="font-size:18px;"><?php echo $podcastCounts[$bar['key']]; ?></strong>
                                             </div>
@@ -440,17 +440,24 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         <div id="db-total-count" style="font-size: 52px; font-weight: 800; color: #1a202c; line-height: 1;">-</div>
                                     </div>
                                     <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
-                                        <div style="display: flex; align-items: center; justify-content: space-between; background: #718096; color: white; border-radius: 6px; padding: 6px 12px;">
+                                        <div style="display: flex; align-items: center; justify-content: space-between; background: #718096; color: white; border-radius: 6px; padding: 6px 12px; min-height: 36px;">
+                                            <span style="font-size: 12px;">Días de retención</span>
+                                            <div style="display:flex;align-items:center;gap:8px;">
+                                                <strong style="font-size:18px;"><?php echo htmlEsc($defaultCaducidad); ?></strong>
+                                                <button onclick="deleteOldRecordingsNow()" style="background:rgba(0,0,0,0.25);color:white;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;white-space:nowrap;">🗑️ Eliminar antiguas</button>
+                                            </div>
+                                        </div>
+                                        <div style="display: flex; align-items: center; justify-content: space-between; background: #718096; color: white; border-radius: 6px; padding: 6px 12px; min-height: 36px;">
                                             <span style="font-size: 12px;">Espacio usado</span>
-                                            <strong style="font-size: 13px;" id="db-total-size">-</strong>
+                                            <strong style="font-size: 18px;" id="db-total-size">-</strong>
                                         </div>
-                                        <div style="display: flex; align-items: center; justify-content: space-between; background: #e53e3e; color: white; border-radius: 6px; padding: 6px 12px;">
+                                        <div style="display: flex; align-items: center; justify-content: space-between; background: #e53e3e; color: white; border-radius: 6px; padding: 6px 12px; min-height: 36px;">
                                             <span style="font-size: 12px;">Grabaciones antiguas</span>
-                                            <strong style="font-size: 13px;" id="db-old-count">-</strong>
+                                            <strong style="font-size: 18px;" id="db-old-count">-</strong>
                                         </div>
-                                        <div style="display: flex; align-items: center; justify-content: space-between; background: #e53e3e; color: white; border-radius: 6px; padding: 6px 12px;">
+                                        <div style="display: flex; align-items: center; justify-content: space-between; background: #e53e3e; color: white; border-radius: 6px; padding: 6px 12px; min-height: 36px;">
                                             <span style="font-size: 12px;">Espacio a liberar</span>
-                                            <strong style="font-size: 13px;" id="db-old-size">-</strong>
+                                            <strong style="font-size: 18px;" id="db-old-size">-</strong>
                                         </div>
                                     </div>
                                 </div>
