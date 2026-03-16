@@ -8,14 +8,10 @@
 function getTimeSignalsDir($username) {
     $dir = "/var/azuracast/stations/{$username}/media/senales_horarias";
 
-    // Crear directorio si no existe
     if (!is_dir($dir)) {
-        $result = @mkdir($dir, 0777, true);
-        if ($result) {
-            chmod($dir, 0777);
-        } else {
-            $parent = dirname($dir);
-            error_log("mkdir FALLÓ: dir=$dir | parent_exists=" . (is_dir($parent)?'si':'no') . " | parent_writable=" . (is_writable($parent)?'si':'no') . " | parent_perms=" . substr(sprintf('%o',fileperms($parent)),-4) . " | error=" . error_get_last()['message']);
+        @mkdir($dir, 0777, true);
+        if (is_dir($dir)) {
+            @chmod($dir, 0777);
         }
     }
 
@@ -205,9 +201,8 @@ function uploadTimeSignal($username, $file) {
 
     // Verificar que el directorio sea escribible
     if (!is_writable($dir)) {
-        $info = "dir=$dir | exists=" . (is_dir($dir)?'si':'no') . " | perms=" . (is_dir($dir)?substr(sprintf('%o',fileperms($dir)),-4):'N/A') . " | whoami=" . trim(shell_exec('id'));
-        error_log("Directorio no escribible: $info");
-        return ['success' => false, 'message' => 'Directorio no tiene permisos de escritura: ' . $info];
+        error_log("Directorio no escribible: $dir");
+        return ['success' => false, 'message' => 'Directorio no tiene permisos de escritura'];
     }
 
     // Verificar que el archivo temporal exista
