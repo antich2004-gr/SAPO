@@ -821,7 +821,8 @@ function getStationStorageAlert($username, $thresholdBytes = 524288000) {
     // Si no hay station_id configurado, intentar auto-detectar por short_name
     if (empty($stationId)) {
         $context0 = stream_context_create([
-            'http' => ['method' => 'GET', 'timeout' => 3, 'header' => "X-API-Key: {$apiKey}\r\n"]
+            'http' => ['method' => 'GET', 'timeout' => 3, 'header' => "X-API-Key: {$apiKey}\r\n"],
+            'ssl'  => ['verify_peer' => false, 'verify_peer_name' => false],
         ]);
         $listResp = @file_get_contents(rtrim($apiUrl, '/') . '/admin/stations', false, $context0);
         if ($listResp !== false) {
@@ -842,7 +843,8 @@ function getStationStorageAlert($username, $thresholdBytes = 524288000) {
 
     $endpoint = rtrim($apiUrl, '/') . '/admin/station/' . $stationId;
     $context  = stream_context_create([
-        'http' => ['method' => 'GET', 'timeout' => 3, 'header' => "X-API-Key: {$apiKey}\r\n"]
+        'http' => ['method' => 'GET', 'timeout' => 3, 'header' => "X-API-Key: {$apiKey}\r\n"],
+        'ssl'  => ['verify_peer' => false, 'verify_peer_name' => false],
     ]);
     $response = @file_get_contents($endpoint, false, $context);
     if ($response === false) return null;
