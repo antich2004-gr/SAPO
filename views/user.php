@@ -484,17 +484,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     <span class="btn-icon">🚀</span> Ejecutar descargas para <?php echo htmlEsc($_SESSION['station_name']); ?>
                                 </button>
                                 <div id="podget-status" style="margin-top: 15px;"></div>
-                                <div id="podget-log-viewer" style="display:none; margin-top: 15px;">
-                                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 8px;">
-                                        <strong style="color:#4a5568; font-size:13px;">📋 Log en tiempo real</strong>
-                                        <span id="podget-log-status" style="font-size:12px; color:#718096;"></span>
-                                    </div>
-                                    <pre id="podget-log-content" style="
-                                        background:#1a202c; color:#68d391; font-size:12px; line-height:1.5;
-                                        padding:16px; border-radius:8px; max-height:300px; overflow-y:auto;
-                                        white-space:pre-wrap; word-break:break-all; margin:0;
-                                    "></pre>
-                                </div>
                             </div>
 
                             <!-- Importar / Exportar -->
@@ -1586,6 +1575,25 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 }
 
 </style>
+
+<!-- Modal log en tiempo real de descargas -->
+<div id="podget-log-modal" onclick="if(event.target===this)closePodgetLogModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(3px);z-index:2000;align-items:flex-start;justify-content:center;padding-top:5vh;overflow-y:auto;">
+    <div style="background:#fff;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.3);width:90%;max-width:760px;animation:modalFadeIn 0.3s ease;display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:2px solid #e2e8f0;">
+            <strong style="font-size:15px;color:#2d3748;">📋 Log en tiempo real</strong>
+            <div style="display:flex;align-items:center;gap:16px;">
+                <span id="podget-log-status" style="font-size:12px;color:#718096;"></span>
+                <button onclick="closePodgetLogModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#718096;line-height:1;" title="Cerrar">×</button>
+            </div>
+        </div>
+        <div style="padding:20px;">
+            <pre id="podget-log-content" style="background:#1a202c;color:#68d391;font-size:12px;line-height:1.6;padding:16px;border-radius:8px;height:380px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;margin:0;"></pre>
+        </div>
+        <div style="padding:0 20px 20px;text-align:right;">
+            <button onclick="closePodgetLogModal()" class="btn btn-secondary">Cerrar</button>
+        </div>
+    </div>
+</div>
 
 <!-- Modal de progreso de actualización de feeds -->
 <div id="feedsProgressModal" style="display: none;">
