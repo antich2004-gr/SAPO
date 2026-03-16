@@ -133,7 +133,11 @@ if (is_array($azPlaylists)) {
 }
 
 // ── Dashboard: alerta de espacio en disco (calculada al iniciar sesión) ───────
-$storageAlert = $_SESSION['storage_alert'] ?? null;
+// array_key_exists distingue "no existe" (sesión antigua) de "existe pero es null" (sin alerta)
+if (!array_key_exists('storage_alert', $_SESSION)) {
+    $_SESSION['storage_alert'] = getStationStorageAlert($_SESSION['username']);
+}
+$storageAlert = $_SESSION['storage_alert'];
 if ($storageAlert !== null) {
     $dashboardAlerts['critical'][] = [
         'title'   => 'Espacio en disco bajo',

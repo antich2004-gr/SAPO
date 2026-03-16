@@ -824,22 +824,37 @@ function getStationStorageAlert($username, $thresholdBytes = 524288000) {
         'http' => ['method' => 'GET', 'timeout' => 8, 'header' => "X-API-Key: {$apiKey}\r\n"]
     ]);
     $response = @file_get_contents($endpoint, false, $context);
-    if ($response === false) return null;
+    if ($response === false) {
+        error_log("STORAGE_ALERT: fallo al llamar a $endpoint");
+        return null;
+    }
 
     $station = json_decode($response, true);
-    if (!is_array($station)) return null;
+    if (!is_array($station)) {
+        error_log("STORAGE_ALERT: respuesta no es JSON válido");
+        return null;
+    }
 
     // Intentar media_storage_location primero, luego recordings_storage_location
     $storageLoc = $station['media_storage_location'] ?? $station['recordings_storage_location'] ?? null;
-    if (!is_array($storageLoc)) return null;
+    error_log("STORAGE_ALERT: keys en station=" . implode(',', array_keys($station)));
+    if (!is_array($storageLoc)) {
+        error_log("STORAGE_ALERT: storage_location no encontrado o no es array");
+        return null;
+    }
+    error_log("STORAGE_ALERT: keys en storageLoc=" . implode(',', array_keys($storageLoc)));
 
     $quotaBytes = isset($storageLoc['storageQuotaBytes']) && $storageLoc['storageQuotaBytes'] !== null
         ? (int)$storageLoc['storageQuotaBytes'] : null;
     $usedBytes  = isset($storageLoc['storageUsedBytes'])  && $storageLoc['storageUsedBytes']  !== null
         ? (int)$storageLoc['storageUsedBytes']  : null;
+    error_log("STORAGE_ALERT: quotaBytes=$quotaBytes usedBytes=$usedBytes");
 
     // Sin cuota definida no podemos calcular el espacio libre
-    if ($quotaBytes === null || $usedBytes === null || $quotaBytes <= 0) return null;
+    if ($quotaBytes === null || $usedBytes === null || $quotaBytes <= 0) {
+        error_log("STORAGE_ALERT: sin cuota definida, no se puede calcular espacio libre");
+        return null;
+    }
 
     $freeBytes = $quotaBytes - $usedBytes;
     if ($freeBytes >= $thresholdBytes) return null;   // Suficiente espacio, sin alerta
