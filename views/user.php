@@ -8,6 +8,7 @@ $margenes = readMargenes($_SESSION['username']);
 $duracionesOptions = getDuracionesOptions();
 $margenesOptions = getMargenesOptions();
 $defaultCaducidad = getDefaultCaducidad($_SESSION['username']);
+$recordingsRetentionDays = getRecordingsConfig($_SESSION['username'])['retention_days'];
 
 // Sincronizar caducidades si hay podcasts sin caducidad definida
 if (!empty($podcasts)) {
@@ -129,6 +130,23 @@ if (is_array($azPlaylists)) {
             ];
         }
     }
+}
+
+// ── Dashboard: alerta de espacio en disco (calculada al iniciar sesión) ───────
+// array_key_exists distingue "no existe" (sesión antigua) de "existe pero es null" (sin alerta)
+if (!array_key_exists('storage_alert', $_SESSION)) {
+    try {
+        $_SESSION['storage_alert'] = getStationStorageAlert($_SESSION['username']);
+    } catch (Throwable $e) {
+        $_SESSION['storage_alert'] = null;
+    }
+}
+$storageAlert = $_SESSION['storage_alert'] ?? null;
+if ($storageAlert !== null) {
+    $dashboardAlerts['critical'][] = [
+        'title'   => 'Espacio en disco bajo',
+        'message' => "⚠️ Solo quedan {$storageAlert['free_fmt']} libres de {$storageAlert['quota_fmt']} asignados (usado: {$storageAlert['used_fmt']})",
+    ];
 }
 
 // Detectar si estamos editando
@@ -442,10 +460,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
                                         <div style="display: flex; align-items: center; justify-content: space-between; background: #718096; color: white; border-radius: 6px; padding: 6px 12px; min-height: 36px;">
                                             <span style="font-size: 12px;">Días de retención</span>
-                                            <div style="display:flex;align-items:center;gap:8px;">
-                                                <strong style="font-size:18px;"><?php echo htmlEsc($defaultCaducidad); ?></strong>
-                                                <button onclick="deleteOldRecordingsNow()" style="background:rgba(0,0,0,0.25);color:white;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;white-space:nowrap;">🗑️ Eliminar antiguas</button>
-                                            </div>
+                                            <strong style="font-size:18px;"><?php echo htmlEsc($recordingsRetentionDays); ?></strong>
                                         </div>
                                         <div style="display: flex; align-items: center; justify-content: space-between; background: #718096; color: white; border-radius: 6px; padding: 6px 12px; min-height: 36px;">
                                             <span style="font-size: 12px;">Espacio usado</span>
@@ -484,36 +499,24 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     <span class="btn-icon">🚀</span> Ejecutar descargas para <?php echo htmlEsc($_SESSION['station_name']); ?>
                                 </button>
                                 <div id="podget-status" style="margin-top: 15px;"></div>
-                                <div id="podget-log-viewer" style="display:none; margin-top: 15px;">
-                                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 8px;">
-                                        <strong style="color:#4a5568; font-size:13px;">📋 Log en tiempo real</strong>
-                                        <span id="podget-log-status" style="font-size:12px; color:#718096;"></span>
-                                    </div>
-                                    <pre id="podget-log-content" style="
-                                        background:#1a202c; color:#68d391; font-size:12px; line-height:1.5;
-                                        padding:16px; border-radius:8px; max-height:300px; overflow-y:auto;
-                                        white-space:pre-wrap; word-break:break-all; margin:0;
-                                    "></pre>
-                                </div>
                             </div>
 
                             <!-- Importar / Exportar -->
-                            <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; background: #fff;">
-                                <div style="font-size: 14px; font-weight: 600; color: #2d3748; margin-bottom: 12px;">Importar podcasts</div>
-                                <form method="POST" enctype="multipart/form-data" style="margin-bottom: 20px;">
-                                    <input type="hidden" name="action" value="import_serverlist">
-                                    <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 20px; background: #fff;">
+                                <div style="font-size: 14px; font-weight: 600; color: #2d3748; margin-bottom: 10px;">Importar / Exportar podcasts</div>
+                                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                                    <form method="POST" enctype="multipart/form-data" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0;">
+                                        <input type="hidden" name="action" value="import_serverlist">
+                                        <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                                         <input type="file" name="serverlist_file" id="serverlist_file_dash" accept=".txt" required onchange="showFileName(this)">
                                         <button type="submit" class="btn btn-success"><span class="btn-icon">📥</span> Importar</button>
-                                    </div>
-                                </form>
-                                <div style="font-size: 14px; font-weight: 600; color: #2d3748; margin-bottom: 10px;">Exportar podcasts</div>
-                                <form method="POST">
-                                    <input type="hidden" name="action" value="export_serverlist">
-                                    <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                                    <button type="submit" class="btn btn-primary"><span class="btn-icon">📤</span> Descargar mi serverlist.txt</button>
-                                </form>
+                                    </form>
+                                    <form method="POST" style="margin:0;">
+                                        <input type="hidden" name="action" value="export_serverlist">
+                                        <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                                        <button type="submit" class="btn btn-primary"><span class="btn-icon">📤</span> Exportar</button>
+                                    </form>
+                                </div>
                             </div>
 
                         </div>
@@ -1586,6 +1589,25 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 }
 
 </style>
+
+<!-- Modal log en tiempo real de descargas -->
+<div id="podget-log-modal" onclick="if(event.target===this)closePodgetLogModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(3px);z-index:2000;align-items:flex-start;justify-content:center;padding-top:5vh;overflow-y:auto;">
+    <div style="background:#fff;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.3);width:90%;max-width:760px;animation:modalFadeIn 0.3s ease;display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:2px solid #e2e8f0;">
+            <strong style="font-size:15px;color:#2d3748;">📋 Log en tiempo real</strong>
+            <div style="display:flex;align-items:center;gap:16px;">
+                <span id="podget-log-status" style="font-size:12px;color:#718096;"></span>
+                <button onclick="closePodgetLogModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#718096;line-height:1;" title="Cerrar">×</button>
+            </div>
+        </div>
+        <div style="padding:20px;">
+            <pre id="podget-log-content" style="background:#1a202c;color:#68d391;font-size:12px;line-height:1.6;padding:16px;border-radius:8px;height:380px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;margin:0;"></pre>
+        </div>
+        <div style="padding:0 20px 20px;text-align:right;">
+            <button onclick="closePodgetLogModal()" class="btn btn-secondary">Cerrar</button>
+        </div>
+    </div>
+</div>
 
 <!-- Modal de progreso de actualización de feeds -->
 <div id="feedsProgressModal" style="display: none;">

@@ -97,12 +97,9 @@ function executePodgetViaAjax() {
             // Hay un mensaje de error específico de SAPO
             statusDiv.innerHTML = '<div class="alert alert-error">❌ ' + errorDiv.textContent.trim() + '</div>';
         } else {
-            // El script se envió correctamente — arrancar visor de log
-            statusDiv.innerHTML = `
-                <div class="alert alert-success">
-                    ✅ Descargas iniciadas correctamente.
-                </div>
-            `;
+            // El script se envió correctamente — abrir modal de log
+            statusDiv.innerHTML = '';
+            openPodgetLogModal();
             startPodgetLogViewer();
         }
     })
@@ -186,18 +183,26 @@ let _logIdleCount   = 0;
 const LOG_POLL_MS   = 500;   // cada 500 ms para ver feeds aparecer en tiempo real
 const LOG_IDLE_MAX  = 600;   // parar tras 5 min sin datos nuevos (podget puede tardar)
 
+function openPodgetLogModal() {
+    const modal = document.getElementById('podget-log-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closePodgetLogModal() {
+    const modal = document.getElementById('podget-log-modal');
+    if (modal) modal.style.display = 'none';
+}
+
 function startPodgetLogViewer() {
-    const viewer  = document.getElementById('podget-log-viewer');
     const content = document.getElementById('podget-log-content');
     const label   = document.getElementById('podget-log-status');
-    if (!viewer || !content) return;
+    if (!content) return;
 
     if (_logPollTimer) clearInterval(_logPollTimer);
     _logOffset    = 0;
     _logIdleCount = 0;
     content.textContent = '';
     label.textContent   = '⏳ esperando inicio del script…';
-    viewer.style.display = 'block';
 
     _logPollTimer = setInterval(_pollPodgetLog, LOG_POLL_MS);
 }

@@ -798,3 +798,98 @@ function updateAzuracastLiquidsoapConfig($username, $configData) {
         return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
     }
 }
+
+/**
+ * Comprueba el espacio de almacenamiento de la emisora en AzuraCast.
+ * Devuelve un array con los datos si queda menos de $thresholdBytes libres,
+ * o null si no se puede determinar o hay espacio suficiente.
+ *
+ * @param string $username
+ * @param int    $thresholdBytes  Umbral en bytes (por defecto 500 MB)
+ * @return array|null  ['quota_bytes', 'used_bytes', 'free_bytes', 'quota_fmt', 'used_fmt', 'free_fmt']
+ */
+function getStationStorageAlert($username, $thresholdBytes = 524288000) {
+    $config   = getConfig();
+    $apiUrl   = $config['azuracast_api_url'] ?? '';
+    $apiKey   = $config['azuracast_api_key'] ?? '';
+
+    if (empty($apiUrl) || empty($apiKey)) return null;
+
+    $userData  = getUserDB($username);
+    $stationId = $userData['azuracast']['station_id'] ?? null;
+    if (empty($stationId)) return null;
+
+    $endpoint = rtrim($apiUrl, '/') . '/admin/station/' . $stationId;
+    $context  = stream_context_create([
+        'http' => ['method' => 'GET', 'timeout' => 3, 'header' => "X-API-Key: {$apiKey}\r\n"]
+    ]);
+    $response = @file_get_contents($endpoint, false, $context);
+    if ($response === false) return null;
+
+    $station = json_decode($response, true);
+    if (!is_array($station)) return null;
+
+    $fmt = function(int $bytes): string {
+        if ($bytes >= 1073741824) return round($bytes / 1073741824, 2) . ' GB';
+        if ($bytes >= 1048576)    return round($bytes / 1048576, 1)    . ' MB';
+        return round($bytes / 1024, 0) . ' KB';
+    };
+
+    // Extrae quota y used de un objeto storage_location, probando camelCase y snake_case
+    $extractStorageBytes = function(?array $loc): array {
+        if (!is_array($loc)) return [null, null];
+        $quota = $loc['storageQuotaBytes'] ?? $loc['storage_quota_bytes'] ?? null;
+        $used  = $loc['storageUsedBytes']  ?? $loc['storage_used_bytes']  ?? null;
+        // Algunos endpoints devuelven strings "0" para sin cuota → convertir null
+        $quota = ($quota !== null && $quota !== '' && $quota !== '0') ? (int)$quota : null;
+        $used  = ($used  !== null && $used  !== '')                   ? (int)$used  : null;
+        return [$quota, $used];
+    };
+
+    // ── Método 1: datos embebidos en /admin/station/{id} ─────────────────────
+    foreach (['media_storage_location', 'recordings_storage_location'] as $locKey) {
+        $loc = $station[$locKey] ?? null;
+        [$quotaBytes, $usedBytes] = $extractStorageBytes($loc);
+        if ($quotaBytes !== null && $usedBytes !== null && $quotaBytes > 0) {
+            $freeBytes = $quotaBytes - $usedBytes;
+            if ($freeBytes >= $thresholdBytes) return null;
+            return [
+                'quota_bytes' => $quotaBytes,
+                'used_bytes'  => $usedBytes,
+                'free_bytes'  => max(0, $freeBytes),
+                'quota_fmt'   => $fmt($quotaBytes),
+                'used_fmt'    => $fmt($usedBytes),
+                'free_fmt'    => $fmt(max(0, $freeBytes)),
+            ];
+        }
+    }
+
+    // ── Método 2: endpoint dedicado /admin/storage_location/{id} ─────────────
+    // El objeto embebido puede no tener los bytes — llamar al endpoint propio
+    foreach (['media_storage_location', 'recordings_storage_location'] as $locKey) {
+        $loc = $station[$locKey] ?? null;
+        $locId = is_array($loc) ? ($loc['id'] ?? null) : null;
+        if (empty($locId)) continue;
+
+        $locEndpoint = rtrim($apiUrl, '/') . '/admin/storage_location/' . $locId;
+        $locResponse = @file_get_contents($locEndpoint, false, $context);
+        if ($locResponse === false) continue;
+
+        $locData = json_decode($locResponse, true);
+        [$quotaBytes, $usedBytes] = $extractStorageBytes($locData);
+        if ($quotaBytes !== null && $usedBytes !== null && $quotaBytes > 0) {
+            $freeBytes = $quotaBytes - $usedBytes;
+            if ($freeBytes >= $thresholdBytes) return null;
+            return [
+                'quota_bytes' => $quotaBytes,
+                'used_bytes'  => $usedBytes,
+                'free_bytes'  => max(0, $freeBytes),
+                'quota_fmt'   => $fmt($quotaBytes),
+                'used_fmt'    => $fmt($usedBytes),
+                'free_fmt'    => $fmt(max(0, $freeBytes)),
+            ];
+        }
+    }
+
+    return null;
+}
