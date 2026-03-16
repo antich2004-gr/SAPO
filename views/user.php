@@ -143,7 +143,7 @@ if (!array_key_exists('storage_alert', $_SESSION)) {
 }
 $storageAlert = $_SESSION['storage_alert'] ?? null;
 // DEBUG TEMPORAL
-error_log('SAPO DEBUG storage_alert: ' . json_encode($storageAlert) . ' | username: ' . ($_SESSION['username'] ?? 'N/A') . ' | key_exists: ' . (array_key_exists('storage_alert', $_SESSION) ? 'SI' : 'NO'));
+file_put_contents('/tmp/sapo_debug.txt', date('H:i:s') . ' | username: ' . ($_SESSION['username'] ?? 'N/A') . ' | key_exists: ' . (array_key_exists('storage_alert', $_SESSION) ? 'SI' : 'NO') . ' | storage_alert: ' . json_encode($storageAlert) . PHP_EOL, FILE_APPEND);
 if ($storageAlert !== null) {
     $dashboardAlerts['critical'][] = [
         'title'   => 'Espacio en disco bajo',
