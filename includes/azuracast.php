@@ -869,57 +869,51 @@ function getStationStorageAlert($username, $thresholdBytes = 524288000) {
         return [$quota, $used];
     };
 
-    // ── Método 1: datos embebidos en /admin/station/{id} ─────────────────────
-    foreach (['media_storage_location', 'recordings_storage_location'] as $locKey) {
+    $locKeys = [
+        'media_storage_location'      => 'Archivos de media',
+        'recordings_storage_location' => 'Grabaciones',
+    ];
+    $alerts = [];
+
+    foreach ($locKeys as $locKey => $locLabel) {
         $loc = $station[$locKey] ?? null;
+
+        // Método 1: datos embebidos en /admin/station/{id}
         [$quotaBytes, $usedBytes] = $extractStorageBytes(is_array($loc) ? $loc : null);
+
+        // Método 2: endpoint dedicado si el embebido no tiene bytes
+        if ($quotaBytes === null || $usedBytes === null) {
+            if (is_array($loc)) {
+                $locId = $loc['id'] ?? null;
+            } elseif (is_numeric($loc) && $loc > 0) {
+                $locId = (int)$loc;
+            } else {
+                $locId = null;
+            }
+            if (!empty($locId)) {
+                $locEndpoint = rtrim($apiUrl, '/') . '/admin/storage_location/' . $locId;
+                $locResponse = @file_get_contents($locEndpoint, false, $context);
+                if ($locResponse !== false) {
+                    [$quotaBytes, $usedBytes] = $extractStorageBytes(json_decode($locResponse, true));
+                }
+            }
+        }
+
         if ($quotaBytes !== null && $usedBytes !== null && $quotaBytes > 0) {
             $freeBytes = $quotaBytes - $usedBytes;
-            if ($freeBytes >= $thresholdBytes) return null;
-            return [
-                'quota_bytes' => $quotaBytes,
-                'used_bytes'  => $usedBytes,
-                'free_bytes'  => max(0, $freeBytes),
-                'quota_fmt'   => $fmt($quotaBytes),
-                'used_fmt'    => $fmt($usedBytes),
-                'free_fmt'    => $fmt(max(0, $freeBytes)),
-            ];
+            if ($freeBytes < $thresholdBytes) {
+                $alerts[$locKey] = [
+                    'label'       => $locLabel,
+                    'quota_bytes' => $quotaBytes,
+                    'used_bytes'  => $usedBytes,
+                    'free_bytes'  => max(0, $freeBytes),
+                    'quota_fmt'   => $fmt($quotaBytes),
+                    'used_fmt'    => $fmt($usedBytes),
+                    'free_fmt'    => $fmt(max(0, $freeBytes)),
+                ];
+            }
         }
     }
 
-    // ── Método 2: endpoint dedicado /admin/storage_location/{id} ─────────────
-    // El objeto embebido puede no tener los bytes — llamar al endpoint propio
-    foreach (['media_storage_location', 'recordings_storage_location'] as $locKey) {
-        $loc = $station[$locKey] ?? null;
-        // La API puede devolver el ID como entero o como objeto con campo 'id'
-        if (is_array($loc)) {
-            $locId = $loc['id'] ?? null;
-        } elseif (is_numeric($loc) && $loc > 0) {
-            $locId = (int)$loc;
-        } else {
-            $locId = null;
-        }
-        if (empty($locId)) continue;
-
-        $locEndpoint = rtrim($apiUrl, '/') . '/admin/storage_location/' . $locId;
-        $locResponse = @file_get_contents($locEndpoint, false, $context);
-        if ($locResponse === false) continue;
-
-        $locData = json_decode($locResponse, true);
-        [$quotaBytes, $usedBytes] = $extractStorageBytes($locData);
-        if ($quotaBytes !== null && $usedBytes !== null && $quotaBytes > 0) {
-            $freeBytes = $quotaBytes - $usedBytes;
-            if ($freeBytes >= $thresholdBytes) return null;
-            return [
-                'quota_bytes' => $quotaBytes,
-                'used_bytes'  => $usedBytes,
-                'free_bytes'  => max(0, $freeBytes),
-                'quota_fmt'   => $fmt($quotaBytes),
-                'used_fmt'    => $fmt($usedBytes),
-                'free_fmt'    => $fmt(max(0, $freeBytes)),
-            ];
-        }
-    }
-
-    return null;
+    return !empty($alerts) ? $alerts : null;
 }
