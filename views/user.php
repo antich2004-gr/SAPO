@@ -84,11 +84,17 @@ $podcastsPaginated = array_slice($podcasts, $offset, $itemsPerPage);
 
 // ── Dashboard: conteo de podcasts por estado de RSS ──────────────────────────
 // formatFeedStatus devuelve class: 'recent' | 'old' | 'inactive' | 'unknown'
-$podcastCounts = ['recent' => 0, 'old' => 0, 'inactive' => 0, 'unknown' => 0];
-$podcastByStatus = ['recent' => [], 'old' => [], 'inactive' => []];
+$podcastCounts = ['recent' => 0, 'old' => 0, 'inactive' => 0, 'unknown' => 0, 'paused' => 0];
+$podcastByStatus = ['recent' => [], 'old' => [], 'inactive' => [], 'paused' => []];
 $dashboardAlerts = ['critical' => [], 'warning' => []];
 foreach ($podcasts as $podcast) {
     $name = displayName($podcast['name']);
+    // Los podcasts pausados solo se contabilizan en la categoría "Pausados"
+    if (!empty($podcast['paused'])) {
+        $podcastCounts['paused']++;
+        $podcastByStatus['paused'][] = $name;
+        continue;
+    }
     if (($podcast['type'] ?? 'rss') === 'ytdlp') {
         $podcastCounts['recent']++;
         $podcastByStatus['recent'][] = $name;
@@ -100,7 +106,7 @@ foreach ($podcasts as $podcast) {
     if (array_key_exists($cls, $podcastCounts)) $podcastCounts[$cls]++;
     else $podcastCounts['unknown']++;
     if (isset($podcastByStatus[$cls])) $podcastByStatus[$cls][] = $name;
-    if (in_array($cls, ['old', 'inactive']) && empty($podcast['paused'])) {
+    if (in_array($cls, ['old', 'inactive'])) {
         $days = $si['days'] ?? 0;
         $dashboardAlerts['warning'][] = [
             'title'   => $name,
@@ -402,6 +408,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                             ['key' => 'recent',   'label' => '&lt;30d',    'bg' => '#38a169'],
                                             ['key' => 'old',      'label' => '30 a 60d', 'bg' => '#d97706'],
                                             ['key' => 'inactive', 'label' => '&gt;60d',    'bg' => '#e53e3e'],
+                                            ['key' => 'paused',   'label' => 'Pausados',  'bg' => '#718096'],
                                         ];
                                         foreach ($bars as $bar):
                                             $names = $podcastByStatus[$bar['key']];
