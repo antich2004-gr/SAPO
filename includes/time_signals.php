@@ -11,6 +11,7 @@ function getTimeSignalsDir($username) {
     // Crear directorio si no existe
     if (!is_dir($dir)) {
         mkdir($dir, 0777, true);
+        chmod($dir, 0777);
     }
 
     return $dir;
@@ -159,6 +160,7 @@ function uploadTimeSignal($username, $file) {
 
     if (!is_dir($dir)) {
         mkdir($dir, 0777, true);
+        chmod($dir, 0777);
     }
 
     // Validar archivo
@@ -256,6 +258,7 @@ function getTimeSignalsConfigPath($username) {
     $dir = getTimeSignalsDir($username);
     if (!is_dir($dir)) {
         mkdir($dir, 0777, true);
+        chmod($dir, 0777);
     }
     return $dir . '/config.json';
 }
