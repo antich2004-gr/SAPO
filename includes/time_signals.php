@@ -267,12 +267,11 @@ function deleteTimeSignal($username, $filename) {
  * Obtener ruta del archivo de configuración
  */
 function getTimeSignalsConfigPath($username) {
-    $dir = getTimeSignalsDir($username);
+    $dir = DATA_DIR . '/time_signals';
     if (!is_dir($dir)) {
         mkdir($dir, 0777, true);
-        chmod($dir, 0777);
     }
-    return $dir . '/config.json';
+    return $dir . '/' . $username . '_config.json';
 }
 
 /**
