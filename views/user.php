@@ -442,10 +442,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
                                         <div style="display: flex; align-items: center; justify-content: space-between; background: #718096; color: white; border-radius: 6px; padding: 6px 12px; min-height: 36px;">
                                             <span style="font-size: 12px;">Días de retención</span>
-                                            <div style="display:flex;align-items:center;gap:8px;">
-                                                <strong style="font-size:18px;"><?php echo htmlEsc($defaultCaducidad); ?></strong>
-                                                <button onclick="deleteOldRecordingsNow()" style="background:rgba(0,0,0,0.25);color:white;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;white-space:nowrap;">🗑️ Eliminar antiguas</button>
-                                            </div>
+                                            <strong style="font-size:18px;"><?php echo htmlEsc($defaultCaducidad); ?></strong>
                                         </div>
                                         <div style="display: flex; align-items: center; justify-content: space-between; background: #718096; color: white; border-radius: 6px; padding: 6px 12px; min-height: 36px;">
                                             <span style="font-size: 12px;">Espacio usado</span>
