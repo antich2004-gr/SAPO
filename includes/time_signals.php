@@ -10,8 +10,13 @@ function getTimeSignalsDir($username) {
 
     // Crear directorio si no existe
     if (!is_dir($dir)) {
-        mkdir($dir, 0777, true);
-        chmod($dir, 0777);
+        $result = @mkdir($dir, 0777, true);
+        if ($result) {
+            chmod($dir, 0777);
+        } else {
+            $parent = dirname($dir);
+            error_log("mkdir FALLÓ: dir=$dir | parent_exists=" . (is_dir($parent)?'si':'no') . " | parent_writable=" . (is_writable($parent)?'si':'no') . " | parent_perms=" . substr(sprintf('%o',fileperms($parent)),-4) . " | error=" . error_get_last()['message']);
+        }
     }
 
     return $dir;
