@@ -142,14 +142,6 @@ if (!array_key_exists('storage_alert', $_SESSION)) {
     }
 }
 $storageAlert = $_SESSION['storage_alert'] ?? null;
-// DEBUG TEMPORAL
-file_put_contents('/tmp/sapo_debug.txt', date('H:i:s') . ' | username: ' . ($_SESSION['username'] ?? 'N/A') . ' | key_exists: ' . (array_key_exists('storage_alert', $_SESSION) ? 'SI' : 'NO') . ' | storage_alert: ' . json_encode($storageAlert) . PHP_EOL, FILE_APPEND);
-if ($storageAlert !== null) {
-    $dashboardAlerts['critical'][] = [
-        'title'   => 'Espacio en disco bajo',
-        'message' => "⚠️ Solo quedan {$storageAlert['free_fmt']} libres de {$storageAlert['quota_fmt']} asignados (usado: {$storageAlert['used_fmt']})",
-    ];
-}
 
 // Detectar si estamos editando
 $isEditing = isset($_GET['edit']) && is_numeric($_GET['edit']);
@@ -326,6 +318,17 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                             <pre id="report-modal-content" style="margin:0;padding:16px 20px;overflow:auto;font-size:12px;font-family:monospace;white-space:pre-wrap;word-break:break-word;color:#2d3748;flex:1;"></pre>
                         </div>
                     </div>
+
+                    <!-- Alerta de espacio en disco (independiente) -->
+                    <?php if ($storageAlert !== null): ?>
+                    <div style="margin-bottom:16px;padding:12px 16px;background:#fff3cd;border:1px solid #f59e0b;border-radius:8px;display:flex;align-items:center;gap:10px;">
+                        <span style="font-size:20px;">💾</span>
+                        <div>
+                            <strong style="color:#92400e;">Espacio en disco bajo</strong><br>
+                            <span style="font-size:13px;color:#78350f;">Solo quedan <strong><?php echo htmlEsc($storageAlert['free_fmt']); ?></strong> libres de <?php echo htmlEsc($storageAlert['quota_fmt']); ?> asignados (usado: <?php echo htmlEsc($storageAlert['used_fmt']); ?>)</span>
+                        </div>
+                    </div>
+                    <?php endif; ?>
 
                     <!-- ① ALERTAS -->
                     <?php if (!empty($dashboardAlerts['critical']) || !empty($dashboardAlerts['warning'])): ?>
