@@ -319,26 +319,26 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         </div>
                     </div>
 
-                    <!-- Alertas de espacio en disco (una por ubicación) -->
-                    <?php if (is_array($storageAlert)): ?>
-                        <?php foreach ($storageAlert as $sa): ?>
-                        <div style="margin-bottom:10px;padding:12px 16px;background:#fff3cd;border:1px solid #f59e0b;border-radius:8px;display:flex;align-items:center;gap:10px;">
-                            <span style="font-size:20px;">💾</span>
-                            <div>
-                                <strong style="color:#92400e;">Espacio en disco bajo — <?php echo htmlEsc($sa['label']); ?></strong><br>
-                                <span style="font-size:13px;color:#78350f;">Solo quedan <strong><?php echo htmlEsc($sa['free_fmt']); ?></strong> libres de <?php echo htmlEsc($sa['quota_fmt']); ?> asignados (usado: <?php echo htmlEsc($sa['used_fmt']); ?>)</span>
-                            </div>
-                        </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-
                     <!-- ① ALERTAS -->
-                    <?php if (!empty($dashboardAlerts['critical']) || !empty($dashboardAlerts['warning'])): ?>
+                    <?php if (is_array($storageAlert) || !empty($dashboardAlerts['critical']) || !empty($dashboardAlerts['warning'])): ?>
                     <div style="margin-bottom: 30px;">
                         <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #2d3748; display: flex; align-items: center; gap: 8px;">
                             <span style="background:#e53e3e;color:white;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">!</span>
                             Alertas
                         </h3>
+
+                        <!-- Alertas de espacio en disco -->
+                        <?php if (is_array($storageAlert)): ?>
+                            <?php foreach ($storageAlert as $sa): ?>
+                            <div style="margin-bottom:10px;padding:12px 16px;background:#fff3cd;border:1px solid #f59e0b;border-radius:8px;display:flex;align-items:center;gap:10px;">
+                                <span style="font-size:20px;">💾</span>
+                                <div>
+                                    <strong style="color:#92400e;">Espacio en disco bajo — <?php echo htmlEsc($sa['label']); ?></strong><br>
+                                    <span style="font-size:13px;color:#78350f;">Solo quedan <strong><?php echo htmlEsc($sa['free_fmt']); ?></strong> libres de <?php echo htmlEsc($sa['quota_fmt']); ?> asignados (usado: <?php echo htmlEsc($sa['used_fmt']); ?>)</span>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
 
                         <?php if (!empty($dashboardAlerts['critical'])): ?>
                         <div class="stale-programs-panel" style="border-color:#dc2626;background:#fee2e2;margin-bottom:10px;">
