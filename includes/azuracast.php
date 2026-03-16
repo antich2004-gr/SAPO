@@ -824,6 +824,10 @@ function getStationStorageAlert($username, $thresholdBytes = 524288000) {
         'http' => ['method' => 'GET', 'timeout' => 8, 'header' => "X-API-Key: {$apiKey}\r\n"]
     ]);
     $response = @file_get_contents($endpoint, false, $context);
+    if ($response === false) return null;
+
+    $station = json_decode($response, true);
+    if (!is_array($station)) return null;
 
     $fmt = function(int $bytes): string {
         if ($bytes >= 1073741824) return round($bytes / 1073741824, 2) . ' GB';
@@ -831,64 +835,60 @@ function getStationStorageAlert($username, $thresholdBytes = 524288000) {
         return round($bytes / 1024, 0) . ' KB';
     };
 
-    // ── Método 1: cuota definida en AzuraCast ─────────────────────────────────
-    if ($response !== false) {
-        $station = json_decode($response, true);
-        if (is_array($station)) {
-            $storageLoc = $station['media_storage_location'] ?? $station['recordings_storage_location'] ?? null;
-            if (is_array($storageLoc)) {
-                $quotaBytes = isset($storageLoc['storageQuotaBytes']) && $storageLoc['storageQuotaBytes'] !== null
-                    ? (int)$storageLoc['storageQuotaBytes'] : null;
-                $usedBytes  = isset($storageLoc['storageUsedBytes'])  && $storageLoc['storageUsedBytes']  !== null
-                    ? (int)$storageLoc['storageUsedBytes']  : null;
+    // Extrae quota y used de un objeto storage_location, probando camelCase y snake_case
+    $extractStorageBytes = function(?array $loc): array {
+        if (!is_array($loc)) return [null, null];
+        $quota = $loc['storageQuotaBytes'] ?? $loc['storage_quota_bytes'] ?? null;
+        $used  = $loc['storageUsedBytes']  ?? $loc['storage_used_bytes']  ?? null;
+        // Algunos endpoints devuelven strings "0" para sin cuota → convertir null
+        $quota = ($quota !== null && $quota !== '' && $quota !== '0') ? (int)$quota : null;
+        $used  = ($used  !== null && $used  !== '')                   ? (int)$used  : null;
+        return [$quota, $used];
+    };
 
-                if ($quotaBytes !== null && $usedBytes !== null && $quotaBytes > 0) {
-                    $freeBytes = $quotaBytes - $usedBytes;
-                    if ($freeBytes >= $thresholdBytes) return null;
-                    return [
-                        'quota_bytes' => $quotaBytes,
-                        'used_bytes'  => $usedBytes,
-                        'free_bytes'  => max(0, $freeBytes),
-                        'quota_fmt'   => $fmt($quotaBytes),
-                        'used_fmt'    => $fmt($usedBytes),
-                        'free_fmt'    => $fmt(max(0, $freeBytes)),
-                        'source'      => 'quota',
-                    ];
-                }
-            }
+    // ── Método 1: datos embebidos en /admin/station/{id} ─────────────────────
+    foreach (['media_storage_location', 'recordings_storage_location'] as $locKey) {
+        $loc = $station[$locKey] ?? null;
+        [$quotaBytes, $usedBytes] = $extractStorageBytes($loc);
+        if ($quotaBytes !== null && $usedBytes !== null && $quotaBytes > 0) {
+            $freeBytes = $quotaBytes - $usedBytes;
+            if ($freeBytes >= $thresholdBytes) return null;
+            return [
+                'quota_bytes' => $quotaBytes,
+                'used_bytes'  => $usedBytes,
+                'free_bytes'  => max(0, $freeBytes),
+                'quota_fmt'   => $fmt($quotaBytes),
+                'used_fmt'    => $fmt($usedBytes),
+                'free_fmt'    => $fmt(max(0, $freeBytes)),
+            ];
         }
     }
 
-    // ── Método 2: fallback a disk_free_space() sobre el directorio de la emisora
-    $stationDir = null;
-    if (isset($station) && is_array($station)) {
-        $mediaLoc = $station['media_storage_location'] ?? null;
-        if (is_array($mediaLoc) && !empty($mediaLoc['path'])) {
-            $stationDir = $mediaLoc['path'];
-        }
-        if (empty($stationDir)) {
-            $stationDir = $station['radio_base_dir'] ?? null;
-        }
-    }
-    // Último recurso: directorio de grabaciones ya conocido
-    if (empty($stationDir)) {
-        $stationDir = getRecordingsDir($username);
-    }
+    // ── Método 2: endpoint dedicado /admin/storage_location/{id} ─────────────
+    // El objeto embebido puede no tener los bytes — llamar al endpoint propio
+    foreach (['media_storage_location', 'recordings_storage_location'] as $locKey) {
+        $loc = $station[$locKey] ?? null;
+        $locId = is_array($loc) ? ($loc['id'] ?? null) : null;
+        if (empty($locId)) continue;
 
-    if (!empty($stationDir) && is_dir($stationDir)) {
-        $freeBytes  = (int)disk_free_space($stationDir);
-        $totalBytes = (int)disk_total_space($stationDir);
-        if ($freeBytes >= $thresholdBytes) return null;
-        $usedBytes = $totalBytes - $freeBytes;
-        return [
-            'quota_bytes' => $totalBytes,
-            'used_bytes'  => $usedBytes,
-            'free_bytes'  => $freeBytes,
-            'quota_fmt'   => $fmt($totalBytes),
-            'used_fmt'    => $fmt($usedBytes),
-            'free_fmt'    => $fmt($freeBytes),
-            'source'      => 'filesystem',
-        ];
+        $locEndpoint = rtrim($apiUrl, '/') . '/admin/storage_location/' . $locId;
+        $locResponse = @file_get_contents($locEndpoint, false, $context);
+        if ($locResponse === false) continue;
+
+        $locData = json_decode($locResponse, true);
+        [$quotaBytes, $usedBytes] = $extractStorageBytes($locData);
+        if ($quotaBytes !== null && $usedBytes !== null && $quotaBytes > 0) {
+            $freeBytes = $quotaBytes - $usedBytes;
+            if ($freeBytes >= $thresholdBytes) return null;
+            return [
+                'quota_bytes' => $quotaBytes,
+                'used_bytes'  => $usedBytes,
+                'free_bytes'  => max(0, $freeBytes),
+                'quota_fmt'   => $fmt($quotaBytes),
+                'used_fmt'    => $fmt($usedBytes),
+                'free_fmt'    => $fmt(max(0, $freeBytes)),
+            ];
+        }
     }
 
     return null;
