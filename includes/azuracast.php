@@ -824,40 +824,6 @@ function getStationStorageAlert($username, $thresholdBytes = 524288000) {
         'http' => ['method' => 'GET', 'timeout' => 8, 'header' => "X-API-Key: {$apiKey}\r\n"]
     ]);
     $response = @file_get_contents($endpoint, false, $context);
-    if ($response === false) {
-        error_log("STORAGE_ALERT: fallo al llamar a $endpoint");
-        return null;
-    }
-
-    $station = json_decode($response, true);
-    if (!is_array($station)) {
-        error_log("STORAGE_ALERT: respuesta no es JSON válido");
-        return null;
-    }
-
-    // Intentar media_storage_location primero, luego recordings_storage_location
-    $storageLoc = $station['media_storage_location'] ?? $station['recordings_storage_location'] ?? null;
-    error_log("STORAGE_ALERT: keys en station=" . implode(',', array_keys($station)));
-    if (!is_array($storageLoc)) {
-        error_log("STORAGE_ALERT: storage_location no encontrado o no es array");
-        return null;
-    }
-    error_log("STORAGE_ALERT: keys en storageLoc=" . implode(',', array_keys($storageLoc)));
-
-    $quotaBytes = isset($storageLoc['storageQuotaBytes']) && $storageLoc['storageQuotaBytes'] !== null
-        ? (int)$storageLoc['storageQuotaBytes'] : null;
-    $usedBytes  = isset($storageLoc['storageUsedBytes'])  && $storageLoc['storageUsedBytes']  !== null
-        ? (int)$storageLoc['storageUsedBytes']  : null;
-    error_log("STORAGE_ALERT: quotaBytes=$quotaBytes usedBytes=$usedBytes");
-
-    // Sin cuota definida no podemos calcular el espacio libre
-    if ($quotaBytes === null || $usedBytes === null || $quotaBytes <= 0) {
-        error_log("STORAGE_ALERT: sin cuota definida, no se puede calcular espacio libre");
-        return null;
-    }
-
-    $freeBytes = $quotaBytes - $usedBytes;
-    if ($freeBytes >= $thresholdBytes) return null;   // Suficiente espacio, sin alerta
 
     $fmt = function(int $bytes): string {
         if ($bytes >= 1073741824) return round($bytes / 1073741824, 2) . ' GB';
@@ -865,12 +831,65 @@ function getStationStorageAlert($username, $thresholdBytes = 524288000) {
         return round($bytes / 1024, 0) . ' KB';
     };
 
-    return [
-        'quota_bytes' => $quotaBytes,
-        'used_bytes'  => $usedBytes,
-        'free_bytes'  => $freeBytes,
-        'quota_fmt'   => $fmt($quotaBytes),
-        'used_fmt'    => $fmt($usedBytes),
-        'free_fmt'    => $fmt(max(0, $freeBytes)),
-    ];
+    // ── Método 1: cuota definida en AzuraCast ─────────────────────────────────
+    if ($response !== false) {
+        $station = json_decode($response, true);
+        if (is_array($station)) {
+            $storageLoc = $station['media_storage_location'] ?? $station['recordings_storage_location'] ?? null;
+            if (is_array($storageLoc)) {
+                $quotaBytes = isset($storageLoc['storageQuotaBytes']) && $storageLoc['storageQuotaBytes'] !== null
+                    ? (int)$storageLoc['storageQuotaBytes'] : null;
+                $usedBytes  = isset($storageLoc['storageUsedBytes'])  && $storageLoc['storageUsedBytes']  !== null
+                    ? (int)$storageLoc['storageUsedBytes']  : null;
+
+                if ($quotaBytes !== null && $usedBytes !== null && $quotaBytes > 0) {
+                    $freeBytes = $quotaBytes - $usedBytes;
+                    if ($freeBytes >= $thresholdBytes) return null;
+                    return [
+                        'quota_bytes' => $quotaBytes,
+                        'used_bytes'  => $usedBytes,
+                        'free_bytes'  => max(0, $freeBytes),
+                        'quota_fmt'   => $fmt($quotaBytes),
+                        'used_fmt'    => $fmt($usedBytes),
+                        'free_fmt'    => $fmt(max(0, $freeBytes)),
+                        'source'      => 'quota',
+                    ];
+                }
+            }
+        }
+    }
+
+    // ── Método 2: fallback a disk_free_space() sobre el directorio de la emisora
+    $stationDir = null;
+    if (isset($station) && is_array($station)) {
+        $mediaLoc = $station['media_storage_location'] ?? null;
+        if (is_array($mediaLoc) && !empty($mediaLoc['path'])) {
+            $stationDir = $mediaLoc['path'];
+        }
+        if (empty($stationDir)) {
+            $stationDir = $station['radio_base_dir'] ?? null;
+        }
+    }
+    // Último recurso: directorio de grabaciones ya conocido
+    if (empty($stationDir)) {
+        $stationDir = getRecordingsDir($username);
+    }
+
+    if (!empty($stationDir) && is_dir($stationDir)) {
+        $freeBytes  = (int)disk_free_space($stationDir);
+        $totalBytes = (int)disk_total_space($stationDir);
+        if ($freeBytes >= $thresholdBytes) return null;
+        $usedBytes = $totalBytes - $freeBytes;
+        return [
+            'quota_bytes' => $totalBytes,
+            'used_bytes'  => $usedBytes,
+            'free_bytes'  => $freeBytes,
+            'quota_fmt'   => $fmt($totalBytes),
+            'used_fmt'    => $fmt($usedBytes),
+            'free_fmt'    => $fmt($freeBytes),
+            'source'      => 'filesystem',
+        ];
+    }
+
+    return null;
 }
