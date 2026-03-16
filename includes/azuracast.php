@@ -821,7 +821,7 @@ function getStationStorageAlert($username, $thresholdBytes = 524288000) {
 
     $endpoint = rtrim($apiUrl, '/') . '/admin/station/' . $stationId;
     $context  = stream_context_create([
-        'http' => ['method' => 'GET', 'timeout' => 8, 'header' => "X-API-Key: {$apiKey}\r\n"]
+        'http' => ['method' => 'GET', 'timeout' => 3, 'header' => "X-API-Key: {$apiKey}\r\n"]
     ]);
     $response = @file_get_contents($endpoint, false, $context);
     if ($response === false) return null;
