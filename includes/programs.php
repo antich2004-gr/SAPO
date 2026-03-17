@@ -511,12 +511,12 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
                 return trim($error->message);
             }, $errors);
             error_log("DEBUG RSS: ERROR - Fallo al parsear XML: " . implode('; ', $errorMessages));
-            error_log("[SAPO-Security] XML parsing failed for $rssUrl - Errors: " . implode('; ', $errorMessages));
+            error_log("[SAPO-Seguridad] Error al parsear XML de $rssUrl - Errores: " . implode('; ', $errorMessages));
 
             // Detectar posibles intentos XXE
             $rssLower = strtolower($rssContent);
             if (strpos($rssLower, '<!entity') !== false || strpos($rssLower, 'system') !== false) {
-                error_log("[SAPO-Security] POSSIBLE XXE ATTEMPT BLOCKED - Feed contains suspicious entities: $rssUrl");
+                error_log("[SAPO-Seguridad] POSIBLE INTENTO XXE BLOQUEADO - El feed contiene entidades sospechosas: $rssUrl");
             }
         } else {
             error_log("DEBUG RSS: ERROR - Error desconocido al parsear XML: $rssUrl");
@@ -653,7 +653,7 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
     if ($isTooOld) {
         error_log("DEBUG RSS: ⚠️ EPISODIO ANTIGUO - " . $title . " (>" . round($daysSincePublished) . " días)");
     } else {
-        error_log("DEBUG RSS: ✅ SUCCESS - Episodio procesado correctamente: " . $title);
+        error_log("DEBUG RSS: ✅ ÉXITO - Episodio procesado correctamente: " . $title);
     }
     error_log("DEBUG RSS: Link: " . $link);
     error_log("DEBUG RSS: Audio URL: " . $audioUrl);
@@ -703,7 +703,7 @@ function getRSSFromCache($rssUrl, $ttl) {
 
     $t2 = microtime(true);
     if (($t2 - $t1) > 0.1) {
-        error_log(sprintf("WARNING: getRSSFromCache tardó %.3fs para %s", $t2 - $t1, basename($cacheFile)));
+        error_log(sprintf("AVISO: getRSSFromCache tardó %.3fs para %s", $t2 - $t1, basename($cacheFile)));
     }
 
     return $decoded;  // Puede ser null (RSS fallido cacheado) o array (RSS exitoso)

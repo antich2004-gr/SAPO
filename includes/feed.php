@@ -8,21 +8,21 @@
 function validateRssFeedUrl($url) {
     // Validar formato básico
     if (!filter_var($url, FILTER_VALIDATE_URL)) {
-        error_log("[SAPO-Security] Invalid URL format rejected: " . $url);
+        error_log("[SAPO-Seguridad] Formato de URL inválido rechazado: " . $url);
         return false;
     }
 
     // Solo permitir HTTP y HTTPS
     $parsed = parse_url($url);
     if (!isset($parsed['scheme']) || !in_array(strtolower($parsed['scheme']), ['http', 'https'])) {
-        error_log("[SAPO-Security] Non-HTTP(S) scheme rejected: " . ($parsed['scheme'] ?? 'none') . " in URL: " . $url);
+        error_log("[SAPO-Seguridad] Esquema no HTTP(S) rechazado: " . ($parsed['scheme'] ?? 'ninguno') . " en URL: " . $url);
         return false;
     }
 
     // Obtener el host
     $host = $parsed['host'] ?? '';
     if (empty($host)) {
-        error_log("[SAPO-Security] Empty host rejected in URL: " . $url);
+        error_log("[SAPO-Seguridad] Host vacío rechazado en URL: " . $url);
         return false;
     }
 
@@ -32,13 +32,13 @@ function validateRssFeedUrl($url) {
         // No se pudo resolver, permitir solo si es un hostname válido
         // (algunos feeds usan CDNs que pueden no resolver desde el servidor)
         if (!preg_match('/^[a-zA-Z0-9.-]+$/', $host)) {
-            error_log("[SAPO-Security] Invalid hostname pattern rejected: " . $host);
+            error_log("[SAPO-Seguridad] Patrón de hostname inválido rechazado: " . $host);
             return false;
         }
     } else {
         // Validar que la IP no sea privada/localhost
         if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
-            error_log("[SAPO-Security] SSRF attempt blocked - Private/Reserved IP: " . $ip . " for host: " . $host);
+            error_log("[SAPO-Seguridad] Intento SSRF bloqueado - IP privada/reservada: " . $ip . " para host: " . $host);
             return false;
         }
     }
@@ -47,7 +47,7 @@ function validateRssFeedUrl($url) {
     $localhostPatterns = ['localhost', '127.0.0.1', '0.0.0.0', '::1', '169.254.'];
     foreach ($localhostPatterns as $pattern) {
         if (stripos($host, $pattern) !== false) {
-            error_log("[SAPO-Security] SSRF attempt blocked - Localhost pattern detected: " . $host);
+            error_log("[SAPO-Seguridad] Intento SSRF bloqueado - Patrón localhost detectado: " . $host);
             return false;
         }
     }
@@ -73,7 +73,7 @@ function getLastEpisodeDate($rssFeedUrl) {
     $xmlContent = @file_get_contents($rssFeedUrl, false, $context);
 
     if ($xmlContent === false) {
-        error_log("[SAPO-Feed] Failed to fetch RSS feed: " . $rssFeedUrl);
+        error_log("[SAPO-Feed] Error al obtener el feed RSS: " . $rssFeedUrl);
         return null;
     }
 
@@ -93,12 +93,12 @@ function getLastEpisodeDate($rssFeedUrl) {
             $errorMessages = array_map(function($error) {
                 return trim($error->message);
             }, $errors);
-            error_log("[SAPO-Security] XML parsing failed for " . $rssFeedUrl . " - Errors: " . implode('; ', $errorMessages));
+            error_log("[SAPO-Seguridad] Error al parsear XML de " . $rssFeedUrl . " - Errores: " . implode('; ', $errorMessages));
 
             // Detectar posibles intentos XXE
             $xmlLower = strtolower($xmlContent);
             if (strpos($xmlLower, '<!entity') !== false || strpos($xmlLower, 'system') !== false) {
-                error_log("[SAPO-Security] POSSIBLE XXE ATTEMPT BLOCKED - Feed contains suspicious entities: " . $rssFeedUrl);
+                error_log("[SAPO-Seguridad] POSIBLE INTENTO XXE BLOQUEADO - El feed contiene entidades sospechosas: " . $rssFeedUrl);
             }
         }
         return null;
