@@ -181,12 +181,10 @@ $users = getAllUsers();
                     <input type="hidden" name="action" value="update_azuracast_config">
                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                     <input type="hidden" name="username" value="<?php echo htmlEsc($user['username']); ?>">
-                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;align-items:end;">
-                        <div class="form-group" style="margin:0;">
-                            <label style="font-size:12px;margin-bottom:4px;">Station ID Radiobot</label>
-                            <input type="number" name="station_id" value="<?php echo htmlEsc($azuracastConfig['station_id'] ?? ''); ?>" placeholder="ej: 34" style="padding:6px;">
-                        </div>
-                        <button type="submit" class="btn btn-primary" style="padding:6px 14px;font-size:13px;">💾 Guardar</button>
+                    <div style="display:flex;gap:10px;align-items:center;">
+                        <label style="font-size:12px;white-space:nowrap;margin:0;">Station ID Radiobot</label>
+                        <input type="number" name="station_id" value="<?php echo htmlEsc($azuracastConfig['station_id'] ?? ''); ?>" placeholder="ej: 34" style="padding:6px;width:100px;">
+                        <button type="submit" class="btn btn-primary" style="padding:6px 14px;font-size:13px;white-space:nowrap;">💾 Guardar</button>
                     </div>
                 </form>
             </div>
