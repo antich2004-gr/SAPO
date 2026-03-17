@@ -592,6 +592,14 @@ function getLatestEpisodeFromRSS($rssUrl, $cacheTTL = 3600) {
     // Extraer fecha de publicación (RSS 2.0: pubDate, Atom: published o updated)
     $pubDate = (string)($item->pubDate ?? $item->published ?? $item->updated ?? '');
 
+    // Fallback a dc:date (Dublin Core) usado por SPIP y otros CMS
+    if (empty($pubDate)) {
+        $dcChildren = $item->children('http://purl.org/dc/elements/1.1/');
+        if (isset($dcChildren->date)) {
+            $pubDate = (string)$dcChildren->date;
+        }
+    }
+
     error_log("DEBUG RSS: Fecha de publicación (raw): " . $pubDate);
 
     // Buscar URL del audio (enclosure)

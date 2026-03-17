@@ -111,6 +111,13 @@ function getLastEpisodeDate($rssFeedUrl) {
         if (isset($firstItem->pubDate)) {
             $lastDate = (string)$firstItem->pubDate;
         }
+        // Fallback a dc:date (Dublin Core) usado por SPIP y otros CMS
+        if (!$lastDate) {
+            $dcChildren = $firstItem->children('http://purl.org/dc/elements/1.1/');
+            if (isset($dcChildren->date)) {
+                $lastDate = (string)$dcChildren->date;
+            }
+        }
     }
 
     if (!$lastDate && isset($xml->entry[0])) {
