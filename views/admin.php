@@ -67,15 +67,6 @@ $users = getAllUsers();
                         <input type="text" name="recordings_mount_base" value="<?php echo htmlEsc($config['recordings_mount_base'] ?? ''); ?>" placeholder="/mnt/emisoras" maxlength="255">
                         <small style="color:#718096;margin-top:4px;display:block;">Si se deja vacío se usa la ruta base de emisoras o la de Radiobot.</small>
                     </div>
-                </div>
-            </div>
-
-            <!-- Bloque avanzado plegable -->
-            <details style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:16px;margin-bottom:20px;">
-                <summary style="cursor:pointer;font-size:13px;font-weight:600;color:#92400e;user-select:none;">
-                    🔧 Configuración avanzada de carpetas
-                </summary>
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:14px;">
                     <div class="form-group" style="margin:0;">
                         <label>Carpeta de suscripciones <small style="font-weight:400;color:#718096;">(donde estará serverlist.txt)</small></label>
                         <input type="text" name="subscriptions_folder" value="<?php echo htmlEsc($config['subscriptions_folder']); ?>" required placeholder="Suscripciones" maxlength="100">
@@ -85,7 +76,7 @@ $users = getAllUsers();
                         <input type="text" name="podcasts_folder" value="<?php echo htmlEsc($config['podcasts_folder'] ?? 'Podcasts'); ?>" required placeholder="Podcasts" pattern="[a-zA-Z0-9_-]+" maxlength="100">
                     </div>
                 </div>
-            </details>
+            </div>
 
             <button type="submit" class="btn btn-warning"><span class="btn-icon">💾</span> Guardar configuración</button>
         </form>
