@@ -186,10 +186,6 @@ $users = getAllUsers();
                             <label style="font-size:12px;margin-bottom:4px;">Station ID Radiobot</label>
                             <input type="number" name="station_id" value="<?php echo htmlEsc($azuracastConfig['station_id'] ?? ''); ?>" placeholder="ej: 34" style="padding:6px;">
                         </div>
-                        <div class="form-group" style="margin:0;">
-                            <label style="font-size:12px;margin-bottom:4px;">Color widget</label>
-                            <input type="color" name="widget_color" value="<?php echo htmlEsc($azuracastConfig['widget_color'] ?? '#3b82f6'); ?>" style="padding:2px;height:34px;width:100%;">
-                        </div>
                         <button type="submit" class="btn btn-primary" style="padding:6px 14px;font-size:13px;">💾 Guardar</button>
                     </div>
                 </form>
