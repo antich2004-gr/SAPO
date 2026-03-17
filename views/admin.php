@@ -151,11 +151,13 @@ $users = getAllUsers();
                         <?php endif; ?>
                     </div>
                 </div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                     <button type="button" class="btn btn-warning" onclick="showPasswordModal('<?php echo htmlEsc($user['username']); ?>', '<?php echo htmlEsc($user['station_name']); ?>')" style="font-size:13px;padding:6px 12px;">
                         🔑 Contraseña
                     </button>
-                    <?php if (!$isAdminUser): ?>
+                    <?php if (!$isAdminUser):
+                        $azuracastConfig = getAzuracastConfig($user['username']);
+                    ?>
                     <form method="POST" style="display:inline;">
                         <input type="hidden" name="action" value="impersonate_user">
                         <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
@@ -168,27 +170,16 @@ $users = getAllUsers();
                         <input type="hidden" name="user_id" value="<?php echo htmlEsc($user['id']); ?>">
                         <button type="submit" class="btn btn-danger" style="font-size:13px;padding:6px 12px;" onclick="return confirm('¿Eliminar esta emisora?')">🗑️ Eliminar</button>
                     </form>
+                    <form method="POST" style="display:inline-flex;gap:6px;align-items:center;">
+                        <input type="hidden" name="action" value="update_azuracast_config">
+                        <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                        <input type="hidden" name="username" value="<?php echo htmlEsc($user['username']); ?>">
+                        <input type="number" name="station_id" value="<?php echo htmlEsc($azuracastConfig['station_id'] ?? ''); ?>" placeholder="Station ID" style="padding:6px;width:90px;font-size:13px;">
+                        <button type="submit" class="btn btn-primary" style="padding:6px 12px;font-size:13px;white-space:nowrap;">💾 Guardar</button>
+                    </form>
                     <?php endif; ?>
                 </div>
             </div>
-
-            <!-- Config de Radiobot (solo emisoras no-admin) -->
-            <?php if (!$isAdminUser):
-                $azuracastConfig = getAzuracastConfig($user['username']);
-            ?>
-            <div style="background:#f7fafc;border-radius:8px;padding:12px 16px;">
-                <form method="POST" style="margin:0;">
-                    <input type="hidden" name="action" value="update_azuracast_config">
-                    <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                    <input type="hidden" name="username" value="<?php echo htmlEsc($user['username']); ?>">
-                    <div style="display:flex;gap:10px;align-items:center;">
-                        <label style="font-size:12px;white-space:nowrap;margin:0;">Station ID Radiobot</label>
-                        <input type="number" name="station_id" value="<?php echo htmlEsc($azuracastConfig['station_id'] ?? ''); ?>" placeholder="ej: 34" style="padding:6px;width:100px;">
-                        <button type="submit" class="btn btn-primary" style="padding:6px 14px;font-size:13px;white-space:nowrap;">💾 Guardar</button>
-                    </div>
-                </form>
-            </div>
-            <?php endif; ?>
 
         </div>
         <?php endforeach; ?>
