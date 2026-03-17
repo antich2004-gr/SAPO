@@ -511,7 +511,17 @@ if [[ "$EJECUTAR_PODGET" -eq 1 ]]; then
         echo "     docker exec -it <nombre_contenedor> apt-get install -y podget"
         echo "   En el host: apt install podget"
     else
-        ( cd "$CONFIG_DIR" && stdbuf -oL "$PODGET_BIN" -d . -c "podgetrc.$EMISORA" ) | tee "$PODGET_LOG"
+        ( cd "$CONFIG_DIR" && stdbuf -oL "$PODGET_BIN" -d . -c "podgetrc.$EMISORA" ) \
+            | sed \
+                -e 's/Session file not found\./Fichero de sesión no encontrado./g' \
+                -e 's/Creating \(podget\.[0-9]*\)/Creando \1/g' \
+                -e 's/Downloading feed index from /Descargando índice del feed desde /g' \
+                -e 's/Already downloaded /Ya descargado /g' \
+                -e 's/Cleanup old tracks\./Limpiando episodios antiguos./g' \
+                -e 's/Closing session and removing lock file\./Cerrando sesión y eliminando el fichero de bloqueo./g' \
+                -e 's/Category:/Categoría:/g' \
+                -e 's/Name:/Nombre:/g' \
+            | tee "$PODGET_LOG"
     fi
 else
     echo "⏭️  Saltando ejecución de podget (--sinpodget activado)"
