@@ -1,6 +1,61 @@
 <?php
 // views/seguimiento_emision.php - Seguimiento de emisiones del mes (solo admin)
 
+// ── Emisora a visualizar ───────────────────────────────────────────────────────
+// Si el admin accede directamente (sin impersonar) usa ?station=username.
+// Si está impersonando, usa la sesión actual.
+if (isImpersonating()) {
+    $trackingUsername = $_SESSION['username'];
+    $trackingStation  = $_SESSION['station_name'];
+} elseif (isAdmin()) {
+    // Admin directo: leer ?station= o mostrar selector
+    $allUsers = getAllUsers();
+    $stationUsers = array_filter($allUsers, fn($u) => !($u['is_admin'] ?? false));
+
+    $requestedStation = $_GET['station'] ?? '';
+    $validUsernames   = array_column($stationUsers, 'username');
+
+    if ($requestedStation && in_array($requestedStation, $validUsernames, true)) {
+        $trackingUsername = $requestedStation;
+        $trackingStation  = $stationUsers[array_search($requestedStation, $validUsernames)]['station_name']
+                            ?? $requestedStation;
+    } else {
+        // Mostrar selector de emisora
+        ?>
+        <div class="card">
+            <div class="nav-buttons">
+                <h2 style="margin:0;">📊 Seguimiento Emisión</h2>
+                <a href="?" class="btn btn-secondary"><span class="btn-icon">⚙️</span> Panel Admin</a>
+            </div>
+            <div class="section" style="max-width:400px;">
+                <h3>Selecciona una emisora</h3>
+                <form method="GET">
+                    <input type="hidden" name="page" value="seguimiento_emision">
+                    <?php if (isset($_GET['month'])): ?>
+                    <input type="hidden" name="month" value="<?php echo htmlEsc($_GET['month']); ?>">
+                    <?php endif; ?>
+                    <div class="form-group">
+                        <label>Emisora</label>
+                        <select name="station" class="form-control">
+                            <option value="">— Seleccionar —</option>
+                            <?php foreach ($stationUsers as $u): ?>
+                            <option value="<?php echo htmlEsc($u['username']); ?>">
+                                <?php echo htmlEsc($u['station_name']); ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Ver seguimiento</button>
+                </form>
+            </div>
+        </div>
+        <?php
+        return;
+    }
+} else {
+    return; // No debería llegar aquí
+}
+
 // ── Mes objetivo ──────────────────────────────────────────────────────────────
 $targetMonth = (isset($_GET['month']) && preg_match('/^\d{4}-\d{2}$/', $_GET['month']))
     ? $_GET['month']
@@ -17,9 +72,11 @@ $monthStart  = mktime(0, 0, 0, $month, 1, $year);
 $daysInMonth = (int)date('t', $monthStart);
 $monthEnd    = mktime(23, 59, 59, $month, $daysInMonth, $year);
 
-$prevMonth  = date('Y-m', strtotime('-1 month', $monthStart));
-$nextMonth  = date('Y-m', strtotime('+1 month', $monthStart));
-$canGoNext  = ($nextMonth <= $currentMonth);
+// Construir base URL preservando station si aplica
+$stationParam = (!isImpersonating() && isset($_GET['station'])) ? '&station=' . urlencode($trackingUsername) : '';
+$prevMonth    = date('Y-m', strtotime('-1 month', $monthStart));
+$nextMonth    = date('Y-m', strtotime('+1 month', $monthStart));
+$canGoNext    = ($nextMonth <= $currentMonth);
 
 $monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -31,7 +88,7 @@ $today      = date('Y-m-d');
 // ── 1. Schedule: qué días de semana y hora tiene cada programa ────────────────
 $programSchedules = []; // [name => [[dayOfWeek, startTime, endTime], ...]]
 
-$schedule = getAzuracastSchedule($_SESSION['username'], 600);
+$schedule = getAzuracastSchedule($trackingUsername, 600);
 
 if ($schedule && is_array($schedule)) {
     foreach ($schedule as $event) {
@@ -80,7 +137,7 @@ if ($schedule && is_array($schedule)) {
 // ── Filtrar: excluir música, jingles, huérfanos y 'live' del schedule AzuraCast
 // Los 'live' NO vienen del schedule de AzuraCast, se añaden desde schedule_slots
 // de SAPO (igual que en la parrilla). Sin catalogar en SAPO → incluir.
-$programsDB = loadProgramsDB($_SESSION['username']);
+$programsDB = loadProgramsDB($trackingUsername);
 $dbPrograms = $programsDB['programs'] ?? [];
 
 if (!empty($programSchedules)) {
@@ -162,7 +219,7 @@ $historyMap   = [];
 $historyError = false;
 
 if ($hasSchedule) {
-    $history = getAzuracastHistory($_SESSION['username'], $monthStart, $monthEnd);
+    $history = getAzuracastHistory($trackingUsername, $monthStart, $monthEnd);
 
     if ($history === false) {
         $historyError = true;
@@ -264,7 +321,7 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div>
                 <h2 style="margin:0 0 2px 0;">📊 Seguimiento Emisión</h2>
-                <span style="color:#718096; font-size:13px;">Conectado como <strong><?php echo htmlEsc($_SESSION['station_name']); ?></strong></span>
+                <span style="color:#718096; font-size:13px;">📻 <strong><?php echo htmlEsc($trackingStation); ?></strong></span>
             </div>
             <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                 <a href="?" class="btn btn-secondary" style="font-size:13px;"><span class="btn-icon">⚙️</span> Panel Admin</a>
@@ -278,7 +335,7 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
 
     <!-- ── Navegación de mes ────────────────────────────────────────────────── -->
     <div style="padding:14px 24px; background:#f7fafc; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; gap:16px;">
-        <a href="?page=seguimiento_emision&month=<?php echo htmlEsc($prevMonth); ?>"
+        <a href="?page=seguimiento_emision&month=<?php echo htmlEsc($prevMonth . $stationParam); ?>"
            class="btn btn-secondary" style="font-size:13px; padding:6px 14px;">← Anterior</a>
 
         <span style="font-size:18px; font-weight:700; color:#2d3748; min-width:180px; text-align:center;">
@@ -286,7 +343,7 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
         </span>
 
         <?php if ($canGoNext): ?>
-            <a href="?page=seguimiento_emision&month=<?php echo htmlEsc($nextMonth); ?>"
+            <a href="?page=seguimiento_emision&month=<?php echo htmlEsc($nextMonth . $stationParam); ?>"
                class="btn btn-secondary" style="font-size:13px; padding:6px 14px;">Siguiente →</a>
         <?php else: ?>
             <button class="btn btn-secondary" disabled style="font-size:13px; padding:6px 14px; opacity:.4; cursor:not-allowed;">Siguiente →</button>
