@@ -106,13 +106,26 @@ foreach ($dbPrograms as $programKey => $programInfo) {
     $type     = $programInfo['playlist_type'] ?? 'program';
     $orphaned = $programInfo['orphaned'] ?? false;
     if ($type !== 'live' || $orphaned) continue;
-    if (empty($programInfo['schedule_slots'])) continue;
 
     $azName       = $programInfo['original_name'] ?? getProgramNameFromKey($programKey);
     $displayTitle = $programInfo['display_title'] ?: $azName;
 
+    // Igual que la parrilla: prioridad schedule_slots (nuevo), fallback schedule_days (antiguo)
+    $rawSlots = [];
+    if (!empty($programInfo['schedule_slots'])) {
+        $rawSlots = $programInfo['schedule_slots'];
+    } elseif (!empty($programInfo['schedule_days']) && !empty($programInfo['schedule_start_time'])) {
+        $rawSlots = [[
+            'days'       => $programInfo['schedule_days'],
+            'start_time' => $programInfo['schedule_start_time'],
+            'duration'   => (int)($programInfo['schedule_duration'] ?? 60),
+        ]];
+    }
+
+    if (empty($rawSlots)) continue;
+
     $slots = [];
-    foreach ($programInfo['schedule_slots'] as $slot) {
+    foreach ($rawSlots as $slot) {
         $scheduleDays = $slot['days'] ?? [];
         $startTime    = $slot['start_time'] ?? '';
         $duration     = (int)($slot['duration'] ?? 60);
