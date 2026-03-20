@@ -84,7 +84,7 @@
         <?php require_once 'views/help_parrilla.php'; ?>
     <?php elseif (isset($_GET['page']) && $_GET['page'] == 'parrilla' && isLoggedIn() && !isAdmin()): ?>
         <?php require_once 'views/parrilla.php'; ?>
-    <?php elseif (isset($_GET['page']) && $_GET['page'] == 'seguimiento_emision' && isLoggedIn() && (isAdmin() || isImpersonating())): ?>
+    <?php elseif (isset($_GET['page']) && $_GET['page'] == 'seguimiento_emision' && isLoggedIn()): ?>
         <?php require_once 'views/seguimiento_emision.php'; ?>
     <?php elseif (!isLoggedIn()): ?>
         <?php require_once 'views/login.php'; ?>
