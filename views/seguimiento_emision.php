@@ -1,24 +1,25 @@
 <?php
-// views/seguimiento_emision.php - Seguimiento de emisiones del mes (solo admin)
+// views/seguimiento_emision.php - Seguimiento de emisiones del mes
 
 // ── Emisora a visualizar ───────────────────────────────────────────────────────
-// Si el admin accede directamente (sin impersonar) usa ?station=username.
-// Si está impersonando, usa la sesión actual.
-if (isImpersonating()) {
+// Usuario normal o admin impersonando → usa la sesión actual.
+// Admin directo → selector de emisora o ?station=username.
+if (!isAdmin() || isImpersonating()) {
+    // Usuario normal (o admin viendo como emisora): usa sus propios datos
     $trackingUsername = $_SESSION['username'];
     $trackingStation  = $_SESSION['station_name'];
-} elseif (isAdmin()) {
+} else {
     // Admin directo: leer ?station= o mostrar selector
-    $allUsers = getAllUsers();
-    $stationUsers = array_filter($allUsers, fn($u) => !($u['is_admin'] ?? false));
+    $allUsers     = getAllUsers();
+    $stationUsers = array_values(array_filter($allUsers, fn($u) => !($u['is_admin'] ?? false)));
 
     $requestedStation = $_GET['station'] ?? '';
     $validUsernames   = array_column($stationUsers, 'username');
 
     if ($requestedStation && in_array($requestedStation, $validUsernames, true)) {
+        $idx              = array_search($requestedStation, $validUsernames);
         $trackingUsername = $requestedStation;
-        $trackingStation  = $stationUsers[array_search($requestedStation, $validUsernames)]['station_name']
-                            ?? $requestedStation;
+        $trackingStation  = $stationUsers[$idx]['station_name'] ?? $requestedStation;
     } else {
         // Mostrar selector de emisora
         ?>
@@ -52,8 +53,6 @@ if (isImpersonating()) {
         <?php
         return;
     }
-} else {
-    return; // No debería llegar aquí
 }
 
 // ── Mes objetivo ──────────────────────────────────────────────────────────────
@@ -443,7 +442,11 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                 <span style="color:#718096; font-size:13px;">📻 <strong><?php echo htmlEsc($trackingStation); ?></strong></span>
             </div>
             <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <?php if (isAdmin()): ?>
                 <a href="?" class="btn btn-secondary" style="font-size:13px;"><span class="btn-icon">⚙️</span> Panel Admin</a>
+                <?php else: ?>
+                <a href="?" class="btn btn-secondary" style="font-size:13px;"><span class="btn-icon">←</span> Volver</a>
+                <?php endif; ?>
                 <form method="POST" style="display:inline; margin:0;">
                     <input type="hidden" name="action" value="logout">
                     <button type="submit" class="btn btn-secondary" style="font-size:13px;"><span class="btn-icon">🚪</span> Cerrar Sesión</button>
