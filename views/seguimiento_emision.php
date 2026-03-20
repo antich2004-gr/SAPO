@@ -214,9 +214,10 @@ $hasSchedule = !empty($programSchedules);
 
 // ── 2. Historial de reproducción del mes ─────────────────────────────────────
 // historyMap[azPlaylistName][Y-m-d] = primera hora de emisión detectada ('HH:MM')
-// liveHistoryTimes[Y-m-d] = ['HH:MM', ...] → momentos con streamer activo
+// liveSessionStarts[Y-m-d] = ['HH:MM', ...] → hora de INICIO de cada sesión DJ
+// (agrupando canciones continuas; evita falsos positivos con entradas mid-sesión)
 $historyMap       = [];
-$liveHistoryTimes = [];
+$liveSessionStarts = [];
 $historyError     = false;
 
 if ($hasSchedule) {
@@ -225,6 +226,9 @@ if ($hasSchedule) {
     if ($history === false) {
         $historyError = true;
     } elseif (is_array($history)) {
+        // Recoger timestamps con streamer por día para luego agrupar en sesiones
+        $streamerTs = []; // [Y-m-d => [timestamp, ...]] ordenados asc
+
         foreach ($history as $entry) {
             $playlist = $entry['playlist'] ?? null;
             $streamer = trim($entry['streamer'] ?? '');
@@ -243,9 +247,27 @@ if ($hasSchedule) {
                 }
             }
 
-            // Directos: AzuraCast rellena 'streamer' en vez de 'playlist'
+            // Acumular timestamps de streamer para agrupar después
             if ($streamer !== '') {
-                $liveHistoryTimes[$dayStr][] = $timeStr;
+                $streamerTs[$dayStr][] = (int)$playedAt;
+            }
+        }
+
+        // Agrupar timestamps de streamer en sesiones (gap > 30 min = nueva sesión)
+        // y guardar solo el inicio de cada sesión
+        foreach ($streamerTs as $dayStr => $timestamps) {
+            sort($timestamps);
+            $sessionStart = null;
+            $prevTs       = null;
+            foreach ($timestamps as $ts) {
+                if ($sessionStart === null || ($ts - $prevTs) > 1800) {
+                    // Nueva sesión: guardar inicio
+                    $dt = new DateTime('@' . $ts);
+                    $dt->setTimezone($timezone);
+                    $liveSessionStarts[$dayStr][] = $dt->format('H:i');
+                    $sessionStart = $ts;
+                }
+                $prevTs = $ts;
             }
         }
     }
@@ -312,7 +334,7 @@ function liveTiempoCoincide($scheduledTime, $emStart) {
 }
 
 // ── Helper: estado de una celda ───────────────────────────────────────────────
-function cellStatus($programKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveHistoryTimes) {
+function cellStatus($programKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts) {
     $slots = array_filter(
         $programSchedules[$programKey] ?? [],
         fn($s) => $s['dayOfWeek'] === $day['dow']
@@ -338,7 +360,7 @@ function cellStatus($programKey, $day, $programSchedules, $historyMap, $today, $
     // Directo: verificar en historial AzuraCast (streamer) e informes diarios
     if (isset($livePrograms[$programKey])) {
         // Fuente 1: historial AzuraCast — entradas con streamer activo
-        foreach ($liveHistoryTimes[$day['date']] ?? [] as $t) {
+        foreach ($liveSessionStarts[$day['date']] ?? [] as $t) {
             if (liveTiempoCoincide($scheduledAt, $t)) {
                 return ['status' => 'played', 'scheduledAt' => $scheduledAt, 'time' => $t];
             }
@@ -375,7 +397,7 @@ if ($hasSchedule) {
     foreach (array_keys($programSchedules) as $progKey) {
         $isLive = isset($livePrograms[$progKey]);
         foreach ($days as $day) {
-            $cell   = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveHistoryTimes);
+            $cell   = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts);
             $status = $cell['status'];
             if ($isLive) {
                 if ($status === 'played')       { $totals['live_esperados']++; $totals['live_efectivos']++; }
@@ -476,7 +498,7 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                         </span>
                     </td>
                     <?php foreach ($days as $day):
-                        $cell = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveHistoryTimes);
+                        $cell = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts);
                         $status = $cell['status'];
 
                         switch ($status) {
@@ -605,13 +627,13 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
             }
         ?></pre>
 
-        <p style="margin:10px 0 4px;"><strong>Directos detectados vía historial AzuraCast (streamer):</strong></p>
+        <p style="margin:10px 0 4px;"><strong>Directos detectados vía historial AzuraCast (inicio de sesión DJ):</strong></p>
         <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:120px;"><?php
-            if (empty($liveHistoryTimes)) {
+            if (empty($liveSessionStarts)) {
                 echo "(ningún evento de streamer en el historial de este mes)\n";
             } else {
-                foreach ($liveHistoryTimes as $d => $times) {
-                    echo htmlEsc("$d: " . implode(', ', array_unique($times)) . "\n");
+                foreach ($liveSessionStarts as $d => $times) {
+                    echo htmlEsc("$d: " . implode(', ', $times) . "\n");
                 }
             }
         ?></pre>
