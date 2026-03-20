@@ -94,6 +94,16 @@ if (!empty($programSchedules)) {
     }
 }
 
+// Mapa de qué programas son directos (live)
+$livePrograms = [];
+if (!empty($dbPrograms)) {
+    foreach (array_keys($programSchedules) as $name) {
+        if (isset($dbPrograms[$name]) && ($dbPrograms[$name]['playlist_type'] ?? '') === 'live') {
+            $livePrograms[$name] = true;
+        }
+    }
+}
+
 $hasSchedule = !empty($programSchedules);
 
 // ── 2. Historial de reproducción del mes ─────────────────────────────────────
@@ -172,6 +182,37 @@ function cellStatus($programName, $day, $programSchedules, $historyMap, $today) 
 
     return ['status' => 'missed', 'scheduledAt' => $scheduledAt];
 }
+
+// ── Pre-cálculo de totales para el resumen ────────────────────────────────────
+$totals = [
+    'emite_ok'       => 0,  // celdas verdes (programas, excluye live)
+    'faltan'         => 0,  // celdas rojas (programas, excluye live)
+    'live_esperados' => 0,  // slots live en días pasados/hoy
+    'live_efectivos' => 0,  // slots live emitidos
+];
+
+if ($hasSchedule) {
+    foreach ($programSchedules as $progName => $slots) {
+        $isLive = isset($livePrograms[$progName]);
+        foreach ($days as $day) {
+            $cell = cellStatus($progName, $day, $programSchedules, $historyMap, $today);
+            $status = $cell['status'];
+            if ($isLive) {
+                // Directos: solo contamos días pasados y hoy (no futuros)
+                if ($status === 'played') {
+                    $totals['live_esperados']++;
+                    $totals['live_efectivos']++;
+                } elseif ($status === 'missed') {
+                    $totals['live_esperados']++;
+                }
+            } else {
+                if ($status === 'played') $totals['emite_ok']++;
+                elseif ($status === 'missed') $totals['faltan']++;
+            }
+        }
+    }
+}
+$totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
 ?>
 
 <div class="card" style="padding: 0;">
@@ -291,6 +332,36 @@ function cellStatus($programName, $day, $programSchedules, $historyMap, $today) 
     </div>
     <?php endif; ?>
 
+    <!-- ── Tabla de resumen ──────────────────────────────────────────────────── -->
+    <?php if ($hasSchedule): ?>
+    <div style="padding:0 24px 24px;">
+        <table class="resumen-table">
+            <tbody>
+                <tr class="resumen-emite-ok">
+                    <td>Total SE EMITE OK</td>
+                    <td><?php echo $totals['emite_ok']; ?></td>
+                </tr>
+                <tr class="resumen-faltan">
+                    <td>Total FALTAN</td>
+                    <td><?php echo $totals['faltan']; ?></td>
+                </tr>
+                <tr class="resumen-azura">
+                    <td>Total EMITIDOS Azura</td>
+                    <td><?php echo $totals['emitidos_azura']; ?></td>
+                </tr>
+                <tr class="resumen-directos">
+                    <td>Total <span style="font-size:16px;">·</span> Directos emitidos</td>
+                    <td><?php echo $totals['live_efectivos']; ?></td>
+                </tr>
+                <tr class="resumen-directos-esp">
+                    <td>Directos esperados</td>
+                    <td><?php echo $totals['live_esperados']; ?></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <?php endif; ?>
+
 </div>
 
 <!-- ── Estilos de la tabla ──────────────────────────────────────────────────── -->
@@ -382,4 +453,26 @@ function cellStatus($programName, $day, $programSchedules, $historyMap, $today) 
 /* Alternar color de filas */
 .seguimiento-table tbody tr:nth-child(even) .col-programa { background: #f7fafc; }
 .seguimiento-table tbody tr:hover .col-programa { background: #ebf4ff; }
+
+/* ── Tabla resumen ── */
+.resumen-table {
+    width: 320px;
+    border-collapse: collapse;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 16px;
+}
+.resumen-table td {
+    padding: 7px 14px;
+    border: 1px solid rgba(0,0,0,.12);
+}
+.resumen-table td:last-child {
+    text-align: right;
+    min-width: 60px;
+}
+.resumen-emite-ok  td { background: #c6f6d5; color: #22543d; }
+.resumen-faltan    td { background: #feb2b2; color: #742a2a; }
+.resumen-azura     td { background: #bee3f8; color: #2a4365; }
+.resumen-directos     td { background: #90cdf4; color: #2a4365; }
+.resumen-directos-esp td { background: #2d3748; color: #fff; }
 </style>
