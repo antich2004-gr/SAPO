@@ -77,6 +77,23 @@ if ($schedule && is_array($schedule)) {
     ksort($programSchedules);
 }
 
+// ── Filtrar: excluir listas de música, jingles y huérfanos ───────────────────
+// Solo mostramos playlist_type 'program' y 'live'.
+// Si un programa no está en la BD de SAPO (sin categorizar), lo incluimos.
+if (!empty($programSchedules)) {
+    $programsDB = loadProgramsDB($_SESSION['username']);
+    $dbPrograms = $programsDB['programs'] ?? [];
+
+    foreach (array_keys($programSchedules) as $name) {
+        if (!isset($dbPrograms[$name])) continue; // Sin catalogar → incluir
+        $type     = $dbPrograms[$name]['playlist_type'] ?? 'program';
+        $orphaned = $dbPrograms[$name]['orphaned'] ?? false;
+        if ($orphaned || !in_array($type, ['program', 'live'], true)) {
+            unset($programSchedules[$name]);
+        }
+    }
+}
+
 $hasSchedule = !empty($programSchedules);
 
 // ── 2. Historial de reproducción del mes ─────────────────────────────────────
