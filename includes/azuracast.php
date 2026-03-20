@@ -928,6 +928,14 @@ function getStationStorageAlert($username, $thresholdBytes = 524288000) {
  * @return array|false Array de entradas del historial o false si hay error
  */
 function getAzuracastHistory($username, $startTimestamp, $endTimestamp) {
+    // Caché de 1 hora por emisora+mes
+    $monthKey  = date('Y-m', $startTimestamp);
+    $cacheKey  = "history_{$username}_{$monthKey}";
+    $cached    = cacheGet($cacheKey, 3600);
+    if ($cached !== null) {
+        return $cached;
+    }
+
     $config = getConfig();
     $apiUrl = $config['azuracast_api_url'] ?? '';
     $apiKey = $config['azuracast_api_key'] ?? '';
@@ -937,7 +945,7 @@ function getAzuracastHistory($username, $startTimestamp, $endTimestamp) {
         return false;
     }
 
-    $userData = getUserDB($username);
+    $userData  = getUserDB($username);
     $stationId = $userData['azuracast']['station_id'] ?? null;
 
     if (empty($stationId)) {
@@ -946,7 +954,7 @@ function getAzuracastHistory($username, $startTimestamp, $endTimestamp) {
     }
 
     $headers = [
-        'timeout'    => 30,
+        'timeout'    => 20,
         'user_agent' => 'SAPO/1.0',
     ];
     if (!empty($apiKey)) {
@@ -956,51 +964,37 @@ function getAzuracastHistory($username, $startTimestamp, $endTimestamp) {
 
     $startDate = date('c', $startTimestamp);
     $endDate   = date('c', $endTimestamp);
-    $baseUrl   = rtrim($apiUrl, '/') . '/station/' . $stationId . '/history'
-               . '?start=' . urlencode($startDate)
-               . '&end='   . urlencode($endDate)
-               . '&rows=1000';
 
-    // Paginar hasta obtener todos los resultados del rango
-    $allEntries = [];
-    $page       = 1;
-    $maxPages   = 50; // límite de seguridad
+    $url = rtrim($apiUrl, '/') . '/station/' . $stationId . '/history'
+         . '?start=' . urlencode($startDate)
+         . '&end='   . urlencode($endDate)
+         . '&rows=9999';
 
-    while ($page <= $maxPages) {
-        $url      = $baseUrl . '&page=' . $page;
-        $response = @file_get_contents($url, false, $context);
+    $response = @file_get_contents($url, false, $context);
 
-        if ($response === false) {
-            error_log("AzuraCast History: Error al obtener página $page desde $url");
-            return $allEntries ?: false;
-        }
-
-        $data = json_decode($response, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            error_log("AzuraCast History: Error JSON en página $page: " . json_last_error_msg());
-            break;
-        }
-
-        // AzuraCast puede devolver array directo o {rows:[...], total:N}
-        if (isset($data['rows']) && is_array($data['rows'])) {
-            $pageEntries = $data['rows'];
-        } elseif (is_array($data)) {
-            $pageEntries = $data;
-        } else {
-            break;
-        }
-
-        if (empty($pageEntries)) break;
-
-        $allEntries = array_merge($allEntries, $pageEntries);
-
-        // Si devolvió menos de 1000, es la última página
-        if (count($pageEntries) < 1000) break;
-
-        $page++;
+    if ($response === false) {
+        error_log("AzuraCast History: Error al obtener historial desde $url");
+        return false;
     }
 
-    error_log("AzuraCast History: Obtenidas " . count($allEntries) . " entradas totales (pág. " . ($page) . ") para station $stationId");
-    return $allEntries;
+    $data = json_decode($response, true);
+
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        error_log("AzuraCast History: Error JSON: " . json_last_error_msg());
+        return false;
+    }
+
+    // AzuraCast puede devolver array directo o {rows:[...], total:N}
+    if (isset($data['rows']) && is_array($data['rows'])) {
+        $data = $data['rows'];
+    }
+
+    if (!is_array($data)) {
+        error_log("AzuraCast History: Respuesta no es un array");
+        return false;
+    }
+
+    error_log("AzuraCast History: Obtenidas " . count($data) . " entradas para station $stationId");
+    cacheSet($cacheKey, $data);
+    return $data;
 }
