@@ -917,3 +917,69 @@ function getStationStorageAlert($username, $thresholdBytes = 524288000) {
 
     return !empty($alerts) ? $alerts : null;
 }
+
+/**
+ * Obtener historial de reproducción de una emisora para un rango de fechas
+ * Usado por la página de Seguimiento Emisión
+ *
+ * @param string $username Nombre de usuario
+ * @param int $startTimestamp Unix timestamp inicio del rango
+ * @param int $endTimestamp Unix timestamp fin del rango
+ * @return array|false Array de entradas del historial o false si hay error
+ */
+function getAzuracastHistory($username, $startTimestamp, $endTimestamp) {
+    $config = getConfig();
+    $apiUrl = $config['azuracast_api_url'] ?? '';
+    $apiKey = $config['azuracast_api_key'] ?? '';
+
+    if (empty($apiUrl)) {
+        error_log("AzuraCast History: URL de API no configurada");
+        return false;
+    }
+
+    $userData = getUserDB($username);
+    $stationId = $userData['azuracast']['station_id'] ?? null;
+
+    if (empty($stationId)) {
+        error_log("AzuraCast History: Station ID no configurado para usuario $username");
+        return false;
+    }
+
+    $headers = [
+        'timeout'    => 30,
+        'user_agent' => 'SAPO/1.0',
+    ];
+    if (!empty($apiKey)) {
+        $headers['header'] = 'X-API-Key: ' . $apiKey;
+    }
+    $context = stream_context_create(['http' => $headers]);
+
+    $startDate = date('c', $startTimestamp);
+    $endDate   = date('c', $endTimestamp);
+
+    $url = rtrim($apiUrl, '/') . '/station/' . $stationId . '/history'
+         . '?start=' . urlencode($startDate)
+         . '&end='   . urlencode($endDate);
+
+    $response = @file_get_contents($url, false, $context);
+
+    if ($response === false) {
+        error_log("AzuraCast History: Error al obtener historial desde $url");
+        return false;
+    }
+
+    $data = json_decode($response, true);
+
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        error_log("AzuraCast History: Error JSON: " . json_last_error_msg());
+        return false;
+    }
+
+    if (!is_array($data)) {
+        error_log("AzuraCast History: Respuesta no es un array");
+        return false;
+    }
+
+    error_log("AzuraCast History: Obtenidas " . count($data) . " entradas para station $stationId");
+    return $data;
+}
