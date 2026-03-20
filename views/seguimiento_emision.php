@@ -241,6 +241,36 @@ if ($hasSchedule) {
     }
 }
 
+// ── Resolver nombres de historial para directos ───────────────────────────────
+// Los directos en SAPO se crean con nombres como "En Franca Decadencia - (Directo)"
+// pero en AzuraCast la playlist se llama "En franca decadencia (2h)".
+// Hacemos matching normalizado: quitamos " - (Directo)", duraciones y acentos.
+function seguimientoNormalizar($str) {
+    $str = preg_replace('/\s*-\s*\(di?recto\)\s*$/ui', '', $str); // quitar "- (Directo)"
+    $str = preg_replace('/\s*\(\d+h\d*\)\s*$/u', '', $str);       // quitar "(2h30)"
+    $str = mb_strtolower(trim($str));
+    $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $str);      // quitar acentos
+    return ($ascii !== false) ? strtolower(trim($ascii)) : $str;
+}
+
+if (!empty($historyMap) && !empty($livePrograms)) {
+    // Pre-indexar claves del historial normalizadas
+    $histNormIndex = [];
+    foreach (array_keys($historyMap) as $hKey) {
+        $histNormIndex[seguimientoNormalizar($hKey)] = $hKey;
+    }
+
+    foreach ($livePrograms as $programKey => $_) {
+        $currentAzName = $historyNameMap[$programKey] ?? '';
+        if (isset($historyMap[$currentAzName])) continue; // ya coincide exacto
+
+        $norm = seguimientoNormalizar($currentAzName);
+        if (isset($histNormIndex[$norm])) {
+            $historyNameMap[$programKey] = $histNormIndex[$norm]; // actualizar con nombre real
+        }
+    }
+}
+
 // ── 3. Calcular días del mes: número, día semana, fecha Y-m-d ─────────────────
 $days = [];
 for ($d = 1; $d <= $daysInMonth; $d++) {
