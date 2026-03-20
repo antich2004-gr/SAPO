@@ -241,36 +241,6 @@ if ($hasSchedule) {
     }
 }
 
-// ── Resolver nombres de historial para directos ───────────────────────────────
-// Los directos en SAPO se crean con nombres como "En Franca Decadencia - (Directo)"
-// pero en AzuraCast la playlist se llama "En franca decadencia (2h)".
-// Hacemos matching normalizado: quitamos " - (Directo)", duraciones y acentos.
-function seguimientoNormalizar($str) {
-    $str = preg_replace('/\s*-\s*\(di?recto\)\s*$/ui', '', $str); // quitar "- (Directo)"
-    $str = preg_replace('/\s*\(\d+h\d*\)\s*$/u', '', $str);       // quitar "(2h30)"
-    $str = mb_strtolower(trim($str));
-    $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $str);      // quitar acentos
-    return ($ascii !== false) ? strtolower(trim($ascii)) : $str;
-}
-
-if (!empty($historyMap) && !empty($livePrograms)) {
-    // Pre-indexar claves del historial normalizadas
-    $histNormIndex = [];
-    foreach (array_keys($historyMap) as $hKey) {
-        $histNormIndex[seguimientoNormalizar($hKey)] = $hKey;
-    }
-
-    foreach ($livePrograms as $programKey => $_) {
-        $currentAzName = $historyNameMap[$programKey] ?? '';
-        if (isset($historyMap[$currentAzName])) continue; // ya coincide exacto
-
-        $norm = seguimientoNormalizar($currentAzName);
-        if (isset($histNormIndex[$norm])) {
-            $historyNameMap[$programKey] = $histNormIndex[$norm]; // actualizar con nombre real
-        }
-    }
-}
-
 // ── 3. Calcular días del mes: número, día semana, fecha Y-m-d ─────────────────
 $days = [];
 for ($d = 1; $d <= $daysInMonth; $d++) {
@@ -287,9 +257,111 @@ for ($d = 1; $d <= $daysInMonth; $d++) {
 
 $dowLabels = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 
+// ── Cargar emisiones en directo desde el log de Liquidsoap ───────────────────
+// Lee /mnt/emisoras/{username}/config/liquidsoap.log y extrae eventos DJ
+// del mes objetivo. No depende de que existan los informes diarios.
+// liveEmissionsPerDay[Y-m-d] = [['start' => 'HH:MM', 'end' => 'HH:MM'|null], ...]
+$liveEmissionsPerDay = [];
+$liveLogError        = null; // null=OK, string=mensaje de error para debug
+
+if (!empty($livePrograms)) {
+    $lsConfig   = getConfig();
+    $lsBasePath = $lsConfig['base_path'] ?? '';
+
+    if (empty($lsBasePath)) {
+        $liveLogError = 'base_path no configurado en SAPO';
+    } else {
+        $lsLogPath = $lsBasePath . '/' . $trackingUsername . '/config/liquidsoap.log';
+
+        if (!file_exists($lsLogPath)) {
+            $liveLogError = 'Archivo no encontrado: ' . $lsLogPath;
+        } elseif (!is_readable($lsLogPath)) {
+            $liveLogError = 'Sin permiso de lectura: ' . $lsLogPath;
+        } else {
+            // Formato de cada línea: "YYYY/MM/DD HH:MM:SS [módulo] mensaje"
+            // Buscamos líneas del mes objetivo con "DJ Source connected!" (inicio)
+            // y "API djoff" (fin).
+            $monthPrefix    = sprintf('%04d/%02d/', $year, $month);
+            $prefixLen      = strlen($monthPrefix);
+            $pendingStart   = null;
+            $pendingDate    = null;
+
+            $fh = @fopen($lsLogPath, 'r');
+            if ($fh === false) {
+                $liveLogError = 'No se pudo abrir el log: ' . $lsLogPath;
+            } else {
+                while (($line = fgets($fh)) !== false) {
+                    $lineMonth = substr($line, 0, $prefixLen);
+                    $inTargetMonth = ($lineMonth === $monthPrefix);
+
+                    // Detectar fin de sesión pendiente incluso fuera del mes objetivo
+                    if ($pendingStart !== null && strpos($line, 'API djoff') !== false) {
+                        $lp = explode(' ', $line, 3);
+                        if (count($lp) >= 2) {
+                            $tp = explode(':', $lp[1]);
+                            $tStr = ($tp[0] ?? '00') . ':' . ($tp[1] ?? '00');
+                            $liveEmissionsPerDay[$pendingDate][] = ['start' => $pendingStart, 'end' => $tStr];
+                            $pendingStart = null;
+                            $pendingDate  = null;
+                        }
+                        if (!$inTargetMonth) continue;
+                    }
+
+                    if (!$inTargetMonth) continue;
+
+                    // Parsear línea del mes objetivo
+                    $parts = explode(' ', $line, 3);
+                    if (count($parts) < 3) continue;
+
+                    $dp = explode('/', $parts[0]); // [YYYY, MM, DD]
+                    if (count($dp) !== 3) continue;
+                    $dateStr = $dp[0] . '-' . $dp[1] . '-' . $dp[2];
+
+                    $tp = explode(':', $parts[1]); // [HH, MM, SS]
+                    $timeStr = ($tp[0] ?? '00') . ':' . ($tp[1] ?? '00');
+
+                    $rest = $parts[2];
+
+                    // Inicio de directo
+                    if (strpos($rest, 'DJ Source connected!') !== false) {
+                        $pendingStart = $timeStr;
+                        $pendingDate  = $dateStr;
+                    }
+
+                    // Fin de directo
+                    if (strpos($rest, 'API djoff') !== false && $pendingStart !== null) {
+                        $liveEmissionsPerDay[$pendingDate][] = ['start' => $pendingStart, 'end' => $timeStr];
+                        $pendingStart = null;
+                        $pendingDate  = null;
+                    }
+                }
+                fclose($fh);
+
+                // Sesión aún activa al final del log
+                if ($pendingStart !== null && $pendingDate !== null) {
+                    $liveEmissionsPerDay[$pendingDate][] = ['start' => $pendingStart, 'end' => null];
+                }
+            }
+        }
+    }
+}
+
+// ── Helpers de tiempo ─────────────────────────────────────────────────────────
+function timeToMinutes($time) {
+    [$h, $m] = explode(':', $time);
+    return (int)$h * 60 + (int)$m;
+}
+
+// Devuelve true si una emisión en directo (con startTime) se solapa con la
+// ventana esperada: el directo empieza a ±45 min del horario programado.
+function liveTiempoCoincide($scheduledTime, $emStart) {
+    $diff = abs(timeToMinutes($scheduledTime) - timeToMinutes($emStart));
+    $diff = min($diff, 1440 - $diff); // ajuste medianoche
+    return $diff <= 45;
+}
+
 // ── Helper: estado de una celda ───────────────────────────────────────────────
-// Para directos, busca en historyMap por el nombre real de AzuraCast.
-function cellStatus($programKey, $day, $programSchedules, $historyMap, $today, $historyNameMap) {
+function cellStatus($programKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay) {
     $slots = array_filter(
         $programSchedules[$programKey] ?? [],
         fn($s) => $s['dayOfWeek'] === $day['dow']
@@ -312,7 +384,18 @@ function cellStatus($programKey, $day, $programSchedules, $historyMap, $today, $
         return ['status' => 'expected', 'scheduledAt' => $scheduledAt];
     }
 
-    // Para live, el historyMap usa el nombre original de AzuraCast
+    // Directo: verificar mediante informe diario
+    if (isset($livePrograms[$programKey])) {
+        $emissions = $liveEmissionsPerDay[$day['date']] ?? [];
+        foreach ($emissions as $em) {
+            if (liveTiempoCoincide($scheduledAt, $em['start'])) {
+                return ['status' => 'played', 'scheduledAt' => $scheduledAt, 'time' => $em['start']];
+            }
+        }
+        return ['status' => 'missed', 'scheduledAt' => $scheduledAt];
+    }
+
+    // Programa automatizado: verificar en historial AzuraCast
     $historyKey = $historyNameMap[$programKey] ?? $programKey;
     $firstPlay  = $historyMap[$historyKey][$day['date']] ?? null;
 
@@ -335,7 +418,7 @@ if ($hasSchedule) {
     foreach (array_keys($programSchedules) as $progKey) {
         $isLive = isset($livePrograms[$progKey]);
         foreach ($days as $day) {
-            $cell   = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap);
+            $cell   = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay);
             $status = $cell['status'];
             if ($isLive) {
                 if ($status === 'played')       { $totals['live_esperados']++; $totals['live_efectivos']++; }
@@ -432,7 +515,7 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                         </span>
                     </td>
                     <?php foreach ($days as $day):
-                        $cell = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap);
+                        $cell = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay);
                         $status = $cell['status'];
 
                         switch ($status) {
@@ -522,29 +605,50 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
         <p style="margin:10px 0 4px;"><strong>Directos cargados en seguimiento (livePrograms):</strong></p>
         <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:160px;"><?php
             foreach ($livePrograms as $key => $_) {
-                $azName = $historyNameMap[$key] ?? '?';
                 $display = $displayNameMap[$key] ?? $key;
-                $slots = $programSchedules[$key] ?? [];
+                $slots   = $programSchedules[$key] ?? [];
                 echo htmlEsc("Clave SAPO: $key\n");
                 echo htmlEsc("  Display:  $display\n");
-                echo htmlEsc("  AzName:   $azName (clave para historial)\n");
+                $dowL = ['D','L','M','X','J','V','S'];
                 foreach ($slots as $s) {
-                    $days = ['D','L','M','X','J','V','S'];
-                    echo htmlEsc("  Slot: " . $days[$s['dayOfWeek']] . " " . $s['startTime'] . "-" . $s['endTime'] . "\n");
+                    echo htmlEsc("  Slot: " . $dowL[$s['dayOfWeek']] . " " . $s['startTime'] . "-" . $s['endTime'] . "\n");
                 }
             }
             if (empty($livePrograms)) echo '(ningún directo cargado)';
         ?></pre>
 
-        <p style="margin:10px 0 4px;"><strong>Historial del mes — playlists detectadas:</strong></p>
+        <p style="margin:10px 0 4px;"><strong>Log de Liquidsoap — estado:</strong></p>
+        <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:100px;"><?php
+            $lsConfig2  = getConfig();
+            $dbgLogPath = ($lsConfig2['base_path'] ?? '') . '/' . $trackingUsername . '/config/liquidsoap.log';
+            echo htmlEsc("Ruta: $dbgLogPath\n");
+            echo htmlEsc("Existe: " . (file_exists($dbgLogPath) ? 'SÍ (' . number_format(filesize($dbgLogPath)) . ' bytes)' : 'NO') . "\n");
+            if ($liveLogError) echo htmlEsc("Error: $liveLogError\n");
+        ?></pre>
+
+        <p style="margin:10px 0 4px;"><strong>Emisiones en directo detectadas en el log:</strong></p>
+        <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:160px;"><?php
+            if (empty($liveEmissionsPerDay)) {
+                echo "(ninguna emisión en directo encontrada en el log para este mes)\n";
+            } else {
+                foreach ($liveEmissionsPerDay as $dateStr => $ems) {
+                    foreach ($ems as $em) {
+                        $end = $em['end'] ?? '(aún activo)';
+                        echo htmlEsc("$dateStr: " . $em['start'] . " → $end\n");
+                    }
+                }
+            }
+        ?></pre>
+
+        <p style="margin:10px 0 4px;"><strong>Historial del mes — playlists (programas automáticos):</strong></p>
         <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:160px;"><?php
             if ($historyError) {
                 echo 'ERROR al obtener historial (¿API Key configurada?)';
             } elseif (empty($historyMap)) {
                 echo '(vacío — sin datos de historial para este mes)';
             } else {
-                foreach ($historyMap as $playlist => $days) {
-                    echo htmlEsc("$playlist: " . count($days) . " día(s) — " . implode(', ', array_keys($days)) . "\n");
+                foreach ($historyMap as $playlist => $dayData) {
+                    echo htmlEsc("$playlist: " . count($dayData) . " día(s) — " . implode(', ', array_keys($dayData)) . "\n");
                 }
             }
         ?></pre>
