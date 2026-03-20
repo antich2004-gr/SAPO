@@ -300,12 +300,14 @@ if (!empty($livePrograms)) {
             if ($fh === false) {
                 $liveLogError = 'No se pudo abrir el log: ' . $lsLogPath;
             } else {
+                $lsDebugLines = []; // muestra de líneas DJ para debug
                 while (($line = fgets($fh)) !== false) {
                     $lineMonth = substr($line, 0, $prefixLen);
                     $inTargetMonth = ($lineMonth === $monthPrefix);
 
                     // Detectar fin de sesión pendiente incluso fuera del mes objetivo
-                    if ($pendingStart !== null && strpos($line, 'API djoff') !== false) {
+                    $isDjOff = (stripos($line, 'djoff') !== false || stripos($line, 'dj_off') !== false);
+                    if ($pendingStart !== null && $isDjOff) {
                         $lp = explode(' ', $line, 3);
                         if (count($lp) >= 2) {
                             $tp = explode(':', $lp[1]);
@@ -332,14 +334,24 @@ if (!empty($livePrograms)) {
 
                     $rest = $parts[2];
 
-                    // Inicio de directo
-                    if (strpos($rest, 'DJ Source connected!') !== false) {
+                    // Guardar líneas con palabras clave DJ para debug (máx. 30)
+                    if (count($lsDebugLines) < 30 &&
+                        preg_match('/\b(dj|live|connect|harbor|source)\b/i', $rest)) {
+                        $lsDebugLines[] = trim($line);
+                    }
+
+                    // Inicio de directo — distintos mensajes según versión de LS/AzuraCast
+                    $isDjOn = (strpos($rest, 'DJ Source connected') !== false
+                            || strpos($rest, 'source_connected') !== false
+                            || strpos($rest, 'live_enabled') !== false
+                            || (strpos($rest, 'connected') !== false && stripos($rest, 'dj') !== false));
+                    if ($isDjOn) {
                         $pendingStart = $timeStr;
                         $pendingDate  = $dateStr;
                     }
 
                     // Fin de directo
-                    if (strpos($rest, 'API djoff') !== false && $pendingStart !== null) {
+                    if ($isDjOff && $pendingStart !== null) {
                         $liveEmissionsPerDay[$pendingDate][] = ['start' => $pendingStart, 'end' => $timeStr];
                         $pendingStart = null;
                         $pendingDate  = null;
@@ -638,13 +650,19 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
             if (empty($livePrograms)) echo '(ningún directo cargado)';
         ?></pre>
 
-        <p style="margin:10px 0 4px;"><strong>Log de Liquidsoap — estado:</strong></p>
-        <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:100px;"><?php
+        <p style="margin:10px 0 4px;"><strong>Log de Liquidsoap — estado y líneas DJ del mes:</strong></p>
+        <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:160px;"><?php
             $lsConfig2  = getConfig();
             $dbgLogPath = ($lsConfig2['base_path'] ?? '') . '/' . $trackingUsername . '/config/liquidsoap.log';
             echo htmlEsc("Ruta: $dbgLogPath\n");
             echo htmlEsc("Existe: " . (file_exists($dbgLogPath) ? 'SÍ (' . number_format(filesize($dbgLogPath)) . ' bytes)' : 'NO') . "\n");
             if ($liveLogError) echo htmlEsc("Error: $liveLogError\n");
+            if (!empty($lsDebugLines)) {
+                echo "\nLíneas con palabras clave DJ/live/connect (max 30):\n";
+                foreach ($lsDebugLines as $l) echo htmlEsc("  $l\n");
+            } elseif (!$liveLogError) {
+                echo htmlEsc("\n(sin líneas con palabras clave DJ/live/connect para " . sprintf('%04d/%02d', $year, $month) . ")\n");
+            }
         ?></pre>
 
         <p style="margin:10px 0 4px;"><strong>Emisiones en directo detectadas en el log:</strong></p>
