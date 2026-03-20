@@ -928,6 +928,14 @@ function getStationStorageAlert($username, $thresholdBytes = 524288000) {
  * @return array|false Array de entradas del historial o false si hay error
  */
 function getAzuracastHistory($username, $startTimestamp, $endTimestamp) {
+    // Caché de 1 hora por emisora+mes
+    $monthKey  = date('Y-m', $startTimestamp);
+    $cacheKey  = "history_{$username}_{$monthKey}";
+    $cached    = cacheGet($cacheKey, 3600);
+    if ($cached !== null) {
+        return $cached;
+    }
+
     $config = getConfig();
     $apiUrl = $config['azuracast_api_url'] ?? '';
     $apiKey = $config['azuracast_api_key'] ?? '';
@@ -937,7 +945,7 @@ function getAzuracastHistory($username, $startTimestamp, $endTimestamp) {
         return false;
     }
 
-    $userData = getUserDB($username);
+    $userData  = getUserDB($username);
     $stationId = $userData['azuracast']['station_id'] ?? null;
 
     if (empty($stationId)) {
@@ -946,7 +954,7 @@ function getAzuracastHistory($username, $startTimestamp, $endTimestamp) {
     }
 
     $headers = [
-        'timeout'    => 30,
+        'timeout'    => 20,
         'user_agent' => 'SAPO/1.0',
     ];
     if (!empty($apiKey)) {
@@ -987,5 +995,6 @@ function getAzuracastHistory($username, $startTimestamp, $endTimestamp) {
     }
 
     error_log("AzuraCast History: Obtenidas " . count($data) . " entradas para station $stationId");
+    cacheSet($cacheKey, $data);
     return $data;
 }

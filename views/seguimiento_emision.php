@@ -267,103 +267,32 @@ for ($d = 1; $d <= $daysInMonth; $d++) {
 
 $dowLabels = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 
-// ── Cargar emisiones en directo desde el log de Liquidsoap ───────────────────
-// Lee /mnt/emisoras/{username}/config/liquidsoap.log y extrae eventos DJ
-// del mes objetivo. No depende de que existan los informes diarios.
-// liveEmissionsPerDay[Y-m-d] = [['start' => 'HH:MM', 'end' => 'HH:MM'|null], ...]
+// ── Cargar emisiones en directo desde informes diarios ───────────────────────
+// Los informes diarios son ficheros pequeños ya procesados, mucho más rápidos
+// que escanear el log de Liquidsoap completo.
+// liveEmissionsPerDay[Y-m-d] = ['HH:MM', ...] — horas de inicio de directos
 $liveEmissionsPerDay = [];
-$liveLogError        = null; // null=OK, string=mensaje de error para debug
 
 if (!empty($livePrograms)) {
-    $lsConfig   = getConfig();
-    $lsBasePath = $lsConfig['base_path'] ?? '';
-
-    if (empty($lsBasePath)) {
-        $liveLogError = 'base_path no configurado en SAPO';
-    } else {
-        $lsLogPath = $lsBasePath . '/' . $trackingUsername . '/config/liquidsoap.log';
-
-        if (!file_exists($lsLogPath)) {
-            $liveLogError = 'Archivo no encontrado: ' . $lsLogPath;
-        } elseif (!is_readable($lsLogPath)) {
-            $liveLogError = 'Sin permiso de lectura: ' . $lsLogPath;
-        } else {
-            // Formato de cada línea: "YYYY/MM/DD HH:MM:SS [módulo] mensaje"
-            // Buscamos líneas del mes objetivo con "DJ Source connected!" (inicio)
-            // y "API djoff" (fin).
-            $monthPrefix    = sprintf('%04d/%02d/', $year, $month);
-            $prefixLen      = strlen($monthPrefix);
-            $pendingStart   = null;
-            $pendingDate    = null;
-
-            $fh = @fopen($lsLogPath, 'r');
-            if ($fh === false) {
-                $liveLogError = 'No se pudo abrir el log: ' . $lsLogPath;
-            } else {
-                $lsDebugLines = []; // muestra de líneas DJ para debug
-                while (($line = fgets($fh)) !== false) {
-                    $lineMonth = substr($line, 0, $prefixLen);
-                    $inTargetMonth = ($lineMonth === $monthPrefix);
-
-                    // Detectar fin de sesión pendiente incluso fuera del mes objetivo
-                    $isDjOff = (stripos($line, 'djoff') !== false || stripos($line, 'dj_off') !== false);
-                    if ($pendingStart !== null && $isDjOff) {
-                        $lp = explode(' ', $line, 3);
-                        if (count($lp) >= 2) {
-                            $tp = explode(':', $lp[1]);
-                            $tStr = ($tp[0] ?? '00') . ':' . ($tp[1] ?? '00');
-                            $liveEmissionsPerDay[$pendingDate][] = ['start' => $pendingStart, 'end' => $tStr];
-                            $pendingStart = null;
-                            $pendingDate  = null;
-                        }
-                        if (!$inTargetMonth) continue;
-                    }
-
-                    if (!$inTargetMonth) continue;
-
-                    // Parsear línea del mes objetivo
-                    $parts = explode(' ', $line, 3);
-                    if (count($parts) < 3) continue;
-
-                    $dp = explode('/', $parts[0]); // [YYYY, MM, DD]
-                    if (count($dp) !== 3) continue;
-                    $dateStr = $dp[0] . '-' . $dp[1] . '-' . $dp[2];
-
-                    $tp = explode(':', $parts[1]); // [HH, MM, SS]
-                    $timeStr = ($tp[0] ?? '00') . ':' . ($tp[1] ?? '00');
-
-                    $rest = $parts[2];
-
-                    // Guardar líneas con palabras clave DJ para debug (máx. 30)
-                    if (count($lsDebugLines) < 30 &&
-                        preg_match('/\b(dj|live|connect|harbor|source)\b/i', $rest)) {
-                        $lsDebugLines[] = trim($line);
-                    }
-
-                    // Inicio de directo — distintos mensajes según versión de LS/AzuraCast
-                    $isDjOn = (strpos($rest, 'DJ Source connected') !== false
-                            || strpos($rest, 'source_connected') !== false
-                            || strpos($rest, 'live_enabled') !== false
-                            || (strpos($rest, 'connected') !== false && stripos($rest, 'dj') !== false));
-                    if ($isDjOn) {
-                        $pendingStart = $timeStr;
-                        $pendingDate  = $dateStr;
-                    }
-
-                    // Fin de directo
-                    if ($isDjOff && $pendingStart !== null) {
-                        $liveEmissionsPerDay[$pendingDate][] = ['start' => $pendingStart, 'end' => $timeStr];
-                        $pendingStart = null;
-                        $pendingDate  = null;
-                    }
-                }
-                fclose($fh);
-
-                // Sesión aún activa al final del log
-                if ($pendingStart !== null && $pendingDate !== null) {
-                    $liveEmissionsPerDay[$pendingDate][] = ['start' => $pendingStart, 'end' => null];
+    $reportsPath = getReportsPath($trackingUsername);
+    if ($reportsPath && is_dir($reportsPath)) {
+        foreach ($days as $day) {
+            if ($day['date'] > $today) continue;
+            $d  = substr($day['date'], 8, 2);
+            $mo = substr($day['date'], 5, 2);
+            $yr = substr($day['date'], 0, 4);
+            $fn = $reportsPath . '/Informe_diario_' . $d . '_' . $mo . '_' . $yr . '.log';
+            if (!file_exists($fn)) continue;
+            $rd = parseReportFile($fn);
+            if (empty($rd['emisiones_directo'])) continue;
+            $times = [];
+            foreach ($rd['emisiones_directo'] as $entry) {
+                // "- DD-MM-YYYY HH:MM:SS → HH:MM:SS desde DJ origin"
+                if (preg_match('/^-\s+[\d-]+\s+(\d{2}:\d{2})/', $entry, $m)) {
+                    $times[] = $m[1];
                 }
             }
+            if ($times) $liveEmissionsPerDay[$day['date']] = $times;
         }
     }
 }
@@ -406,19 +335,18 @@ function cellStatus($programKey, $day, $programSchedules, $historyMap, $today, $
         return ['status' => 'expected', 'scheduledAt' => $scheduledAt];
     }
 
-    // Directo: verificar primero en historial AzuraCast (campo streamer),
-    // luego como respaldo en el log de Liquidsoap.
+    // Directo: verificar en historial AzuraCast (streamer) e informes diarios
     if (isset($livePrograms[$programKey])) {
-        // Fuente 1: historial AzuraCast con streamer activo
+        // Fuente 1: historial AzuraCast — entradas con streamer activo
         foreach ($liveHistoryTimes[$day['date']] ?? [] as $t) {
             if (liveTiempoCoincide($scheduledAt, $t)) {
                 return ['status' => 'played', 'scheduledAt' => $scheduledAt, 'time' => $t];
             }
         }
-        // Fuente 2: log de Liquidsoap (DJ Source connected!)
-        foreach ($liveEmissionsPerDay[$day['date']] ?? [] as $em) {
-            if (liveTiempoCoincide($scheduledAt, $em['start'])) {
-                return ['status' => 'played', 'scheduledAt' => $scheduledAt, 'time' => $em['start']];
+        // Fuente 2: informes diarios (sección "Emisiones en directo:")
+        foreach ($liveEmissionsPerDay[$day['date']] ?? [] as $t) {
+            if (liveTiempoCoincide($scheduledAt, $t)) {
+                return ['status' => 'played', 'scheduledAt' => $scheduledAt, 'time' => $t];
             }
         }
         return ['status' => 'missed', 'scheduledAt' => $scheduledAt];
@@ -650,18 +578,16 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
             if (empty($livePrograms)) echo '(ningún directo cargado)';
         ?></pre>
 
-        <p style="margin:10px 0 4px;"><strong>Log de Liquidsoap — estado y líneas DJ del mes:</strong></p>
-        <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:160px;"><?php
-            $lsConfig2  = getConfig();
-            $dbgLogPath = ($lsConfig2['base_path'] ?? '') . '/' . $trackingUsername . '/config/liquidsoap.log';
-            echo htmlEsc("Ruta: $dbgLogPath\n");
-            echo htmlEsc("Existe: " . (file_exists($dbgLogPath) ? 'SÍ (' . number_format(filesize($dbgLogPath)) . ' bytes)' : 'NO') . "\n");
-            if ($liveLogError) echo htmlEsc("Error: $liveLogError\n");
-            if (!empty($lsDebugLines)) {
-                echo "\nLíneas con palabras clave DJ/live/connect (max 30):\n";
-                foreach ($lsDebugLines as $l) echo htmlEsc("  $l\n");
-            } elseif (!$liveLogError) {
-                echo htmlEsc("\n(sin líneas con palabras clave DJ/live/connect para " . sprintf('%04d/%02d', $year, $month) . ")\n");
+        <p style="margin:10px 0 4px;"><strong>Informes diarios — directos del mes:</strong></p>
+        <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:120px;"><?php
+            $dbgReportsPath = getReportsPath($trackingUsername);
+            echo htmlEsc("Ruta informes: " . ($dbgReportsPath ?: '(base_path no configurado)') . "\n");
+            if (empty($liveEmissionsPerDay)) {
+                echo "(sin informes con directos para este mes)\n";
+            } else {
+                foreach ($liveEmissionsPerDay as $d => $times) {
+                    echo htmlEsc("$d: " . implode(', ', $times) . "\n");
+                }
             }
         ?></pre>
 
