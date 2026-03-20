@@ -410,6 +410,54 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
     </div>
     <?php endif; ?>
 
+    <!-- ── Debug (solo con ?debug=1) ────────────────────────────────────────── -->
+    <?php if (isset($_GET['debug']) && $_GET['debug'] === '1'): ?>
+    <div style="padding:16px 24px 24px; border-top:2px dashed #f59e0b; background:#fffbeb; font-size:12px; font-family:monospace;">
+        <strong style="color:#92400e;">🔍 DEBUG — solo visible con ?debug=1</strong>
+
+        <p style="margin:10px 0 4px;"><strong>Programas en BD de SAPO (todos):</strong></p>
+        <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:200px;"><?php
+            foreach ($dbPrograms as $k => $v) {
+                $t = $v['playlist_type'] ?? '?';
+                $o = $v['orphaned'] ?? false;
+                $slots = !empty($v['schedule_slots']) ? count($v['schedule_slots']).' slot(s)' : (!empty($v['schedule_days']) ? 'formato antiguo' : 'SIN HORARIO');
+                echo htmlEsc("[$t" . ($o?' HUÉRFANO':'') . "] $k  →  $slots\n");
+            }
+            if (empty($dbPrograms)) echo '(vacío — no hay programas en la BD de SAPO)';
+        ?></pre>
+
+        <p style="margin:10px 0 4px;"><strong>Directos cargados en seguimiento (livePrograms):</strong></p>
+        <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:160px;"><?php
+            foreach ($livePrograms as $key => $_) {
+                $azName = $historyNameMap[$key] ?? '?';
+                $display = $displayNameMap[$key] ?? $key;
+                $slots = $programSchedules[$key] ?? [];
+                echo htmlEsc("Clave SAPO: $key\n");
+                echo htmlEsc("  Display:  $display\n");
+                echo htmlEsc("  AzName:   $azName (clave para historial)\n");
+                foreach ($slots as $s) {
+                    $days = ['D','L','M','X','J','V','S'];
+                    echo htmlEsc("  Slot: " . $days[$s['dayOfWeek']] . " " . $s['startTime'] . "-" . $s['endTime'] . "\n");
+                }
+            }
+            if (empty($livePrograms)) echo '(ningún directo cargado)';
+        ?></pre>
+
+        <p style="margin:10px 0 4px;"><strong>Historial del mes — playlists detectadas:</strong></p>
+        <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:160px;"><?php
+            if ($historyError) {
+                echo 'ERROR al obtener historial (¿API Key configurada?)';
+            } elseif (empty($historyMap)) {
+                echo '(vacío — sin datos de historial para este mes)';
+            } else {
+                foreach ($historyMap as $playlist => $days) {
+                    echo htmlEsc("$playlist: " . count($days) . " día(s) — " . implode(', ', array_keys($days)) . "\n");
+                }
+            }
+        ?></pre>
+    </div>
+    <?php endif; ?>
+
 </div>
 
 <!-- ── Estilos de la tabla ──────────────────────────────────────────────────── -->
