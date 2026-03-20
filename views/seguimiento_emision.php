@@ -77,39 +77,76 @@ if ($schedule && is_array($schedule)) {
     ksort($programSchedules);
 }
 
-// ── Filtrar: excluir listas de música, jingles y huérfanos ───────────────────
-// Solo mostramos playlist_type 'program' y 'live'.
-// Si un programa no está en la BD de SAPO (sin categorizar), lo incluimos.
-if (!empty($programSchedules)) {
-    $programsDB = loadProgramsDB($_SESSION['username']);
-    $dbPrograms = $programsDB['programs'] ?? [];
+// ── Filtrar: excluir música, jingles, huérfanos y 'live' del schedule AzuraCast
+// Los 'live' NO vienen del schedule de AzuraCast, se añaden desde schedule_slots
+// de SAPO (igual que en la parrilla). Sin catalogar en SAPO → incluir.
+$programsDB = loadProgramsDB($_SESSION['username']);
+$dbPrograms = $programsDB['programs'] ?? [];
 
+if (!empty($programSchedules)) {
     foreach (array_keys($programSchedules) as $name) {
         if (!isset($dbPrograms[$name])) continue; // Sin catalogar → incluir
         $type     = $dbPrograms[$name]['playlist_type'] ?? 'program';
         $orphaned = $dbPrograms[$name]['orphaned'] ?? false;
-        if ($orphaned || !in_array($type, ['program', 'live'], true)) {
+        // Solo 'program' desde AzuraCast; live se añade aparte
+        if ($orphaned || $type !== 'program') {
             unset($programSchedules[$name]);
         }
     }
 }
 
-// Mapa de qué programas son directos (live)
-$livePrograms = [];
-if (!empty($dbPrograms)) {
-    foreach (array_keys($programSchedules) as $name) {
-        if (isset($dbPrograms[$name]) && ($dbPrograms[$name]['playlist_type'] ?? '') === 'live') {
-            $livePrograms[$name] = true;
+// ── Directos (live): horario desde schedule_slots de SAPO ────────────────────
+// Para el lookup de historial usamos el nombre original de la playlist
+// (sin sufijo ::live). $historyNameMap traduce clave→nombre AzuraCast.
+$livePrograms   = []; // [schedKey => true]
+$historyNameMap = []; // [schedKey => azuraCastPlaylistName]
+$displayNameMap = []; // [schedKey => displayTitle para la tabla]
+
+foreach ($dbPrograms as $programKey => $programInfo) {
+    $type     = $programInfo['playlist_type'] ?? 'program';
+    $orphaned = $programInfo['orphaned'] ?? false;
+    if ($type !== 'live' || $orphaned) continue;
+    if (empty($programInfo['schedule_slots'])) continue;
+
+    $azName       = $programInfo['original_name'] ?? getProgramNameFromKey($programKey);
+    $displayTitle = $programInfo['display_title'] ?: $azName;
+
+    $slots = [];
+    foreach ($programInfo['schedule_slots'] as $slot) {
+        $scheduleDays = $slot['days'] ?? [];
+        $startTime    = $slot['start_time'] ?? '';
+        $duration     = (int)($slot['duration'] ?? 60);
+        if (empty($scheduleDays) || empty($startTime)) continue;
+
+        foreach ($scheduleDays as $dow) {
+            $dow     = (int)$dow;
+            $startDt = DateTime::createFromFormat('H:i', $startTime);
+            if (!$startDt) continue;
+            $endDt = clone $startDt;
+            $endDt->modify("+{$duration} minutes");
+            $slots[] = [
+                'dayOfWeek' => $dow,
+                'startTime' => $startDt->format('H:i'),
+                'endTime'   => $endDt->format('H:i'),
+            ];
         }
+    }
+
+    if (!empty($slots)) {
+        $programSchedules[$programKey] = $slots;
+        $livePrograms[$programKey]     = true;
+        $historyNameMap[$programKey]   = $azName;
+        $displayNameMap[$programKey]   = $displayTitle;
     }
 }
 
+ksort($programSchedules);
 $hasSchedule = !empty($programSchedules);
 
 // ── 2. Historial de reproducción del mes ─────────────────────────────────────
-// historyMap[playlist][Y-m-d] = primera hora de emisión detectada ('HH:MM')
-$historyMap     = [];
-$historyError   = false;
+// historyMap[azPlaylistName][Y-m-d] = primera hora de emisión detectada ('HH:MM')
+$historyMap   = [];
+$historyError = false;
 
 if ($hasSchedule) {
     $history = getAzuracastHistory($_SESSION['username'], $monthStart, $monthEnd);
@@ -128,7 +165,6 @@ if ($hasSchedule) {
             $timeStr = $playedDt->format('H:i');
 
             if (!isset($historyMap[$playlist][$dayStr])) {
-                // Guardar solo la primera aparición (inicio del programa)
                 $historyMap[$playlist][$dayStr] = $timeStr;
             }
         }
@@ -143,21 +179,19 @@ for ($d = 1; $d <= $daysInMonth; $d++) {
     $dt->setTimezone($timezone);
     $days[] = [
         'num'    => $d,
-        'dow'    => (int)$dt->format('w'),  // 0=Dom
+        'dow'    => (int)$dt->format('w'),
         'date'   => $dt->format('Y-m-d'),
         'isToday'=> ($dt->format('Y-m-d') === $today),
     ];
 }
 
-// Abreviaciones de días (Dom=D, Lun=L, Mar=M, Mié=X, Jue=J, Vie=V, Sáb=S)
 $dowLabels = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 
 // ── Helper: estado de una celda ───────────────────────────────────────────────
-// Devuelve: 'none' | 'expected' | 'played' | 'missed'
-// + 'time' (si played) | 'scheduledAt' (hora esperada)
-function cellStatus($programName, $day, $programSchedules, $historyMap, $today) {
+// Para directos, busca en historyMap por el nombre real de AzuraCast.
+function cellStatus($programKey, $day, $programSchedules, $historyMap, $today, $historyNameMap) {
     $slots = array_filter(
-        $programSchedules[$programName] ?? [],
+        $programSchedules[$programKey] ?? [],
         fn($s) => $s['dayOfWeek'] === $day['dow']
     );
 
@@ -165,16 +199,16 @@ function cellStatus($programName, $day, $programSchedules, $historyMap, $today) 
         return ['status' => 'none'];
     }
 
-    $slot = array_values($slots)[0];
+    $slot        = array_values($slots)[0];
     $scheduledAt = $slot['startTime'];
 
-    // Día futuro: solo marcar como esperado (gris)
     if ($day['date'] > $today) {
         return ['status' => 'expected', 'scheduledAt' => $scheduledAt];
     }
 
-    // Comprobar historial
-    $firstPlay = $historyMap[$programName][$day['date']] ?? null;
+    // Para live, el historyMap usa el nombre original de AzuraCast
+    $historyKey = $historyNameMap[$programKey] ?? $programKey;
+    $firstPlay  = $historyMap[$historyKey][$day['date']] ?? null;
 
     if ($firstPlay !== null) {
         return ['status' => 'played', 'scheduledAt' => $scheduledAt, 'time' => $firstPlay];
@@ -183,31 +217,26 @@ function cellStatus($programName, $day, $programSchedules, $historyMap, $today) 
     return ['status' => 'missed', 'scheduledAt' => $scheduledAt];
 }
 
-// ── Pre-cálculo de totales para el resumen ────────────────────────────────────
+// ── Pre-cálculo de totales ────────────────────────────────────────────────────
 $totals = [
-    'emite_ok'       => 0,  // celdas verdes (programas, excluye live)
-    'faltan'         => 0,  // celdas rojas (programas, excluye live)
-    'live_esperados' => 0,  // slots live en días pasados/hoy
-    'live_efectivos' => 0,  // slots live emitidos
+    'emite_ok'       => 0,
+    'faltan'         => 0,
+    'live_esperados' => 0,
+    'live_efectivos' => 0,
 ];
 
 if ($hasSchedule) {
-    foreach ($programSchedules as $progName => $slots) {
-        $isLive = isset($livePrograms[$progName]);
+    foreach (array_keys($programSchedules) as $progKey) {
+        $isLive = isset($livePrograms[$progKey]);
         foreach ($days as $day) {
-            $cell = cellStatus($progName, $day, $programSchedules, $historyMap, $today);
+            $cell   = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap);
             $status = $cell['status'];
             if ($isLive) {
-                // Directos: solo contamos días pasados y hoy (no futuros)
-                if ($status === 'played') {
-                    $totals['live_esperados']++;
-                    $totals['live_efectivos']++;
-                } elseif ($status === 'missed') {
-                    $totals['live_esperados']++;
-                }
+                if ($status === 'played')       { $totals['live_esperados']++; $totals['live_efectivos']++; }
+                elseif ($status === 'missed')   { $totals['live_esperados']++; }
             } else {
-                if ($status === 'played') $totals['emite_ok']++;
-                elseif ($status === 'missed') $totals['faltan']++;
+                if ($status === 'played')       $totals['emite_ok']++;
+                elseif ($status === 'missed')   $totals['faltan']++;
             }
         }
     }
@@ -285,13 +314,19 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($programSchedules as $progName => $slots): ?>
+                <?php foreach ($programSchedules as $progKey => $slots):
+                    $progDisplay = $displayNameMap[$progKey] ?? $progKey;
+                    $isLiveProg  = isset($livePrograms[$progKey]);
+                ?>
                 <tr>
                     <td class="col-programa">
-                        <span title="<?php echo htmlEsc($progName); ?>"><?php echo htmlEsc($progName); ?></span>
+                        <span title="<?php echo htmlEsc($progDisplay); ?>">
+                            <?php if ($isLiveProg): ?><span style="color:#ef4444;font-size:10px;">🔴 </span><?php endif; ?>
+                            <?php echo htmlEsc($progDisplay); ?>
+                        </span>
                     </td>
                     <?php foreach ($days as $day):
-                        $cell = cellStatus($progName, $day, $programSchedules, $historyMap, $today);
+                        $cell = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap);
                         $status = $cell['status'];
 
                         switch ($status) {
