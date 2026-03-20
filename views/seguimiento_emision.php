@@ -272,7 +272,13 @@ function cellStatus($programKey, $day, $programSchedules, $historyMap, $today, $
     $slot        = array_values($slots)[0];
     $scheduledAt = $slot['startTime'];
 
+    // Día futuro → esperado (gris)
     if ($day['date'] > $today) {
+        return ['status' => 'expected', 'scheduledAt' => $scheduledAt];
+    }
+
+    // Hoy: si la hora programada aún no ha pasado → esperado (gris)
+    if ($day['date'] === $today && date('H:i') < $scheduledAt) {
         return ['status' => 'expected', 'scheduledAt' => $scheduledAt];
     }
 
