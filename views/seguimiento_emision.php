@@ -710,7 +710,7 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                                 } elseif ($liveStatus === 'missed') {
                                     $cls     = 'celda-directo-perdido';
                                     $reason  = getMissedReason($liveCell['scheduledAt'], $day['date'], $dayTimeline, true, $linkedLiveKey, $dailyReports[$day['date']] ?? null);
-                                    $tooltip = 'Directo no emitido (esperado ' . $liveCell['scheduledAt'] . 'h) · ' . $reason;
+                                    $tooltip = 'Directo no emitido (esperado ' . $liveCell['scheduledAt'] . 'h) · ' . $reason . ' · ✎ Clic para corregir';
                                     $icon    = '📡';
                                 } elseif ($liveStatus === 'expected') {
                                     $cls     = 'celda-directo-esperado';
@@ -746,7 +746,7 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                                 case 'missed':
                                     $cls     = 'celda-perdida';
                                     $reason  = getMissedReason($cell['scheduledAt'], $day['date'], $dayTimeline, $isLiveProg, $progKey, $dailyReports[$day['date']] ?? null);
-                                    $tooltip = 'No emitido (esperado ' . $cell['scheduledAt'] . 'h) · ' . $reason;
+                                    $tooltip = 'No emitido (esperado ' . $cell['scheduledAt'] . 'h) · ' . $reason . ' · ✎ Clic para corregir';
                                     $icon    = '✗';
                                     break;
                                 case 'expected':
@@ -991,7 +991,17 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
 .celda-directo-manual    { background: #63b3ed; color: #fff;    outline: 2px dashed #2b6cb0; outline-offset: -2px; }
 /* Celdas clickeables (missed + manual) */
 .celda-corregible        { cursor: pointer; }
-.celda-corregible:hover  { filter: brightness(0.9); }
+.celda-corregible:hover  { filter: brightness(0.88); }
+.celda-corregible:hover::before {
+    content: '✎';
+    position: absolute;
+    top: 1px;
+    right: 2px;
+    font-size: 9px;
+    line-height: 1;
+    opacity: .75;
+    pointer-events: none;
+}
 /* Hoy */
 .col-hoy { border-left: 2px solid #667eea !important; border-right: 2px solid #667eea !important; }
 /* Tooltip CSS */
