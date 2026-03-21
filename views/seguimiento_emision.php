@@ -575,6 +575,47 @@ if ($hasSchedule) {
     }
 }
 $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
+
+// ── Datos para la vista resumen (mini barra por programa) ─────────────────────
+$progSummary = [];
+if ($hasSchedule) {
+    foreach (array_keys($programSchedules) as $progKey) {
+        if (isset($absorbedLive[$progKey])) continue;
+        $linkedLiveKey = $liveForAutomated[$progKey] ?? null;
+        $firstSeen     = $programFirstSeen[$progKey] ?? null;
+        $lastActive    = $programLastActive[$progKey] ?? null;
+        $s = ['played' => 0, 'missed' => 0, 'live_played' => 0, 'live_missed' => 0, 'days' => [], 'linkedLiveKey' => $linkedLiveKey];
+        foreach ($days as $day) {
+            $outside = ($firstSeen && $day['date'] < $firstSeen) || ($lastActive && $day['date'] > $lastActive);
+            if ($outside) { $s['days'][$day['date']] = 'outside'; continue; }
+            $usedLive = false;
+            if ($linkedLiveKey !== null) {
+                $lf = $programFirstSeen[$linkedLiveKey] ?? null;
+                $la = $programLastActive[$linkedLiveKey] ?? null;
+                $liveActive = (!$lf || $day['date'] >= $lf) && (!$la || $day['date'] <= $la);
+                if ($liveActive) {
+                    $lc = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts, $overrides);
+                    if ($lc['status'] === 'played')      { $s['days'][$day['date']] = !empty($lc['manual']) ? 'live-manual' : 'live-played'; $s['live_played']++; }
+                    elseif ($lc['status'] === 'missed')  { $s['days'][$day['date']] = 'live-missed'; $s['live_missed']++; }
+                    else                                 { $s['days'][$day['date']] = 'live-expected'; }
+                    $usedLive = true;
+                }
+            }
+            if (!$usedLive) {
+                $c = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts, $overrides);
+                if ($c['status'] === 'played')      { $s['days'][$day['date']] = !empty($c['manual']) ? 'manual' : 'played'; $s['played']++; }
+                elseif ($c['status'] === 'missed')  { $s['days'][$day['date']] = 'missed'; $s['missed']++; }
+                elseif ($c['status'] === 'expected'){ $s['days'][$day['date']] = 'expected'; }
+                else                                { $s['days'][$day['date']] = 'none'; }
+            }
+        }
+        $progSummary[$progKey] = $s;
+    }
+    // Ordenar: más fallos primero
+    uasort($progSummary, function($a, $b) {
+        return ($b['missed'] + $b['live_missed']) - ($a['missed'] + $a['live_missed']);
+    });
+}
 ?>
 
 <div class="card" id="seguimiento-card" style="padding: 0;">
@@ -618,6 +659,12 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
             <button class="btn btn-secondary" disabled style="font-size:13px; padding:6px 14px; opacity:.4; cursor:not-allowed;">Siguiente →</button>
         <?php endif; ?>
 
+        <!-- Toggle de vista -->
+        <div style="display:flex; gap:3px;" class="no-print">
+            <button id="btn-vista-resumen" onclick="toggleVista('resumen')" class="btn btn-secondary" style="font-size:12px; padding:4px 12px;">📊 Resumen</button>
+            <button id="btn-vista-detalle" onclick="toggleVista('detalle')" class="btn btn-secondary" style="font-size:12px; padding:4px 12px;">📋 Detalle</button>
+        </div>
+
         <!-- Leyenda -->
         <div style="margin-left:auto; display:flex; gap:12px; align-items:center; font-size:12px; color:#4a5568; flex-wrap:wrap;">
             <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#e2e8f0;border-radius:3px;display:inline-block;"></span> Esperado</span>
@@ -639,6 +686,55 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
         ⚠️ No se pudo obtener el historial de reproducción de AzuraCast. Los días pasados no muestran estado de emisión. Comprueba la <strong>API Key</strong>.
     </div>
     <?php endif; ?>
+
+    <!-- ── Vista resumen ─────────────────────────────────────────────────────── -->
+    <div id="vista-resumen" style="padding:16px 24px 24px;">
+        <?php if ($hasSchedule && !empty($progSummary)): ?>
+        <div style="display:flex; flex-direction:column; gap:2px;">
+        <?php foreach ($progSummary as $progKey => $s):
+            $progDisplay   = $displayNameMap[$progKey] ?? $progKey;
+            $totalFails    = $s['missed'] + $s['live_missed'];
+            $totalPlayed   = $s['played'] + $s['live_played'];
+            $linkedLiveKey = $s['linkedLiveKey'];
+        ?>
+        <div class="resumen-prog-row">
+            <div class="resumen-prog-nombre" title="<?php echo htmlEsc(displayName($progDisplay)); ?>">
+                <?php echo htmlEsc(displayName($progDisplay)); ?>
+            </div>
+            <div class="resumen-mini-bar">
+                <?php foreach ($days as $day):
+                    $st         = $s['days'][$day['date']] ?? 'none';
+                    $todayMark  = $day['isToday'] ? ' mini-hoy' : '';
+                    $isLiveSpan = (strpos($st, 'live-') === 0) ? '1' : '0';
+                    $isManual   = in_array($st, ['manual', 'live-manual']) ? '1' : '0';
+                    $corregible = in_array($st, ['missed', 'live-missed', 'manual', 'live-manual']) ? ' celda-corregible' : '';
+                    $ovKey      = ($isLiveSpan === '1' && $linkedLiveKey) ? $linkedLiveKey : $progKey;
+                    $extraData  = $corregible
+                        ? ' data-prog="' . htmlEsc($ovKey) . '" data-date="' . htmlEsc($day['date']) . '" data-live="' . $isLiveSpan . '" data-manual="' . $isManual . '"'
+                        : '';
+                ?>
+                <span class="mini-dia mini-<?php echo htmlEsc($st) . $todayMark . $corregible; ?>"<?php echo $extraData; ?>
+                      title="<?php echo htmlEsc($day['date']); ?>"></span>
+                <?php endforeach; ?>
+            </div>
+            <div class="resumen-prog-badges">
+                <?php if ($totalFails > 0): ?>
+                <span class="badge-falla"><?php echo $totalFails; ?> sin emitir</span>
+                <?php endif; ?>
+                <?php if ($totalPlayed > 0): ?>
+                <span class="badge-ok"><?php echo $totalPlayed; ?> emitidos</span>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endforeach; ?>
+        </div>
+        <?php else: ?>
+        <p style="color:#718096; font-size:13px; margin:0;">No hay datos de programación disponibles.</p>
+        <?php endif; ?>
+    </div>
+
+    <!-- ── Vista detalle (tabla + totales) ───────────────────────────────────── -->
+    <div id="vista-detalle">
 
     <!-- ── Tabla ─────────────────────────────────────────────────────────────── -->
     <?php if ($hasSchedule): ?>
@@ -914,7 +1010,9 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
     </div>
     <?php endif; ?>
 
-</div>
+    </div><!-- /vista-detalle -->
+
+</div><!-- /card -->
 
 <!-- ── Estilos de la tabla ──────────────────────────────────────────────────── -->
 <style>
@@ -1049,6 +1147,82 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
 .resumen-directos     td { background: #90cdf4; color: #2a4365; }
 .resumen-directos-esp td { background: #2d3748; color: #fff; }
 
+/* ── Vista resumen (mini barra por programa) ── */
+.resumen-prog-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+    border-bottom: 1px solid #f0f4f8;
+}
+.resumen-prog-row:last-child { border-bottom: none; }
+.resumen-prog-nombre {
+    min-width: 180px;
+    max-width: 200px;
+    font-size: 13px;
+    color: #2d3748;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.resumen-mini-bar {
+    display: flex;
+    gap: 1px;
+    flex: 1;
+    align-items: center;
+}
+.mini-dia {
+    width: 10px;
+    height: 18px;
+    border-radius: 2px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+.mini-played       { background: #9ae6b4; }
+.mini-missed       { background: #fc8181; }
+.mini-manual       { background: #68d391; outline: 1px dashed #38a169; outline-offset: -1px; }
+.mini-live-played  { background: #63b3ed; }
+.mini-live-missed  { background: #f56565; }
+.mini-live-manual  { background: #4299e1; outline: 1px dashed #2b6cb0; outline-offset: -1px; }
+.mini-live-expected { background: #a0aec0; }
+.mini-expected     { background: #e2e8f0; }
+.mini-none         { background: transparent; }
+.mini-outside      { background: transparent; }
+.mini-hoy          { outline: 2px solid #667eea; outline-offset: -1px; }
+.mini-dia.celda-corregible { cursor: pointer; }
+.mini-dia.celda-corregible:hover { filter: brightness(0.82); }
+.resumen-prog-badges {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.badge-falla {
+    background: #fed7d7;
+    color: #9b2335;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+.badge-ok {
+    background: #c6f6d5;
+    color: #276749;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+/* Toggle buttons active state */
+.btn-vista-activo {
+    background: #667eea !important;
+    color: #fff !important;
+    border-color: #5a67d8 !important;
+}
+
 /* ── Print / Export ── */
 .no-print { }
 @keyframes btn-pulso {
@@ -1176,6 +1350,34 @@ function exportarImagen() {
 }
 </script>
 
+<!-- ── Toggle de vista resumen / detalle ─────────────────────────────────────── -->
+<script>
+function toggleVista(vista) {
+    var r    = document.getElementById('vista-resumen');
+    var d    = document.getElementById('vista-detalle');
+    var btnR = document.getElementById('btn-vista-resumen');
+    var btnD = document.getElementById('btn-vista-detalle');
+    if (vista === 'resumen') {
+        if (r) r.style.display = '';
+        if (d) d.style.display = 'none';
+        if (btnR) btnR.classList.add('btn-vista-activo');
+        if (btnD) btnD.classList.remove('btn-vista-activo');
+    } else {
+        if (r) r.style.display = 'none';
+        if (d) d.style.display = '';
+        if (btnR) btnR.classList.remove('btn-vista-activo');
+        if (btnD) btnD.classList.add('btn-vista-activo');
+    }
+    try { localStorage.setItem('sapo_vista', vista); } catch(e) {}
+}
+// Inicializar desde localStorage
+(function() {
+    var v = 'resumen';
+    try { v = localStorage.getItem('sapo_vista') || 'resumen'; } catch(e) {}
+    toggleVista(v);
+})();
+</script>
+
 <!-- ── Modal corrección manual ───────────────────────────────────────────────── -->
 <input type="hidden" id="csrf-override" value="<?php echo generateCSRFToken(); ?>">
 
@@ -1199,16 +1401,23 @@ function exportarImagen() {
 (function() {
     var _cell = null; // { prog, date, isLive, isManual, td }
 
-    function abrirModal(td) {
-        var prog   = td.dataset.prog;
-        var date   = td.dataset.date;
-        var manual = td.dataset.manual === '1';
-        var isLive = td.dataset.live === '1';
-        _cell = { prog: prog, date: date, isLive: isLive, isManual: manual, td: td };
+    function abrirModal(el) {
+        var prog   = el.dataset.prog;
+        var date   = el.dataset.date;
+        var manual = el.dataset.manual === '1';
+        var isLive = el.dataset.live === '1';
+        _cell = { prog: prog, date: date, isLive: isLive, isManual: manual, td: el };
 
-        // Nombre del programa desde la columna fija
-        var progName = td.closest('tr').querySelector('.col-programa span[title]');
-        progName = progName ? progName.getAttribute('title') : prog;
+        // Nombre del programa (distinto según vista)
+        var progName;
+        if (el.tagName === 'TD') {
+            var nameEl = el.closest('tr').querySelector('.col-programa span[title]');
+            progName = nameEl ? nameEl.getAttribute('title') : prog;
+        } else {
+            var row = el.closest('.resumen-prog-row');
+            var nameEl = row ? row.querySelector('.resumen-prog-nombre') : null;
+            progName = nameEl ? nameEl.textContent.trim() : prog;
+        }
         // Fecha legible
         var parts = date.split('-');
         var dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
@@ -1285,33 +1494,42 @@ function exportarImagen() {
             });
     });
 
-    function actualizarCelda(td, wasManual, isLive) {
-        if (wasManual) {
-            // Revertir a perdida
-            td.classList.remove('celda-manual', 'celda-directo-manual');
-            if (isLive) {
-                td.classList.add('celda-directo-perdido');
-                td.textContent = '📡';
+    function actualizarCelda(el, wasManual, isLive) {
+        if (el.tagName === 'SPAN') {
+            // Mini-bar span
+            if (wasManual) {
+                el.classList.remove('mini-manual', 'mini-live-manual');
+                el.classList.add(isLive ? 'mini-live-missed' : 'mini-missed');
             } else {
-                td.classList.add('celda-perdida');
-                td.textContent = '✗';
+                el.classList.remove('mini-missed', 'mini-live-missed');
+                el.classList.add(isLive ? 'mini-live-manual' : 'mini-manual');
             }
-            td.dataset.manual = '0';
-            ajustarTotales(isLive, -1); // quitar corrección: emitidos--, faltan++
+            el.dataset.manual = wasManual ? '0' : '1';
         } else {
-            // Marcar como manual
-            if (isLive) {
-                td.classList.remove('celda-directo-perdido');
-                td.classList.add('celda-directo-manual');
-                td.textContent = '📡';
+            // Celda de tabla (TD)
+            if (wasManual) {
+                el.classList.remove('celda-manual', 'celda-directo-manual');
+                if (isLive) {
+                    el.classList.add('celda-directo-perdido');
+                    el.textContent = '📡';
+                } else {
+                    el.classList.add('celda-perdida');
+                    el.textContent = '✗';
+                }
             } else {
-                td.classList.remove('celda-perdida');
-                td.classList.add('celda-manual');
-                td.textContent = '✎';
+                if (isLive) {
+                    el.classList.remove('celda-directo-perdido');
+                    el.classList.add('celda-directo-manual');
+                    el.textContent = '📡';
+                } else {
+                    el.classList.remove('celda-perdida');
+                    el.classList.add('celda-manual');
+                    el.textContent = '✎';
+                }
             }
-            td.dataset.manual = '1';
-            ajustarTotales(isLive, +1); // añadir corrección: emitidos++, faltan--
+            el.dataset.manual = wasManual ? '0' : '1';
         }
+        ajustarTotales(isLive, wasManual ? -1 : +1);
     }
 
     function ajustarTotales(isLive, delta) {
@@ -1334,6 +1552,15 @@ function exportarImagen() {
         tabla.addEventListener('click', function(e) {
             var td = e.target.closest('td.celda-corregible');
             if (td) abrirModal(td);
+        });
+    }
+
+    // Event delegation en la vista resumen
+    var resumen = document.getElementById('vista-resumen');
+    if (resumen) {
+        resumen.addEventListener('click', function(e) {
+            var span = e.target.closest('span.mini-dia.celda-corregible');
+            if (span) abrirModal(span);
         });
     }
 
