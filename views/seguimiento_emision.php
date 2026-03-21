@@ -254,6 +254,7 @@ foreach ($livePrograms as $liveKey => $_) {
 // (agrupando canciones continuas; evita falsos positivos con entradas mid-sesión)
 $historyMap       = [];
 $liveSessionStarts = [];
+$dayTimeline      = []; // [Y-m-d => [['playlist'=>..., 'time'=>'HH:MM'], ...]]
 $historyError     = false;
 
 if ($hasSchedule) {
@@ -281,6 +282,8 @@ if ($hasSchedule) {
                 if (!isset($historyMap[$playlist][$dayStr])) {
                     $historyMap[$playlist][$dayStr] = $timeStr;
                 }
+                // Timeline para diagnóstico de emisiones perdidas
+                $dayTimeline[$dayStr][] = ['playlist' => $playlist, 'time' => $timeStr];
             }
 
             // Acumular timestamps de streamer para agrupar después
@@ -367,6 +370,43 @@ function liveTiempoCoincide($scheduledTime, $emStart) {
     $diff = abs(timeToMinutes($scheduledTime) - timeToMinutes($emStart));
     $diff = min($diff, 1440 - $diff); // ajuste medianoche
     return $diff <= 45;
+}
+
+// ── Helper: diagnóstico de emisión perdida ────────────────────────────────────
+// Mira qué había emitiéndose en la franja ±60 min del slot esperado
+// y devuelve una cadena explicativa para el tooltip.
+function getMissedReason($scheduledAt, $date, $dayTimeline, $isLive = false) {
+    if ($isLive) {
+        // Para directos: simplemente no hubo stream
+        $entries = $dayTimeline[$date] ?? [];
+        if (empty($entries)) {
+            return 'DJ no conectó · sin actividad en AzuraCast ese día';
+        }
+        return 'DJ no conectó · sin stream detectado';
+    }
+
+    $entries = $dayTimeline[$date] ?? [];
+    if (empty($entries)) {
+        return 'Sin actividad en AzuraCast ese día (posible corte de señal)';
+    }
+
+    $schedMin = timeToMinutes($scheduledAt);
+    $inWindow = [];
+    foreach ($entries as $e) {
+        $diff = abs($schedMin - timeToMinutes($e['time']));
+        $diff = min($diff, 1440 - $diff);
+        if ($diff <= 60 && !in_array($e['playlist'], $inWindow, true)) {
+            $inWindow[] = $e['playlist'];
+        }
+    }
+
+    if (!empty($inWindow)) {
+        $shown = array_slice($inWindow, 0, 2);
+        $label = implode(', ', $shown) . (count($inWindow) > 2 ? '…' : '');
+        return 'En esa franja emitió: ' . $label;
+    }
+
+    return 'Sin emisión en esa franja (posible silencio o corte)';
 }
 
 // ── Helper: estado de una celda ───────────────────────────────────────────────
@@ -568,7 +608,8 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                                 $icon    = '📡';
                             } elseif ($liveStatus === 'missed') {
                                 $cls     = 'celda-directo-perdido';
-                                $tooltip = 'Directo no emitido (esperado ' . $liveCell['scheduledAt'] . 'h)';
+                                $reason  = getMissedReason($liveCell['scheduledAt'], $day['date'], $dayTimeline, true);
+                                $tooltip = 'Directo no emitido (esperado ' . $liveCell['scheduledAt'] . 'h) · ' . $reason;
                                 $icon    = '📡';
                             } elseif ($liveStatus === 'expected') {
                                 $cls     = 'celda-directo-esperado';
@@ -589,7 +630,8 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                                     break;
                                 case 'missed':
                                     $cls     = 'celda-perdida';
-                                    $tooltip = 'Sin emisión registrada (esperado ' . $cell['scheduledAt'] . 'h)';
+                                    $reason  = getMissedReason($cell['scheduledAt'], $day['date'], $dayTimeline, $isLiveProg);
+                                    $tooltip = 'No emitido (esperado ' . $cell['scheduledAt'] . 'h) · ' . $reason;
                                     $icon    = '✗';
                                     break;
                                 case 'expected':
