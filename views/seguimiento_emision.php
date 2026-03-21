@@ -783,14 +783,34 @@ if ($hasSchedule) {
     <!-- ── Vista detalle (tabla + totales) ───────────────────────────────────── -->
     <div id="vista-detalle">
 
-    <!-- ── Leyenda (solo vista detalle) ─────────────────────────────────────── -->
-    <div style="padding:10px 24px; border-bottom:1px solid #e2e8f0; display:flex; gap:12px; align-items:center; font-size:12px; color:#4a5568; flex-wrap:wrap;">
-        <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#e2e8f0;border-radius:3px;display:inline-block;"></span> Esperado</span>
-        <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#c6f6d5;border-radius:3px;display:inline-block;"></span> Emitido</span>
-        <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#fed7d7;border-radius:3px;display:inline-block;"></span> No emitido</span>
-        <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#3b82f6;border-radius:3px;display:inline-block;font-size:10px;text-align:center;line-height:14px;color:#fff;">📡</span> Directo emitido</span>
-        <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#ef4444;border-radius:3px;display:inline-block;font-size:10px;text-align:center;line-height:14px;color:#fff;">📡</span> Directo no emitido</span>
-        <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#94a3b8;border-radius:3px;display:inline-block;font-size:10px;text-align:center;line-height:14px;color:#fff;">📡</span> Directo esperado</span>
+    <!-- ── Leyenda + totales (solo vista detalle) ───────────────────────────── -->
+    <div style="padding:10px 24px; border-bottom:1px solid #e2e8f0; font-size:12px; color:#4a5568;">
+        <!-- fila 1: leyenda -->
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+            <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#e2e8f0;border-radius:3px;display:inline-block;"></span> Esperado</span>
+            <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#c6f6d5;border-radius:3px;display:inline-block;"></span> Emitido</span>
+            <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#fed7d7;border-radius:3px;display:inline-block;"></span> No emitido</span>
+            <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#3b82f6;border-radius:3px;display:inline-block;font-size:10px;text-align:center;line-height:14px;color:#fff;">📡</span> Directo emitido</span>
+            <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#ef4444;border-radius:3px;display:inline-block;font-size:10px;text-align:center;line-height:14px;color:#fff;">📡</span> Directo no emitido</span>
+            <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#94a3b8;border-radius:3px;display:inline-block;font-size:10px;text-align:center;line-height:14px;color:#fff;">📡</span> Directo esperado</span>
+        </div>
+        <!-- fila 2: totales -->
+        <?php if ($hasSchedule):
+            $totalEsperados = $totals['emite_ok'] + $totals['faltan'];
+            $livefaltan     = $totals['live_esperados'] - $totals['live_efectivos'];
+        ?>
+        <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-top:6px; color:#4a5568;">
+            <span style="font-weight:600; color:#4a5568;">Emisiones:</span>
+            <span>Esperadas <strong><?php echo $totalEsperados; ?></strong></span>
+            <span>Emitidas <strong id="total-emite-ok" style="color:#276749;"><?php echo $totals['emite_ok']; ?></strong></span>
+            <span>Faltan <strong id="total-faltan" style="color:#c53030;"><?php echo $totals['faltan']; ?></strong></span>
+            <span style="color:#cbd5e0;">|</span>
+            <span style="font-weight:600; color:#2563eb;">Directos:</span>
+            <span>Esperados <strong><?php echo $totals['live_esperados']; ?></strong></span>
+            <span>Emitidos <strong id="total-live-ef" style="color:#1d4ed8;"><?php echo $totals['live_efectivos']; ?></strong></span>
+            <span>Faltan <strong id="total-live-faltan" style="color:#b91c1c;"><?php echo $livefaltan; ?></strong></span>
+        </div>
+        <?php endif; ?>
     </div>
 
     <!-- ── Tabla ─────────────────────────────────────────────────────────────── -->
@@ -936,52 +956,6 @@ if ($hasSchedule) {
     </div>
     <?php endif; ?>
 
-    <!-- ── Resumen ──────────────────────────────────────────────────────────── -->
-    <?php if ($hasSchedule):
-        $totalEsperados  = $totals['emite_ok'] + $totals['faltan'];
-        $livefaltan      = $totals['live_esperados'] - $totals['live_efectivos'];
-    ?>
-    <div style="padding:0 24px 24px;">
-        <div style="display:flex;gap:12px;align-items:flex-end;">
-            <!-- Grupo EMISIONES -->
-            <div style="display:flex;flex-direction:column;gap:0;">
-                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#fff;background:#4a5568;padding:5px 12px;border-radius:6px 6px 0 0;text-align:center;">Emisiones</div>
-                <div style="display:flex;align-items:stretch;gap:0;font-size:13px;font-weight:600;border-radius:0 0 8px 8px;overflow:hidden;border:1px solid #e2e8f0;">
-                    <div style="background:#f0fff4;color:#276749;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid #9ae6b4;">
-                        <span style="font-size:11px;font-weight:400;color:#48bb78;text-transform:uppercase;letter-spacing:.04em;">Esperadas</span>
-                        <span style="font-size:20px;"><?php echo $totalEsperados; ?></span>
-                    </div>
-                    <div style="background:#c6f6d5;color:#276749;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid #9ae6b4;">
-                        <span style="font-size:11px;font-weight:400;color:#276749;text-transform:uppercase;letter-spacing:.04em;">Emitidas</span>
-                        <span id="total-emite-ok" style="font-size:20px;"><?php echo $totals['emite_ok']; ?></span>
-                    </div>
-                    <div style="background:#fed7d7;color:#9b2335;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;">
-                        <span style="font-size:11px;font-weight:400;color:#c53030;text-transform:uppercase;letter-spacing:.04em;">Faltan</span>
-                        <span id="total-faltan" style="font-size:20px;"><?php echo $totals['faltan']; ?></span>
-                    </div>
-                </div>
-            </div>
-            <!-- Grupo DIRECTOS -->
-            <div style="display:flex;flex-direction:column;gap:0;">
-                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#fff;background:#2563eb;padding:5px 12px;border-radius:6px 6px 0 0;text-align:center;">Directos</div>
-                <div style="display:flex;align-items:stretch;gap:0;font-size:13px;font-weight:600;border-radius:0 0 8px 8px;overflow:hidden;border:1px solid #e2e8f0;">
-                    <div style="background:#e2e8f0;color:#4a5568;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid #cbd5e0;">
-                        <span style="font-size:11px;font-weight:400;color:#718096;text-transform:uppercase;letter-spacing:.04em;">📡 Esperados</span>
-                        <span style="font-size:20px;"><?php echo $totals['live_esperados']; ?></span>
-                    </div>
-                    <div style="background:#3b82f6;color:#fff;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid #2563eb;">
-                        <span style="font-size:11px;font-weight:400;color:#bfdbfe;text-transform:uppercase;letter-spacing:.04em;">📡 Emitidos</span>
-                        <span id="total-live-ef" style="font-size:20px;"><?php echo $totals['live_efectivos']; ?></span>
-                    </div>
-                    <div style="background:#ef4444;color:#fff;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;">
-                        <span style="font-size:11px;font-weight:400;color:#fecaca;text-transform:uppercase;letter-spacing:.04em;">📡 Faltan</span>
-                        <span id="total-live-faltan" style="font-size:20px;"><?php echo $livefaltan; ?></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
 
     <!-- ── Debug (solo con ?debug=1) ────────────────────────────────────────── -->
     <?php if (isset($_GET['debug']) && $_GET['debug'] === '1'): ?>
