@@ -689,20 +689,47 @@ if ($hasSchedule) {
 
     <!-- ── Vista resumen ─────────────────────────────────────────────────────── -->
     <div id="vista-resumen" style="padding:16px 24px 24px;">
-        <?php if ($hasSchedule && !empty($progSummary)): ?>
-        <div style="display:flex; flex-direction:column; gap:2px;">
+        <?php if ($hasSchedule && !empty($progSummary)):
+            // Totales del resumen para la cabecera
+            $resTotalFails = 0; $resTotalProgs = 0;
+            foreach ($progSummary as $s2) { $resTotalFails += $s2['missed'] + $s2['live_missed']; $resTotalProgs++; }
+        ?>
+        <!-- Cabecera del resumen -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid #e2e8f0;">
+            <span style="font-size:13px; color:#718096;">
+                <strong style="color:#2d3748;"><?php echo $resTotalProgs; ?></strong> programa<?php echo $resTotalProgs !== 1 ? 's' : ''; ?>
+                <?php if ($resTotalFails > 0): ?>
+                · <strong style="color:#c53030;"><?php echo $resTotalFails; ?></strong> emisión<?php echo $resTotalFails !== 1 ? 'es' : ''; ?> sin registrar
+                <?php else: ?>
+                · <strong style="color:#276749;">✓ Todo correcto</strong>
+                <?php endif; ?>
+            </span>
+            <span style="font-size:11px; color:#a0aec0;">Haz clic en un bloque rojo para corregir</span>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:6px;">
         <?php foreach ($progSummary as $progKey => $s):
             $progDisplay   = $displayNameMap[$progKey] ?? $progKey;
             $totalFails    = $s['missed'] + $s['live_missed'];
             $totalPlayed   = $s['played'] + $s['live_played'];
             $linkedLiveKey = $s['linkedLiveKey'];
+            // Porcentaje sobre días ya pasados con algo que mostrar
+            $totalDone     = $totalPlayed + $totalFails;
+            $pct           = $totalDone > 0 ? round($totalPlayed / $totalDone * 100) : null;
+            // Clase de salud según fallos
+            if ($totalFails === 0)     $hc = 'rh-ok';
+            elseif ($totalFails <= 2)  $hc = 'rh-warn';
+            else                       $hc = 'rh-crit';
         ?>
-        <div class="resumen-prog-row">
+        <div class="resumen-prog-row <?php echo $hc; ?>">
+            <!-- Nombre -->
             <div class="resumen-prog-nombre" title="<?php echo htmlEsc(displayName($progDisplay)); ?>">
                 <?php echo htmlEsc(displayName($progDisplay)); ?>
             </div>
+
+            <!-- Mini-barra de días -->
             <div class="resumen-mini-bar">
-                <?php foreach ($days as $day):
+                <?php foreach ($days as $idx => $day):
                     $st         = $s['days'][$day['date']] ?? 'none';
                     $todayMark  = $day['isToday'] ? ' mini-hoy' : '';
                     $isLiveSpan = (strpos($st, 'live-') === 0) ? '1' : '0';
@@ -712,22 +739,45 @@ if ($hasSchedule) {
                     $extraData  = $corregible
                         ? ' data-prog="' . htmlEsc($ovKey) . '" data-date="' . htmlEsc($day['date']) . '" data-live="' . $isLiveSpan . '" data-manual="' . $isManual . '"'
                         : '';
+                    // Separador de semana antes de cada lunes (excepto el primero)
+                    $sepClass = ($idx > 0 && $day['dow'] == 1) ? ' mini-sep-semana' : '';
+                    // Tooltip legible
+                    $dowNames = ['dom','lun','mar','mié','jue','vie','sáb'];
+                    $tipDate  = $dowNames[$day['dow']] . ' ' . $day['num'];
+                    $tipSt    = match($st) {
+                        'played'       => '✓ Emitido',
+                        'missed'       => '✗ No emitido',
+                        'manual'       => '✎ Corrección manual',
+                        'expected'     => '· Esperado',
+                        'live-played'  => '📡 Directo emitido',
+                        'live-missed'  => '📡 Directo no emitido',
+                        'live-manual'  => '📡 Corrección manual',
+                        'live-expected'=> '📡 Directo esperado',
+                        default        => ''
+                    };
+                    $tip = $tipSt ? $tipDate . ' — ' . $tipSt : $tipDate;
                 ?>
-                <span class="mini-dia mini-<?php echo htmlEsc($st) . $todayMark . $corregible; ?>"<?php echo $extraData; ?>
-                      title="<?php echo htmlEsc($day['date']); ?>"></span>
+                <span class="mini-dia mini-<?php echo htmlEsc($st) . $todayMark . $corregible . $sepClass; ?>"<?php echo $extraData; ?>
+                      title="<?php echo htmlEsc($tip); ?>"></span>
                 <?php endforeach; ?>
             </div>
-            <div class="resumen-prog-badges">
-                <?php if ($totalFails > 0): ?>
-                <span class="badge-falla"><?php echo $totalFails; ?> sin emitir</span>
+
+            <!-- Stats -->
+            <div class="resumen-prog-stats">
+                <?php if ($pct !== null): ?>
+                <span class="resumen-pct <?php echo $hc; ?>"><?php echo $pct; ?>%</span>
                 <?php endif; ?>
-                <?php if ($totalPlayed > 0): ?>
-                <span class="badge-ok"><?php echo $totalPlayed; ?> emitidos</span>
+                <?php if ($totalFails > 0): ?>
+                <span class="badge-falla"><?php echo $totalFails; ?> ✗</span>
+                <?php endif; ?>
+                <?php if ($totalPlayed > 0 && $totalFails === 0): ?>
+                <span class="badge-ok"><?php echo $totalPlayed; ?> ✓</span>
                 <?php endif; ?>
             </div>
         </div>
         <?php endforeach; ?>
         </div>
+
         <?php else: ?>
         <p style="color:#718096; font-size:13px; margin:0;">No hay datos de programación disponibles.</p>
         <?php endif; ?>
@@ -1151,17 +1201,28 @@ if ($hasSchedule) {
 .resumen-prog-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 4px 0;
-    border-bottom: 1px solid #f0f4f8;
+    gap: 14px;
+    padding: 9px 12px 9px 14px;
+    border-radius: 7px;
+    background: #fff;
+    border: 1px solid #e8edf2;
+    border-left: 4px solid #cbd5e0;
+    transition: box-shadow .12s, border-color .12s;
 }
-.resumen-prog-row:last-child { border-bottom: none; }
+.resumen-prog-row:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,.07);
+}
+/* Colores de borde lateral según salud */
+.resumen-prog-row.rh-ok   { border-left-color: #48bb78; }
+.resumen-prog-row.rh-warn { border-left-color: #ed8936; }
+.resumen-prog-row.rh-crit { border-left-color: #e53e3e; }
+
 .resumen-prog-nombre {
     min-width: 180px;
-    max-width: 200px;
+    max-width: 210px;
     font-size: 13px;
+    font-weight: 600;
     color: #2d3748;
-    font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1169,53 +1230,74 @@ if ($hasSchedule) {
 }
 .resumen-mini-bar {
     display: flex;
-    gap: 1px;
+    gap: 2px;
     flex: 1;
     align-items: center;
 }
 .mini-dia {
-    width: 10px;
-    height: 18px;
-    border-radius: 2px;
+    width: 12px;
+    height: 24px;
+    border-radius: 3px;
     display: inline-block;
     flex-shrink: 0;
+    transition: filter .1s;
 }
-.mini-played       { background: #9ae6b4; }
-.mini-missed       { background: #fc8181; }
-.mini-manual       { background: #68d391; outline: 1px dashed #38a169; outline-offset: -1px; }
-.mini-live-played  { background: #63b3ed; }
-.mini-live-missed  { background: #f56565; }
-.mini-live-manual  { background: #4299e1; outline: 1px dashed #2b6cb0; outline-offset: -1px; }
-.mini-live-expected { background: #a0aec0; }
-.mini-expected     { background: #e2e8f0; }
-.mini-none         { background: transparent; }
-.mini-outside      { background: transparent; }
-.mini-hoy          { outline: 2px solid #667eea; outline-offset: -1px; }
+/* Separador de semana (lunes) */
+.mini-sep-semana { margin-left: 5px; }
+
+/* Estados */
+.mini-played        { background: #68d391; }
+.mini-missed        { background: #fc8181; }
+.mini-manual        { background: #48bb78; outline: 2px dashed #276749; outline-offset: -2px; }
+.mini-live-played   { background: #63b3ed; }
+.mini-live-missed   { background: #f56565; }
+.mini-live-manual   { background: #4299e1; outline: 2px dashed #2b6cb0; outline-offset: -2px; }
+.mini-live-expected { background: #b0bec5; }
+.mini-expected      { background: #dde3ea; }
+.mini-none          { background: transparent; width: 12px; }
+.mini-outside       { background: transparent; width: 12px; }
+.mini-hoy           { box-shadow: 0 0 0 2px #667eea; }
 .mini-dia.celda-corregible { cursor: pointer; }
-.mini-dia.celda-corregible:hover { filter: brightness(0.82); }
-.resumen-prog-badges {
+.mini-dia.celda-corregible:hover { filter: brightness(0.78) saturate(1.3); }
+
+/* Stats a la derecha */
+.resumen-prog-stats {
     display: flex;
-    gap: 6px;
+    align-items: center;
+    gap: 7px;
     flex-shrink: 0;
+    min-width: 90px;
+    justify-content: flex-end;
 }
+.resumen-pct {
+    font-size: 14px;
+    font-weight: 700;
+    min-width: 38px;
+    text-align: right;
+}
+.resumen-pct.rh-ok   { color: #276749; }
+.resumen-pct.rh-warn { color: #c05621; }
+.resumen-pct.rh-crit { color: #c53030; }
+
 .badge-falla {
     background: #fed7d7;
     color: #9b2335;
     font-size: 11px;
     font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 10px;
+    padding: 3px 9px;
+    border-radius: 12px;
     white-space: nowrap;
 }
 .badge-ok {
     background: #c6f6d5;
     color: #276749;
     font-size: 11px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 10px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 12px;
     white-space: nowrap;
 }
+
 /* Toggle buttons active state */
 .btn-vista-activo {
     background: #667eea !important;
