@@ -660,7 +660,8 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
 
     <!-- ── Resumen ──────────────────────────────────────────────────────────── -->
     <?php if ($hasSchedule):
-        $totalEsperados = $totals['emite_ok'] + $totals['faltan'];
+        $totalEsperados  = $totals['emite_ok'] + $totals['faltan'];
+        $livefaltan      = $totals['live_esperados'] - $totals['live_efectivos'];
     ?>
     <div style="padding:0 24px 24px;">
         <div style="display:flex;gap:12px;align-items:flex-end;">
@@ -669,11 +670,11 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                 <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#fff;background:#4a5568;padding:5px 12px;border-radius:6px 6px 0 0;text-align:center;">Emisiones</div>
                 <div style="display:flex;align-items:stretch;gap:0;font-size:13px;font-weight:600;border-radius:0 0 8px 8px;overflow:hidden;border:1px solid #e2e8f0;">
                     <div style="background:#f0fff4;color:#276749;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid #9ae6b4;">
-                        <span style="font-size:11px;font-weight:400;color:#48bb78;text-transform:uppercase;letter-spacing:.04em;">Esperados</span>
+                        <span style="font-size:11px;font-weight:400;color:#48bb78;text-transform:uppercase;letter-spacing:.04em;">Esperadas</span>
                         <span style="font-size:20px;"><?php echo $totalEsperados; ?></span>
                     </div>
                     <div style="background:#c6f6d5;color:#276749;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid #9ae6b4;">
-                        <span style="font-size:11px;font-weight:400;color:#276749;text-transform:uppercase;letter-spacing:.04em;">Emitidos</span>
+                        <span style="font-size:11px;font-weight:400;color:#276749;text-transform:uppercase;letter-spacing:.04em;">Emitidas</span>
                         <span style="font-size:20px;"><?php echo $totals['emite_ok']; ?></span>
                     </div>
                     <div style="background:#fed7d7;color:#9b2335;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;">
@@ -687,12 +688,16 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                 <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#fff;background:#2563eb;padding:5px 12px;border-radius:6px 6px 0 0;text-align:center;">Directos</div>
                 <div style="display:flex;align-items:stretch;gap:0;font-size:13px;font-weight:600;border-radius:0 0 8px 8px;overflow:hidden;border:1px solid #e2e8f0;">
                     <div style="background:#e2e8f0;color:#4a5568;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid #cbd5e0;">
-                        <span style="font-size:11px;font-weight:400;color:#718096;text-transform:uppercase;letter-spacing:.04em;">📡 Esperado</span>
+                        <span style="font-size:11px;font-weight:400;color:#718096;text-transform:uppercase;letter-spacing:.04em;">📡 Esperados</span>
                         <span style="font-size:20px;"><?php echo $totals['live_esperados']; ?></span>
                     </div>
-                    <div style="background:#3b82f6;color:#fff;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;">
-                        <span style="font-size:11px;font-weight:400;color:#bfdbfe;text-transform:uppercase;letter-spacing:.04em;">📡 Emitido</span>
+                    <div style="background:#3b82f6;color:#fff;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid #2563eb;">
+                        <span style="font-size:11px;font-weight:400;color:#bfdbfe;text-transform:uppercase;letter-spacing:.04em;">📡 Emitidos</span>
                         <span style="font-size:20px;"><?php echo $totals['live_efectivos']; ?></span>
+                    </div>
+                    <div style="background:#ef4444;color:#fff;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;">
+                        <span style="font-size:11px;font-weight:400;color:#fecaca;text-transform:uppercase;letter-spacing:.04em;">📡 Faltan</span>
+                        <span style="font-size:20px;"><?php echo $livefaltan; ?></span>
                     </div>
                 </div>
             </div>
