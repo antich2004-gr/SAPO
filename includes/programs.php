@@ -206,9 +206,12 @@ function syncProgramsFromAzuracast($username) {
             $currentOrphaned = $data['programs'][$programName]['orphaned'] ?? false;
 
             if ($shouldBeOrphaned && !$currentOrphaned) {
-                // Marcar como huérfano
+                // Marcar como huérfano — guardar fecha de baja si no estaba ya
                 $data['programs'][$programName]['orphaned'] = true;
                 $data['programs'][$programName]['orphan_reason'] = $reason;
+                if (empty($data['programs'][$programName]['last_active_date'])) {
+                    $data['programs'][$programName]['last_active_date'] = date('Y-m-d');
+                }
                 $orphanedCount++;
                 error_log("syncProgramsFromAzuracast: Marcando '$programName' como huérfano (razón: $reason)");
             } elseif ($shouldBeOrphaned && $currentOrphaned) {
@@ -219,9 +222,10 @@ function syncProgramsFromAzuracast($username) {
                     error_log("syncProgramsFromAzuracast: Actualizando razón de '$programName': '$currentReason' -> '$reason'");
                 }
             } elseif (!$shouldBeOrphaned && $currentOrphaned) {
-                // Reactivar si ya no debería ser huérfano
+                // Reactivar — limpiar fecha de baja
                 $data['programs'][$programName]['orphaned'] = false;
                 unset($data['programs'][$programName]['orphan_reason']);
+                unset($data['programs'][$programName]['last_active_date']);
                 $reactivatedCount++;
                 error_log("syncProgramsFromAzuracast: Reactivando '$programName' (estaba huérfano, ahora activo)");
             }

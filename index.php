@@ -960,6 +960,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $scheduleStartTime = $firstSlot ? $firstSlot['start_time'] : '';
             $scheduleDuration = $firstSlot ? $firstSlot['duration'] : 60;
 
+            $nowHidden   = isset($_POST['hidden_from_schedule']);
+            $existingInfo = getProgramInfo($username, $programName) ?? [];
+            $wasHidden    = !empty($existingInfo['hidden_from_schedule']);
+
             $programInfo = [
                 'display_title' => trim($_POST['display_title'] ?? ''),
                 'playlist_type' => $playlistType,
@@ -975,7 +979,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'social_bluesky' => trim($_POST['social_bluesky'] ?? ''),
                 'social_facebook' => trim($_POST['social_facebook'] ?? ''),
                 'rss_feed' => trim($_POST['rss_feed'] ?? ''),
-                'hidden_from_schedule' => isset($_POST['hidden_from_schedule']) ? true : false,
+                'hidden_from_schedule' => $nowHidden,
                 // FORMATO NUEVO: múltiples horarios
                 'schedule_slots' => $scheduleSlots,
                 // FORMATO ANTIGUO: mantener por retrocompatibilidad
@@ -983,6 +987,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'schedule_start_time' => $scheduleStartTime,
                 'schedule_duration' => $scheduleDuration
             ];
+
+            // Gestionar last_active_date según cambio de visibilidad
+            if ($nowHidden && !$wasHidden) {
+                // Se está ocultando ahora → registrar fecha de baja
+                $programInfo['last_active_date'] = date('Y-m-d');
+            } elseif (!$nowHidden && $wasHidden) {
+                // Se está mostrando de nuevo → limpiar fecha de baja
+                $programInfo['last_active_date'] = null;
+            }
 
             if (saveProgramInfo($username, $programName, $programInfo)) {
                 $message = "Información del programa guardada correctamente";
