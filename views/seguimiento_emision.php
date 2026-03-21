@@ -647,21 +647,29 @@ $listadoDetails = []; // [progKey][Y-m-d] = [...]
 if ($hasSchedule) {
     foreach (array_keys($programSchedules) as $progKey) {
         if (isset($absorbedLive[$progKey])) continue;
-        $historyKey    = $historyNameMap[$progKey] ?? $progKey;
         $linkedLiveKey = $liveForAutomated[$progKey] ?? null;
-        // Mismos límites de actividad que $progSummary
-        $firstSeen  = $programFirstSeen[$progKey] ?? null;
-        $lastActive = $programLastActive[$progKey] ?? null;
+        $summaryDays   = $progSummary[$progKey]['days'] ?? [];
 
         foreach ($days as $day) {
             $date = $day['date'];
             if ($date > $today) continue;
 
-            // Saltar días fuera del rango activo del programa (igual que $progSummary)
-            $outside = ($firstSeen && $date < $firstSeen) || ($lastActive && $date > $lastActive);
-            if ($outside) continue;
+            // ── Estado: leído directamente de $progSummary para garantizar consistencia
+            $rawDay = $summaryDays[$date] ?? null;
+            // Si progSummary no registró este día (outside, no slot…) lo saltamos
+            if ($rawDay === null || $rawDay === 'outside' || $rawDay === 'none') continue;
 
-            // ¿Tiene slot este día de la semana?
+            $isLiveDay = in_array($rawDay, ['live-played','live-manual','live-missed','live-expected'], true);
+            $status    = match($rawDay) {
+                'played','manual','live-played','live-manual' => 'played',
+                'missed','live-missed'                        => 'missed',
+                default                                       => 'expected',
+            };
+
+            // Clave efectiva para buscar historial (live o automático según el día)
+            $effectiveKey = ($isLiveDay && $linkedLiveKey !== null) ? $linkedLiveKey : $progKey;
+
+            // ¿Tiene slot este día? (para hora teórica y duración)
             $slots = array_filter(
                 $programSchedules[$progKey] ?? [],
                 fn($s) => $s['dayOfWeek'] === $day['dow']
@@ -677,48 +685,15 @@ if ($hasSchedule) {
                 if ($schDurMin < 0) $schDurMin += 1440;
             }
 
-            // ── Estado: misma lógica que $progSummary ────────────────────────
-            // Primero consultamos el estado del programa automático
-            $cell        = cellStatus($progKey, $day, $programSchedules, $historyMap, $today,
-                                      $historyNameMap, $livePrograms, $liveEmissionsPerDay,
-                                      $liveSessionStarts, $overrides);
-            $status      = $cell['status'];
-            $usedLiveKey = false;
-            $effectiveKey = $progKey;
-
-            // Si hay directo vinculado y está activo este día, su estado tiene prioridad
-            // (igual que hace $progSummary: el live absorbe la celda del automático)
-            if ($linkedLiveKey !== null) {
-                $lf = $programFirstSeen[$linkedLiveKey] ?? null;
-                $la = $programLastActive[$linkedLiveKey] ?? null;
-                $liveActive = (!$lf || $date >= $lf) && (!$la || $date <= $la);
-                if ($liveActive) {
-                    $lc = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today,
-                                     $historyNameMap, $livePrograms, $liveEmissionsPerDay,
-                                     $liveSessionStarts, $overrides);
-                    // Solo usamos el live si tiene slot ese día (no 'none')
-                    if ($lc['status'] !== 'none') {
-                        $cell         = $lc;
-                        $status       = $lc['status'];
-                        $effectiveKey = $linkedLiveKey;
-                        $usedLiveKey  = true;
-                    }
-                }
-            }
-
             // Hora real
-            $realTime = $cell['time'] ?? null;
-            if (!$realTime && $status === 'played') {
-                $hk2      = $historyNameMap[$effectiveKey] ?? $effectiveKey;
-                $realTime = $historyMap[$hk2][$date] ?? null;
-            }
+            $hk2      = $historyNameMap[$effectiveKey] ?? $effectiveKey;
+            $realTime = $historyMap[$hk2][$date] ?? null;
 
-            // Detalles del episodio (buscar en la clave efectiva)
+            // Detalles del episodio
             $epTitle    = null;
             $realDurSec = null;
             if ($status === 'played') {
-                $detHKey = $historyNameMap[$effectiveKey] ?? $effectiveKey;
-                $det     = $historyDetails[$detHKey][$date] ?? null;
+                $det = $historyDetails[$hk2][$date] ?? null;
                 if ($det) {
                     $epTitle    = $det['title'] ?: null;
                     $realDurSec = $det['duration'] ?: null;
@@ -732,7 +707,7 @@ if ($hasSchedule) {
             if ($status === 'missed') {
                 $dailyRep     = $dailyReports[$date] ?? null;
                 $missedReason = getMissedReason($schTime, $date, $dayTimeline,
-                                               $usedLiveKey || isset($livePrograms[$progKey]),
+                                               $isLiveDay || isset($livePrograms[$progKey]),
                                                $effectiveKey, $dailyRep);
 
                 $schedTs = mktime(
@@ -743,9 +718,8 @@ if ($hasSchedule) {
                     (int)substr($date, 8, 2),
                     (int)substr($date, 0, 4)
                 );
-                $skipKey = $historyNameMap[$effectiveKey] ?? $effectiveKey;
                 foreach ($historyEntryByDay[$date] ?? [] as $he) {
-                    if ($he['playlist'] === $skipKey) continue;
+                    if ($he['playlist'] === $hk2) continue;
                     $heEnd = $he['ts'] + $he['duration'];
                     if ($he['ts'] <= $schedTs && $heEnd > $schedTs) {
                         $overrunSec  = $heEnd - $schedTs;
