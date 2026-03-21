@@ -1043,18 +1043,10 @@ function exportarImagen() {
     btn.disabled = true;
     btn.innerHTML = '<span class="btn-icon">⏳</span> Generando…';
 
-    // Congelar animaciones CSS para que html2canvas no capture opacity:0
-    var noAnimStyle = document.createElement('style');
-    noAnimStyle.id = 'h2c-noanim';
-    noAnimStyle.textContent = '#seguimiento-card,#seguimiento-card *{animation:none!important;transition:none!important;}';
-    document.head.appendChild(noAnimStyle);
-
     function restaurar() {
         noPrintEls.forEach(function(el) { el.style.visibility = ''; });
         btn.disabled = false;
         btn.innerHTML = '<span class="btn-icon">🖼️</span> Imagen';
-        var fix = document.getElementById('h2c-noanim');
-        if (fix) fix.remove();
     }
 
     try {
@@ -1068,7 +1060,16 @@ function exportarImagen() {
             width:  card.scrollWidth,
             height: card.scrollHeight,
             x: 0,
-            y: 0
+            y: 0,
+            onclone: function(clonedDoc) {
+                // El body tiene un degradado gris que html2canvas compone encima
+                // de los colores de la tabla → los lava. Lo eliminamos en el clon.
+                clonedDoc.body.style.background = '#ffffff';
+                // Desactivar animaciones para evitar que fadeIn capture opacity:0
+                var s = clonedDoc.createElement('style');
+                s.textContent = '*{animation:none!important;transition:none!important;}';
+                clonedDoc.head.appendChild(s);
+            }
         }).then(function(canvas) {
             restaurar();
             var link = document.createElement('a');
