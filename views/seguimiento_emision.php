@@ -649,10 +649,17 @@ if ($hasSchedule) {
         if (isset($absorbedLive[$progKey])) continue;
         $historyKey    = $historyNameMap[$progKey] ?? $progKey;
         $linkedLiveKey = $liveForAutomated[$progKey] ?? null;
+        // Mismos límites de actividad que $progSummary
+        $firstSeen  = $programFirstSeen[$progKey] ?? null;
+        $lastActive = $programLastActive[$progKey] ?? null;
 
         foreach ($days as $day) {
             $date = $day['date'];
             if ($date > $today) continue;
+
+            // Saltar días fuera del rango activo del programa (igual que $progSummary)
+            $outside = ($firstSeen && $date < $firstSeen) || ($lastActive && $date > $lastActive);
+            if ($outside) continue;
 
             // ¿Tiene slot este día de la semana?
             $slots = array_filter(
@@ -670,30 +677,36 @@ if ($hasSchedule) {
                 if ($schDurMin < 0) $schDurMin += 1440;
             }
 
-            // Estado de la celda (reutiliza la lógica existente)
-            $cell   = cellStatus($progKey, $day, $programSchedules, $historyMap, $today,
+            // ── Estado: misma lógica que $progSummary ────────────────────────
+            $usedLiveKey = false;
+            $effectiveKey = $progKey;
+            if ($linkedLiveKey !== null) {
+                $lf = $programFirstSeen[$linkedLiveKey] ?? null;
+                $la = $programLastActive[$linkedLiveKey] ?? null;
+                $liveActive = (!$lf || $date >= $lf) && (!$la || $date <= $la);
+                if ($liveActive) {
+                    $effectiveKey = $linkedLiveKey;
+                    $usedLiveKey  = true;
+                }
+            }
+            $cell   = cellStatus($effectiveKey, $day, $programSchedules, $historyMap, $today,
                                  $historyNameMap, $livePrograms, $liveEmissionsPerDay,
                                  $liveSessionStarts, $overrides);
             $status = $cell['status'];
-            // Hora real: la que registró cellStatus, o la del historyMap
+
+            // Hora real
             $realTime = $cell['time'] ?? null;
             if (!$realTime && $status === 'played') {
-                $lk2 = ($linkedLiveKey !== null) ? $linkedLiveKey : $progKey;
-                $hk2 = $historyNameMap[$lk2] ?? $lk2;
+                $hk2      = $historyNameMap[$effectiveKey] ?? $effectiveKey;
                 $realTime = $historyMap[$hk2][$date] ?? null;
             }
 
-            // Detalles del episodio
+            // Detalles del episodio (buscar en la clave efectiva)
             $epTitle    = null;
             $realDurSec = null;
             if ($status === 'played') {
-                // Directo: buscar en historyDetails por linkedLiveKey si corresponde
-                $detKey = $historyKey;
-                if ($linkedLiveKey !== null) {
-                    $lhk = $historyNameMap[$linkedLiveKey] ?? $linkedLiveKey;
-                    if (isset($historyDetails[$lhk][$date])) $detKey = $lhk;
-                }
-                $det = $historyDetails[$detKey][$date] ?? null;
+                $detHKey = $historyNameMap[$effectiveKey] ?? $effectiveKey;
+                $det     = $historyDetails[$detHKey][$date] ?? null;
                 if ($det) {
                     $epTitle    = $det['title'] ?: null;
                     $realDurSec = $det['duration'] ?: null;
@@ -707,9 +720,9 @@ if ($hasSchedule) {
             if ($status === 'missed') {
                 $dailyRep     = $dailyReports[$date] ?? null;
                 $missedReason = getMissedReason($schTime, $date, $dayTimeline,
-                                               isset($livePrograms[$progKey]), $progKey, $dailyRep);
+                                               $usedLiveKey || isset($livePrograms[$progKey]),
+                                               $effectiveKey, $dailyRep);
 
-                // Buscar si algún programa anterior estaba sonando en la franja
                 $schedTs = mktime(
                     (int)substr($schTime, 0, 2),
                     (int)substr($schTime, 3, 2),
@@ -718,8 +731,9 @@ if ($hasSchedule) {
                     (int)substr($date, 8, 2),
                     (int)substr($date, 0, 4)
                 );
+                $skipKey = $historyNameMap[$effectiveKey] ?? $effectiveKey;
                 foreach ($historyEntryByDay[$date] ?? [] as $he) {
-                    if ($he['playlist'] === $historyKey) continue;
+                    if ($he['playlist'] === $skipKey) continue;
                     $heEnd = $he['ts'] + $he['duration'];
                     if ($he['ts'] <= $schedTs && $heEnd > $schedTs) {
                         $overrunSec  = $heEnd - $schedTs;
