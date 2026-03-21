@@ -893,16 +893,16 @@ if ($hasSchedule) {
                         $eDow       = (int)date('w', mktime(0,0,0,(int)$eParts[1],(int)$eParts[2],(int)$eParts[0]));
                         $eDateLabel = $dowNames[$eDow] . ' ' . (int)$eParts[2] . '/' . (int)$eParts[1];
 
-                        $durTeoStr  = $em['schDurMin'] !== null ? $em['schDurMin'] . ' min' : '—';
+                        $durTeoStr  = ($em['schDurMin'] > 0) ? $em['schDurMin'] . ' min' : '—';
                         $durRealStr = '—';
                         $diffStr    = '—';
                         $diffClass  = '';
                         if (!empty($em['realDurSec'])) {
                             $realMin    = (int)round($em['realDurSec'] / 60);
                             $durRealStr = $realMin . ' min';
-                            if ($em['schDurMin'] !== null) {
-                                $diff     = $realMin - $em['schDurMin'];
-                                $diffStr  = ($diff >= 0 ? '+' : '') . $diff . ' min';
+                            if ($em['schDurMin'] > 0) {
+                                $diff      = $realMin - $em['schDurMin'];
+                                $diffStr   = ($diff >= 0 ? '+' : '') . $diff . ' min';
                                 $diffClass = $diff > 5 ? 'ld-diff-over' : ($diff < -5 ? 'ld-diff-under' : 'ld-diff-ok');
                             }
                         }
