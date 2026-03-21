@@ -484,6 +484,20 @@ function cellStatus($programKey, $day, $programSchedules, $historyMap, $today, $
     return ['status' => 'missed', 'scheduledAt' => $scheduledAt];
 }
 
+// ── Fecha de inicio de cada programa ─────────────────────────────────────────
+// Para no marcar como "no emitido" días en que el programa aún no existía.
+// Fuente: first_seen_date (automáticos) o created_at (directos manuales).
+$programFirstSeen = []; // [progKey => 'Y-m-d']
+foreach (array_keys($programSchedules) as $progKey) {
+    $info = $dbPrograms[$progKey] ?? null;
+    if (!$info) continue;
+    if (!empty($info['first_seen_date'])) {
+        $programFirstSeen[$progKey] = $info['first_seen_date'];
+    } elseif (!empty($info['created_at'])) {
+        $programFirstSeen[$progKey] = substr($info['created_at'], 0, 10);
+    }
+}
+
 // ── Pre-cálculo de totales ────────────────────────────────────────────────────
 $totals = [
     'emite_ok'       => 0,
@@ -501,6 +515,10 @@ if ($hasSchedule) {
         $linkedLiveKey = $liveForAutomated[$progKey] ?? null;
 
         foreach ($days as $day) {
+            // No contar días anteriores a la fecha de alta del programa
+            $firstSeen = $programFirstSeen[$progKey] ?? null;
+            if ($firstSeen && $day['date'] < $firstSeen) continue;
+
             $cell   = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts);
             $status = $cell['status'];
             if ($isLive) {
@@ -513,10 +531,13 @@ if ($hasSchedule) {
 
             // Count stats for the linked live program (merged into this row)
             if ($linkedLiveKey !== null) {
-                $liveCell   = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts);
-                $liveStatus = $liveCell['status'];
-                if ($liveStatus === 'played')     { $totals['live_esperados']++; $totals['live_efectivos']++; }
-                elseif ($liveStatus === 'missed') { $totals['live_esperados']++; }
+                $liveFirstSeen = $programFirstSeen[$linkedLiveKey] ?? null;
+                if (!$liveFirstSeen || $day['date'] >= $liveFirstSeen) {
+                    $liveCell   = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts);
+                    $liveStatus = $liveCell['status'];
+                    if ($liveStatus === 'played')     { $totals['live_esperados']++; $totals['live_efectivos']++; }
+                    elseif ($liveStatus === 'missed') { $totals['live_esperados']++; }
+                }
             }
         }
     }
@@ -619,27 +640,42 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                     <?php foreach ($days as $day):
                         $cls = $tooltip = $icon = '';
 
-                        // If this automated program has a linked live version, check live status first
-                        if ($linkedLiveKey !== null) {
-                            $liveCell   = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts);
-                            $liveStatus = $liveCell['status'];
-                            if ($liveStatus === 'played') {
-                                $cls     = 'celda-directo-emitido';
-                                $liveEnd = $liveCell['scheduledEnd'] ?? null;
-                                $tooltip = 'Directo emitido ' . $liveCell['time'] . 'h' . ($liveEnd ? ' - ' . $liveEnd . 'h' : '') . ' (esperado ' . $liveCell['scheduledAt'] . 'h)';
-                                $icon    = '📡';
-                            } elseif ($liveStatus === 'missed') {
-                                $cls     = 'celda-directo-perdido';
-                                $reason  = getMissedReason($liveCell['scheduledAt'], $day['date'], $dayTimeline, true, $linkedLiveKey, $dailyReports[$day['date']] ?? null);
-                                $tooltip = 'Directo no emitido (esperado ' . $liveCell['scheduledAt'] . 'h) · ' . $reason;
-                                $icon    = '📡';
-                            } elseif ($liveStatus === 'expected') {
-                                $cls     = 'celda-directo-esperado';
-                                $tooltip = 'Directo programado a las ' . $liveCell['scheduledAt'] . 'h';
-                                $icon    = '📡';
+                        // Celda vacía si el programa aún no existía ese día
+                        $firstSeen     = $programFirstSeen[$progKey] ?? null;
+                        $dayIsBeforeStart = $firstSeen && $day['date'] < $firstSeen;
+
+                        if (!$dayIsBeforeStart && $linkedLiveKey !== null) {
+                            // If this automated program has a linked live version, check live status first
+                            // (only if the live program also existed on this day)
+                            $liveFirstSeen = $programFirstSeen[$linkedLiveKey] ?? null;
+                            $liveExistsOnDay = !$liveFirstSeen || $day['date'] >= $liveFirstSeen;
+                            if ($liveExistsOnDay) {
+                                $liveCell   = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts);
+                                $liveStatus = $liveCell['status'];
+                                if ($liveStatus === 'played') {
+                                    $cls     = 'celda-directo-emitido';
+                                    $liveEnd = $liveCell['scheduledEnd'] ?? null;
+                                    $tooltip = 'Directo emitido ' . $liveCell['time'] . 'h' . ($liveEnd ? ' - ' . $liveEnd . 'h' : '') . ' (esperado ' . $liveCell['scheduledAt'] . 'h)';
+                                    $icon    = '📡';
+                                } elseif ($liveStatus === 'missed') {
+                                    $cls     = 'celda-directo-perdido';
+                                    $reason  = getMissedReason($liveCell['scheduledAt'], $day['date'], $dayTimeline, true, $linkedLiveKey, $dailyReports[$day['date']] ?? null);
+                                    $tooltip = 'Directo no emitido (esperado ' . $liveCell['scheduledAt'] . 'h) · ' . $reason;
+                                    $icon    = '📡';
+                                } elseif ($liveStatus === 'expected') {
+                                    $cls     = 'celda-directo-esperado';
+                                    $tooltip = 'Directo programado a las ' . $liveCell['scheduledAt'] . 'h';
+                                    $icon    = '📡';
+                                }
                             }
                         }
 
+                        // Si el programa no existía ese día → celda vacía; si hay estado → renderizar
+                        if ($dayIsBeforeStart):
+                    ?>
+                    <td class="col-dia <?php echo $day['isToday'] ? 'col-hoy' : ''; ?>"></td>
+                    <?php else: ?>
+                    <?php
                         // If no live override, use automated (or standalone live) status
                         if ($cls === '') {
                             $cell   = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts);
@@ -668,6 +704,7 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                         <?php if ($tooltip): ?>data-tooltip="<?php echo htmlEsc($tooltip); ?>"<?php endif; ?>>
                         <?php echo $icon; ?>
                     </td>
+                    <?php endif; ?>
                     <?php endforeach; ?>
                 </tr>
                 <?php endforeach; ?>
