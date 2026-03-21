@@ -666,9 +666,9 @@ if ($hasSchedule) {
                         $effectiveKey = $linkedLiveKey;
                         $isLiveDay    = true;
                         $usedLive     = true;
-                    } else {
-                        $usedLive = true; // live exists but future/none — skip auto too
                     }
+                    // live devuelve 'none'/'expected': no está programado ese día de la semana
+                    // → NO marcar $usedLive; dejar que el bloque de automático evalúe.
                 }
             }
 
