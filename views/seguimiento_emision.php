@@ -661,8 +661,8 @@ if ($hasSchedule) {
 
         <!-- Toggle de vista -->
         <div style="display:flex; gap:3px;" class="no-print">
-            <button id="btn-vista-resumen" onclick="toggleVista('resumen')" class="btn btn-secondary" style="font-size:12px; padding:4px 12px;">📊 Resumen</button>
-            <button id="btn-vista-detalle" onclick="toggleVista('detalle')" class="btn btn-secondary" style="font-size:12px; padding:4px 12px;">📋 Detalle</button>
+            <button id="btn-vista-resumen" onclick="toggleVista('resumen')" class="btn btn-secondary" style="font-size:12px; padding:4px 12px;">☰ Listado</button>
+            <button id="btn-vista-detalle" onclick="toggleVista('detalle')" class="btn btn-secondary" style="font-size:12px; padding:4px 12px;">⊞ Rejilla</button>
         </div>
 
     </div>
