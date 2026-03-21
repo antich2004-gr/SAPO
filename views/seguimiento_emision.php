@@ -545,8 +545,11 @@ if ($hasSchedule) {
 
             // Count stats for the linked live program (merged into this row)
             if ($linkedLiveKey !== null) {
-                $liveFirstSeen = $programFirstSeen[$linkedLiveKey] ?? null;
-                if (!$liveFirstSeen || $day['date'] >= $liveFirstSeen) {
+                $liveFirstSeen  = $programFirstSeen[$linkedLiveKey] ?? null;
+                $liveLastActive = $programLastActive[$linkedLiveKey] ?? null;
+                $liveActiveOnDay = (!$liveFirstSeen || $day['date'] >= $liveFirstSeen)
+                                && (!$liveLastActive || $day['date'] <= $liveLastActive);
+                if ($liveActiveOnDay) {
                     $liveCell   = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts);
                     $liveStatus = $liveCell['status'];
                     if ($liveStatus === 'played')     { $totals['live_esperados']++; $totals['live_efectivos']++; }
@@ -655,17 +658,18 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                         $cls = $tooltip = $icon = '';
 
                         // Celda vacía si el día está fuera del periodo activo del programa
-                        $firstSeen        = $programFirstSeen[$progKey] ?? null;
-                        $lastActive       = $programLastActive[$progKey] ?? null;
-                        $dayIsBeforeStart = $firstSeen && $day['date'] < $firstSeen;
-                        $dayIsAfterEnd    = $lastActive && $day['date'] > $lastActive;
-                        $dayIsBeforeStart = $dayIsBeforeStart || $dayIsAfterEnd;
+                        $firstSeen         = $programFirstSeen[$progKey] ?? null;
+                        $lastActive        = $programLastActive[$progKey] ?? null;
+                        $dayOutsideRange   = ($firstSeen && $day['date'] < $firstSeen)
+                                          || ($lastActive && $day['date'] > $lastActive);
 
-                        if (!$dayIsBeforeStart && $linkedLiveKey !== null) {
+                        if (!$dayOutsideRange && $linkedLiveKey !== null) {
                             // If this automated program has a linked live version, check live status first
-                            // (only if the live program also existed on this day)
-                            $liveFirstSeen = $programFirstSeen[$linkedLiveKey] ?? null;
-                            $liveExistsOnDay = !$liveFirstSeen || $day['date'] >= $liveFirstSeen;
+                            // (only if the live program was active on this day)
+                            $liveFirstSeen  = $programFirstSeen[$linkedLiveKey] ?? null;
+                            $liveLastActive = $programLastActive[$linkedLiveKey] ?? null;
+                            $liveExistsOnDay = (!$liveFirstSeen || $day['date'] >= $liveFirstSeen)
+                                           && (!$liveLastActive || $day['date'] <= $liveLastActive);
                             if ($liveExistsOnDay) {
                                 $liveCell   = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts);
                                 $liveStatus = $liveCell['status'];
@@ -687,8 +691,8 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                             }
                         }
 
-                        // Si el programa no existía ese día → celda vacía; si hay estado → renderizar
-                        if ($dayIsBeforeStart):
+                        // Si el día está fuera del periodo activo → celda vacía
+                        if ($dayOutsideRange):
                     ?>
                     <td class="col-dia <?php echo $day['isToday'] ? 'col-hoy' : ''; ?>"></td>
                     <?php else: ?>
