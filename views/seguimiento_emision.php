@@ -994,6 +994,9 @@ if ($hasSchedule) {
                             <?php else: ?>
                                 <span class="ld-no-data">—</span>
                             <?php endif; ?>
+                            <?php if ($isLive): ?>
+                                <span class="ld-badge-live" title="Emisión en directo">📡</span>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <?php if ($em['status'] === 'missed' && ($em['overrunBy'] !== null || $em['missedReason'])): ?>
@@ -1537,6 +1540,7 @@ if ($hasSchedule) {
 .ld-status-ok   { color: #276749; font-weight: 700; font-size: 14px; }
 .ld-status-miss { color: #c53030; font-weight: 700; font-size: 14px; cursor: pointer; }
 .ld-status-miss:hover { text-decoration: underline; }
+.ld-badge-live  { font-size: 13px; margin-left: 4px; vertical-align: middle; opacity: .85; }
 
 /* Fechas de fallos (compatibilidad con modal) */
 .fecha-fallo {
