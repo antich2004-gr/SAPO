@@ -412,11 +412,13 @@ function getMissedReason(
     $scheduledAt,
     $date,
     $dayTimeline,
-    $isLive          = false,
-    $programKey      = '',
-    $dailyReport     = null,
-    $liquidsoapLog   = null,
-    $liquidsoapSrcId = null
+    $isLive              = false,
+    $programKey          = '',
+    $dailyReport         = null,
+    $liquidsoapLog       = null,
+    $liquidsoapSrcId     = null,
+    $historyEntryByDay   = [],
+    $programSchedules    = []
 ) {
     // ── PRIORIDAD 0: Log de Liquidsoap (fuente más precisa) ──────────────────
     // Solo para programas automáticos; los directos se diagnostican distinto.
@@ -427,7 +429,6 @@ function getMissedReason(
 
     // ── Directos ─────────────────────────────────────────────────────────────
     if ($isLive) {
-        // Comprobar primero en el log si hay evidencia de por qué no se conectó
         if ($liquidsoapLog !== null && $liquidsoapSrcId !== null) {
             $fromLog = diagnoseMissedFromLog($liquidsoapLog, $date, $scheduledAt, $liquidsoapSrcId);
             if ($fromLog !== null) return $fromLog;
@@ -459,29 +460,46 @@ function getMissedReason(
         }
     }
 
-    // ── PRIORIDAD 3: Historial API — qué sonaba en esa franja ────────────────
+    // ── PRIORIDAD 3: Historial API — diagnóstico por timestamp exacto ────────
     $entries = $dayTimeline[$date] ?? [];
     if (empty($entries)) {
         return 'Sin actividad en AzuraCast ese día (posible corte de señal)';
     }
 
-    $schedMin = timeToMinutes($scheduledAt);
-    $inWindow = [];
-    foreach ($entries as $e) {
-        $diff = abs($schedMin - timeToMinutes($e['time']));
-        $diff = min($diff, 1440 - $diff);
-        if ($diff <= 60 && !in_array($e['playlist'], $inWindow, true)) {
-            $inWindow[] = $e['playlist'];
+    // Calcular el timestamp Unix del inicio programado para comparar con duraciones
+    $schedTs = mktime(
+        (int)substr($scheduledAt, 0, 2),
+        (int)substr($scheduledAt, 3, 2),
+        0,
+        (int)substr($date, 5, 2),
+        (int)substr($date, 8, 2),
+        (int)substr($date, 0, 4)
+    );
+
+    // Comprobar si había algún contenido ACTIVO en el momento exacto del inicio
+    $activeAtStart = null;
+    foreach ($historyEntryByDay[$date] ?? [] as $he) {
+        if ($he['ts'] <= $schedTs && ($he['ts'] + $he['duration']) > $schedTs) {
+            $activeAtStart = $he;
+            break;
         }
     }
 
-    if (!empty($inWindow)) {
-        $shown = array_slice($inWindow, 0, 2);
-        $label = implode(', ', $shown) . (count($inWindow) > 2 ? '…' : '');
-        return 'En esa franja emitió: ' . $label;
+    if ($activeAtStart !== null) {
+        $pl = $activeAtStart['playlist'];
+        if (isset($programSchedules[$pl])) {
+            // Era un programa programado que se extendió (el overrunBy lo mostrará aparte,
+            // pero si no se captó allí —overrun < 10 min— damos contexto aquí)
+            return 'El programa anterior aún estaba en emisión al comenzar esta franja';
+        }
+        // Era música u otro contenido de relleno
+        $overrunMin = (int)ceil((($activeAtStart['ts'] + $activeAtStart['duration']) - $schedTs) / 60);
+        return 'Contenido de relleno invadió la franja' .
+               ($overrunMin > 0 ? ' (se extendió ~' . $overrunMin . ' min sobre el horario)' : '');
     }
 
-    return 'Sin emisión en esa franja (posible silencio o corte)';
+    // No había nada activo en ese instante: el programador no lanzó el programa
+    return 'Fallo del programador de AzuraCast — el programa no se activó en su horario';
 }
 
 // ── Helper: estado de una celda ───────────────────────────────────────────────
@@ -759,7 +777,8 @@ if ($hasSchedule) {
                 $missedReason = getMissedReason($schTime, $date, $dayTimeline,
                                                $isLiveDay || isset($livePrograms[$progKey]),
                                                $effectiveKey, $dailyRep,
-                                               $liquidsoapLog, $lsSrcId);
+                                               $liquidsoapLog, $lsSrcId,
+                                               $historyEntryByDay, $programSchedules);
                 $schedTs = mktime(
                     (int)substr($schTime, 0, 2),
                     (int)substr($schTime, 3, 2),
@@ -1151,7 +1170,7 @@ if ($hasSchedule) {
                                     }
                                 } elseif ($liveStatus === 'missed') {
                                     $cls     = 'celda-directo-perdido';
-                                    $reason  = getMissedReason($liveCell['scheduledAt'], $day['date'], $dayTimeline, true, $linkedLiveKey, $dailyReports[$day['date']] ?? null);
+                                    $reason  = getMissedReason($liveCell['scheduledAt'], $day['date'], $dayTimeline, true, $linkedLiveKey, $dailyReports[$day['date']] ?? null, null, null, $historyEntryByDay, $programSchedules);
                                     $tooltip = 'Directo no emitido (esperado ' . $liveCell['scheduledAt'] . 'h) · ' . $reason . ' · ✎ Clic para corregir';
                                     $icon    = '📡';
                                 } elseif ($liveStatus === 'expected') {
@@ -1187,7 +1206,7 @@ if ($hasSchedule) {
                                     break;
                                 case 'missed':
                                     $cls     = 'celda-perdida';
-                                    $reason  = getMissedReason($cell['scheduledAt'], $day['date'], $dayTimeline, $isLiveProg, $progKey, $dailyReports[$day['date']] ?? null);
+                                    $reason  = getMissedReason($cell['scheduledAt'], $day['date'], $dayTimeline, $isLiveProg, $progKey, $dailyReports[$day['date']] ?? null, null, null, $historyEntryByDay, $programSchedules);
                                     $tooltip = 'No emitido (esperado ' . $cell['scheduledAt'] . 'h) · ' . $reason . ' · ✎ Clic para corregir';
                                     $icon    = '✗';
                                     break;
