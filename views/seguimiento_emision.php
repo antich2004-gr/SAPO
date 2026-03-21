@@ -616,33 +616,35 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
     </div>
     <?php endif; ?>
 
-    <!-- ── Tabla de resumen ──────────────────────────────────────────────────── -->
-    <?php if ($hasSchedule): ?>
+    <!-- ── Resumen ──────────────────────────────────────────────────────────── -->
+    <?php if ($hasSchedule):
+        $totalEsperados = $totals['emite_ok'] + $totals['faltan'];
+    ?>
     <div style="padding:0 24px 24px;">
-        <table class="resumen-table">
-            <tbody>
-                <tr class="resumen-emite-ok">
-                    <td>Total SE EMITE OK</td>
-                    <td><?php echo $totals['emite_ok']; ?></td>
-                </tr>
-                <tr class="resumen-faltan">
-                    <td>Total FALTAN</td>
-                    <td><?php echo $totals['faltan']; ?></td>
-                </tr>
-                <tr class="resumen-azura">
-                    <td>Total EMITIDOS Azura</td>
-                    <td><?php echo $totals['emitidos_azura']; ?></td>
-                </tr>
-                <tr class="resumen-directos">
-                    <td>Total <span style="font-size:16px;">·</span> Directos emitidos</td>
-                    <td><?php echo $totals['live_efectivos']; ?></td>
-                </tr>
-                <tr class="resumen-directos-esp">
-                    <td>Directos esperados</td>
-                    <td><?php echo $totals['live_esperados']; ?></td>
-                </tr>
-            </tbody>
-        </table>
+        <div style="display:flex;align-items:stretch;gap:0;font-size:13px;font-weight:600;border-radius:8px;overflow:hidden;border:1px solid #e2e8f0;width:fit-content;">
+            <!-- Automatizados -->
+            <div style="background:#f0fff4;color:#276749;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid #9ae6b4;">
+                <span style="font-size:11px;font-weight:400;color:#48bb78;text-transform:uppercase;letter-spacing:.04em;">Esperados</span>
+                <span style="font-size:20px;"><?php echo $totalEsperados; ?></span>
+            </div>
+            <div style="background:#c6f6d5;color:#276749;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid #9ae6b4;">
+                <span style="font-size:11px;font-weight:400;color:#276749;text-transform:uppercase;letter-spacing:.04em;">Emitidos</span>
+                <span style="font-size:20px;"><?php echo $totals['emite_ok']; ?></span>
+            </div>
+            <div style="background:#fed7d7;color:#9b2335;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;border-right:2px solid #718096;">
+                <span style="font-size:11px;font-weight:400;color:#c53030;text-transform:uppercase;letter-spacing:.04em;">Faltan</span>
+                <span style="font-size:20px;"><?php echo $totals['faltan']; ?></span>
+            </div>
+            <!-- Directos -->
+            <div style="background:#e2e8f0;color:#4a5568;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid #cbd5e0;">
+                <span style="font-size:11px;font-weight:400;color:#718096;text-transform:uppercase;letter-spacing:.04em;">📡 Directo esperado</span>
+                <span style="font-size:20px;"><?php echo $totals['live_esperados']; ?></span>
+            </div>
+            <div style="background:#3b82f6;color:#fff;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;">
+                <span style="font-size:11px;font-weight:400;color:#bfdbfe;text-transform:uppercase;letter-spacing:.04em;">📡 Directo emitido</span>
+                <span style="font-size:20px;"><?php echo $totals['live_efectivos']; ?></span>
+            </div>
+        </div>
     </div>
     <?php endif; ?>
 
