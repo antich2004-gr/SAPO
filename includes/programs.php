@@ -158,8 +158,8 @@ function syncProgramsFromAzuracast($username) {
                 'presenters' => '',
                 'social_twitter' => '',
                 'social_instagram' => '',
-                'orphaned' => false
-                // NO incluir created_at - solo programas manuales lo tienen
+                'orphaned' => false,
+                'first_seen_date' => date('Y-m-d'), // Fecha en que SAPO lo detectó por primera vez
             ];
             $newCount++;
         } else {
