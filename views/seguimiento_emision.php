@@ -1445,14 +1445,9 @@ function toggleVista(vista) {
         if (btnR) btnR.classList.remove('btn-vista-activo');
         if (btnD) btnD.classList.add('btn-vista-activo');
     }
-    try { localStorage.setItem('sapo_vista', vista); } catch(e) {}
 }
-// Inicializar desde localStorage
-(function() {
-    var v = 'resumen';
-    try { v = localStorage.getItem('sapo_vista') || 'resumen'; } catch(e) {}
-    toggleVista(v);
-})();
+// Siempre arrancar en resumen
+toggleVista('resumen');
 
 var _ordenActual = 'fallos';
 var _ordenDir    = { fallos: 'desc', nombre: 'asc' };
