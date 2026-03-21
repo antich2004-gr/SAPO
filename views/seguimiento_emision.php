@@ -590,49 +590,7 @@ if ($hasSchedule) {
 }
 $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
 
-// ── Datos para la vista resumen (mini barra por programa) ─────────────────────
-$progSummary = [];
-if ($hasSchedule) {
-    foreach (array_keys($programSchedules) as $progKey) {
-        if (isset($absorbedLive[$progKey])) continue;
-        $linkedLiveKey = $liveForAutomated[$progKey] ?? null;
-        $firstSeen     = $programFirstSeen[$progKey] ?? null;
-        $lastActive    = $programLastActive[$progKey] ?? null;
-        $s = ['played' => 0, 'missed' => 0, 'live_played' => 0, 'live_missed' => 0, 'days' => [], 'linkedLiveKey' => $linkedLiveKey];
-        foreach ($days as $day) {
-            $outside = ($firstSeen && $day['date'] < $firstSeen) || ($lastActive && $day['date'] > $lastActive);
-            if ($outside) { $s['days'][$day['date']] = 'outside'; continue; }
-            $usedLive = false;
-            if ($linkedLiveKey !== null) {
-                $lf = $programFirstSeen[$linkedLiveKey] ?? null;
-                $la = $programLastActive[$linkedLiveKey] ?? null;
-                $liveActive = (!$lf || $day['date'] >= $lf) && (!$la || $day['date'] <= $la);
-                if ($liveActive) {
-                    $lc = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts, $overrides);
-                    if ($lc['status'] === 'played')      { $s['days'][$day['date']] = !empty($lc['manual']) ? 'live-manual' : 'live-played'; $s['live_played']++; }
-                    elseif ($lc['status'] === 'missed')  { $s['days'][$day['date']] = 'live-missed'; $s['live_missed']++; }
-                    else                                 { $s['days'][$day['date']] = 'live-expected'; }
-                    $usedLive = true;
-                }
-            }
-            if (!$usedLive) {
-                $c = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts, $overrides);
-                if ($c['status'] === 'played')      { $s['days'][$day['date']] = !empty($c['manual']) ? 'manual' : 'played'; $s['played']++; }
-                elseif ($c['status'] === 'missed')  { $s['days'][$day['date']] = 'missed'; $s['missed']++; }
-                elseif ($c['status'] === 'expected'){ $s['days'][$day['date']] = 'expected'; }
-                else                                { $s['days'][$day['date']] = 'none'; }
-            }
-        }
-        $progSummary[$progKey] = $s;
-    }
-    // Ordenar: más fallos primero
-    uasort($progSummary, function($a, $b) {
-        return ($b['missed'] + $b['live_missed']) - ($a['missed'] + $a['live_missed']);
-    });
-}
-
-// ── Datos para la vista listado (fichas colapsables) ──────────────────────────
-// Mapa inverso: azPlaylistName → nombre de display
+// ── Mapa inverso: azPlaylistName → nombre de display ─────────────────────────
 $playlistDisplayName = [];
 foreach ($historyNameMap as $pk => $azName) {
     $playlistDisplayName[$azName] = displayName($displayNameMap[$pk] ?? $pk);
@@ -643,37 +601,73 @@ foreach ($displayNameMap as $pk => $dispName) {
     }
 }
 
+// ── Fuente única de verdad: listadoDetails primero, badge deriva de él ────────
+// Solo se añaden días con estado definitivo ('played' o 'missed').
+// Los días futuros/expected/none no se registran → el badge siempre coincide.
 $listadoDetails = []; // [progKey][Y-m-d] = [...]
 if ($hasSchedule) {
     foreach (array_keys($programSchedules) as $progKey) {
         if (isset($absorbedLive[$progKey])) continue;
         $linkedLiveKey = $liveForAutomated[$progKey] ?? null;
-        $summaryDays   = $progSummary[$progKey]['days'] ?? [];
+        $firstSeen     = $programFirstSeen[$progKey] ?? null;
+        $lastActive    = $programLastActive[$progKey] ?? null;
 
         foreach ($days as $day) {
             $date = $day['date'];
             if ($date > $today) continue;
 
-            // ── Estado: leído directamente de $progSummary para garantizar consistencia
-            $rawDay = $summaryDays[$date] ?? null;
-            // Si progSummary no registró este día (outside, no slot…) lo saltamos
-            if ($rawDay === null || $rawDay === 'outside' || $rawDay === 'none') continue;
+            // Fuera del rango activo del programa
+            if (($firstSeen && $date < $firstSeen) || ($lastActive && $date > $lastActive)) continue;
 
-            $isLiveDay = in_array($rawDay, ['live-played','live-manual','live-missed','live-expected'], true);
-            $status    = match($rawDay) {
-                'played','manual','live-played','live-manual' => 'played',
-                'missed','live-missed'                        => 'missed',
-                default                                       => 'expected',
-            };
+            // ── Determinar estado: misma lógica que el antiguo progSummary ───
+            $isLiveDay    = false;
+            $effectiveKey = $progKey;
+            $usedLive     = false;
+            $cellResult   = null;
 
-            // Clave efectiva para buscar historial (live o automático según el día)
-            $effectiveKey = ($isLiveDay && $linkedLiveKey !== null) ? $linkedLiveKey : $progKey;
+            if ($linkedLiveKey !== null) {
+                $lf = $programFirstSeen[$linkedLiveKey] ?? null;
+                $la = $programLastActive[$linkedLiveKey] ?? null;
+                $liveActive = (!$lf || $date >= $lf) && (!$la || $date <= $la);
+                if ($liveActive) {
+                    $lc = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today,
+                                     $historyNameMap, $livePrograms, $liveEmissionsPerDay,
+                                     $liveSessionStarts, $overrides);
+                    if ($lc['status'] === 'played' || $lc['status'] === 'missed') {
+                        $cellResult   = $lc;
+                        $effectiveKey = $linkedLiveKey;
+                        $isLiveDay    = true;
+                        $usedLive     = true;
+                    } else {
+                        $usedLive = true; // live exists but future/none — skip auto too
+                    }
+                }
+            }
 
-            // ¿Tiene slot este día? (para hora teórica y duración)
+            if (!$usedLive) {
+                $c = cellStatus($progKey, $day, $programSchedules, $historyMap, $today,
+                               $historyNameMap, $livePrograms, $liveEmissionsPerDay,
+                               $liveSessionStarts, $overrides);
+                if ($c['status'] === 'played' || $c['status'] === 'missed') {
+                    $cellResult = $c;
+                }
+            }
+
+            // Solo registramos días con estado definitivo
+            if ($cellResult === null) continue;
+            $status = $cellResult['status']; // 'played' or 'missed'
+
+            // Slot para la hora teórica (preferir automated, si no existe usar live)
             $slots = array_filter(
                 $programSchedules[$progKey] ?? [],
                 fn($s) => $s['dayOfWeek'] === $day['dow']
             );
+            if (empty($slots) && $isLiveDay) {
+                $slots = array_filter(
+                    $programSchedules[$linkedLiveKey] ?? [],
+                    fn($s) => $s['dayOfWeek'] === $day['dow']
+                );
+            }
             if (empty($slots)) continue;
 
             $slot      = array_values($slots)[0];
@@ -685,11 +679,10 @@ if ($hasSchedule) {
                 if ($schDurMin < 0) $schDurMin += 1440;
             }
 
-            // Hora real
+            // Hora real e historial
             $hk2      = $historyNameMap[$effectiveKey] ?? $effectiveKey;
             $realTime = $historyMap[$hk2][$date] ?? null;
 
-            // Detalles del episodio
             $epTitle    = null;
             $realDurSec = null;
             if ($status === 'played') {
@@ -700,7 +693,7 @@ if ($hasSchedule) {
                 }
             }
 
-            // Razón de fallo y detección de sobretiempo
+            // Razón de fallo y sobretiempo
             $missedReason = null;
             $overrunBy    = null;
             $overrunProg  = null;
@@ -709,7 +702,6 @@ if ($hasSchedule) {
                 $missedReason = getMissedReason($schTime, $date, $dayTimeline,
                                                $isLiveDay || isset($livePrograms[$progKey]),
                                                $effectiveKey, $dailyRep);
-
                 $schedTs = mktime(
                     (int)substr($schTime, 0, 2),
                     (int)substr($schTime, 3, 2),
@@ -732,6 +724,8 @@ if ($hasSchedule) {
 
             $listadoDetails[$progKey][$date] = [
                 'status'       => $status,
+                'isLive'       => $isLiveDay,
+                'isManual'     => !empty($cellResult['manual']),
                 'schTime'      => $schTime,
                 'schEnd'       => $schEnd,
                 'schDurMin'    => $schDurMin,
@@ -744,6 +738,30 @@ if ($hasSchedule) {
             ];
         }
     }
+}
+
+// ── Badge/resumen: deriva directamente de listadoDetails ─────────────────────
+$progSummary = [];
+if ($hasSchedule) {
+    foreach (array_keys($programSchedules) as $progKey) {
+        if (isset($absorbedLive[$progKey])) continue;
+        $linkedLiveKey = $liveForAutomated[$progKey] ?? null;
+        $s = ['played' => 0, 'missed' => 0, 'live_played' => 0, 'live_missed' => 0, 'linkedLiveKey' => $linkedLiveKey];
+        foreach ($listadoDetails[$progKey] ?? [] as $em) {
+            if ($em['isLive']) {
+                if ($em['status'] === 'played') $s['live_played']++;
+                elseif ($em['status'] === 'missed') $s['live_missed']++;
+            } else {
+                if ($em['status'] === 'played') $s['played']++;
+                elseif ($em['status'] === 'missed') $s['missed']++;
+            }
+        }
+        $progSummary[$progKey] = $s;
+    }
+    // Ordenar: más fallos primero
+    uasort($progSummary, function($a, $b) {
+        return ($b['missed'] + $b['live_missed']) - ($a['missed'] + $a['live_missed']);
+    });
 }
 ?>
 
@@ -907,9 +925,9 @@ if ($hasSchedule) {
                             }
                         }
 
-                        $isLive   = isset($livePrograms[$progKey]);
-                        $ovKey    = ($isLive && $linkedLiveKey) ? $linkedLiveKey : $progKey;
-                        $isManual = isset($overrides[$ovKey][$eDate]);
+                        $isLive   = $em['isLive'];
+                        $ovKey    = ($em['isLive'] && $linkedLiveKey) ? $linkedLiveKey : $progKey;
+                        $isManual = $em['isManual'];
 
                         if ($em['status'] === 'played')       $rowClass = 'ld-row-ok';
                         elseif ($em['status'] === 'missed')   $rowClass = 'ld-row-missed';
