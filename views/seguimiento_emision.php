@@ -609,9 +609,9 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                 ?>
                 <tr>
                     <td class="col-programa">
-                        <span title="<?php echo htmlEsc($progDisplay); ?>">
+                        <span title="<?php echo htmlEsc(displayName($progDisplay)); ?>">
                             <?php if ($isLiveProg): ?><span style="color:#ef4444;font-size:10px;">🔴 </span><?php endif; ?>
-                            <?php echo htmlEsc($progDisplay); ?>
+                            <?php echo htmlEsc(displayName($progDisplay)); ?>
                         </span>
                     </td>
                     <?php foreach ($days as $day):
@@ -843,6 +843,8 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: #2d3748;
+    font-size: 13px;
 }
 .seguimiento-table thead th.col-programa {
     z-index: 3;
