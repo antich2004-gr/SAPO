@@ -746,9 +746,17 @@ if ($hasSchedule) {
                     if ($he['playlist'] === $hk2) continue;
                     $heEnd = $he['ts'] + $he['duration'];
                     if ($he['ts'] <= $schedTs && $heEnd > $schedTs) {
-                        $overrunSec  = $heEnd - $schedTs;
-                        $overrunBy   = (int)ceil($overrunSec / 60);
-                        $overrunProg = $playlistDisplayName[$he['playlist']] ?? $he['playlist'];
+                        // Ignorar sobretiempo de playlists musicales (no son programas programados).
+                        // Solo los programas del schedule (type=program) pueden causar overrun real.
+                        if (!isset($programSchedules[$he['playlist']])) break;
+                        $overrunSec = $heEnd - $schedTs;
+                        $overrunMin = (int)ceil($overrunSec / 60);
+                        // Retraso < 10 min: no es el overrun la causa; el log de Liquidsoap
+                        // o el informe diario ya habrán diagnosticado la razón real.
+                        if ($overrunMin >= 10) {
+                            $overrunBy   = $overrunMin;
+                            $overrunProg = $playlistDisplayName[$he['playlist']] ?? $he['playlist'];
+                        }
                         break;
                     }
                 }
