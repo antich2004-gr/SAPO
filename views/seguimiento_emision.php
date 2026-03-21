@@ -562,7 +562,7 @@ if ($hasSchedule) {
 $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
 ?>
 
-<div class="card" style="padding: 0;">
+<div class="card" id="seguimiento-card" style="padding: 0;">
 
     <!-- ── Cabecera ─────────────────────────────────────────────────────────── -->
     <div style="padding: 20px 24px 16px; border-bottom: 1px solid #e2e8f0;">
@@ -571,12 +571,14 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                 <h2 style="margin:0 0 2px 0;">📊 Seguimiento Emisión</h2>
                 <span style="color:#718096; font-size:13px;">📻 <strong><?php echo htmlEsc($trackingStation); ?></strong></span>
             </div>
-            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;" class="no-print">
                 <?php if (isAdmin()): ?>
                 <a href="?" class="btn btn-secondary" style="font-size:13px;"><span class="btn-icon">⚙️</span> Panel Admin</a>
                 <?php else: ?>
                 <a href="?" class="btn btn-secondary" style="font-size:13px;"><span class="btn-icon">←</span> Volver</a>
                 <?php endif; ?>
+                <button onclick="exportarPDF()" class="btn btn-secondary" style="font-size:13px;"><span class="btn-icon">🖨️</span> PDF</button>
+                <button onclick="exportarImagen()" class="btn btn-secondary" style="font-size:13px;" id="btn-imagen"><span class="btn-icon">🖼️</span> Imagen</button>
                 <form method="POST" style="display:inline; margin:0;">
                     <input type="hidden" name="action" value="logout">
                     <button type="submit" class="btn btn-secondary" style="font-size:13px;"><span class="btn-icon">🚪</span> Cerrar Sesión</button>
@@ -625,7 +627,7 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
 
     <!-- ── Tabla ─────────────────────────────────────────────────────────────── -->
     <?php if ($hasSchedule): ?>
-    <div style="overflow-x:auto; padding: 0 0 24px 0;">
+    <div style="overflow-x:auto; padding: 0 0 24px 0;" class="tabla-wrapper">
         <table class="seguimiento-table">
             <thead>
                 <tr>
@@ -987,4 +989,82 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
 .resumen-azura     td { background: #bee3f8; color: #2a4365; }
 .resumen-directos     td { background: #90cdf4; color: #2a4365; }
 .resumen-directos-esp td { background: #2d3748; color: #fff; }
+
+/* ── Print / Export ── */
+.no-print { }
+@media print {
+    /* Ocultar todo lo que no es la tabla */
+    body > *:not(.card) { display: none !important; }
+    .no-print { display: none !important; }
+    .card { box-shadow: none !important; border: none !important; padding: 0 !important; }
+
+    /* Cabecera: solo título y nombre de emisora */
+    .card > div:first-child > div { flex-wrap: nowrap; }
+
+    /* Sticky off — necesario para que el navegador imprima bien */
+    .seguimiento-table thead th,
+    .seguimiento-table .col-programa { position: static !important; }
+
+    /* Asegurarse de que la tabla cabe (escalar si hace falta) */
+    .seguimiento-table { font-size: 10px; }
+    .seguimiento-table .col-programa { min-width: 140px; max-width: 180px; }
+    .seguimiento-table .col-dia { width: 24px; min-width: 24px; }
+
+    /* Colores de fondo visibles al imprimir */
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+    /* Sin scroll horizontal */
+    .tabla-wrapper { overflow: visible !important; }
+
+    /* Salto de página razonable */
+    @page { size: A4 landscape; margin: 10mm; }
+}
 </style>
+
+<!-- ── Exportar PDF / Imagen ─────────────────────────────────────────────────── -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGE2rbL3ZGyXtQqVQ7M9Z/sB3Z1A4Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+function exportarPDF() {
+    window.print();
+}
+
+function exportarImagen() {
+    var card = document.getElementById('seguimiento-card');
+    var btn  = document.getElementById('btn-imagen');
+    var noPrintEls = card.querySelectorAll('.no-print');
+
+    // Ocultar elementos que no deben aparecer en la imagen
+    noPrintEls.forEach(function(el) { el.style.visibility = 'hidden'; });
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-icon">⏳</span> Generando…';
+
+    // Capturar la card completa (scrollWidth para incluir toda la tabla horizontal)
+    html2canvas(card, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        scrollX: 0,
+        scrollY: -window.scrollY,
+        width:  card.scrollWidth,
+        height: card.scrollHeight,
+        windowWidth:  card.scrollWidth,
+        windowHeight: card.scrollHeight
+    }).then(function(canvas) {
+        // Restaurar
+        noPrintEls.forEach(function(el) { el.style.visibility = ''; });
+        btn.disabled = false;
+        btn.innerHTML = '<span class="btn-icon">🖼️</span> Imagen';
+
+        // Descargar
+        var link = document.createElement('a');
+        link.download = 'seguimiento_<?php echo htmlEsc($trackingUsername . '_' . $targetMonth); ?>.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }).catch(function() {
+        noPrintEls.forEach(function(el) { el.style.visibility = ''; });
+        btn.disabled = false;
+        btn.innerHTML = '<span class="btn-icon">🖼️</span> Imagen';
+        alert('Error al generar la imagen.');
+    });
+}
+</script>
