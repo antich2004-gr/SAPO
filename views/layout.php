@@ -19,7 +19,7 @@
     </div>
 
     <?php if (isImpersonating()): ?>
-    <div style="background: #1e40af; color: white; padding: 10px 20px; margin-bottom: 15px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+    <div class="no-print" style="background: #1e40af; color: white; padding: 10px 20px; margin-bottom: 15px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
         <span>👤 Viendo como <strong><?php echo htmlEsc($_SESSION['station_name']); ?></strong> (<?php echo htmlEsc($_SESSION['username']); ?>)</span>
         <form method="POST" style="margin: 0;">
             <input type="hidden" name="action" value="stop_impersonating">
