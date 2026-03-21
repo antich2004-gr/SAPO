@@ -26,6 +26,7 @@ require_once INCLUDES_DIR . '/podcasts.php';
 require_once INCLUDES_DIR . '/feed.php';
 require_once INCLUDES_DIR . '/reports.php';
 require_once INCLUDES_DIR . '/azuracast.php';
+require_once INCLUDES_DIR . '/liquidsoap_log.php';
 require_once INCLUDES_DIR . '/time_signals.php';
 require_once INCLUDES_DIR . '/recordings.php';
 require_once INCLUDES_DIR . '/overrides.php';
