@@ -1243,7 +1243,7 @@ if ($hasSchedule) {
     transition: filter .1s;
 }
 /* Separador de semana (lunes) */
-.mini-sep-semana { margin-left: 5px; }
+.mini-sep-semana { margin-left: 6px; }
 
 /* Estados */
 .mini-played        { background: #68d391; }
@@ -1252,10 +1252,12 @@ if ($hasSchedule) {
 .mini-live-played   { background: #63b3ed; }
 .mini-live-missed   { background: #f56565; }
 .mini-live-manual   { background: #4299e1; outline: 2px dashed #2b6cb0; outline-offset: -2px; }
-.mini-live-expected { background: #b0bec5; }
-.mini-expected      { background: #dde3ea; }
-.mini-none          { background: transparent; width: 12px; }
-.mini-outside       { background: transparent; width: 12px; }
+/* Días futuros programados: trazo fino y tenue (no compiten con datos reales) */
+.mini-expected      { background: #cbd5e0; width: 5px; border-radius: 2px; }
+.mini-live-expected { background: #a0aec0; width: 5px; border-radius: 2px; }
+/* Días sin programar / fuera de periodo: solo espacio, sin color */
+.mini-none          { background: transparent; width: 4px; }
+.mini-outside       { background: transparent; width: 4px; }
 .mini-hoy           { box-shadow: 0 0 0 2px #667eea; }
 .mini-dia.celda-corregible { cursor: pointer; }
 .mini-dia.celda-corregible:hover { filter: brightness(0.78) saturate(1.3); }
