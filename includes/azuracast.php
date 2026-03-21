@@ -183,6 +183,117 @@ function getPlaylistFileCounts($username) {
 }
 
 /**
+ * Devuelve el número de episodios actuales y una muestra de metadatos de
+ * una playlist de AzuraCast, identificada por su nombre exacto.
+ *
+ * Se usa para enriquecer el diagnóstico de emisiones perdidas:
+ * si la playlist sigue vacía ahora, probablemente lo estaba también cuando
+ * falló la emisión.
+ *
+ * @param string $username     Nombre de usuario de la emisora
+ * @param string $playlistName Nombre exacto de la playlist en AzuraCast
+ * @param int    $cacheTTL     Caché en segundos (por defecto 5 min)
+ * @return array|null  ['num_songs'=>N, 'playlist_id'=>ID, 'sample'=>[['title','artist','path']...]]
+ *                     o null si no se puede determinar
+ */
+function getPlaylistContentInfo(string $username, string $playlistName, int $cacheTTL = 300): ?array
+{
+    $cacheKey = 'plcontent_' . md5($username . ':' . $playlistName);
+    $cached   = cacheGet($cacheKey, $cacheTTL);
+    if ($cached !== null) return $cached;
+
+    // 1. Buscar la playlist por nombre exacto
+    $playlists = getAzuracastPlaylists($username, 600);
+    if (!$playlists) return null;
+
+    $found = null;
+    foreach ($playlists as $pl) {
+        if (($pl['name'] ?? '') === $playlistName) { $found = $pl; break; }
+    }
+    if (!$found) return null;
+
+    $result = [
+        'num_songs'   => (int)($found['num_songs'] ?? 0),
+        'playlist_id' => (int)($found['id']        ?? 0),
+        'sample'      => [],
+    ];
+
+    // 2. Si hay ficheros, obtener una muestra con metadatos
+    if ($result['num_songs'] > 0 && $result['playlist_id'] > 0) {
+        $result['sample'] = _azFetchPlaylistFileSample($username, $result['playlist_id']);
+    }
+
+    cacheSet($cacheKey, $result);
+    return $result;
+}
+
+/**
+ * Obtiene hasta 3 ficheros de una playlist de AzuraCast con sus metadatos de título.
+ * Usa el parámetro playlist_id del endpoint de ficheros (disponible en AzuraCast ≥ 0.19).
+ * Si el API no filtra por playlist, verifica la membresía en el campo `playlists` de cada
+ * fichero.
+ *
+ * @return array Array de entradas ['title', 'artist', 'path'] — vacío si no se obtiene nada
+ */
+function _azFetchPlaylistFileSample(string $username, int $playlistId): array
+{
+    $config    = getConfig();
+    $apiUrl    = $config['azuracast_api_url'] ?? '';
+    $apiKey    = $config['azuracast_api_key'] ?? '';
+    $userData  = getUserDB($username);
+    $stationId = $userData['azuracast']['station_id'] ?? null;
+
+    if (empty($apiUrl) || empty($stationId) || empty($apiKey)) return [];
+
+    $context = stream_context_create(['http' => [
+        'timeout'    => 10,
+        'user_agent' => 'SAPO/1.0',
+        'header'     => 'X-API-Key: ' . $apiKey,
+    ]]);
+
+    // Intentar con filtro directo por playlist_id (soportado en AzuraCast ≥ 0.19)
+    $url = rtrim($apiUrl, '/') . '/station/' . $stationId . '/files?'
+         . http_build_query(['playlist_id' => $playlistId, 'rowCount' => 20, 'current' => 1]);
+
+    $response = @file_get_contents($url, false, $context);
+    if ($response === false) return [];
+
+    $data = @json_decode($response, true);
+    if (!is_array($data)) return [];
+
+    // La respuesta puede ser un array directo o tener una clave 'rows'
+    $rows = isset($data['rows']) ? $data['rows'] : $data;
+    if (!is_array($rows)) return [];
+
+    $sample = [];
+    foreach ($rows as $file) {
+        if (!is_array($file)) continue;
+
+        // Si el API devolvió la membresía de playlist, verificar que corresponde a la nuestra.
+        // Si no vino el campo (el API ya filtró), aceptar el fichero tal cual.
+        $filePlaylists = $file['playlists'] ?? null;
+        if ($filePlaylists !== null) {
+            $inPlaylist = false;
+            foreach ((array)$filePlaylists as $pl) {
+                if ((int)($pl['id'] ?? 0) === $playlistId) { $inPlaylist = true; break; }
+            }
+            if (!$inPlaylist) continue;
+        }
+
+        $title  = trim($file['title']  ?? '');
+        $artist = trim($file['artist'] ?? '');
+        $path   = trim($file['path']   ?? '');
+
+        if ($title === '' && $path === '') continue;
+
+        $sample[] = compact('title', 'artist', 'path');
+        if (count($sample) >= 3) break;
+    }
+
+    return $sample;
+}
+
+/**
  * Obtener schedule desde caché si existe y es válida
  *
  * @param string $username Nombre de usuario
