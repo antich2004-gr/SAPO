@@ -506,6 +506,7 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
             <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#c6f6d5;border-radius:3px;display:inline-block;"></span> Emitido</span>
             <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#fed7d7;border-radius:3px;display:inline-block;"></span> No emitido</span>
             <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#3b82f6;border-radius:3px;display:inline-block;font-size:10px;text-align:center;line-height:14px;color:#fff;">📡</span> Directo emitido</span>
+            <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#ef4444;border-radius:3px;display:inline-block;font-size:10px;text-align:center;line-height:14px;color:#fff;">📡</span> Directo no emitido</span>
             <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#94a3b8;border-radius:3px;display:inline-block;font-size:10px;text-align:center;line-height:14px;color:#fff;">📡</span> Directo esperado</span>
         </div>
     </div>
@@ -562,6 +563,10 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                             if ($liveStatus === 'played') {
                                 $cls     = 'celda-directo-emitido';
                                 $tooltip = 'Directo emitido a las ' . $liveCell['time'] . 'h (esperado ' . $liveCell['scheduledAt'] . 'h)';
+                                $icon    = '📡';
+                            } elseif ($liveStatus === 'missed') {
+                                $cls     = 'celda-directo-perdido';
+                                $tooltip = 'Directo no emitido (esperado ' . $liveCell['scheduledAt'] . 'h)';
                                 $icon    = '📡';
                             } elseif ($liveStatus === 'expected') {
                                 $cls     = 'celda-directo-esperado';
@@ -792,6 +797,7 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
 .celda-perdida           { background: #fed7d7; color: #9b2335; }
 .celda-directo-emitido   { background: #3b82f6; color: #fff; }
 .celda-directo-esperado  { background: #94a3b8; color: #fff; }
+.celda-directo-perdido   { background: #ef4444; color: #fff; }
 /* Hoy */
 .col-hoy { border-left: 2px solid #667eea !important; border-right: 2px solid #667eea !important; }
 /* Tooltip CSS */
