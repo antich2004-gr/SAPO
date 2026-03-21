@@ -1043,10 +1043,18 @@ function exportarImagen() {
     btn.disabled = true;
     btn.innerHTML = '<span class="btn-icon">⏳</span> Generando…';
 
+    // Congelar animaciones CSS para que html2canvas no capture opacity:0
+    var noAnimStyle = document.createElement('style');
+    noAnimStyle.id = 'h2c-noanim';
+    noAnimStyle.textContent = '#seguimiento-card,#seguimiento-card *{animation:none!important;transition:none!important;}';
+    document.head.appendChild(noAnimStyle);
+
     function restaurar() {
         noPrintEls.forEach(function(el) { el.style.visibility = ''; });
         btn.disabled = false;
         btn.innerHTML = '<span class="btn-icon">🖼️</span> Imagen';
+        var fix = document.getElementById('h2c-noanim');
+        if (fix) fix.remove();
     }
 
     try {
