@@ -588,7 +588,7 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
     </div>
 
     <!-- ── Navegación de mes ────────────────────────────────────────────────── -->
-    <div style="padding:14px 24px; background:#f7fafc; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; gap:16px;">
+    <div id="nav-mes" style="padding:14px 24px; background:#f7fafc; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; gap:16px;">
         <a href="?page=seguimiento_emision&month=<?php echo htmlEsc($prevMonth . $stationParam); ?>"
            class="btn btn-secondary" style="font-size:13px; padding:6px 14px;">← Anterior</a>
 
@@ -992,10 +992,14 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
 
 /* ── Print / Export ── */
 .no-print { }
+@keyframes btn-pulso {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: .55; }
+}
+.btn-generando { animation: btn-pulso 1.2s ease-in-out infinite; }
 @media print {
-    /* Ocultar cabecera SAPO, footer y alertas del layout */
+    /* Ocultar cabecera SAPO, footer, alertas y barra de impersonación */
     .header, footer, .alert, .alert-success, .alert-error, .alert-warning,
-    [style*="background: #1e40af"] { display: none !important; }
     .no-print { display: none !important; }
     .container { padding: 0 !important; margin: 0 !important; max-width: none !important; }
     .card { box-shadow: none !important; border: none !important; padding: 0 !important; }
@@ -1021,7 +1025,7 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
 </style>
 
 <!-- ── Exportar PDF / Imagen ─────────────────────────────────────────────────── -->
-<script src="assets/html2canvas.min.js"></script>
+<!-- html2canvas se carga de forma diferida solo al pulsar el botón Imagen -->
 <script>
 function exportarPDF() {
     window.print();
@@ -1029,60 +1033,86 @@ function exportarPDF() {
 
 function exportarImagen() {
     var btn = document.getElementById('btn-imagen');
-
-    if (typeof html2canvas === 'undefined') {
-        alert('No se pudo cargar la librería de exportación.\nComprueba la conexión a internet.');
-        return;
-    }
-
-    var card = document.getElementById('seguimiento-card');
-    var noPrintEls = card.querySelectorAll('.no-print');
-
-    // Ocultar elementos que no deben aparecer en la imagen
-    noPrintEls.forEach(function(el) { el.style.visibility = 'hidden'; });
     btn.disabled = true;
+    btn.classList.add('btn-generando');
     btn.innerHTML = '<span class="btn-icon">⏳</span> Generando…';
 
     function restaurar() {
-        noPrintEls.forEach(function(el) { el.style.visibility = ''; });
         btn.disabled = false;
+        btn.classList.remove('btn-generando');
         btn.innerHTML = '<span class="btn-icon">🖼️</span> Imagen';
     }
 
-    try {
-        // Capturar la card completa (ancho real aunque desborde la ventana)
-        html2canvas(card, {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff',
-            logging: false,
-            width:  card.scrollWidth,
-            height: card.scrollHeight,
-            x: 0,
-            y: 0,
-            onclone: function(clonedDoc) {
-                // El body tiene un degradado gris que html2canvas compone encima
-                // de los colores de la tabla → los lava. Lo eliminamos en el clon.
-                clonedDoc.body.style.background = '#ffffff';
-                // Desactivar animaciones para evitar que fadeIn capture opacity:0
-                var s = clonedDoc.createElement('style');
-                s.textContent = '*{animation:none!important;transition:none!important;}';
-                clonedDoc.head.appendChild(s);
-            }
-        }).then(function(canvas) {
-            restaurar();
-            var link = document.createElement('a');
-            link.download = 'seguimiento_<?php echo htmlEsc($trackingUsername . '_' . $targetMonth); ?>.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-        }).catch(function(err) {
+    function capturar() {
+        var card    = document.getElementById('seguimiento-card');
+        var mesLabel = <?php echo json_encode($monthLabel); ?>;
+        var ahora   = new Date().toLocaleString('es-ES', {dateStyle:'long', timeStyle:'short'});
+
+        try {
+            html2canvas(card, {
+                scale:           2,
+                useCORS:         true,
+                allowTaint:      true,
+                backgroundColor: '#ffffff',
+                logging:         false,
+                width:           card.scrollWidth,
+                height:          card.scrollHeight,
+                x:               0,
+                y:               0,
+                onclone: function(clonedDoc) {
+                    // 1. Eliminar el degradado gris del body (lavaría los colores)
+                    clonedDoc.body.style.background = '#ffffff';
+
+                    // 2. Desactivar animaciones (fadeIn empieza en opacity:0)
+                    var s = clonedDoc.createElement('style');
+                    s.textContent = '*{animation:none!important;transition:none!important;}';
+                    clonedDoc.head.appendChild(s);
+
+                    // 3. Ocultar con display:none (no visibility) → sin hueco en blanco
+                    clonedDoc.querySelectorAll('.no-print').forEach(function(el) {
+                        el.style.display = 'none';
+                    });
+
+                    // 4. Ocultar barra de navegación prev/next/leyenda
+                    var nav = clonedDoc.getElementById('nav-mes');
+                    if (nav) nav.style.display = 'none';
+
+                    // 5. Pie de página con mes y fecha de generación
+                    var pie = clonedDoc.createElement('div');
+                    pie.style.cssText = 'padding:8px 24px;font-size:11px;color:#718096;' +
+                                        'text-align:right;border-top:1px solid #e2e8f0;';
+                    pie.textContent = mesLabel + ' · Generado el ' + ahora + ' · SAPO';
+                    clonedDoc.getElementById('seguimiento-card').appendChild(pie);
+                }
+            }).then(function(canvas) {
+                restaurar();
+                var link      = document.createElement('a');
+                link.download = 'seguimiento_<?php echo htmlEsc($trackingUsername . '_' . $targetMonth); ?>.png';
+                link.href     = canvas.toDataURL('image/png');
+                link.click();
+            }).catch(function(err) {
+                restaurar();
+                alert('Error al generar la imagen: ' + err);
+            });
+        } catch(err) {
             restaurar();
             alert('Error al generar la imagen: ' + err);
-        });
-    } catch(err) {
-        restaurar();
-        alert('Error al generar la imagen: ' + err);
+        }
+    }
+
+    // Carga diferida: solo descarga html2canvas la primera vez que se pulsa
+    if (typeof html2canvas !== 'undefined') {
+        capturar();
+    } else {
+        var s    = document.createElement('script');
+        s.src    = 'assets/html2canvas.min.js';
+        s.onload = capturar;
+        s.onerror = function() {
+            restaurar();
+            alert('No se pudo cargar la librería de exportación.\n' +
+                  'Comprueba que el archivo assets/html2canvas.min.js existe en el servidor.');
+        };
+        document.head.appendChild(s);
     }
 }
 </script>
