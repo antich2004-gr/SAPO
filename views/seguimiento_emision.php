@@ -993,13 +993,12 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
 /* ── Print / Export ── */
 .no-print { }
 @media print {
-    /* Ocultar todo lo que no es la tabla */
-    body > *:not(.card) { display: none !important; }
+    /* Ocultar cabecera SAPO, footer y alertas del layout */
+    .header, footer, .alert, .alert-success, .alert-error, .alert-warning,
+    [style*="background: #1e40af"] { display: none !important; }
     .no-print { display: none !important; }
+    .container { padding: 0 !important; margin: 0 !important; max-width: none !important; }
     .card { box-shadow: none !important; border: none !important; padding: 0 !important; }
-
-    /* Cabecera: solo título y nombre de emisora */
-    .card > div:first-child > div { flex-wrap: nowrap; }
 
     /* Sticky off — necesario para que el navegador imprima bien */
     .seguimiento-table thead th,
@@ -1022,15 +1021,21 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
 </style>
 
 <!-- ── Exportar PDF / Imagen ─────────────────────────────────────────────────── -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGE2rbL3ZGyXtQqVQ7M9Z/sB3Z1A4Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 function exportarPDF() {
     window.print();
 }
 
 function exportarImagen() {
+    var btn = document.getElementById('btn-imagen');
+
+    if (typeof html2canvas === 'undefined') {
+        alert('No se pudo cargar la librería de exportación.\nComprueba la conexión a internet.');
+        return;
+    }
+
     var card = document.getElementById('seguimiento-card');
-    var btn  = document.getElementById('btn-imagen');
     var noPrintEls = card.querySelectorAll('.no-print');
 
     // Ocultar elementos que no deben aparecer en la imagen
@@ -1038,33 +1043,37 @@ function exportarImagen() {
     btn.disabled = true;
     btn.innerHTML = '<span class="btn-icon">⏳</span> Generando…';
 
-    // Capturar la card completa (scrollWidth para incluir toda la tabla horizontal)
-    html2canvas(card, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        scrollX: 0,
-        scrollY: -window.scrollY,
-        width:  card.scrollWidth,
-        height: card.scrollHeight,
-        windowWidth:  card.scrollWidth,
-        windowHeight: card.scrollHeight
-    }).then(function(canvas) {
-        // Restaurar
+    function restaurar() {
         noPrintEls.forEach(function(el) { el.style.visibility = ''; });
         btn.disabled = false;
         btn.innerHTML = '<span class="btn-icon">🖼️</span> Imagen';
+    }
 
-        // Descargar
-        var link = document.createElement('a');
-        link.download = 'seguimiento_<?php echo htmlEsc($trackingUsername . '_' . $targetMonth); ?>.png';
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-    }).catch(function() {
-        noPrintEls.forEach(function(el) { el.style.visibility = ''; });
-        btn.disabled = false;
-        btn.innerHTML = '<span class="btn-icon">🖼️</span> Imagen';
-        alert('Error al generar la imagen.');
-    });
+    try {
+        // Capturar la card completa (scrollWidth para incluir toda la tabla horizontal)
+        html2canvas(card, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            scrollX: 0,
+            scrollY: -window.scrollY,
+            width:  card.scrollWidth,
+            height: card.scrollHeight,
+            windowWidth:  card.scrollWidth,
+            windowHeight: card.scrollHeight
+        }).then(function(canvas) {
+            restaurar();
+            var link = document.createElement('a');
+            link.download = 'seguimiento_<?php echo htmlEsc($trackingUsername . '_' . $targetMonth); ?>.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }).catch(function(err) {
+            restaurar();
+            alert('Error al generar la imagen: ' + err);
+        });
+    } catch(err) {
+        restaurar();
+        alert('Error al generar la imagen: ' + err);
+    }
 }
 </script>
