@@ -382,15 +382,16 @@ function cellStatus($programKey, $day, $programSchedules, $historyMap, $today, $
 
     $slot        = array_values($slots)[0];
     $scheduledAt = $slot['startTime'];
+    $scheduledEnd = $slot['endTime'] ?? null;
 
     // Día futuro → esperado (gris)
     if ($day['date'] > $today) {
-        return ['status' => 'expected', 'scheduledAt' => $scheduledAt];
+        return ['status' => 'expected', 'scheduledAt' => $scheduledAt, 'scheduledEnd' => $scheduledEnd];
     }
 
     // Hoy: si la hora programada aún no ha pasado → esperado (gris)
     if ($day['date'] === $today && date('H:i') < $scheduledAt) {
-        return ['status' => 'expected', 'scheduledAt' => $scheduledAt];
+        return ['status' => 'expected', 'scheduledAt' => $scheduledAt, 'scheduledEnd' => $scheduledEnd];
     }
 
     // Directo: verificar en historial AzuraCast (streamer) e informes diarios
@@ -398,16 +399,16 @@ function cellStatus($programKey, $day, $programSchedules, $historyMap, $today, $
         // Fuente 1: historial AzuraCast — entradas con streamer activo
         foreach ($liveSessionStarts[$day['date']] ?? [] as $t) {
             if (liveTiempoCoincide($scheduledAt, $t)) {
-                return ['status' => 'played', 'scheduledAt' => $scheduledAt, 'time' => $t];
+                return ['status' => 'played', 'scheduledAt' => $scheduledAt, 'scheduledEnd' => $scheduledEnd, 'time' => $t];
             }
         }
         // Fuente 2: informes diarios (sección "Emisiones en directo:")
         foreach ($liveEmissionsPerDay[$day['date']] ?? [] as $t) {
             if (liveTiempoCoincide($scheduledAt, $t)) {
-                return ['status' => 'played', 'scheduledAt' => $scheduledAt, 'time' => $t];
+                return ['status' => 'played', 'scheduledAt' => $scheduledAt, 'scheduledEnd' => $scheduledEnd, 'time' => $t];
             }
         }
-        return ['status' => 'missed', 'scheduledAt' => $scheduledAt];
+        return ['status' => 'missed', 'scheduledAt' => $scheduledAt, 'scheduledEnd' => $scheduledEnd];
     }
 
     // Programa automatizado: verificar en historial AzuraCast
@@ -562,7 +563,8 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                             $liveStatus = $liveCell['status'];
                             if ($liveStatus === 'played') {
                                 $cls     = 'celda-directo-emitido';
-                                $tooltip = 'Directo emitido a las ' . $liveCell['time'] . 'h (esperado ' . $liveCell['scheduledAt'] . 'h)';
+                                $liveEnd = $liveCell['scheduledEnd'] ?? null;
+                                $tooltip = 'Directo emitido ' . $liveCell['time'] . 'h' . ($liveEnd ? ' - ' . $liveEnd . 'h' : '') . ' (esperado ' . $liveCell['scheduledAt'] . 'h)';
                                 $icon    = '📡';
                             } elseif ($liveStatus === 'missed') {
                                 $cls     = 'celda-directo-perdido';
