@@ -706,6 +706,32 @@ if ($hasSchedule) {
                 $schDurMin = timeToMinutes($schEnd) - timeToMinutes($schTime);
                 if ($schDurMin < 0) $schDurMin += 1440;
             }
+            // Fallback: si AzuraCast no tiene duración útil, usar la configurada
+            // en la ficha de SAPO (schedule_slots.duration) para ese día y hora.
+            if (!$schDurMin) {
+                $dbKey      = $isLiveDay ? ($linkedLiveKey ?? $progKey) : $progKey;
+                $rawSlotsSS = $dbPrograms[$dbKey]['schedule_slots'] ?? [];
+                if (empty($rawSlotsSS) && isset($dbPrograms[$dbKey]['schedule_duration'])) {
+                    $rawSlotsSS = [[
+                        'days'       => $dbPrograms[$dbKey]['schedule_days'] ?? [],
+                        'start_time' => $dbPrograms[$dbKey]['schedule_start_time'] ?? '',
+                        'duration'   => (int)$dbPrograms[$dbKey]['schedule_duration'],
+                    ]];
+                }
+                foreach ($rawSlotsSS as $ss) {
+                    $ssDow = array_map('intval', $ss['days'] ?? []);
+                    if (!in_array($day['dow'], $ssDow, true)) continue;
+                    if (($ss['start_time'] ?? '') !== $schTime) continue;
+                    $dur = (int)($ss['duration'] ?? 0);
+                    if ($dur > 0) {
+                        $schDurMin = $dur;
+                        $endDt = DateTime::createFromFormat('H:i', $schTime);
+                        $endDt->modify("+{$dur} minutes");
+                        $schEnd = $endDt->format('H:i');
+                    }
+                    break;
+                }
+            }
 
             // Hora real e historial
             $hk2      = $historyNameMap[$effectiveKey] ?? $effectiveKey;
