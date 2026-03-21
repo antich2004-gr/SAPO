@@ -665,15 +665,6 @@ if ($hasSchedule) {
             <button id="btn-vista-detalle" onclick="toggleVista('detalle')" class="btn btn-secondary" style="font-size:12px; padding:4px 12px;">📋 Detalle</button>
         </div>
 
-        <!-- Leyenda -->
-        <div style="margin-left:auto; display:flex; gap:12px; align-items:center; font-size:12px; color:#4a5568; flex-wrap:wrap;">
-            <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#e2e8f0;border-radius:3px;display:inline-block;"></span> Esperado</span>
-            <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#c6f6d5;border-radius:3px;display:inline-block;"></span> Emitido</span>
-            <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#fed7d7;border-radius:3px;display:inline-block;"></span> No emitido</span>
-            <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#3b82f6;border-radius:3px;display:inline-block;font-size:10px;text-align:center;line-height:14px;color:#fff;">📡</span> Directo emitido</span>
-            <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#ef4444;border-radius:3px;display:inline-block;font-size:10px;text-align:center;line-height:14px;color:#fff;">📡</span> Directo no emitido</span>
-            <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#94a3b8;border-radius:3px;display:inline-block;font-size:10px;text-align:center;line-height:14px;color:#fff;">📡</span> Directo esperado</span>
-        </div>
     </div>
 
     <!-- ── Alertas ───────────────────────────────────────────────────────────── -->
@@ -695,7 +686,7 @@ if ($hasSchedule) {
             foreach ($progSummary as $s2) { $resTotalFails += $s2['missed'] + $s2['live_missed']; $resTotalProgs++; }
         ?>
         <!-- Cabecera del resumen -->
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid #e2e8f0;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid #e2e8f0; gap:12px; flex-wrap:wrap;">
             <span style="font-size:13px; color:#718096;">
                 <strong style="color:#2d3748;"><?php echo $resTotalProgs; ?></strong> programa<?php echo $resTotalProgs !== 1 ? 's' : ''; ?>
                 <?php if ($resTotalFails > 0): ?>
@@ -704,10 +695,14 @@ if ($hasSchedule) {
                 · <strong style="color:#276749;">✓ Todo correcto</strong>
                 <?php endif; ?>
             </span>
-            <span style="font-size:11px; color:#a0aec0;">Haz clic en una fecha para corregir manualmente</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:11px; color:#a0aec0;">Ordenar:</span>
+                <button id="sort-fallos" onclick="ordenarResumen('fallos')" class="btn btn-secondary btn-vista-activo" style="font-size:11px; padding:3px 10px;">% Fallos</button>
+                <button id="sort-nombre" onclick="ordenarResumen('nombre')" class="btn btn-secondary" style="font-size:11px; padding:3px 10px;">Nombre</button>
+            </div>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:5px;">
+        <div id="lista-resumen" style="display:flex; flex-direction:column; gap:5px;">
         <?php
         $dowNames = ['dom','lun','mar','mié','jue','vie','sáb'];
         foreach ($progSummary as $progKey => $s):
@@ -737,7 +732,10 @@ if ($hasSchedule) {
                 }
             }
         ?>
-        <div class="resumen-prog-row <?php echo $hc; ?>">
+        <div class="resumen-prog-row <?php echo $hc; ?>"
+             data-name="<?php echo htmlEsc(mb_strtolower(displayName($progDisplay))); ?>"
+             data-fails="<?php echo $totalFails; ?>"
+             data-pct="<?php echo $pct ?? 100; ?>">
             <div style="display:flex; align-items:center; gap:14px; width:100%;">
                 <!-- Nombre -->
                 <div class="resumen-prog-nombre" title="<?php echo htmlEsc(displayName($progDisplay)); ?>">
@@ -784,6 +782,16 @@ if ($hasSchedule) {
 
     <!-- ── Vista detalle (tabla + totales) ───────────────────────────────────── -->
     <div id="vista-detalle">
+
+    <!-- ── Leyenda (solo vista detalle) ─────────────────────────────────────── -->
+    <div style="padding:10px 24px; border-bottom:1px solid #e2e8f0; display:flex; gap:12px; align-items:center; font-size:12px; color:#4a5568; flex-wrap:wrap;">
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#e2e8f0;border-radius:3px;display:inline-block;"></span> Esperado</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#c6f6d5;border-radius:3px;display:inline-block;"></span> Emitido</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#fed7d7;border-radius:3px;display:inline-block;"></span> No emitido</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#3b82f6;border-radius:3px;display:inline-block;font-size:10px;text-align:center;line-height:14px;color:#fff;">📡</span> Directo emitido</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#ef4444;border-radius:3px;display:inline-block;font-size:10px;text-align:center;line-height:14px;color:#fff;">📡</span> Directo no emitido</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#94a3b8;border-radius:3px;display:inline-block;font-size:10px;text-align:center;line-height:14px;color:#fff;">📡</span> Directo esperado</span>
+    </div>
 
     <!-- ── Tabla ─────────────────────────────────────────────────────────────── -->
     <?php if ($hasSchedule): ?>
@@ -1471,6 +1479,29 @@ function toggleVista(vista) {
     try { v = localStorage.getItem('sapo_vista') || 'resumen'; } catch(e) {}
     toggleVista(v);
 })();
+
+var _ordenActual = 'fallos';
+function ordenarResumen(criterio) {
+    _ordenActual = criterio;
+    var btnF = document.getElementById('sort-fallos');
+    var btnN = document.getElementById('sort-nombre');
+    if (btnF) btnF.classList.toggle('btn-vista-activo', criterio === 'fallos');
+    if (btnN) btnN.classList.toggle('btn-vista-activo', criterio === 'nombre');
+
+    var lista = document.getElementById('lista-resumen');
+    if (!lista) return;
+    var rows = Array.from(lista.querySelectorAll(':scope > .resumen-prog-row'));
+    rows.sort(function(a, b) {
+        if (criterio === 'nombre') {
+            return (a.dataset.name || '').localeCompare(b.dataset.name || '', 'es');
+        }
+        // fallos desc, luego pct asc como desempate
+        var df = parseInt(b.dataset.fails || 0) - parseInt(a.dataset.fails || 0);
+        if (df !== 0) return df;
+        return parseInt(a.dataset.pct || 100) - parseInt(b.dataset.pct || 100);
+    });
+    rows.forEach(function(r) { lista.appendChild(r); });
+}
 </script>
 
 <!-- ── Modal corrección manual ───────────────────────────────────────────────── -->
