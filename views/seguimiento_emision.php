@@ -1481,24 +1481,42 @@ function toggleVista(vista) {
 })();
 
 var _ordenActual = 'fallos';
+var _ordenDir    = { fallos: 'desc', nombre: 'asc' };
+
 function ordenarResumen(criterio) {
-    _ordenActual = criterio;
+    // Mismo criterio → invertir dirección; criterio nuevo → dirección por defecto
+    if (criterio === _ordenActual) {
+        _ordenDir[criterio] = _ordenDir[criterio] === 'asc' ? 'desc' : 'asc';
+    } else {
+        _ordenActual = criterio;
+    }
+    var dir = _ordenDir[criterio];
+
+    // Actualizar botones
     var btnF = document.getElementById('sort-fallos');
     var btnN = document.getElementById('sort-nombre');
-    if (btnF) btnF.classList.toggle('btn-vista-activo', criterio === 'fallos');
-    if (btnN) btnN.classList.toggle('btn-vista-activo', criterio === 'nombre');
+    var arrow = { asc: ' ↑', desc: ' ↓' };
+    if (btnF) {
+        btnF.classList.toggle('btn-vista-activo', criterio === 'fallos');
+        btnF.textContent = '% Fallos' + (criterio === 'fallos' ? arrow[dir] : '');
+    }
+    if (btnN) {
+        btnN.classList.toggle('btn-vista-activo', criterio === 'nombre');
+        btnN.textContent = 'Nombre' + (criterio === 'nombre' ? arrow[dir] : '');
+    }
 
     var lista = document.getElementById('lista-resumen');
     if (!lista) return;
     var rows = Array.from(lista.querySelectorAll(':scope > .resumen-prog-row'));
     rows.sort(function(a, b) {
+        var r;
         if (criterio === 'nombre') {
-            return (a.dataset.name || '').localeCompare(b.dataset.name || '', 'es');
+            r = (a.dataset.name || '').localeCompare(b.dataset.name || '', 'es');
+        } else {
+            r = parseInt(b.dataset.fails || 0) - parseInt(a.dataset.fails || 0);
+            if (r === 0) r = parseInt(a.dataset.pct || 100) - parseInt(b.dataset.pct || 100);
         }
-        // fallos desc, luego pct asc como desempate
-        var df = parseInt(b.dataset.fails || 0) - parseInt(a.dataset.fails || 0);
-        if (df !== 0) return df;
-        return parseInt(a.dataset.pct || 100) - parseInt(b.dataset.pct || 100);
+        return dir === 'asc' ? -r : r;
     });
     rows.forEach(function(r) { lista.appendChild(r); });
 }
