@@ -1021,7 +1021,7 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
 </style>
 
 <!-- ── Exportar PDF / Imagen ─────────────────────────────────────────────────── -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="assets/html2canvas.min.js"></script>
 <script>
 function exportarPDF() {
     window.print();
