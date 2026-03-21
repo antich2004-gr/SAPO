@@ -154,6 +154,7 @@ function computeLiquidsoapSourceId(string $playlistName): string
  *   4. Archivo de audio corrupto o no decodificable
  *   5. Servidor sobrecargado (retraso de reloj acumulado)
  *   6. Un directo tomó el control en esa franja
+ *   7. Slot expiró sin activarse (overrun total del programa anterior)
  *
  * @param array  $logIndex          Índice parseado (getLiquidsoapLogIndex)
  * @param string $date              Y-m-d de la emisión perdida
@@ -249,6 +250,31 @@ function diagnoseMissedFromLog(
             }
             return 'Un directo tomó el control en esa franja';
         }
+    }
+
+    // 7. Slot expirado sin activarse.
+    // Si hay actividad de Liquidsoap en la ventana (otros playlist_/switch_/
+    // schedule_switch activos) pero el source esperado nunca apareció, el slot
+    // completo fue consumido por el programa anterior antes de que Liquidsoap
+    // pudiera seleccionar este source.
+    $sourceHasAnyMsg  = false;
+    $otherSourceActive = false;
+    foreach ($relevant as $line) {
+        if ($line['comp'] === $liquidsoapSrcId) {
+            $sourceHasAnyMsg = true;
+        }
+        if (!$otherSourceActive
+            && $line['comp'] !== $liquidsoapSrcId
+            && (str_starts_with($line['comp'], 'playlist_')
+             || str_starts_with($line['comp'], 'cue_playlist_')
+             || str_starts_with($line['comp'], 'switch_')
+             || $line['comp'] === 'schedule_switch')
+        ) {
+            $otherSourceActive = true;
+        }
+    }
+    if (!$sourceHasAnyMsg && $otherSourceActive) {
+        return 'El slot no llegó a activarse — el programa anterior probablemente se extendió más allá del fin del slot';
     }
 
     return null;
