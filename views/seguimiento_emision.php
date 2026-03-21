@@ -1233,6 +1233,8 @@ function exportarImagen() {
 
     window.cerrarModalOverride = function() {
         document.getElementById('modal-override').style.display = 'none';
+        var btn = document.getElementById('modal-confirm-btn');
+        btn.disabled = false;
         _cell = null;
     };
 
