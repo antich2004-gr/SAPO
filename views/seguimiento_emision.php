@@ -1050,17 +1050,17 @@ function exportarImagen() {
     }
 
     try {
-        // Capturar la card completa (scrollWidth para incluir toda la tabla horizontal)
+        // Capturar la card completa (ancho real aunque desborde la ventana)
         html2canvas(card, {
             scale: 2,
             useCORS: true,
             allowTaint: true,
-            scrollX: 0,
-            scrollY: -window.scrollY,
+            backgroundColor: '#ffffff',
+            logging: false,
             width:  card.scrollWidth,
             height: card.scrollHeight,
-            windowWidth:  card.scrollWidth,
-            windowHeight: card.scrollHeight
+            x: 0,
+            y: 0
         }).then(function(canvas) {
             restaurar();
             var link = document.createElement('a');
