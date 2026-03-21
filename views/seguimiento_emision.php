@@ -212,6 +212,42 @@ foreach ($dbPrograms as $programKey => $programInfo) {
 ksort($programSchedules);
 $hasSchedule = !empty($programSchedules);
 
+// ── Vincular directos con su programa automático homónimo ─────────────────────
+// Si un directo tiene el mismo nombre base que una playlist automática,
+// se fusionan en una sola fila (el directo absorbe la celda del automático
+// cuando corresponde ese día).
+// $liveForAutomated[autoKey] = liveKey
+// $absorbedLive[liveKey]     = autoKey  → no muestra fila propia
+function _normProgName($s) {
+    $s = preg_replace('/\s*[-–]\s*\(di?recto\)\s*$/ui', '', $s);
+    $s = preg_replace('/\s*\(di?recto\)\s*$/ui', '', $s);
+    $s = preg_replace('/\s*\(\d+h\d*\)\s*$/u', '', $s);
+    $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', mb_strtolower(trim($s)));
+    return preg_replace('/\s+/', ' ', trim($ascii !== false ? $ascii : mb_strtolower(trim($s))));
+}
+
+$liveForAutomated = []; // [autoKey  => liveKey]
+$absorbedLive     = []; // [liveKey  => autoKey]
+
+$_autoNormIdx = [];
+foreach ($programSchedules as $k => $_) {
+    if (!isset($livePrograms[$k])) {
+        $_autoNormIdx[_normProgName($k)] = $k;
+    }
+}
+foreach ($livePrograms as $liveKey => $_) {
+    foreach ([$displayNameMap[$liveKey] ?? '', $historyNameMap[$liveKey] ?? ''] as $candidate) {
+        if ($candidate === '') continue;
+        $norm = _normProgName($candidate);
+        if (isset($_autoNormIdx[$norm])) {
+            $autoKey = $_autoNormIdx[$norm];
+            $liveForAutomated[$autoKey] = $liveKey;
+            $absorbedLive[$liveKey]     = $autoKey;
+            break;
+        }
+    }
+}
+
 // ── 2. Historial de reproducción del mes ─────────────────────────────────────
 // historyMap[azPlaylistName][Y-m-d] = primera hora de emisión detectada ('HH:MM')
 // liveSessionStarts[Y-m-d] = ['HH:MM', ...] → hora de INICIO de cada sesión DJ
@@ -395,16 +431,29 @@ $totals = [
 
 if ($hasSchedule) {
     foreach (array_keys($programSchedules) as $progKey) {
-        $isLive = isset($livePrograms[$progKey]);
+        // Skip absorbed live programs — their stats are counted via the automated row
+        if (isset($absorbedLive[$progKey])) continue;
+
+        $isLive        = isset($livePrograms[$progKey]);
+        $linkedLiveKey = $liveForAutomated[$progKey] ?? null;
+
         foreach ($days as $day) {
             $cell   = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts);
             $status = $cell['status'];
             if ($isLive) {
-                if ($status === 'played')       { $totals['live_esperados']++; $totals['live_efectivos']++; }
-                elseif ($status === 'missed')   { $totals['live_esperados']++; }
+                if ($status === 'played')     { $totals['live_esperados']++; $totals['live_efectivos']++; }
+                elseif ($status === 'missed') { $totals['live_esperados']++; }
             } else {
-                if ($status === 'played')       $totals['emite_ok']++;
-                elseif ($status === 'missed')   $totals['faltan']++;
+                if ($status === 'played')     $totals['emite_ok']++;
+                elseif ($status === 'missed') $totals['faltan']++;
+            }
+
+            // Count stats for the linked live program (merged into this row)
+            if ($linkedLiveKey !== null) {
+                $liveCell   = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts);
+                $liveStatus = $liveCell['status'];
+                if ($liveStatus === 'played')     { $totals['live_esperados']++; $totals['live_efectivos']++; }
+                elseif ($liveStatus === 'missed') { $totals['live_esperados']++; }
             }
         }
     }
@@ -456,6 +505,8 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
             <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#e2e8f0;border-radius:3px;display:inline-block;"></span> Esperado</span>
             <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#c6f6d5;border-radius:3px;display:inline-block;"></span> Emitido</span>
             <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#fed7d7;border-radius:3px;display:inline-block;"></span> No emitido</span>
+            <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#3b82f6;border-radius:3px;display:inline-block;font-size:10px;text-align:center;line-height:14px;color:#fff;">📡</span> Directo emitido</span>
+            <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;background:#94a3b8;border-radius:3px;display:inline-block;font-size:10px;text-align:center;line-height:14px;color:#fff;">📡</span> Directo esperado</span>
         </div>
     </div>
 
@@ -487,8 +538,12 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
             </thead>
             <tbody>
                 <?php foreach ($programSchedules as $progKey => $slots):
-                    $progDisplay = $displayNameMap[$progKey] ?? $progKey;
-                    $isLiveProg  = isset($livePrograms[$progKey]);
+                    // Skip live programs merged into their automated counterpart row
+                    if (isset($absorbedLive[$progKey])) continue;
+
+                    $progDisplay   = $displayNameMap[$progKey] ?? $progKey;
+                    $isLiveProg    = isset($livePrograms[$progKey]);
+                    $linkedLiveKey = $liveForAutomated[$progKey] ?? null;
                 ?>
                 <tr>
                     <td class="col-programa">
@@ -498,29 +553,44 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                         </span>
                     </td>
                     <?php foreach ($days as $day):
-                        $cell = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts);
-                        $status = $cell['status'];
+                        $cls = $tooltip = $icon = '';
 
-                        switch ($status) {
-                            case 'played':
-                                $cls     = 'celda-emitida';
-                                $tooltip = 'Emitido a las ' . $cell['time'] . 'h (esperado ' . $cell['scheduledAt'] . 'h)';
-                                $icon    = '✓';
-                                break;
-                            case 'missed':
-                                $cls     = 'celda-perdida';
-                                $tooltip = 'Sin emisión registrada (esperado ' . $cell['scheduledAt'] . 'h)';
-                                $icon    = '✗';
-                                break;
-                            case 'expected':
-                                $cls     = 'celda-esperada';
-                                $tooltip = 'Programado a las ' . $cell['scheduledAt'] . 'h';
-                                $icon    = '';
-                                break;
-                            default:
-                                $cls     = '';
-                                $tooltip = '';
-                                $icon    = '';
+                        // If this automated program has a linked live version, check live status first
+                        if ($linkedLiveKey !== null) {
+                            $liveCell   = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts);
+                            $liveStatus = $liveCell['status'];
+                            if ($liveStatus === 'played') {
+                                $cls     = 'celda-directo-emitido';
+                                $tooltip = 'Directo emitido a las ' . $liveCell['time'] . 'h (esperado ' . $liveCell['scheduledAt'] . 'h)';
+                                $icon    = '📡';
+                            } elseif ($liveStatus === 'expected') {
+                                $cls     = 'celda-directo-esperado';
+                                $tooltip = 'Directo programado a las ' . $liveCell['scheduledAt'] . 'h';
+                                $icon    = '📡';
+                            }
+                        }
+
+                        // If no live override, use automated (or standalone live) status
+                        if ($cls === '') {
+                            $cell   = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts);
+                            $status = $cell['status'];
+                            switch ($status) {
+                                case 'played':
+                                    $cls     = 'celda-emitida';
+                                    $tooltip = 'Emitido a las ' . $cell['time'] . 'h (esperado ' . $cell['scheduledAt'] . 'h)';
+                                    $icon    = '✓';
+                                    break;
+                                case 'missed':
+                                    $cls     = 'celda-perdida';
+                                    $tooltip = 'Sin emisión registrada (esperado ' . $cell['scheduledAt'] . 'h)';
+                                    $icon    = '✗';
+                                    break;
+                                case 'expected':
+                                    $cls     = 'celda-esperada';
+                                    $tooltip = 'Programado a las ' . $cell['scheduledAt'] . 'h';
+                                    $icon    = '';
+                                    break;
+                            }
                         }
                     ?>
                     <td class="col-dia <?php echo $day['isToday'] ? 'col-hoy' : ''; ?> <?php echo $cls; ?>"
@@ -717,9 +787,11 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
     font-weight: 700;
 }
 /* Estados */
-.celda-esperada { background: #e2e8f0; color: #718096; }
-.celda-emitida  { background: #c6f6d5; color: #276749; }
-.celda-perdida  { background: #fed7d7; color: #9b2335; }
+.celda-esperada          { background: #e2e8f0; color: #718096; }
+.celda-emitida           { background: #c6f6d5; color: #276749; }
+.celda-perdida           { background: #fed7d7; color: #9b2335; }
+.celda-directo-emitido   { background: #3b82f6; color: #fff; }
+.celda-directo-esperado  { background: #94a3b8; color: #fff; }
 /* Hoy */
 .col-hoy { border-left: 2px solid #667eea !important; border-right: 2px solid #667eea !important; }
 /* Tooltip CSS */
