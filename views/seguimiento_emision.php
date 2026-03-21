@@ -386,6 +386,11 @@ if ($reportsPath && is_dir($reportsPath)) {
     }
 }
 
+// ── 4. Log de Liquidsoap (diagnóstico de causa exacta) ───────────────────────
+// Índice parseado [Y-m-d => líneas relevantes]. null si no disponible/sin permisos.
+// Caché de 30 min; para meses pasados el log puede estar rotado (devuelve sin esas fechas).
+$liquidsoapLog = $hasSchedule ? getLiquidsoapLogIndex($trackingUsername) : null;
+
 // ── Helpers de tiempo ─────────────────────────────────────────────────────────
 function timeToMinutes($time) {
     [$h, $m] = explode(':', $time);
@@ -401,15 +406,39 @@ function liveTiempoCoincide($scheduledTime, $emStart) {
 }
 
 // ── Helper: diagnóstico de emisión perdida ────────────────────────────────────
-function getMissedReason($scheduledAt, $date, $dayTimeline, $isLive = false, $programKey = '', $dailyReport = null) {
+// $liquidsoapLog   → índice parseado del log de Liquidsoap (puede ser null)
+// $liquidsoapSrcId → ID de source Liquidsoap de la playlist (puede ser null)
+function getMissedReason(
+    $scheduledAt,
+    $date,
+    $dayTimeline,
+    $isLive          = false,
+    $programKey      = '',
+    $dailyReport     = null,
+    $liquidsoapLog   = null,
+    $liquidsoapSrcId = null
+) {
+    // ── PRIORIDAD 0: Log de Liquidsoap (fuente más precisa) ──────────────────
+    // Solo para programas automáticos; los directos se diagnostican distinto.
+    if (!$isLive && $liquidsoapLog !== null && $liquidsoapSrcId !== null) {
+        $fromLog = diagnoseMissedFromLog($liquidsoapLog, $date, $scheduledAt, $liquidsoapSrcId);
+        if ($fromLog !== null) return $fromLog;
+    }
+
+    // ── Directos ─────────────────────────────────────────────────────────────
     if ($isLive) {
+        // Comprobar primero en el log si hay evidencia de por qué no se conectó
+        if ($liquidsoapLog !== null && $liquidsoapSrcId !== null) {
+            $fromLog = diagnoseMissedFromLog($liquidsoapLog, $date, $scheduledAt, $liquidsoapSrcId);
+            if ($fromLog !== null) return $fromLog;
+        }
         $entries = $dayTimeline[$date] ?? [];
         return empty($entries)
             ? 'Sin actividad en AzuraCast ese día (posible corte de señal)'
             : 'Sin stream detectado';
     }
 
-    // 1. Carpeta vacía: sin episodios descargados para esa playlist
+    // ── PRIORIDAD 1: Informe diario — carpeta vacía ──────────────────────────
     if ($dailyReport && !empty($dailyReport['carpetas_vacias']) && $programKey !== '') {
         $normKey = _normProgName($programKey);
         foreach ($dailyReport['carpetas_vacias'] as $folder) {
@@ -420,9 +449,8 @@ function getMissedReason($scheduledAt, $date, $dayTimeline, $isLive = false, $pr
         }
     }
 
-    // 2. Errores de descarga ese día que podrían haber dejado la playlist sin archivo
+    // ── PRIORIDAD 2: Informe diario — error de descarga ──────────────────────
     if ($dailyReport && !empty($dailyReport['errores_podget'])) {
-        // Buscar si algún error menciona el nombre del programa
         $normKey = $programKey !== '' ? _normProgName($programKey) : '';
         foreach ($dailyReport['errores_podget'] as $err) {
             if ($normKey !== '' && stripos(_normProgName($err), $normKey) !== false) {
@@ -431,7 +459,7 @@ function getMissedReason($scheduledAt, $date, $dayTimeline, $isLive = false, $pr
         }
     }
 
-    // 3. Timeline de AzuraCast: qué había sonando en esa franja
+    // ── PRIORIDAD 3: Historial API — qué sonaba en esa franja ────────────────
     $entries = $dayTimeline[$date] ?? [];
     if (empty($entries)) {
         return 'Sin actividad en AzuraCast ese día (posible corte de señal)';
@@ -698,10 +726,14 @@ if ($hasSchedule) {
             $overrunBy    = null;
             $overrunProg  = null;
             if ($status === 'missed') {
-                $dailyRep     = $dailyReports[$date] ?? null;
+                $dailyRep  = $dailyReports[$date] ?? null;
+                // Nombre AzuraCast de la playlist efectiva → ID de source en Liquidsoap
+                $azName    = $historyNameMap[$effectiveKey] ?? $effectiveKey;
+                $lsSrcId   = computeLiquidsoapSourceId($azName);
                 $missedReason = getMissedReason($schTime, $date, $dayTimeline,
                                                $isLiveDay || isset($livePrograms[$progKey]),
-                                               $effectiveKey, $dailyRep);
+                                               $effectiveKey, $dailyRep,
+                                               $liquidsoapLog, $lsSrcId);
                 $schedTs = mktime(
                     (int)substr($schTime, 0, 2),
                     (int)substr($schTime, 3, 2),
