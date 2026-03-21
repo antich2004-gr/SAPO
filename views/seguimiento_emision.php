@@ -142,11 +142,16 @@ $dbPrograms = $programsDB['programs'] ?? [];
 if (!empty($programSchedules)) {
     foreach (array_keys($programSchedules) as $name) {
         if (!isset($dbPrograms[$name])) continue; // Sin catalogar → incluir
-        $type     = $dbPrograms[$name]['playlist_type'] ?? 'program';
-        $orphaned = $dbPrograms[$name]['orphaned'] ?? false;
-        $hidden   = !empty($dbPrograms[$name]['hidden_from_schedule']);
-        // Solo 'program' desde AzuraCast; live se añade aparte
-        if ($orphaned || $hidden || $type !== 'program') {
+        $type       = $dbPrograms[$name]['playlist_type'] ?? 'program';
+        $orphaned   = $dbPrograms[$name]['orphaned'] ?? false;
+        $hidden     = !empty($dbPrograms[$name]['hidden_from_schedule']);
+        $lastActive = $dbPrograms[$name]['last_active_date'] ?? null;
+        // Solo 'program' desde AzuraCast; live se añade aparte.
+        // Excepción: mantener si fue dado de baja este mes (para mostrar historial).
+        $lastActiveThisMonth = $lastActive && substr($lastActive, 0, 7) === $targetMonth;
+        if ($type !== 'program') {
+            unset($programSchedules[$name]);
+        } elseif (($orphaned || $hidden) && !$lastActiveThisMonth) {
             unset($programSchedules[$name]);
         }
     }
@@ -160,10 +165,13 @@ $historyNameMap = []; // [schedKey => azuraCastPlaylistName]
 $displayNameMap = []; // [schedKey => displayTitle para la tabla]
 
 foreach ($dbPrograms as $programKey => $programInfo) {
-    $type     = $programInfo['playlist_type'] ?? 'program';
-    $orphaned = $programInfo['orphaned'] ?? false;
-    $hidden   = !empty($programInfo['hidden_from_schedule']);
-    if ($type !== 'live' || $orphaned || $hidden) continue;
+    $type       = $programInfo['playlist_type'] ?? 'program';
+    $orphaned   = $programInfo['orphaned'] ?? false;
+    $hidden     = !empty($programInfo['hidden_from_schedule']);
+    $lastActive = $programInfo['last_active_date'] ?? null;
+    $lastActiveThisMonth = $lastActive && substr($lastActive, 0, 7) === $targetMonth;
+    if ($type !== 'live') continue;
+    if (($orphaned || $hidden) && !$lastActiveThisMonth) continue;
 
     $azName       = $programInfo['original_name'] ?? getProgramNameFromKey($programKey);
     $displayTitle = $programInfo['display_title'] ?: $azName;
@@ -484,10 +492,11 @@ function cellStatus($programKey, $day, $programSchedules, $historyMap, $today, $
     return ['status' => 'missed', 'scheduledAt' => $scheduledAt];
 }
 
-// ── Fecha de inicio de cada programa ─────────────────────────────────────────
-// Para no marcar como "no emitido" días en que el programa aún no existía.
-// Fuente: first_seen_date (automáticos) o created_at (directos manuales).
-$programFirstSeen = []; // [progKey => 'Y-m-d']
+// ── Fechas de inicio y fin de cada programa ───────────────────────────────────
+// programFirstSeen: no marcar como perdido días previos al alta del programa.
+// programLastActive: no marcar como perdido días posteriores a la baja.
+$programFirstSeen  = []; // [progKey => 'Y-m-d']
+$programLastActive = []; // [progKey => 'Y-m-d']
 foreach (array_keys($programSchedules) as $progKey) {
     $info = $dbPrograms[$progKey] ?? null;
     if (!$info) continue;
@@ -495,6 +504,9 @@ foreach (array_keys($programSchedules) as $progKey) {
         $programFirstSeen[$progKey] = $info['first_seen_date'];
     } elseif (!empty($info['created_at'])) {
         $programFirstSeen[$progKey] = substr($info['created_at'], 0, 10);
+    }
+    if (!empty($info['last_active_date'])) {
+        $programLastActive[$progKey] = $info['last_active_date'];
     }
 }
 
@@ -515,9 +527,11 @@ if ($hasSchedule) {
         $linkedLiveKey = $liveForAutomated[$progKey] ?? null;
 
         foreach ($days as $day) {
-            // No contar días anteriores a la fecha de alta del programa
-            $firstSeen = $programFirstSeen[$progKey] ?? null;
+            // No contar días fuera del periodo activo del programa
+            $firstSeen  = $programFirstSeen[$progKey] ?? null;
+            $lastActive = $programLastActive[$progKey] ?? null;
             if ($firstSeen && $day['date'] < $firstSeen) continue;
+            if ($lastActive && $day['date'] > $lastActive) continue;
 
             $cell   = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts);
             $status = $cell['status'];
@@ -640,9 +654,12 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                     <?php foreach ($days as $day):
                         $cls = $tooltip = $icon = '';
 
-                        // Celda vacía si el programa aún no existía ese día
-                        $firstSeen     = $programFirstSeen[$progKey] ?? null;
+                        // Celda vacía si el día está fuera del periodo activo del programa
+                        $firstSeen        = $programFirstSeen[$progKey] ?? null;
+                        $lastActive       = $programLastActive[$progKey] ?? null;
                         $dayIsBeforeStart = $firstSeen && $day['date'] < $firstSeen;
+                        $dayIsAfterEnd    = $lastActive && $day['date'] > $lastActive;
+                        $dayIsBeforeStart = $dayIsBeforeStart || $dayIsAfterEnd;
 
                         if (!$dayIsBeforeStart && $linkedLiveKey !== null) {
                             // If this automated program has a linked live version, check live status first
