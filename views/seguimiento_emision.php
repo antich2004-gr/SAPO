@@ -678,21 +678,33 @@ if ($hasSchedule) {
             }
 
             // ── Estado: misma lógica que $progSummary ────────────────────────
+            // Primero consultamos el estado del programa automático
+            $cell        = cellStatus($progKey, $day, $programSchedules, $historyMap, $today,
+                                      $historyNameMap, $livePrograms, $liveEmissionsPerDay,
+                                      $liveSessionStarts, $overrides);
+            $status      = $cell['status'];
             $usedLiveKey = false;
             $effectiveKey = $progKey;
+
+            // Si hay directo vinculado y está activo este día, su estado tiene prioridad
+            // (igual que hace $progSummary: el live absorbe la celda del automático)
             if ($linkedLiveKey !== null) {
                 $lf = $programFirstSeen[$linkedLiveKey] ?? null;
                 $la = $programLastActive[$linkedLiveKey] ?? null;
                 $liveActive = (!$lf || $date >= $lf) && (!$la || $date <= $la);
                 if ($liveActive) {
-                    $effectiveKey = $linkedLiveKey;
-                    $usedLiveKey  = true;
+                    $lc = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today,
+                                     $historyNameMap, $livePrograms, $liveEmissionsPerDay,
+                                     $liveSessionStarts, $overrides);
+                    // Solo usamos el live si tiene slot ese día (no 'none')
+                    if ($lc['status'] !== 'none') {
+                        $cell         = $lc;
+                        $status       = $lc['status'];
+                        $effectiveKey = $linkedLiveKey;
+                        $usedLiveKey  = true;
+                    }
                 }
             }
-            $cell   = cellStatus($effectiveKey, $day, $programSchedules, $historyMap, $today,
-                                 $historyNameMap, $livePrograms, $liveEmissionsPerDay,
-                                 $liveSessionStarts, $overrides);
-            $status = $cell['status'];
 
             // Hora real
             $realTime = $cell['time'] ?? null;
@@ -967,7 +979,7 @@ if ($hasSchedule) {
                     </tbody>
                 </table>
                 <?php else: ?>
-                <p style="margin:0; padding:12px 16px; font-size:13px; color:#718096;">Sin emisiones programadas este mes.</p>
+                <p style="margin:0; padding:12px 16px; font-size:13px; color:#718096;">Sin historial de emisión este mes (no se encontraron registros en AzuraCast).</p>
                 <?php endif; ?>
             </div>
         </div>
