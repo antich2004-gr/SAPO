@@ -974,7 +974,7 @@ if ($hasSchedule) {
                         else                                   $rowClass = '';
                     ?>
                     <tr class="<?php echo $rowClass; ?>">
-                        <td><?php echo htmlEsc($eDateLabel); ?></td>
+                        <td><?php if ($isLive): ?><span class="ld-badge-live" title="Emisión en directo">📡</span> <?php endif; ?><?php echo htmlEsc($eDateLabel); ?></td>
                         <td><?php echo htmlEsc($em['schTime']); ?><?php if ($em['schEnd']): ?><span class="ld-end-time"> –<?php echo htmlEsc($em['schEnd']); ?></span><?php endif; ?></td>
                         <td><?php echo $em['realTime'] ? htmlEsc($em['realTime']) : '<span class="ld-no-data">—</span>'; ?></td>
                         <td><?php echo htmlEsc($durTeoStr); ?></td>
@@ -993,9 +993,6 @@ if ($hasSchedule) {
                                       title="Clic para marcar como emitida">✗</span>
                             <?php else: ?>
                                 <span class="ld-no-data">—</span>
-                            <?php endif; ?>
-                            <?php if ($isLive): ?>
-                                <span class="ld-badge-live" title="Emisión en directo">📡</span>
                             <?php endif; ?>
                         </td>
                     </tr>
