@@ -492,14 +492,21 @@ function getMissedReason(
             // pero si no se captó allí —overrun < 10 min— damos contexto aquí)
             return 'El programa anterior aún estaba en emisión al comenzar esta franja';
         }
-        // Era música u otro contenido de relleno
+        // Era música u otro contenido de relleno.
+        // Un overrun de ≤ 2 min es el comportamiento normal de AzuraCast cuando un
+        // track de relleno termina su ciclo natural: no explica por qué el programa
+        // no llegó a sonar después. Solo lo reportamos si la invasión fue significativa.
         $overrunMin = (int)ceil((($activeAtStart['ts'] + $activeAtStart['duration']) - $schedTs) / 60);
-        return 'Contenido de relleno invadió la franja' .
-               ($overrunMin > 0 ? ' (se extendió ~' . $overrunMin . ' min sobre el horario)' : '');
+        if ($overrunMin > 2) {
+            return 'Contenido de relleno invadió la franja (se extendió ~' . $overrunMin . ' min sobre el horario)';
+        }
+        // Overrun mínimo: caemos al diagnóstico genérico de abajo
     }
 
-    // No había nada activo en ese instante: el programador no lanzó el programa
-    return 'Fallo del programador de AzuraCast — el programa no se activó en su horario';
+    // No había contenido activo al inicio (o el relleno era residual).
+    // El programador de AzuraCast no activó el programa — lo más probable es
+    // que la playlist estuviera vacía o sin episodios descargados.
+    return 'El programa no se activó — probablemente la playlist estaba vacía o sin episodio disponible';
 }
 
 // ── Helper: estado de una celda ───────────────────────────────────────────────
