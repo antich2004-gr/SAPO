@@ -144,8 +144,9 @@ if (!empty($programSchedules)) {
         if (!isset($dbPrograms[$name])) continue; // Sin catalogar → incluir
         $type     = $dbPrograms[$name]['playlist_type'] ?? 'program';
         $orphaned = $dbPrograms[$name]['orphaned'] ?? false;
+        $hidden   = !empty($dbPrograms[$name]['hidden_from_schedule']);
         // Solo 'program' desde AzuraCast; live se añade aparte
-        if ($orphaned || $type !== 'program') {
+        if ($orphaned || $hidden || $type !== 'program') {
             unset($programSchedules[$name]);
         }
     }
@@ -161,7 +162,8 @@ $displayNameMap = []; // [schedKey => displayTitle para la tabla]
 foreach ($dbPrograms as $programKey => $programInfo) {
     $type     = $programInfo['playlist_type'] ?? 'program';
     $orphaned = $programInfo['orphaned'] ?? false;
-    if ($type !== 'live' || $orphaned) continue;
+    $hidden   = !empty($programInfo['hidden_from_schedule']);
+    if ($type !== 'live' || $orphaned || $hidden) continue;
 
     $azName       = $programInfo['original_name'] ?? getProgramNameFromKey($programKey);
     $displayTitle = $programInfo['display_title'] ?: $azName;
