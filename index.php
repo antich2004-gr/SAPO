@@ -28,6 +28,7 @@ require_once INCLUDES_DIR . '/reports.php';
 require_once INCLUDES_DIR . '/azuracast.php';
 require_once INCLUDES_DIR . '/time_signals.php';
 require_once INCLUDES_DIR . '/recordings.php';
+require_once INCLUDES_DIR . '/overrides.php';
 
 initSession();
 
@@ -554,6 +555,61 @@ initSession();
         exit;
     }
 
+
+// ── AJAX: corrección manual de emisiones ──────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST'
+    && ($_POST['action'] ?? '') === 'override_emision'
+    && isLoggedIn()) {
+    header('Content-Type: application/json');
+
+    $token = $_POST['csrf_token'] ?? '';
+    if (!validateCSRFToken($token)) {
+        echo json_encode(['ok' => false, 'error' => 'Token CSRF inválido']);
+        exit;
+    }
+
+    // Determinar emisora objetivo
+    if (!isAdmin() || isImpersonating()) {
+        $targetUser = $_SESSION['username'];
+    } else {
+        $targetUser     = $_POST['station'] ?? '';
+        if (!validateUsernameStrict($targetUser)) {
+            echo json_encode(['ok' => false, 'error' => 'Emisora inválida']);
+            exit;
+        }
+        $allUsers       = getAllUsers();
+        $validUsernames = array_column(
+            array_filter($allUsers, fn($u) => !($u['is_admin'] ?? false)),
+            'username'
+        );
+        if (!in_array($targetUser, $validUsernames, true)) {
+            echo json_encode(['ok' => false, 'error' => 'Emisora no encontrada']);
+            exit;
+        }
+    }
+
+    $progKey = $_POST['prog_key'] ?? '';
+    $date    = $_POST['date']     ?? '';
+    $remove  = ($_POST['remove'] ?? '') === '1';
+    $reason  = substr(trim($_POST['reason'] ?? ''), 0, 200);
+
+    // Validar fecha (no futura)
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) || $date > date('Y-m-d')) {
+        echo json_encode(['ok' => false, 'error' => 'Fecha inválida']);
+        exit;
+    }
+    if (empty($progKey) || mb_strlen($progKey) > 300) {
+        echo json_encode(['ok' => false, 'error' => 'Programa inválido']);
+        exit;
+    }
+
+    $ok = $remove
+        ? removeOverride($targetUser, $progKey, $date)
+        : saveOverride($targetUser, $progKey, $date, $reason, $_SESSION['username']);
+
+    echo json_encode(['ok' => $ok]);
+    exit;
+}
 
 $message = '';
 $error = '';

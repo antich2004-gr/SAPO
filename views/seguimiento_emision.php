@@ -55,6 +55,9 @@ if (!isAdmin() || isImpersonating()) {
     }
 }
 
+// ── Correcciones manuales ─────────────────────────────────────────────────────
+$overrides = loadOverrides($trackingUsername);
+
 // ── Mes objetivo ──────────────────────────────────────────────────────────────
 $targetMonth = (isset($_GET['month']) && preg_match('/^\d{4}-\d{2}$/', $_GET['month']))
     ? $_GET['month']
@@ -440,7 +443,7 @@ function getMissedReason($scheduledAt, $date, $dayTimeline, $isLive = false, $pr
 }
 
 // ── Helper: estado de una celda ───────────────────────────────────────────────
-function cellStatus($programKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts) {
+function cellStatus($programKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts, $overrides = []) {
     $slots = array_filter(
         $programSchedules[$programKey] ?? [],
         fn($s) => $s['dayOfWeek'] === $day['dow']
@@ -478,6 +481,12 @@ function cellStatus($programKey, $day, $programSchedules, $historyMap, $today, $
                 return ['status' => 'played', 'scheduledAt' => $scheduledAt, 'scheduledEnd' => $scheduledEnd, 'time' => $t];
             }
         }
+        // Override manual para directos
+        if (isset($overrides[$programKey][$day['date']])) {
+            $ov = $overrides[$programKey][$day['date']];
+            return ['status' => 'played', 'manual' => true, 'scheduledAt' => $scheduledAt, 'scheduledEnd' => $scheduledEnd,
+                    'reason' => $ov['reason'] ?? '', 'corrected_by' => $ov['corrected_by'] ?? '', 'corrected_at' => $ov['corrected_at'] ?? ''];
+        }
         return ['status' => 'missed', 'scheduledAt' => $scheduledAt, 'scheduledEnd' => $scheduledEnd];
     }
 
@@ -489,6 +498,12 @@ function cellStatus($programKey, $day, $programSchedules, $historyMap, $today, $
         return ['status' => 'played', 'scheduledAt' => $scheduledAt, 'time' => $firstPlay];
     }
 
+    // Override manual para automáticos
+    if (isset($overrides[$programKey][$day['date']])) {
+        $ov = $overrides[$programKey][$day['date']];
+        return ['status' => 'played', 'manual' => true, 'scheduledAt' => $scheduledAt,
+                'reason' => $ov['reason'] ?? '', 'corrected_by' => $ov['corrected_by'] ?? '', 'corrected_at' => $ov['corrected_at'] ?? ''];
+    }
     return ['status' => 'missed', 'scheduledAt' => $scheduledAt];
 }
 
@@ -533,7 +548,7 @@ if ($hasSchedule) {
             if ($firstSeen && $day['date'] < $firstSeen) continue;
             if ($lastActive && $day['date'] > $lastActive) continue;
 
-            $cell   = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts);
+            $cell   = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts, $overrides);
             $status = $cell['status'];
             if ($isLive) {
                 if ($status === 'played')     { $totals['live_esperados']++; $totals['live_efectivos']++; }
@@ -550,7 +565,7 @@ if ($hasSchedule) {
                 $liveActiveOnDay = (!$liveFirstSeen || $day['date'] >= $liveFirstSeen)
                                 && (!$liveLastActive || $day['date'] <= $liveLastActive);
                 if ($liveActiveOnDay) {
-                    $liveCell   = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts);
+                    $liveCell   = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts, $overrides);
                     $liveStatus = $liveCell['status'];
                     if ($liveStatus === 'played')     { $totals['live_esperados']++; $totals['live_efectivos']++; }
                     elseif ($liveStatus === 'missed') { $totals['live_esperados']++; }
@@ -658,6 +673,9 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                     </td>
                     <?php foreach ($days as $day):
                         $cls = $tooltip = $icon = '';
+                        $overrideProgKey = $progKey; // clave efectiva para el override (puede ser $linkedLiveKey)
+                        $isLiveCell      = $isLiveProg;
+                        $isManualCell    = false;
 
                         // Celda vacía si el día está fuera del periodo activo del programa
                         $firstSeen         = $programFirstSeen[$progKey] ?? null;
@@ -673,13 +691,22 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                             $liveExistsOnDay = (!$liveFirstSeen || $day['date'] >= $liveFirstSeen)
                                            && (!$liveLastActive || $day['date'] <= $liveLastActive);
                             if ($liveExistsOnDay) {
-                                $liveCell   = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts);
+                                $liveCell   = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts, $overrides);
                                 $liveStatus = $liveCell['status'];
+                                $overrideProgKey = $linkedLiveKey;
+                                $isLiveCell      = true;
                                 if ($liveStatus === 'played') {
-                                    $cls     = 'celda-directo-emitido';
-                                    $liveEnd = $liveCell['scheduledEnd'] ?? null;
-                                    $tooltip = 'Directo emitido ' . $liveCell['time'] . 'h' . ($liveEnd ? ' - ' . $liveEnd . 'h' : '') . ' (esperado ' . $liveCell['scheduledAt'] . 'h)';
-                                    $icon    = '📡';
+                                    if (!empty($liveCell['manual'])) {
+                                        $cls          = 'celda-directo-manual';
+                                        $tooltip      = 'Directo — corrección manual' . ($liveCell['reason'] ? ': ' . $liveCell['reason'] : '') . ' · ' . $liveCell['corrected_by'] . ' ' . $liveCell['corrected_at'];
+                                        $icon         = '📡';
+                                        $isManualCell = true;
+                                    } else {
+                                        $cls     = 'celda-directo-emitido';
+                                        $liveEnd = $liveCell['scheduledEnd'] ?? null;
+                                        $tooltip = 'Directo emitido ' . $liveCell['time'] . 'h' . ($liveEnd ? ' - ' . $liveEnd . 'h' : '') . ' (esperado ' . $liveCell['scheduledAt'] . 'h)';
+                                        $icon    = '📡';
+                                    }
                                 } elseif ($liveStatus === 'missed') {
                                     $cls     = 'celda-directo-perdido';
                                     $reason  = getMissedReason($liveCell['scheduledAt'], $day['date'], $dayTimeline, true, $linkedLiveKey, $dailyReports[$day['date']] ?? null);
@@ -701,13 +728,20 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                     <?php
                         // If no live override, use automated (or standalone live) status
                         if ($cls === '') {
-                            $cell   = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts);
+                            $cell   = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts, $overrides);
                             $status = $cell['status'];
                             switch ($status) {
                                 case 'played':
-                                    $cls     = 'celda-emitida';
-                                    $tooltip = 'Emitido a las ' . $cell['time'] . 'h (esperado ' . $cell['scheduledAt'] . 'h)';
-                                    $icon    = '✓';
+                                    if (!empty($cell['manual'])) {
+                                        $cls          = 'celda-manual';
+                                        $tooltip      = 'Corrección manual' . ($cell['reason'] ? ': ' . $cell['reason'] : '') . ' · ' . $cell['corrected_by'] . ' ' . $cell['corrected_at'];
+                                        $icon         = '✎';
+                                        $isManualCell = true;
+                                    } else {
+                                        $cls     = 'celda-emitida';
+                                        $tooltip = 'Emitido a las ' . $cell['time'] . 'h (esperado ' . $cell['scheduledAt'] . 'h)';
+                                        $icon    = '✓';
+                                    }
                                     break;
                                 case 'missed':
                                     $cls     = 'celda-perdida';
@@ -723,8 +757,17 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                             }
                         }
                     ?>
-                    <td class="col-dia <?php echo $day['isToday'] ? 'col-hoy' : ''; ?> <?php echo $cls; ?>"
-                        <?php if ($tooltip): ?>data-tooltip="<?php echo htmlEsc($tooltip); ?>"<?php endif; ?>>
+                    <?php
+                        $esClickeable = in_array($cls, ['celda-perdida','celda-manual','celda-directo-perdido','celda-directo-manual']);
+                    ?>
+                    <td class="col-dia <?php echo $day['isToday'] ? 'col-hoy' : ''; ?> <?php echo $cls; ?><?php echo $esClickeable ? ' celda-corregible' : ''; ?>"
+                        <?php if ($tooltip): ?>data-tooltip="<?php echo htmlEsc($tooltip); ?>"<?php endif; ?>
+                        <?php if ($esClickeable): ?>
+                        data-prog="<?php echo htmlEsc($overrideProgKey); ?>"
+                        data-date="<?php echo $day['date']; ?>"
+                        data-live="<?php echo $isLiveCell ? '1' : '0'; ?>"
+                        data-manual="<?php echo $isManualCell ? '1' : '0'; ?>"
+                        <?php endif; ?>>
                         <?php echo $icon; ?>
                     </td>
                     <?php endif; ?>
@@ -757,11 +800,11 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                     </div>
                     <div style="background:#c6f6d5;color:#276749;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid #9ae6b4;">
                         <span style="font-size:11px;font-weight:400;color:#276749;text-transform:uppercase;letter-spacing:.04em;">Emitidas</span>
-                        <span style="font-size:20px;"><?php echo $totals['emite_ok']; ?></span>
+                        <span id="total-emite-ok" style="font-size:20px;"><?php echo $totals['emite_ok']; ?></span>
                     </div>
                     <div style="background:#fed7d7;color:#9b2335;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;">
                         <span style="font-size:11px;font-weight:400;color:#c53030;text-transform:uppercase;letter-spacing:.04em;">Faltan</span>
-                        <span style="font-size:20px;"><?php echo $totals['faltan']; ?></span>
+                        <span id="total-faltan" style="font-size:20px;"><?php echo $totals['faltan']; ?></span>
                     </div>
                 </div>
             </div>
@@ -775,11 +818,11 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                     </div>
                     <div style="background:#3b82f6;color:#fff;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid #2563eb;">
                         <span style="font-size:11px;font-weight:400;color:#bfdbfe;text-transform:uppercase;letter-spacing:.04em;">📡 Emitidos</span>
-                        <span style="font-size:20px;"><?php echo $totals['live_efectivos']; ?></span>
+                        <span id="total-live-ef" style="font-size:20px;"><?php echo $totals['live_efectivos']; ?></span>
                     </div>
                     <div style="background:#ef4444;color:#fff;padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;">
                         <span style="font-size:11px;font-weight:400;color:#fecaca;text-transform:uppercase;letter-spacing:.04em;">📡 Faltan</span>
-                        <span style="font-size:20px;"><?php echo $livefaltan; ?></span>
+                        <span id="total-live-faltan" style="font-size:20px;"><?php echo $livefaltan; ?></span>
                     </div>
                 </div>
             </div>
@@ -943,6 +986,12 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
 .celda-directo-emitido   { background: #3b82f6; color: #fff; }
 .celda-directo-esperado  { background: #94a3b8; color: #fff; }
 .celda-directo-perdido   { background: #ef4444; color: #fff; }
+/* Correcciones manuales */
+.celda-manual            { background: #9ae6b4; color: #22543d; outline: 2px dashed #38a169; outline-offset: -2px; }
+.celda-directo-manual    { background: #63b3ed; color: #fff;    outline: 2px dashed #2b6cb0; outline-offset: -2px; }
+/* Celdas clickeables (missed + manual) */
+.celda-corregible        { cursor: pointer; }
+.celda-corregible:hover  { filter: brightness(0.9); }
 /* Hoy */
 .col-hoy { border-left: 2px solid #667eea !important; border-right: 2px solid #667eea !important; }
 /* Tooltip CSS */
@@ -1115,4 +1164,175 @@ function exportarImagen() {
         document.head.appendChild(s);
     }
 }
+</script>
+
+<!-- ── Modal corrección manual ───────────────────────────────────────────────── -->
+<input type="hidden" id="csrf-override" value="<?php echo generateCSRFToken(); ?>">
+
+<div id="modal-override" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:8px;padding:24px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+        <h3 id="modal-title" style="margin:0 0 6px;font-size:15px;color:#2d3748;"></h3>
+        <p id="modal-desc" style="color:#718096;font-size:13px;margin:0 0 16px;line-height:1.5;"></p>
+        <div id="modal-form-area">
+            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;color:#4a5568;">Motivo (opcional)</label>
+            <input id="modal-reason" type="text" maxlength="200" placeholder="Ej: API caída 14:00-14:15, sí emitió"
+                   style="width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:4px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
+            <button onclick="cerrarModalOverride()" class="btn btn-secondary" style="font-size:13px;">Cancelar</button>
+            <button id="modal-confirm-btn" class="btn btn-primary" style="font-size:13px;">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    var _cell = null; // { prog, date, isLive, isManual, td }
+
+    function abrirModal(td) {
+        var prog   = td.dataset.prog;
+        var date   = td.dataset.date;
+        var manual = td.dataset.manual === '1';
+        var isLive = td.dataset.live === '1';
+        _cell = { prog: prog, date: date, isLive: isLive, isManual: manual, td: td };
+
+        // Nombre del programa desde la columna fija
+        var progName = td.closest('tr').querySelector('.col-programa span[title]');
+        progName = progName ? progName.getAttribute('title') : prog;
+        // Fecha legible
+        var parts = date.split('-');
+        var dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        var dateStr = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+
+        document.getElementById('modal-title').textContent = progName + ' — ' + dateStr;
+
+        var formArea   = document.getElementById('modal-form-area');
+        var confirmBtn = document.getElementById('modal-confirm-btn');
+
+        if (manual) {
+            document.getElementById('modal-desc').textContent =
+                'Esta emisión fue marcada manualmente como emitida. ¿Quitar la corrección y volver a marcarla como no emitida?';
+            formArea.style.display = 'none';
+            confirmBtn.textContent = 'Quitar corrección';
+            confirmBtn.style.background = '#e53e3e';
+            confirmBtn.style.borderColor = '#e53e3e';
+        } else {
+            document.getElementById('modal-desc').textContent =
+                'AzuraCast no registró esta emisión. ¿Marcarla como emitida manualmente?';
+            formArea.style.display = 'block';
+            document.getElementById('modal-reason').value = '';
+            confirmBtn.textContent = 'Marcar como emitida ✓';
+            confirmBtn.style.background = '';
+            confirmBtn.style.borderColor = '';
+        }
+
+        var modal = document.getElementById('modal-override');
+        modal.style.display = 'flex';
+        if (!manual) setTimeout(function() { document.getElementById('modal-reason').focus(); }, 50);
+    }
+
+    window.cerrarModalOverride = function() {
+        document.getElementById('modal-override').style.display = 'none';
+        _cell = null;
+    };
+
+    document.getElementById('modal-confirm-btn').addEventListener('click', function() {
+        if (!_cell) return;
+        var btn = this;
+        btn.disabled = true;
+        btn.textContent = 'Guardando…';
+
+        var data = new FormData();
+        data.append('action',     'override_emision');
+        data.append('csrf_token', document.getElementById('csrf-override').value);
+        data.append('prog_key',   _cell.prog);
+        data.append('date',       _cell.date);
+        data.append('station',    '<?php echo htmlEsc($trackingUsername); ?>');
+        if (_cell.isManual) {
+            data.append('remove', '1');
+        } else {
+            data.append('reason', document.getElementById('modal-reason').value);
+        }
+
+        fetch('', { method: 'POST', body: data })
+            .then(function(r) { return r.json(); })
+            .then(function(r) {
+                if (r.ok) {
+                    actualizarCelda(_cell.td, _cell.isManual, _cell.isLive);
+                    cerrarModalOverride();
+                } else {
+                    alert('Error: ' + (r.error || 'Error desconocido'));
+                    btn.disabled = false;
+                    btn.textContent = _cell.isManual ? 'Quitar corrección' : 'Marcar como emitida ✓';
+                }
+            })
+            .catch(function() {
+                alert('Error de red al guardar la corrección.');
+                btn.disabled = false;
+                btn.textContent = _cell.isManual ? 'Quitar corrección' : 'Marcar como emitida ✓';
+            });
+    });
+
+    function actualizarCelda(td, wasManual, isLive) {
+        if (wasManual) {
+            // Revertir a perdida
+            td.classList.remove('celda-manual', 'celda-directo-manual');
+            if (isLive) {
+                td.classList.add('celda-directo-perdido');
+                td.textContent = '📡';
+            } else {
+                td.classList.add('celda-perdida');
+                td.textContent = '✗';
+            }
+            td.dataset.manual = '0';
+            ajustarTotales(isLive, -1); // quitar corrección: emitidos--, faltan++
+        } else {
+            // Marcar como manual
+            if (isLive) {
+                td.classList.remove('celda-directo-perdido');
+                td.classList.add('celda-directo-manual');
+                td.textContent = '📡';
+            } else {
+                td.classList.remove('celda-perdida');
+                td.classList.add('celda-manual');
+                td.textContent = '✎';
+            }
+            td.dataset.manual = '1';
+            ajustarTotales(isLive, +1); // añadir corrección: emitidos++, faltan--
+        }
+    }
+
+    function ajustarTotales(isLive, delta) {
+        if (isLive) {
+            var ef    = document.getElementById('total-live-ef');
+            var falta = document.getElementById('total-live-faltan');
+            if (ef)    ef.textContent    = Math.max(0, parseInt(ef.textContent)    + delta);
+            if (falta) falta.textContent = Math.max(0, parseInt(falta.textContent) - delta);
+        } else {
+            var ok    = document.getElementById('total-emite-ok');
+            var falta = document.getElementById('total-faltan');
+            if (ok)    ok.textContent    = Math.max(0, parseInt(ok.textContent)    + delta);
+            if (falta) falta.textContent = Math.max(0, parseInt(falta.textContent) - delta);
+        }
+    }
+
+    // Event delegation en la tabla
+    var tabla = document.querySelector('.seguimiento-table');
+    if (tabla) {
+        tabla.addEventListener('click', function(e) {
+            var td = e.target.closest('td.celda-corregible');
+            if (td) abrirModal(td);
+        });
+    }
+
+    // Cerrar al hacer clic fuera del modal
+    document.getElementById('modal-override').addEventListener('click', function(e) {
+        if (e.target === this) cerrarModalOverride();
+    });
+
+    // Cerrar con Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') cerrarModalOverride();
+    });
+})();
 </script>
