@@ -328,27 +328,28 @@ for ($d = 1; $d <= $daysInMonth; $d++) {
 
 $dowLabels = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 
-// ── Cargar emisiones en directo desde informes diarios ───────────────────────
-// Los informes diarios son ficheros pequeños ya procesados, mucho más rápidos
-// que escanear el log de Liquidsoap completo.
+// ── Cargar informes diarios del mes ──────────────────────────────────────────
+// dailyReports[Y-m-d] = parsed report (carpetas_vacias, errores_podget, emisiones_directo…)
 // liveEmissionsPerDay[Y-m-d] = ['HH:MM', ...] — horas de inicio de directos
+$dailyReports        = [];
 $liveEmissionsPerDay = [];
 
-if (!empty($livePrograms)) {
-    $reportsPath = getReportsPath($trackingUsername);
-    if ($reportsPath && is_dir($reportsPath)) {
-        foreach ($days as $day) {
-            if ($day['date'] > $today) continue;
-            $d  = substr($day['date'], 8, 2);
-            $mo = substr($day['date'], 5, 2);
-            $yr = substr($day['date'], 0, 4);
-            $fn = $reportsPath . '/Informe_diario_' . $d . '_' . $mo . '_' . $yr . '.log';
-            if (!file_exists($fn)) continue;
-            $rd = parseReportFile($fn);
-            if (empty($rd['emisiones_directo'])) continue;
+$reportsPath = getReportsPath($trackingUsername);
+if ($reportsPath && is_dir($reportsPath)) {
+    foreach ($days as $day) {
+        if ($day['date'] > $today) continue;
+        $d  = substr($day['date'], 8, 2);
+        $mo = substr($day['date'], 5, 2);
+        $yr = substr($day['date'], 0, 4);
+        $fn = $reportsPath . '/Informe_diario_' . $d . '_' . $mo . '_' . $yr . '.log';
+        if (!file_exists($fn)) continue;
+        $rd = parseReportFile($fn);
+        if (!$rd) continue;
+        $dailyReports[$day['date']] = $rd;
+        // Extraer horas de directos para la detección de emisiones en vivo
+        if (!empty($rd['emisiones_directo'])) {
             $times = [];
             foreach ($rd['emisiones_directo'] as $entry) {
-                // "- DD-MM-YYYY HH:MM:SS → HH:MM:SS desde DJ origin"
                 if (preg_match('/^-\s+[\d-]+\s+(\d{2}:\d{2})/', $entry, $m)) {
                     $times[] = $m[1];
                 }
@@ -373,18 +374,37 @@ function liveTiempoCoincide($scheduledTime, $emStart) {
 }
 
 // ── Helper: diagnóstico de emisión perdida ────────────────────────────────────
-// Mira qué había emitiéndose en la franja ±60 min del slot esperado
-// y devuelve una cadena explicativa para el tooltip.
-function getMissedReason($scheduledAt, $date, $dayTimeline, $isLive = false) {
+function getMissedReason($scheduledAt, $date, $dayTimeline, $isLive = false, $programKey = '', $dailyReport = null) {
     if ($isLive) {
-        // Para directos: simplemente no hubo stream
         $entries = $dayTimeline[$date] ?? [];
-        if (empty($entries)) {
-            return 'DJ no conectó · sin actividad en AzuraCast ese día';
-        }
-        return 'DJ no conectó · sin stream detectado';
+        return empty($entries)
+            ? 'Sin actividad en AzuraCast ese día (posible corte de señal)'
+            : 'Sin stream detectado';
     }
 
+    // 1. Carpeta vacía: sin episodios descargados para esa playlist
+    if ($dailyReport && !empty($dailyReport['carpetas_vacias']) && $programKey !== '') {
+        $normKey = _normProgName($programKey);
+        foreach ($dailyReport['carpetas_vacias'] as $folder) {
+            if (_normProgName($folder['nombre']) === $normKey) {
+                $dias = $folder['dias'] > 1 ? ' (vacía desde hace ' . $folder['dias'] . ' días)' : '';
+                return 'Sin episodios disponibles — carpeta vacía' . $dias;
+            }
+        }
+    }
+
+    // 2. Errores de descarga ese día que podrían haber dejado la playlist sin archivo
+    if ($dailyReport && !empty($dailyReport['errores_podget'])) {
+        // Buscar si algún error menciona el nombre del programa
+        $normKey = $programKey !== '' ? _normProgName($programKey) : '';
+        foreach ($dailyReport['errores_podget'] as $err) {
+            if ($normKey !== '' && stripos(_normProgName($err), $normKey) !== false) {
+                return 'Error de descarga del episodio ese día';
+            }
+        }
+    }
+
+    // 3. Timeline de AzuraCast: qué había sonando en esa franja
     $entries = $dayTimeline[$date] ?? [];
     if (empty($entries)) {
         return 'Sin actividad en AzuraCast ese día (posible corte de señal)';
@@ -608,7 +628,7 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                                 $icon    = '📡';
                             } elseif ($liveStatus === 'missed') {
                                 $cls     = 'celda-directo-perdido';
-                                $reason  = getMissedReason($liveCell['scheduledAt'], $day['date'], $dayTimeline, true);
+                                $reason  = getMissedReason($liveCell['scheduledAt'], $day['date'], $dayTimeline, true, $linkedLiveKey, $dailyReports[$day['date']] ?? null);
                                 $tooltip = 'Directo no emitido (esperado ' . $liveCell['scheduledAt'] . 'h) · ' . $reason;
                                 $icon    = '📡';
                             } elseif ($liveStatus === 'expected') {
@@ -630,7 +650,7 @@ $totals['emitidos_azura'] = $totals['emite_ok'] + $totals['live_efectivos'];
                                     break;
                                 case 'missed':
                                     $cls     = 'celda-perdida';
-                                    $reason  = getMissedReason($cell['scheduledAt'], $day['date'], $dayTimeline, $isLiveProg);
+                                    $reason  = getMissedReason($cell['scheduledAt'], $day['date'], $dayTimeline, $isLiveProg, $progKey, $dailyReports[$day['date']] ?? null);
                                     $tooltip = 'No emitido (esperado ' . $cell['scheduledAt'] . 'h) · ' . $reason;
                                     $icon    = '✗';
                                     break;
