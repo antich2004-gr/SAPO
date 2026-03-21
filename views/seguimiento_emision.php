@@ -418,7 +418,8 @@ function getMissedReason(
     $liquidsoapLog       = null,
     $liquidsoapSrcId     = null,
     $historyEntryByDay   = [],
-    $programSchedules    = []
+    $programSchedules    = [],
+    $playlistContentInfo = null   // ['num_songs'=>N,'playlist_id'=>ID,'sample'=>[...]]
 ) {
     // ── PRIORIDAD 0: Log de Liquidsoap (fuente más precisa) ──────────────────
     // Solo para programas automáticos; los directos se diagnostican distinto.
@@ -504,8 +505,25 @@ function getMissedReason(
     }
 
     // No había contenido activo al inicio (o el relleno era residual).
-    // El programador de AzuraCast no activó el programa — lo más probable es
-    // que la playlist estuviera vacía o sin episodios descargados.
+    // Si tenemos datos actuales de la playlist, daremos un diagnóstico preciso.
+    if ($playlistContentInfo !== null) {
+        $n = (int)$playlistContentInfo['num_songs'];
+        if ($n === 0) {
+            return 'La playlist está vacía — no hay ningún episodio disponible';
+        }
+        // La playlist tiene contenido: construir mensaje con título si lo hay
+        $sample = $playlistContentInfo['sample'] ?? [];
+        $ep = null;
+        if (!empty($sample[0])) {
+            $title = $sample[0]['title'] ?? '';
+            $path  = $sample[0]['path']  ?? '';
+            // Preferir título de metadatos; si no, usar nombre de fichero
+            $ep = $title !== '' ? $title : ($path !== '' ? basename($path) : null);
+        }
+        $epStr = $ep !== null ? ' (ej: "' . $ep . '")' : '';
+        $noun  = $n === 1 ? 'episodio' : 'episodios';
+        return "La playlist tiene {$n} {$noun} disponibles{$epStr} — el programa no se activó por otro motivo";
+    }
     return 'El programa no se activó — probablemente la playlist estaba vacía o sin episodio disponible';
 }
 
@@ -781,11 +799,16 @@ if ($hasSchedule) {
                 // Nombre AzuraCast de la playlist efectiva → ID de source en Liquidsoap
                 $azName    = $historyNameMap[$effectiveKey] ?? $effectiveKey;
                 $lsSrcId   = computeLiquidsoapSourceId($azName);
+                // Contenido actual de la playlist (best-effort; null si no disponible)
+                $plContentInfo = (!($isLiveDay || isset($livePrograms[$progKey])) && $hasSchedule)
+                    ? getPlaylistContentInfo($trackingUsername, $azName)
+                    : null;
                 $missedReason = getMissedReason($schTime, $date, $dayTimeline,
                                                $isLiveDay || isset($livePrograms[$progKey]),
                                                $effectiveKey, $dailyRep,
                                                $liquidsoapLog, $lsSrcId,
-                                               $historyEntryByDay, $programSchedules);
+                                               $historyEntryByDay, $programSchedules,
+                                               $plContentInfo);
                 $schedTs = mktime(
                     (int)substr($schTime, 0, 2),
                     (int)substr($schTime, 3, 2),
