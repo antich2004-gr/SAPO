@@ -774,6 +774,30 @@ if ($hasSchedule) {
                     }
                     break;
                 }
+                // Fallback 2: misma hora, cualquier día
+                if (!$schDurMin && $schTime) {
+                    foreach ($rawSlotsSS as $ss) {
+                        if (($ss['start_time'] ?? '') !== $schTime) continue;
+                        $dur = (int)($ss['duration'] ?? 0);
+                        if ($dur > 0) {
+                            $schDurMin = $dur;
+                            $endDt = DateTime::createFromFormat('H:i', $schTime);
+                            $endDt->modify("+{$dur} minutes");
+                            $schEnd = $endDt->format('H:i');
+                        }
+                        break;
+                    }
+                }
+                // Fallback 3: slot único configurado, usar su duración independientemente
+                if (!$schDurMin && count($rawSlotsSS) === 1) {
+                    $dur = (int)($rawSlotsSS[0]['duration'] ?? 0);
+                    if ($dur > 0) {
+                        $schDurMin = $dur;
+                        $endDt = DateTime::createFromFormat('H:i', $schTime);
+                        $endDt->modify("+{$dur} minutes");
+                        $schEnd = $endDt->format('H:i');
+                    }
+                }
             }
 
             // Hora real e historial
