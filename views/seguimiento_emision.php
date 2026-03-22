@@ -951,7 +951,7 @@ if ($hasSchedule) {
             <span style="font-size:13px; color:#718096;">
                 <strong style="color:#2d3748;"><?php echo $resTotalProgs; ?></strong> programa<?php echo $resTotalProgs !== 1 ? 's' : ''; ?>
                 <?php if ($resTotalFails > 0): ?>
-                · <strong style="color:#c53030;"><?php echo $resTotalFails; ?></strong> emisión<?php echo $resTotalFails !== 1 ? 'es' : ''; ?> sin registrar
+                · <strong style="color:#c53030;"><?php echo $resTotalFails; ?></strong> emisión<?php echo $resTotalFails !== 1 ? 'es' : ''; ?> perdida<?php echo $resTotalFails !== 1 ? 's' : ''; ?>
                 <?php else: ?>
                 · <strong style="color:#276749;">✓ Todo correcto</strong>
                 <?php endif; ?>
@@ -995,7 +995,7 @@ if ($hasSchedule) {
                 <span class="listado-card-nombre"><?php echo htmlEsc(displayName($progDisplay)); ?></span>
                 <div class="listado-card-stats">
                     <?php if ($pct !== null): ?>
-                    <span class="listado-pct <?php echo $hc; ?>"><?php echo $pct; ?>%</span>
+                    <span class="listado-pct <?php echo $hc; ?>"><?php echo $totalPlayed; ?>/<?php echo $totalDone; ?> · <?php echo $pct; ?>%</span>
                     <?php endif; ?>
                     <span style="font-size:12px; color:#276749; white-space:nowrap;"><?php echo $totalPlayed; ?> emitidos</span>
                     <?php if ($totalFails > 0): ?>
