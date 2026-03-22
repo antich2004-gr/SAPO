@@ -299,7 +299,7 @@ if ($hasSchedule) {
                     // Guardar detalles del primer episodio emitido ese día
                     $historyDetails[$playlist][$dayStr] = [
                         'time'     => $timeStr,
-                        'title'    => $entry['text'] ?? '',
+                        'title'    => $entry['song']['text'] ?? $entry['text'] ?? '',
                         'duration' => (int)($entry['duration'] ?? 0),
                     ];
                 }
