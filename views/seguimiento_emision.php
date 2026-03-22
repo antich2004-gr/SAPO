@@ -1058,7 +1058,15 @@ if ($hasSchedule) {
                         <td><?php if ($isLive): ?><span class="ld-badge-live" title="Emisión en directo">📡</span> <?php endif; ?><?php echo htmlEsc($eDateLabel); ?></td>
                         <td><?php echo htmlEsc($em['schTime']); ?><?php if ($em['schEnd']): ?><span class="ld-end-time"> –<?php echo htmlEsc($em['schEnd']); ?></span><?php endif; ?></td>
                         <td><?php echo $em['realTime'] ? htmlEsc($em['realTime']) : '<span class="ld-no-data">—</span>'; ?></td>
-                        <td><?php echo htmlEsc($durTeoStr); ?></td>
+                        <td><span class="dur-teo-edit"
+                                  data-progkey="<?php echo htmlEsc($ovKey); ?>"
+                                  data-day="<?php echo $eDow; ?>"
+                                  data-time="<?php echo htmlEsc($em['schTime'] ?? ''); ?>"
+                                  data-dur="<?php echo (int)($em['schDurMin'] ?? 0); ?>"
+                                  onclick="abrirEditDur(this)"
+                                  title="Clic para editar duración teórica"
+                                  style="cursor:pointer; border-bottom:1px dashed #94a3b8; white-space:nowrap;"
+                            ><?php echo htmlEsc($durTeoStr); ?></span></td>
                         <td><?php echo htmlEsc($durRealStr); ?></td>
                         <td class="<?php echo $diffClass; ?>"><?php echo htmlEsc($diffStr); ?></td>
                         <td class="ld-title"><?php echo $em['title'] ? htmlEsc($em['title']) : '<span class="ld-no-data">—</span>'; ?></td>
@@ -2095,6 +2103,98 @@ function ordenarResumen(criterio) {
         if (e.key === 'Escape') {
             cerrarModalOverride();
             cerrarFichaPrograma();
+            cerrarEditDur();
+        }
+    });
+})();
+</script>
+
+<!-- ── Popover edición inline de duración teórica ──────────────────────────── -->
+<div id="edit-dur-popover"
+     style="display:none; position:fixed; z-index:3000; background:#fff; border:1px solid #cbd5e0;
+            border-radius:8px; padding:14px 16px; box-shadow:0 4px 16px rgba(0,0,0,.18); min-width:210px;">
+    <label for="edit-dur-input" style="font-size:12px; color:#6b7280; display:block; margin-bottom:8px; font-weight:600;">
+        Duración teórica (minutos)
+    </label>
+    <div style="display:flex; gap:8px; align-items:center;">
+        <input type="number" id="edit-dur-input" min="1" max="720"
+               style="width:75px; padding:6px 8px; border:1px solid #cbd5e0; border-radius:5px; font-size:14px;">
+        <button onclick="guardarDur()" class="btn btn-success" style="padding:5px 12px; font-size:13px;">✓</button>
+        <button onclick="cerrarEditDur()" class="btn btn-secondary" style="padding:5px 10px; font-size:13px;">✕</button>
+    </div>
+    <div id="edit-dur-error" style="color:#dc2626; font-size:12px; margin-top:6px; display:none;"></div>
+</div>
+
+<script>
+(function() {
+    var _durEl = null;
+
+    window.abrirEditDur = function(el) {
+        _durEl = el;
+        var pop = document.getElementById('edit-dur-popover');
+        var inp = document.getElementById('edit-dur-input');
+        inp.value = parseInt(el.dataset.dur) > 0 ? el.dataset.dur : '';
+        document.getElementById('edit-dur-error').style.display = 'none';
+        var r = el.getBoundingClientRect();
+        pop.style.top  = (r.bottom + 6 + window.scrollY) + 'px';
+        pop.style.left = Math.min(r.left, window.innerWidth - 230) + 'px';
+        pop.style.display = 'block';
+        inp.focus(); inp.select();
+    };
+
+    window.cerrarEditDur = function() {
+        document.getElementById('edit-dur-popover').style.display = 'none';
+        _durEl = null;
+    };
+
+    window.guardarDur = function() {
+        var dur   = parseInt(document.getElementById('edit-dur-input').value, 10);
+        var errEl = document.getElementById('edit-dur-error');
+        if (!dur || dur < 1 || dur > 720) {
+            errEl.textContent = 'Introduce un valor entre 1 y 720 minutos';
+            errEl.style.display = 'block';
+            return;
+        }
+        var fd = new FormData();
+        fd.append('action',       'update_slot_duration');
+        fd.append('csrf_token',   document.getElementById('csrf-override').value);
+        fd.append('program_name', _durEl.dataset.progkey);
+        fd.append('day',          _durEl.dataset.day);
+        fd.append('start_time',   _durEl.dataset.time);
+        fd.append('duration',     dur);
+        fetch(window.location.href, {method: 'POST', body: fd})
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (d.success) {
+                    _durEl.textContent   = dur + ' min';
+                    _durEl.dataset.dur   = dur;
+                    cerrarEditDur();
+                    var t = document.createElement('div');
+                    t.textContent = '✓ Duración guardada';
+                    t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:4000;background:#166534;color:#fff;padding:10px 18px;border-radius:7px;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.2);pointer-events:none;';
+                    document.body.appendChild(t);
+                    setTimeout(function() { t.remove(); }, 2500);
+                } else {
+                    errEl.textContent = d.error || 'Error al guardar';
+                    errEl.style.display = 'block';
+                }
+            })
+            .catch(function() {
+                errEl.textContent = 'Error de conexión';
+                errEl.style.display = 'block';
+            });
+    };
+
+    // Enter en el input → guardar
+    document.getElementById('edit-dur-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') window.guardarDur();
+    });
+
+    // Clic fuera del popover → cerrar
+    document.addEventListener('click', function(e) {
+        var pop = document.getElementById('edit-dur-popover');
+        if (pop.style.display !== 'none' && !pop.contains(e.target) && e.target !== _durEl) {
+            cerrarEditDur();
         }
     });
 })();
