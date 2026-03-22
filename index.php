@@ -1586,6 +1586,93 @@ if (isset($_GET['action']) && $_GET['action'] == 'get_category_files' && isLogge
 
 // ========== FIN ACCIONES GESTOR DE CATEGORÍAS ==========
 
+// ── AJAX: actualizar duración de un slot de programa desde seguimiento ────────
+if (isset($_POST['action']) && $_POST['action'] === 'update_slot_duration' && isLoggedIn() && !isAdmin()) {
+    header('Content-Type: application/json');
+
+    $token = $_POST['csrf_token'] ?? '';
+    if (!validateCSRFToken($token)) {
+        echo json_encode(['success' => false, 'error' => ERROR_INVALID_TOKEN]);
+        exit;
+    }
+
+    $username    = $_SESSION['username'];
+    $programName = trim($_POST['program_name'] ?? '');
+    $day         = (int)($_POST['day'] ?? -1);
+    $startTime   = trim($_POST['start_time'] ?? '');
+    $duration    = (int)($_POST['duration'] ?? 0);
+
+    if ($programName === '' || $duration < 1 || $duration > 720) {
+        echo json_encode(['success' => false, 'error' => 'Parámetros inválidos']);
+        exit;
+    }
+
+    $info = getProgramInfo($username, $programName);
+    if ($info === null) {
+        echo json_encode(['success' => false, 'error' => 'Programa no encontrado']);
+        exit;
+    }
+
+    // Construir array de slots (migrando formato legacy si es necesario)
+    $slots = $info['schedule_slots'] ?? [];
+    if (empty($slots) && !empty($info['schedule_days'])) {
+        $slots = [[
+            'days'       => (array)($info['schedule_days'] ?? []),
+            'start_time' => $info['schedule_start_time'] ?? '',
+            'duration'   => (int)($info['schedule_duration'] ?? 60),
+        ]];
+    }
+
+    // Buscar slot coincidente: mismo start_time Y mismo día de semana
+    $found = false;
+    foreach ($slots as &$slot) {
+        $slotDays = array_map('intval', (array)($slot['days'] ?? []));
+        if ($startTime !== '' && ($slot['start_time'] ?? '') === $startTime && in_array($day, $slotDays, true)) {
+            $slot['duration'] = $duration;
+            $found = true;
+            break;
+        }
+    }
+    unset($slot);
+
+    // Fallback: coincidencia solo por start_time
+    if (!$found && $startTime !== '') {
+        foreach ($slots as &$slot) {
+            if (($slot['start_time'] ?? '') === $startTime) {
+                $slot['duration'] = $duration;
+                $found = true;
+                break;
+            }
+        }
+        unset($slot);
+    }
+
+    // Fallback: si hay un único slot, actualizar; si hay varios, añadir uno nuevo
+    if (!$found) {
+        if (count($slots) === 1) {
+            $slots[0]['duration'] = $duration;
+        } else {
+            $slots[] = ['days' => $day >= 0 ? [$day] : [], 'start_time' => $startTime, 'duration' => $duration];
+        }
+    }
+
+    // Actualizar también campos legacy (primer slot)
+    $first = $slots[0] ?? null;
+    $saveData = [
+        'schedule_slots'      => $slots,
+        'schedule_days'       => $first ? ($first['days'] ?? []) : ($info['schedule_days'] ?? []),
+        'schedule_start_time' => $first ? ($first['start_time'] ?? '') : ($info['schedule_start_time'] ?? ''),
+        'schedule_duration'   => $first ? (int)($first['duration'] ?? 60) : $duration,
+    ];
+
+    if (saveProgramInfo($username, $programName, $saveData)) {
+        echo json_encode(['success' => true, 'duration' => $duration]);
+    } else {
+        echo json_encode(['success' => false, 'error' => 'Error al guardar']);
+    }
+    exit;
+}
+
 // ── Embed: edición de ficha de programa en iframe (desde seguimiento) ─────────
 // Se intercepta antes de cargar el layout para devolver una página mínima.
 if (isset($_GET['page']) && $_GET['page'] === 'program_edit_embed') {
