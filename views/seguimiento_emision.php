@@ -2174,8 +2174,15 @@ function ordenarResumen(criterio) {
             .then(function(r) { return r.json(); })
             .then(function(d) {
                 if (d.success) {
-                    _durEl.textContent   = dur + ' min';
-                    _durEl.dataset.dur   = dur;
+                    // Actualizar todas las celdas del mismo programa y misma hora
+                    var key  = _durEl.dataset.progkey;
+                    var time = _durEl.dataset.time;
+                    document.querySelectorAll('.dur-teo-edit').forEach(function(el) {
+                        if (el.dataset.progkey === key && el.dataset.time === time) {
+                            el.textContent  = dur + ' min';
+                            el.dataset.dur  = dur;
+                        }
+                    });
                     cerrarEditDur();
                     var t = document.createElement('div');
                     t.textContent = '✓ Duración guardada';
