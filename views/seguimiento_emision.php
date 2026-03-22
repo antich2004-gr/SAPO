@@ -2112,13 +2112,24 @@ function ordenarResumen(criterio) {
 <!-- ── Popover edición inline de duración teórica ──────────────────────────── -->
 <div id="edit-dur-popover"
      style="display:none; position:fixed; z-index:3000; background:#fff; border:1px solid #cbd5e0;
-            border-radius:8px; padding:14px 16px; box-shadow:0 4px 16px rgba(0,0,0,.18); min-width:210px;">
+            border-radius:8px; padding:14px 16px; box-shadow:0 4px 16px rgba(0,0,0,.18); min-width:200px;">
     <label for="edit-dur-input" style="font-size:12px; color:#6b7280; display:block; margin-bottom:8px; font-weight:600;">
-        Duración teórica (minutos)
+        Duración teórica
     </label>
     <div style="display:flex; gap:8px; align-items:center;">
-        <input type="number" id="edit-dur-input" min="1" max="720"
-               style="width:75px; padding:6px 8px; border:1px solid #cbd5e0; border-radius:5px; font-size:14px;">
+        <select id="edit-dur-input" style="padding:6px 8px; border:1px solid #cbd5e0; border-radius:5px; font-size:14px;">
+            <option value="15">15 min</option>
+            <option value="30">30 min</option>
+            <option value="45">45 min</option>
+            <option value="60">1 h</option>
+            <option value="90">1 h 30 min</option>
+            <option value="120">2 h</option>
+            <option value="150">2 h 30 min</option>
+            <option value="180">3 h</option>
+            <option value="240">4 h</option>
+            <option value="300">5 h</option>
+            <option value="360">6 h</option>
+        </select>
         <button onclick="guardarDur()" class="btn btn-success" style="padding:5px 12px; font-size:13px;">✓</button>
         <button onclick="cerrarEditDur()" class="btn btn-secondary" style="padding:5px 10px; font-size:13px;">✕</button>
     </div>
@@ -2133,13 +2144,15 @@ function ordenarResumen(criterio) {
         _durEl = el;
         var pop = document.getElementById('edit-dur-popover');
         var inp = document.getElementById('edit-dur-input');
-        inp.value = parseInt(el.dataset.dur) > 0 ? el.dataset.dur : '';
+        // Pre-seleccionar el valor actual (o el más cercano disponible)
+        var cur = parseInt(el.dataset.dur, 10);
+        inp.value = cur > 0 ? cur : 60;
         document.getElementById('edit-dur-error').style.display = 'none';
         var r = el.getBoundingClientRect();
         pop.style.top  = (r.bottom + 6 + window.scrollY) + 'px';
         pop.style.left = Math.min(r.left, window.innerWidth - 230) + 'px';
         pop.style.display = 'block';
-        inp.focus(); inp.select();
+        inp.focus();
     };
 
     window.cerrarEditDur = function() {
@@ -2150,11 +2163,6 @@ function ordenarResumen(criterio) {
     window.guardarDur = function() {
         var dur   = parseInt(document.getElementById('edit-dur-input').value, 10);
         var errEl = document.getElementById('edit-dur-error');
-        if (!dur || dur < 1 || dur > 720) {
-            errEl.textContent = 'Introduce un valor entre 1 y 720 minutos';
-            errEl.style.display = 'block';
-            return;
-        }
         var fd = new FormData();
         fd.append('action',       'update_slot_duration');
         fd.append('csrf_token',   document.getElementById('csrf-override').value);
@@ -2184,11 +2192,6 @@ function ordenarResumen(criterio) {
                 errEl.style.display = 'block';
             });
     };
-
-    // Enter en el input → guardar
-    document.getElementById('edit-dur-input').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') window.guardarDur();
-    });
 
     // Clic fuera del popover → cerrar
     document.addEventListener('click', function(e) {
