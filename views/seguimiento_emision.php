@@ -1193,10 +1193,12 @@ if ($hasSchedule) {
                                         $icon         = '📡';
                                         $isManualCell = true;
                                     } else {
-                                        $cls     = 'celda-directo-emitido';
-                                        $liveEnd = $liveCell['scheduledEnd'] ?? null;
-                                        $tooltip = 'Directo emitido ' . $liveCell['time'] . 'h' . ($liveEnd ? ' - ' . $liveEnd . 'h' : '') . ' (esperado ' . $liveCell['scheduledAt'] . 'h)';
-                                        $icon    = '📡';
+                                        $cls        = 'celda-directo-emitido';
+                                        $liveEnd    = $liveCell['scheduledEnd'] ?? null;
+                                        $_liveTitle = $listadoDetails[$progKey][$day['date']]['title'] ?? null;
+                                        $tooltip    = 'Directo emitido ' . $liveCell['time'] . 'h' . ($liveEnd ? ' - ' . $liveEnd . 'h' : '') . ' (esperado ' . $liveCell['scheduledAt'] . 'h)'
+                                                    . ($_liveTitle ? ' · ' . $_liveTitle : '');
+                                        $icon       = '📡';
                                     }
                                 } elseif ($liveStatus === 'missed') {
                                     $cls     = 'celda-directo-perdido';
@@ -1229,9 +1231,11 @@ if ($hasSchedule) {
                                         $icon         = '✎';
                                         $isManualCell = true;
                                     } else {
-                                        $cls     = 'celda-emitida';
-                                        $tooltip = 'Emitido a las ' . $cell['time'] . 'h (esperado ' . $cell['scheduledAt'] . 'h)';
-                                        $icon    = '✓';
+                                        $cls      = 'celda-emitida';
+                                        $_epTitle = $listadoDetails[$progKey][$day['date']]['title'] ?? null;
+                                        $tooltip  = 'Emitido a las ' . $cell['time'] . 'h (esperado ' . $cell['scheduledAt'] . 'h)'
+                                                  . ($_epTitle ? ' · ' . $_epTitle : '');
+                                        $icon     = '✓';
                                     }
                                     break;
                                 case 'missed':
