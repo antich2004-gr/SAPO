@@ -1055,6 +1055,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
 
             if (saveProgramInfo($username, $programName, $programInfo)) {
+                if (!empty($_POST['embed'])) {
+                    // Modo embed (iframe desde seguimiento): comunicar al padre y mostrar confirmación
+                    header_remove('X-Frame-Options');
+                    echo '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head><body style="margin:0;padding:28px 24px;font-family:sans-serif;">';
+                    echo '<p style="color:#166534;font-size:15px;font-weight:600;">✓ Cambios guardados correctamente</p>';
+                    echo '<script>window.parent.postMessage({type:"programSaved",program:' . json_encode($programName) . '},"*");</script>';
+                    echo '</body></html>';
+                    exit;
+                }
                 $message = "Información del programa guardada correctamente";
                 // Redirigir para cerrar el formulario de edición
                 header('Location: ?page=parrilla&section=programs&saved=1');
@@ -1576,6 +1585,48 @@ if (isset($_GET['action']) && $_GET['action'] == 'get_category_files' && isLogge
 }
 
 // ========== FIN ACCIONES GESTOR DE CATEGORÍAS ==========
+
+// ── Embed: edición de ficha de programa en iframe (desde seguimiento) ─────────
+// Se intercepta antes de cargar el layout para devolver una página mínima.
+if (isset($_GET['page']) && $_GET['page'] === 'program_edit_embed') {
+    if (!isLoggedIn() || isAdmin()) {
+        http_response_code(403); die('No autorizado');
+    }
+    $username = $_SESSION['username'];
+    $progKey  = trim($_GET['program'] ?? '');
+    if ($progKey === '') {
+        http_response_code(400); die('Programa no especificado');
+    }
+    $programInfo    = getProgramInfo($username, $progKey);
+    $editingProgram = $progKey;
+    $isEmbed        = true;
+    // Quitar X-Frame-Options para que el iframe desde la misma app funcione
+    header_remove('X-Frame-Options');
+    ?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar: <?php echo htmlEsc(getProgramNameFromKey($progKey)); ?></title>
+    <link rel="stylesheet" href="assets/style.css">
+    <style>
+        body { margin: 0; padding: 20px 24px 32px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; }
+        h2   { margin: 0 0 20px; font-size: 17px; color: #1e40af; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; }
+    </style>
+</head>
+<body>
+    <?php if ($programInfo === null): ?>
+    <div class="alert alert-error">Programa no encontrado: <?php echo htmlEsc($progKey); ?></div>
+    <?php else: ?>
+    <h2>✏️ Editar: <?php echo htmlEsc(getProgramNameFromKey($progKey)); ?><?php if (str_ends_with($progKey, '::live')): ?> <span style="font-size:12px; background:#dcfce7; color:#166534; padding:2px 7px; border-radius:4px; font-weight:600;">DIRECTO</span><?php endif; ?></h2>
+    <?php include INCLUDES_DIR . '/program_edit_form.php'; ?>
+    <?php endif; ?>
+</body>
+</html>
+    <?php
+    exit;
+}
 
 // Cargar vista
 require_once 'views/layout.php';

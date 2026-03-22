@@ -265,10 +265,9 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                     <!-- Contenido del formulario -->
                     <div style="padding:24px;">
 
-                <form method="POST">
-                    <input type="hidden" name="action" value="save_program">
-                    <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                    <input type="hidden" name="program_name" value="<?php echo htmlEsc($editingProgram); ?>">
+                <?php $isEmbed = false; include INCLUDES_DIR . '/program_edit_form.php'; ?>
+                <?php // fin include — el form y su JS ya están en program_edit_form.php
+                if (false): ?><form>
 
                     <div class="form-group">
                         <label>Tipo de lista de reproducción: <small>(importante para la parrilla)</small></label>
@@ -591,7 +590,7 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
                         </button>
                         <a href="?page=parrilla&section=programs" class="btn btn-secondary">Cancelar</a>
                     </div>
-                </form>
+                <?php endif; // cierra el bloque if(false) del código de formulario antiguo (dead code) ?>
                     </div><!-- /padding -->
                 </div><!-- /modal-box -->
             </div><!-- /modal-overlay -->
@@ -714,154 +713,9 @@ $showSavedMessage = isset($_GET['saved']) && $_GET['saved'] == '1';
 </div>
 
 <script>
-// ====== JAVASCRIPT PARA HORARIOS MÚLTIPLES ======
-// Inicializar contador dinámicamente desde los slots existentes en el DOM
-let slotCounter = document.querySelectorAll('.schedule-slot').length;
-
-/**
- * Añadir nuevo bloque de horario
- */
-function addScheduleSlot() {
-    const container = document.getElementById('schedule-slots-container');
-    const slotIndex = slotCounter++;
-
-    const slotHTML = `
-        <div class="schedule-slot" data-slot-index="${slotIndex}">
-            <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 15px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <strong style="color: #374151; font-size: 14px;">Horario #${slotIndex + 1}</strong>
-                    <button type="button" onclick="removeScheduleSlot(this)" class="btn" style="background: #dc2626; color: white; padding: 4px 8px; font-size: 12px;">
-                        🗑️ Eliminar
-                    </button>
-                </div>
-
-                <div style="margin-bottom: 12px;">
-                    <label style="font-size: 13px; color: #6b7280; margin-bottom: 8px; display: block;">Días de emisión:</label>
-                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                        <label style="display: inline-flex; align-items: center; padding: 6px 10px; background: white; border: 2px solid #d1d5db; border-radius: 6px; cursor: pointer;">
-                            <input type="checkbox" name="schedule_slots[${slotIndex}][days][]" value="1" style="margin-right: 5px; cursor: pointer;">
-                            <span>L</span>
-                        </label>
-                        <label style="display: inline-flex; align-items: center; padding: 6px 10px; background: white; border: 2px solid #d1d5db; border-radius: 6px; cursor: pointer;">
-                            <input type="checkbox" name="schedule_slots[${slotIndex}][days][]" value="2" style="margin-right: 5px; cursor: pointer;">
-                            <span>M</span>
-                        </label>
-                        <label style="display: inline-flex; align-items: center; padding: 6px 10px; background: white; border: 2px solid #d1d5db; border-radius: 6px; cursor: pointer;">
-                            <input type="checkbox" name="schedule_slots[${slotIndex}][days][]" value="3" style="margin-right: 5px; cursor: pointer;">
-                            <span>X</span>
-                        </label>
-                        <label style="display: inline-flex; align-items: center; padding: 6px 10px; background: white; border: 2px solid #d1d5db; border-radius: 6px; cursor: pointer;">
-                            <input type="checkbox" name="schedule_slots[${slotIndex}][days][]" value="4" style="margin-right: 5px; cursor: pointer;">
-                            <span>J</span>
-                        </label>
-                        <label style="display: inline-flex; align-items: center; padding: 6px 10px; background: white; border: 2px solid #d1d5db; border-radius: 6px; cursor: pointer;">
-                            <input type="checkbox" name="schedule_slots[${slotIndex}][days][]" value="5" style="margin-right: 5px; cursor: pointer;">
-                            <span>V</span>
-                        </label>
-                        <label style="display: inline-flex; align-items: center; padding: 6px 10px; background: white; border: 2px solid #d1d5db; border-radius: 6px; cursor: pointer;">
-                            <input type="checkbox" name="schedule_slots[${slotIndex}][days][]" value="6" style="margin-right: 5px; cursor: pointer;">
-                            <span>S</span>
-                        </label>
-                        <label style="display: inline-flex; align-items: center; padding: 6px 10px; background: white; border: 2px solid #d1d5db; border-radius: 6px; cursor: pointer;">
-                            <input type="checkbox" name="schedule_slots[${slotIndex}][days][]" value="0" style="margin-right: 5px; cursor: pointer;">
-                            <span>D</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <div>
-                        <label style="font-size: 13px; color: #6b7280; margin-bottom: 6px; display: block;">Hora inicio:</label>
-                        <input type="time" name="schedule_slots[${slotIndex}][start_time]" value=""
-                               style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
-                    </div>
-                    <div>
-                        <label style="font-size: 13px; color: #6b7280; margin-bottom: 6px; display: block;">Duración:</label>
-                        <select name="schedule_slots[${slotIndex}][duration]"
-                                style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
-                            <option value="15">15min</option>
-                            <option value="30">30min</option>
-                            <option value="45">45min</option>
-                            <option value="60" selected>1h</option>
-                            <option value="90">1h 30m</option>
-                            <option value="120">2h</option>
-                            <option value="150">2h 30m</option>
-                            <option value="180">3h</option>
-                            <option value="240">4h</option>
-                            <option value="300">5h</option>
-                            <option value="360">6h</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    container.insertAdjacentHTML('beforeend', slotHTML);
-    updateSlotNumbers();
-    updateDeleteButtons();
-}
-
-/**
- * Eliminar bloque de horario
- */
-function removeScheduleSlot(button) {
-    const slot = button.closest('.schedule-slot');
-    if (slot) {
-        slot.remove();
-        updateSlotNumbers();
-        updateDeleteButtons();
-    }
-}
-
-/**
- * Actualizar numeración de slots
- */
-function updateSlotNumbers() {
-    const slots = document.querySelectorAll('.schedule-slot');
-    slots.forEach((slot, index) => {
-        const title = slot.querySelector('strong');
-        if (title) {
-            title.textContent = `Horario #${index + 1}`;
-        }
-    });
-}
-
-/**
- * Mostrar/ocultar botones de eliminar
- * Solo mostrar si hay más de un slot
- */
-function updateDeleteButtons() {
-    const slots = document.querySelectorAll('.schedule-slot');
-    const deleteButtons = document.querySelectorAll('.schedule-slot button[onclick*="removeScheduleSlot"]');
-
-    deleteButtons.forEach(btn => {
-        if (slots.length > 1) {
-            btn.style.display = 'inline-block';
-        } else {
-            btn.style.display = 'none';
-        }
-    });
-}
-
-/**
- * Colapsar/expandir redes sociales
- */
-function toggleSocial() {
-    const fields = document.getElementById('social-fields');
-    const arrow = document.getElementById('social-arrow');
-    if (!fields) return;
-    const isOpen = fields.style.maxHeight !== '0px' && fields.style.maxHeight !== '';
-    if (isOpen) {
-        fields.style.maxHeight = '0';
-        fields.style.padding = '0';
-        arrow.textContent = '▼';
-    } else {
-        fields.style.maxHeight = '600px';
-        fields.style.padding = '16px';
-        arrow.textContent = '▲';
-    }
-}
+// Nota: addScheduleSlot, removeScheduleSlot, toggleSocial, etc. se cargan desde
+// includes/program_edit_form.php cuando hay un programa en edición.
+// Este bloque solo contiene la lógica de apertura del modal propia de parrilla.
 
 // Inicializar al cargar
 document.addEventListener('DOMContentLoaded', function() {

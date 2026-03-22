@@ -993,6 +993,12 @@ if ($hasSchedule) {
             <div class="listado-card-header" onclick="toggleListadoCard('<?php echo $bodyId; ?>', this)">
                 <span class="listado-chevron">▶</span>
                 <span class="listado-card-nombre"><?php echo htmlEsc(displayName($progDisplay)); ?></span>
+                <button type="button"
+                        class="btn-edit-prog"
+                        data-progkey="<?php echo htmlEsc($progKey); ?>"
+                        title="Editar ficha del programa"
+                        onclick="event.stopPropagation(); abrirFichaPrograma(this);"
+                        style="margin-left:6px; padding:2px 8px; font-size:12px; background:none; border:1px solid #cbd5e0; border-radius:5px; cursor:pointer; color:#4a5568; line-height:1.4; flex-shrink:0;">✏️</button>
                 <div class="listado-card-stats">
                     <?php if ($pct !== null): ?>
                     <span class="listado-pct <?php echo $hc; ?>"><?php echo $totalPlayed; ?>/<?php echo $totalDone; ?> · <?php echo $pct; ?>%</span>
@@ -2086,7 +2092,60 @@ function ordenarResumen(criterio) {
 
     // Cerrar con Escape
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') cerrarModalOverride();
+        if (e.key === 'Escape') {
+            cerrarModalOverride();
+            cerrarFichaPrograma();
+        }
     });
 })();
+</script>
+
+<!-- ── Modal iframe: edición de ficha de programa ──────────────────────────── -->
+<div id="prog-edit-overlay"
+     style="display:none; position:fixed; inset:0; z-index:2000; background:rgba(0,0,0,0.55); overflow-y:auto; padding:24px 16px;"
+     onclick="if(event.target===this) cerrarFichaPrograma();">
+    <div style="max-width:800px; margin:0 auto; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.3); position:relative;">
+        <button onclick="cerrarFichaPrograma()"
+                title="Cerrar"
+                style="position:absolute; top:10px; right:14px; z-index:10; background:none; border:none; font-size:22px; cursor:pointer; color:#6b7280; line-height:1;">✕</button>
+        <iframe id="prog-edit-iframe"
+                src=""
+                style="width:100%; min-height:75vh; border:none; display:block;"
+                onload="detectarGuardadoEmbed(this)"></iframe>
+    </div>
+</div>
+
+<script>
+function abrirFichaPrograma(btn) {
+    var key    = btn.dataset.progkey;
+    var iframe = document.getElementById('prog-edit-iframe');
+    var overlay = document.getElementById('prog-edit-overlay');
+    iframe.src = '?page=program_edit_embed&program=' + encodeURIComponent(key);
+    overlay.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function cerrarFichaPrograma() {
+    var overlay = document.getElementById('prog-edit-overlay');
+    var iframe  = document.getElementById('prog-edit-iframe');
+    overlay.style.display = 'none';
+    iframe.src = '';
+    document.body.style.overflow = '';
+}
+
+// Recibir mensaje del iframe cuando se guarda correctamente
+window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'programSaved') {
+        cerrarFichaPrograma();
+        // Toast de confirmación
+        var toast = document.createElement('div');
+        toast.textContent = '✓ Ficha guardada correctamente';
+        toast.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:3000;background:#166534;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,0.2);';
+        document.body.appendChild(toast);
+        setTimeout(function() { toast.remove(); }, 3000);
+    }
+    if (e.data && e.data.type === 'programCancelled') {
+        cerrarFichaPrograma();
+    }
+});
 </script>
