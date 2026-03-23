@@ -269,8 +269,9 @@ foreach ($livePrograms as $liveKey => $_) {
 $historyMap        = [];
 $historyDetails    = []; // [playlist][Y-m-d] = ['time'=>'HH:MM','title'=>...,'duration'=>secs]
 $historyEntryByDay = []; // [Y-m-d][] = ['playlist'=>...,'ts'=>...,'duration'=>secs]
-$liveSessionStarts = [];
-$dayTimeline       = []; // [Y-m-d => [['playlist'=>..., 'time'=>'HH:MM'], ...]]
+$liveSessionStarts    = [];
+$liveSessionStreamers = []; // [Y-m-d => ['HH:MM' => 'nombre_streamer']]
+$dayTimeline          = []; // [Y-m-d => [['playlist'=>..., 'time'=>'HH:MM'], ...]]
 $historyError      = false;
 
 if ($hasSchedule) {
@@ -316,25 +317,27 @@ if ($hasSchedule) {
 
             // Acumular timestamps de streamer para agrupar después
             if ($streamer !== '') {
-                $streamerTs[$dayStr][] = (int)$playedAt;
+                $streamerTs[$dayStr][] = ['ts' => (int)$playedAt, 'name' => $streamer];
             }
         }
 
         // Agrupar timestamps de streamer en sesiones (gap > 30 min = nueva sesión)
         // y guardar solo el inicio de cada sesión
-        foreach ($streamerTs as $dayStr => $timestamps) {
-            sort($timestamps);
+        foreach ($streamerTs as $dayStr => $entries) {
+            usort($entries, fn($a, $b) => $a['ts'] <=> $b['ts']);
             $sessionStart = null;
             $prevTs       = null;
-            foreach ($timestamps as $ts) {
-                if ($sessionStart === null || ($ts - $prevTs) > 1800) {
+            foreach ($entries as $entry) {
+                if ($sessionStart === null || ($entry['ts'] - $prevTs) > 1800) {
                     // Nueva sesión: guardar inicio
-                    $dt = new DateTime('@' . $ts);
+                    $dt = new DateTime('@' . $entry['ts']);
                     $dt->setTimezone($timezone);
-                    $liveSessionStarts[$dayStr][] = $dt->format('H:i');
-                    $sessionStart = $ts;
+                    $timeKey = $dt->format('H:i');
+                    $liveSessionStarts[$dayStr][]              = $timeKey;
+                    $liveSessionStreamers[$dayStr][$timeKey]   = $entry['name'];
+                    $sessionStart = $entry['ts'];
                 }
-                $prevTs = $ts;
+                $prevTs = $entry['ts'];
             }
         }
     }
@@ -555,7 +558,7 @@ function getMissedReason(
 }
 
 // ── Helper: estado de una celda ───────────────────────────────────────────────
-function cellStatus($programKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts, $overrides = []) {
+function cellStatus($programKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts, $overrides = [], $liveSessionStreamers = []) {
     $slots = array_filter(
         $programSchedules[$programKey] ?? [],
         fn($s) => $s['dayOfWeek'] === $day['dow']
@@ -584,13 +587,14 @@ function cellStatus($programKey, $day, $programSchedules, $historyMap, $today, $
         // Fuente 1: historial AzuraCast — entradas con streamer activo
         foreach ($liveSessionStarts[$day['date']] ?? [] as $t) {
             if (liveTiempoCoincide($scheduledAt, $t)) {
-                return ['status' => 'played', 'scheduledAt' => $scheduledAt, 'scheduledEnd' => $scheduledEnd, 'time' => $t];
+                $streamerName = $liveSessionStreamers[$day['date']][$t] ?? '';
+                return ['status' => 'played', 'scheduledAt' => $scheduledAt, 'scheduledEnd' => $scheduledEnd, 'time' => $t, 'streamer' => $streamerName];
             }
         }
         // Fuente 2: informes diarios (sección "Emisiones en directo:")
         foreach ($liveEmissionsPerDay[$day['date']] ?? [] as $t) {
             if (liveTiempoCoincide($scheduledAt, $t)) {
-                return ['status' => 'played', 'scheduledAt' => $scheduledAt, 'scheduledEnd' => $scheduledEnd, 'time' => $t];
+                return ['status' => 'played', 'scheduledAt' => $scheduledAt, 'scheduledEnd' => $scheduledEnd, 'time' => $t, 'streamer' => ''];
             }
         }
         // Override manual para directos
@@ -660,7 +664,7 @@ if ($hasSchedule) {
             if ($firstSeen && $day['date'] < $firstSeen) continue;
             if ($lastActive && $day['date'] > $lastActive) continue;
 
-            $cell   = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts, $overrides);
+            $cell   = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts, $overrides, $liveSessionStreamers);
             $status = $cell['status'];
             if ($isLive) {
                 if ($status === 'played')     { $totals['live_esperados']++; $totals['live_efectivos']++; }
@@ -677,7 +681,7 @@ if ($hasSchedule) {
                 $liveActiveOnDay = (!$liveFirstSeen || $day['date'] >= $liveFirstSeen)
                                 && (!$liveLastActive || $day['date'] <= $liveLastActive);
                 if ($liveActiveOnDay) {
-                    $liveCell   = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts, $overrides);
+                    $liveCell   = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts, $overrides, $liveSessionStreamers);
                     $liveStatus = $liveCell['status'];
                     if ($liveStatus === 'played')     { $totals['live_esperados']++; $totals['live_efectivos']++; }
                     elseif ($liveStatus === 'missed') { $totals['live_esperados']++; }
@@ -730,7 +734,7 @@ if ($hasSchedule) {
                 if ($liveActive) {
                     $lc = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today,
                                      $historyNameMap, $livePrograms, $liveEmissionsPerDay,
-                                     $liveSessionStarts, $overrides);
+                                     $liveSessionStarts, $overrides, $liveSessionStreamers);
                     if ($lc['status'] === 'played' || $lc['status'] === 'missed') {
                         $cellResult   = $lc;
                         $effectiveKey = $linkedLiveKey;
@@ -745,7 +749,7 @@ if ($hasSchedule) {
             if (!$usedLive) {
                 $c = cellStatus($progKey, $day, $programSchedules, $historyMap, $today,
                                $historyNameMap, $livePrograms, $liveEmissionsPerDay,
-                               $liveSessionStarts, $overrides);
+                               $liveSessionStarts, $overrides, $liveSessionStreamers);
                 if ($c['status'] === 'played' || $c['status'] === 'missed') {
                     $cellResult = $c;
                 }
@@ -1393,7 +1397,7 @@ if ($hasSchedule) {
                             $liveExistsOnDay = (!$liveFirstSeen || $day['date'] >= $liveFirstSeen)
                                            && (!$liveLastActive || $day['date'] <= $liveLastActive);
                             if ($liveExistsOnDay) {
-                                $liveCell   = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts, $overrides);
+                                $liveCell   = cellStatus($linkedLiveKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts, $overrides, $liveSessionStreamers);
                                 $liveStatus = $liveCell['status'];
                                 $overrideProgKey = $linkedLiveKey;
                                 $isLiveCell      = true;
@@ -1404,10 +1408,12 @@ if ($hasSchedule) {
                                         $icon         = '📡';
                                         $isManualCell = true;
                                     } else {
-                                        $cls        = 'celda-directo-emitido';
-                                        $liveEnd    = $liveCell['scheduledEnd'] ?? null;
-                                        $_liveTitle = $listadoDetails[$progKey][$day['date']]['title'] ?? null;
+                                        $cls             = 'celda-directo-emitido';
+                                        $liveEnd         = $liveCell['scheduledEnd'] ?? null;
+                                        $_liveTitle      = $listadoDetails[$progKey][$day['date']]['title'] ?? null;
+                                        $_liveStreamer    = $liveCell['streamer'] ?? '';
                                         $tooltip    = 'Directo emitido ' . $liveCell['time'] . 'h' . ($liveEnd ? ' - ' . $liveEnd . 'h' : '') . ' (esperado ' . $liveCell['scheduledAt'] . 'h)'
+                                                    . ($_liveStreamer ? ' · ' . $_liveStreamer : '')
                                                     . ($_liveTitle ? ' · ' . $_liveTitle : '');
                                         $icon       = '📡';
                                     }
@@ -1432,7 +1438,7 @@ if ($hasSchedule) {
                     <?php
                         // If no live override, use automated (or standalone live) status
                         if ($cls === '') {
-                            $cell   = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts, $overrides);
+                            $cell   = cellStatus($progKey, $day, $programSchedules, $historyMap, $today, $historyNameMap, $livePrograms, $liveEmissionsPerDay, $liveSessionStarts, $overrides, $liveSessionStreamers);
                             $status = $cell['status'];
                             switch ($status) {
                                 case 'played':
@@ -1442,11 +1448,13 @@ if ($hasSchedule) {
                                         $icon         = '✎';
                                         $isManualCell = true;
                                     } else {
-                                        $cls      = 'celda-emitida';
-                                        $_epTitle = $listadoDetails[$progKey][$day['date']]['title'] ?? null;
+                                        $cls             = $isLiveProg ? 'celda-directo-emitido' : 'celda-emitida';
+                                        $_epTitle        = $listadoDetails[$progKey][$day['date']]['title'] ?? null;
+                                        $_epStreamer      = $isLiveProg ? ($cell['streamer'] ?? '') : '';
                                         $tooltip  = 'Emitido a las ' . $cell['time'] . 'h (esperado ' . $cell['scheduledAt'] . 'h)'
+                                                  . ($_epStreamer ? ' · ' . $_epStreamer : '')
                                                   . ($_epTitle ? ' · ' . $_epTitle : '');
-                                        $icon     = '✓';
+                                        $icon     = $isLiveProg ? '📡' : '✓';
                                     }
                                     break;
                                 case 'missed':
