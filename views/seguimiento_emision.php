@@ -518,7 +518,7 @@ function getMissedReason(
                 }
             }
 
-            if ($schedEndTs !== null && $overrunEndTs >= $schedEndTs) {
+            if ($schedEndTs !== null && $schedEndTs > $schedTs && $overrunEndTs >= $schedEndTs) {
                 // El overrun superó el fin del slot → AzuraCast no pudo activar el programa
                 $slotMinutes = (int)round(($schedEndTs - $schedTs) / 60);
                 return "«{$dispName}» se extendió ~{$overrunMin} min y el slot caducó"
@@ -554,11 +554,13 @@ function getMissedReason(
             // Preferir título de metadatos; si no, usar nombre de fichero
             $ep = $title !== '' ? $title : ($path !== '' ? basename($path) : null);
         }
-        $epStr = $ep !== null ? ' (ej: "' . $ep . '")' : '';
+        $epStr = $ep !== null ? ' («' . $ep . '»)' : '';
         $noun  = $n === 1 ? 'episodio' : 'episodios';
-        return "La playlist tiene {$n} {$noun} disponibles{$epStr} — el programa no se activó por otro motivo";
+        // La playlist tiene contenido AHORA, pero el episodio puede haberse subido después del fallo.
+        // Mostramos la causa más probable sin afirmar con certeza.
+        return "Posiblemente sin episodio ese día — la playlist tiene {$n} {$noun} actualmente{$epStr}";
     }
-    return 'El programa no se activó — probablemente la playlist estaba vacía o sin episodio disponible';
+    return 'Sin episodio disponible — la playlist estaba vacía';
 }
 
 // ── Helper: estado de una celda ───────────────────────────────────────────────
