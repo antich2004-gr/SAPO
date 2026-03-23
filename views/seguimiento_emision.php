@@ -1011,8 +1011,9 @@ if ($hasSchedule) {
         <!-- Toggle de vista + filtros -->
         <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;" class="no-print">
             <div style="display:flex; gap:3px;">
-                <button id="btn-vista-resumen" onclick="toggleVista('resumen')" class="btn btn-secondary" style="font-size:12px; padding:4px 12px;">≡ Vista cronológica</button>
-                <button id="btn-vista-detalle" onclick="toggleVista('detalle')" class="btn btn-secondary" style="font-size:12px; padding:4px 12px;">⊞ Vista por programas</button>
+                <button id="btn-vista-resumen"   onclick="toggleVista('resumen')"   class="btn btn-secondary" style="font-size:12px; padding:4px 12px;">≡ Vista cronológica</button>
+                <button id="btn-vista-programas" onclick="toggleVista('programas')" class="btn btn-secondary" style="font-size:12px; padding:4px 12px;">☰ Vista por programas</button>
+                <button id="btn-vista-detalle"   onclick="toggleVista('detalle')"   class="btn btn-secondary" style="font-size:12px; padding:4px 12px;">⊞ Rejilla</button>
             </div>
             <div id="filtros-cronologico" style="display:flex; align-items:center; gap:6px;">
                 <span style="font-size:11px; color:#718096;">Filtrar por:</span>
@@ -1114,6 +1115,172 @@ if ($hasSchedule) {
             <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
+
+        <?php else: ?>
+        <p style="color:#718096; font-size:13px; margin:0;">No hay datos de programación disponibles.</p>
+        <?php endif; ?>
+    </div>
+
+    <!-- ── Vista por programas (fichas colapsables) ─────────────────────────── -->
+    <div id="vista-programas" style="padding:16px 24px 24px; display:none;">
+        <?php if ($hasSchedule && !empty($progSummary)):
+            $resTotalFails = 0; $resTotalProgs = 0;
+            foreach ($progSummary as $s2) { $resTotalFails += $s2['missed'] + $s2['live_missed']; $resTotalProgs++; }
+        ?>
+        <!-- Cabecera -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid #e2e8f0; gap:12px; flex-wrap:wrap;">
+            <span style="font-size:13px; color:#718096;">
+                <strong style="color:#2d3748;"><?php echo $resTotalProgs; ?></strong> programa<?php echo $resTotalProgs !== 1 ? 's' : ''; ?>
+                <?php if ($resTotalFails > 0): ?>
+                · <strong style="color:#c53030;"><?php echo $resTotalFails; ?></strong> emisión<?php echo $resTotalFails !== 1 ? 'es' : ''; ?> perdida<?php echo $resTotalFails !== 1 ? 's' : ''; ?>
+                <?php else: ?>
+                · <strong style="color:#276749;">✓ Todo correcto</strong>
+                <?php endif; ?>
+            </span>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:11px; color:#a0aec0;">Ordenar:</span>
+                <button id="sort-fallos" onclick="ordenarResumen('fallos')" class="btn btn-secondary btn-vista-activo" style="font-size:11px; padding:3px 10px;">% Fallos</button>
+                <button id="sort-nombre" onclick="ordenarResumen('nombre')" class="btn btn-secondary" style="font-size:11px; padding:3px 10px;">Nombre</button>
+            </div>
+        </div>
+
+        <div id="lista-resumen" style="display:flex; flex-direction:column; gap:6px;">
+        <?php
+        $dowNames = ['dom','lun','mar','mié','jue','vie','sáb'];
+        $cardIdx  = 0;
+        foreach ($progSummary as $progKey => $s):
+            $cardIdx++;
+            $bodyId        = 'lbody-' . $cardIdx;
+            $progDisplay   = $displayNameMap[$progKey] ?? $progKey;
+            $totalFails    = $s['missed'] + $s['live_missed'];
+            $totalPlayed   = $s['played'] + $s['live_played'];
+            $linkedLiveKey = $s['linkedLiveKey'];
+            $totalDone     = $totalPlayed + $totalFails;
+            $pct           = $totalDone > 0 ? round($totalPlayed / $totalDone * 100) : null;
+            if ($totalFails === 0)     $hc = 'rh-ok';
+            elseif ($totalFails <= 2)  $hc = 'rh-warn';
+            else                       $hc = 'rh-crit';
+
+            $progEmissions      = $listadoDetails[$progKey] ?? [];
+            $scheduledEmissions = array_filter($progEmissions, fn($e) => $e['status'] !== 'none');
+            ksort($scheduledEmissions);
+        ?>
+        <div class="listado-card <?php echo $hc; ?>"
+             data-name="<?php echo htmlEsc(mb_strtolower(displayName($progDisplay))); ?>"
+             data-fails="<?php echo $totalFails; ?>"
+             data-pct="<?php echo $pct ?? 100; ?>">
+
+            <!-- Cabecera clicable -->
+            <div class="listado-card-header" onclick="toggleListadoCard('<?php echo $bodyId; ?>', this)">
+                <span class="listado-chevron">▶</span>
+                <span class="listado-card-nombre"><?php echo htmlEsc(displayName($progDisplay)); ?></span>
+                <button type="button"
+                        class="btn-edit-prog"
+                        data-progkey="<?php echo htmlEsc($progKey); ?>"
+                        title="Editar ficha del programa"
+                        onclick="event.stopPropagation(); abrirFichaPrograma(this);"
+                        style="margin-left:6px; padding:2px 8px; font-size:12px; background:none; border:1px solid #cbd5e0; border-radius:5px; cursor:pointer; color:#4a5568; line-height:1.4; flex-shrink:0;">✏️</button>
+                <div class="listado-card-stats">
+                    <?php if ($pct !== null): ?>
+                    <span class="listado-pct <?php echo $hc; ?>"><?php echo $totalPlayed; ?>/<?php echo $totalDone; ?> · <?php echo $pct; ?>%</span>
+                    <?php endif; ?>
+                    <span style="font-size:12px; color:#276749; white-space:nowrap;"><?php echo $totalPlayed; ?> emitidos</span>
+                    <?php if ($totalFails > 0): ?>
+                    <span class="badge-falla"><?php echo $totalFails; ?> sin emitir</span>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Cuerpo colapsable -->
+            <div class="listado-card-body" id="<?php echo $bodyId; ?>">
+                <?php if (!empty($scheduledEmissions)): ?>
+                <table class="listado-detail-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>H. teórica</th>
+                            <th>H. real</th>
+                            <th>Dur. teórica</th>
+                            <th>Dur. real</th>
+                            <th>Diferencia</th>
+                            <th>Episodio emitido</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($scheduledEmissions as $eDate => $em):
+                        $eParts     = explode('-', $eDate);
+                        $eDow       = (int)date('w', mktime(0,0,0,(int)$eParts[1],(int)$eParts[2],(int)$eParts[0]));
+                        $eDateLabel = $dowNames[$eDow] . ' ' . (int)$eParts[2] . '/' . (int)$eParts[1];
+
+                        $durTeoStr  = ($em['schDurMin'] > 0) ? $em['schDurMin'] . ' min' : '—';
+                        $durRealStr = '—';
+                        $diffStr    = '—';
+                        $diffClass  = '';
+                        if (!empty($em['realDurSec'])) {
+                            $realMin    = (int)round($em['realDurSec'] / 60);
+                            $durRealStr = $realMin . ' min';
+                            if ($em['schDurMin'] > 0) {
+                                $diff      = $realMin - $em['schDurMin'];
+                                $diffStr   = ($diff >= 0 ? '+' : '') . $diff . ' min';
+                                $diffClass = $diff > 5 ? 'ld-diff-over' : ($diff < -5 ? 'ld-diff-under' : 'ld-diff-ok');
+                            }
+                        }
+
+                        $isLive   = $em['isLive'];
+                        $ovKey    = ($em['isLive'] && $linkedLiveKey) ? $linkedLiveKey : $progKey;
+                        $isManual = $em['isManual'];
+
+                        if ($em['status'] === 'played')       $rowClass = 'ld-row-ok';
+                        elseif ($em['status'] === 'missed')   $rowClass = 'ld-row-missed';
+                        else                                   $rowClass = '';
+                    ?>
+                    <tr class="<?php echo $rowClass; ?>">
+                        <td><?php if ($isLive): ?><span class="ld-badge-live" title="Emisión en directo">📡</span> <?php endif; ?><?php echo htmlEsc($eDateLabel); ?></td>
+                        <td><?php echo htmlEsc($em['schTime']); ?><?php if ($em['schEnd']): ?><span class="ld-end-time"> –<?php echo htmlEsc($em['schEnd']); ?></span><?php endif; ?></td>
+                        <td><?php echo $em['realTime'] ? htmlEsc($em['realTime']) : '<span class="ld-no-data">—</span>'; ?></td>
+                        <td><span class="dur-teo-edit"
+                                  data-progkey="<?php echo htmlEsc($ovKey); ?>"
+                                  data-day="<?php echo $eDow; ?>"
+                                  data-time="<?php echo htmlEsc($em['schTime'] ?? ''); ?>"
+                                  data-dur="<?php echo (int)($em['schDurMin'] ?? 0); ?>"
+                                  onclick="abrirEditDur(this)"
+                                  title="Clic para editar duración teórica"
+                                  style="cursor:pointer; border-bottom:1px dashed #94a3b8; white-space:nowrap;"
+                            ><?php echo htmlEsc($durTeoStr); ?></span></td>
+                        <td><?php echo htmlEsc($durRealStr); ?></td>
+                        <td class="<?php echo $diffClass; ?>"><?php echo htmlEsc($diffStr); ?></td>
+                        <td class="ld-title"><?php echo $em['title'] ? htmlEsc($em['title']) : '<span class="ld-no-data">—</span>'; ?></td>
+                        <td>
+                            <?php if ($em['status'] === 'played'): ?>
+                                <span class="ld-status-ok">✓</span>
+                            <?php elseif ($em['status'] === 'missed'): ?>
+                                <span class="ld-status-miss celda-corregible"
+                                      data-prog="<?php echo htmlEsc($ovKey); ?>"
+                                      data-date="<?php echo htmlEsc($eDate); ?>"
+                                      data-live="<?php echo $isLive ? '1' : '0'; ?>"
+                                      data-manual="<?php echo $isManual ? '1' : '0'; ?>"
+                                      title="Clic para marcar como emitida">✗</span>
+                            <?php else: ?>
+                                <span class="ld-no-data">—</span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <?php if ($em['status'] === 'missed' && $em['missedReason']): ?>
+                    <tr class="ld-row-reason">
+                        <td colspan="8">ℹ️ <?php echo htmlEsc($em['missedReason']); ?></td>
+                    </tr>
+                    <?php endif; ?>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <?php else: ?>
+                <p style="margin:0; padding:12px 16px; font-size:13px; color:#718096;">Sin historial de emisión este mes (no se encontraron registros en AzuraCast).</p>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endforeach; ?>
         </div>
 
         <?php else: ?>
@@ -1819,29 +1986,59 @@ function exportarImagen() {
 }
 </script>
 
-<!-- ── Toggle de vista cronológica / por programas ───────────────────────────── -->
+<!-- ── Toggle de vistas: cronológica / por programas / rejilla ───────────────── -->
 <script>
 function toggleVista(vista) {
-    var r    = document.getElementById('vista-resumen');
-    var d    = document.getElementById('vista-detalle');
-    var btnR = document.getElementById('btn-vista-resumen');
-    var btnD = document.getElementById('btn-vista-detalle');
-    var fc   = document.getElementById('filtros-cronologico');
-    if (vista === 'resumen') {
-        if (r) r.style.display = '';
-        if (d) d.style.display = 'none';
-        if (btnR) btnR.classList.add('btn-vista-activo');
-        if (btnD) btnD.classList.remove('btn-vista-activo');
-        if (fc) fc.style.display = '';
-    } else {
-        if (r) r.style.display = 'none';
-        if (d) d.style.display = '';
-        if (btnR) btnR.classList.remove('btn-vista-activo');
-        if (btnD) btnD.classList.add('btn-vista-activo');
-        if (fc) fc.style.display = 'none';
-    }
+    var vistas = ['resumen', 'programas', 'detalle'];
+    vistas.forEach(function(v) {
+        var el  = document.getElementById('vista-' + v);
+        var btn = document.getElementById('btn-vista-' + v);
+        var show = (v === vista);
+        if (el)  el.style.display  = show ? '' : 'none';
+        if (btn) btn.classList.toggle('btn-vista-activo', show);
+    });
+    var fc = document.getElementById('filtros-cronologico');
+    if (fc) fc.style.display = (vista === 'resumen') ? '' : 'none';
 }
 toggleVista('resumen');
+
+function toggleListadoCard(bodyId, headerEl) {
+    var body    = document.getElementById(bodyId);
+    var chevron = headerEl ? headerEl.querySelector('.listado-chevron') : null;
+    if (!body) return;
+    var open = body.style.display !== 'none' && body.style.display !== '';
+    body.style.display = open ? 'none' : 'block';
+    if (chevron) chevron.classList.toggle('open', !open);
+}
+
+var _ordenActual = 'fallos';
+var _ordenDir    = { fallos: 'desc', nombre: 'asc' };
+
+function ordenarResumen(criterio) {
+    if (criterio === _ordenActual) {
+        _ordenDir[criterio] = _ordenDir[criterio] === 'asc' ? 'desc' : 'asc';
+    } else {
+        _ordenActual = criterio;
+    }
+    var dir   = _ordenDir[criterio];
+    var arrow = { asc: ' ↑', desc: ' ↓' };
+    var btnF  = document.getElementById('sort-fallos');
+    var btnN  = document.getElementById('sort-nombre');
+    if (btnF) { btnF.classList.toggle('btn-vista-activo', criterio === 'fallos'); btnF.textContent = '% Fallos' + (criterio === 'fallos' ? arrow[dir] : ''); }
+    if (btnN) { btnN.classList.toggle('btn-vista-activo', criterio === 'nombre'); btnN.textContent = 'Nombre'  + (criterio === 'nombre'  ? arrow[dir] : ''); }
+
+    var lista = document.getElementById('lista-resumen');
+    if (!lista) return;
+    var rows = Array.from(lista.querySelectorAll(':scope > .listado-card'));
+    rows.sort(function(a, b) {
+        var r = criterio === 'nombre'
+            ? (a.dataset.name || '').localeCompare(b.dataset.name || '', 'es')
+            : (parseInt(b.dataset.fails || 0) - parseInt(a.dataset.fails || 0)) ||
+              (parseInt(a.dataset.pct   || 100) - parseInt(b.dataset.pct   || 100));
+        return dir === 'asc' ? -r : r;
+    });
+    rows.forEach(function(r) { lista.appendChild(r); });
+}
 
 // ── Vista cronológica: filtro y paginación ────────────────────────────────────
 var _cronoFiltro = null;   // null | 'played' | 'missed'
@@ -2119,14 +2316,14 @@ _cronoRender();
         });
     }
 
-    // Event delegation en la vista listado (spans de estado y chips de fecha)
-    var resumen = document.getElementById('vista-resumen');
-    if (resumen) {
-        resumen.addEventListener('click', function(e) {
+    // Event delegation en vista cronológica y vista por programas
+    ['vista-resumen', 'vista-programas'].forEach(function(id) {
+        var contenedor = document.getElementById(id);
+        if (contenedor) contenedor.addEventListener('click', function(e) {
             var el = e.target.closest('.celda-corregible');
             if (el) abrirModal(el);
         });
-    }
+    });
 
     // Cerrar al hacer clic fuera del modal
     document.getElementById('modal-override').addEventListener('click', function(e) {
