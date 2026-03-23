@@ -361,34 +361,35 @@ if ($hasSchedule) {
             }
         }
 
-        // Fallback: si no se obtuvieron broadcasts de la API, inferir sesiones
-        // desde el campo streamer del historial de canciones
-        if (empty($broadcasts)) {
-            foreach ($streamerTsFallback as $dayStr => $entries) {
-                usort($entries, fn($a, $b) => $a['ts'] <=> $b['ts']);
-                $sessionStartTs  = null;
-                $sessionStartKey = null;
-                $prevTs          = null;
-                $prevDur         = 0;
-                foreach ($entries as $entry) {
-                    if ($sessionStartTs === null || ($entry['ts'] - $prevTs) > 1800) {
-                        if ($sessionStartKey !== null) {
-                            $liveSessionDurations[$dayStr][$sessionStartKey] = ($prevTs + $prevDur) - $sessionStartTs ?: null;
-                        }
-                        $dt = new DateTime('@' . $entry['ts']);
-                        $dt->setTimezone($timezone);
-                        $timeKey = $dt->format('H:i');
-                        $liveSessionStarts[$dayStr][]            = $timeKey;
-                        $liveSessionStreamers[$dayStr][$timeKey] = $entry['name'];
-                        $sessionStartTs  = $entry['ts'];
-                        $sessionStartKey = $timeKey;
+        // Fallback por día: para días donde el API de broadcasts no aportó sesiones,
+        // inferir sesiones desde el campo streamer del historial de canciones.
+        // Esto cubre emisoras sin streamers registrados en AzuraCast o días concretos
+        // donde el broadcast no fue capturado por el API pero sí por el historial.
+        foreach ($streamerTsFallback as $dayStr => $entries) {
+            if (!empty($liveSessionStarts[$dayStr])) continue; // ya cubierto por broadcasts
+            usort($entries, fn($a, $b) => $a['ts'] <=> $b['ts']);
+            $sessionStartTs  = null;
+            $sessionStartKey = null;
+            $prevTs          = null;
+            $prevDur         = 0;
+            foreach ($entries as $entry) {
+                if ($sessionStartTs === null || ($entry['ts'] - $prevTs) > 1800) {
+                    if ($sessionStartKey !== null) {
+                        $liveSessionDurations[$dayStr][$sessionStartKey] = ($prevTs + $prevDur) - $sessionStartTs ?: null;
                     }
-                    $prevTs  = $entry['ts'];
-                    $prevDur = $entry['duration'];
+                    $dt = new DateTime('@' . $entry['ts']);
+                    $dt->setTimezone($timezone);
+                    $timeKey = $dt->format('H:i');
+                    $liveSessionStarts[$dayStr][]            = $timeKey;
+                    $liveSessionStreamers[$dayStr][$timeKey] = $entry['name'];
+                    $sessionStartTs  = $entry['ts'];
+                    $sessionStartKey = $timeKey;
                 }
-                if ($sessionStartKey !== null) {
-                    $liveSessionDurations[$dayStr][$sessionStartKey] = ($prevTs + $prevDur) - $sessionStartTs ?: null;
-                }
+                $prevTs  = $entry['ts'];
+                $prevDur = $entry['duration'];
+            }
+            if ($sessionStartKey !== null) {
+                $liveSessionDurations[$dayStr][$sessionStartKey] = ($prevTs + $prevDur) - $sessionStartTs ?: null;
             }
         }
     }
