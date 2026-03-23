@@ -419,7 +419,8 @@ function getMissedReason(
     $liquidsoapSrcId     = null,
     $historyEntryByDay   = [],
     $programSchedules    = [],
-    $playlistContentInfo = null   // ['num_songs'=>N,'playlist_id'=>ID,'sample'=>[...]]
+    $playlistContentInfo = null,  // ['num_songs'=>N,'playlist_id'=>ID,'sample'=>[...]]
+    $playlistDisplayName = []     // [azPlaylistName => displayName]
 ) {
     // ── PRIORIDAD 0: Log de Liquidsoap (fuente más precisa) ──────────────────
     // Solo para programas automáticos; los directos se diagnostican distinto.
@@ -491,7 +492,12 @@ function getMissedReason(
         if (isset($programSchedules[$pl])) {
             // Era un programa programado que se extendió (el overrunBy lo mostrará aparte,
             // pero si no se captó allí —overrun < 10 min— damos contexto aquí)
-            return 'El programa anterior aún estaba en emisión al comenzar esta franja';
+            $overrunMin = (int)ceil(
+                ($activeAtStart['ts'] + $activeAtStart['duration'] - $schedTs) / 60
+            );
+            $dispName = $playlistDisplayName[$pl] ?? $pl;
+            return "«{$dispName}» aún estaba en emisión al comenzar esta franja"
+                 . " (se extendió ~{$overrunMin} min)";
         }
         // Era música u otro contenido de relleno.
         // Un overrun de ≤ 2 min es el comportamiento normal de AzuraCast cuando un
@@ -832,7 +838,7 @@ if ($hasSchedule) {
                                                $effectiveKey, $dailyRep,
                                                $liquidsoapLog, $lsSrcId,
                                                $historyEntryByDay, $programSchedules,
-                                               $plContentInfo);
+                                               $plContentInfo, $playlistDisplayName);
                 $schedTs = mktime(
                     (int)substr($schTime, 0, 2),
                     (int)substr($schTime, 3, 2),
@@ -1240,7 +1246,7 @@ if ($hasSchedule) {
                                     }
                                 } elseif ($liveStatus === 'missed') {
                                     $cls     = 'celda-directo-perdido';
-                                    $reason  = getMissedReason($liveCell['scheduledAt'], $day['date'], $dayTimeline, true, $linkedLiveKey, $dailyReports[$day['date']] ?? null, null, null, $historyEntryByDay, $programSchedules);
+                                    $reason  = getMissedReason($liveCell['scheduledAt'], $day['date'], $dayTimeline, true, $linkedLiveKey, $dailyReports[$day['date']] ?? null, null, null, $historyEntryByDay, $programSchedules, null, $playlistDisplayName);
                                     $tooltip = 'Directo no emitido (esperado ' . $liveCell['scheduledAt'] . 'h) · ' . $reason . ' · ✎ Clic para corregir';
                                     $icon    = '📡';
                                 } elseif ($liveStatus === 'expected') {
@@ -1278,7 +1284,7 @@ if ($hasSchedule) {
                                     break;
                                 case 'missed':
                                     $cls     = 'celda-perdida';
-                                    $reason  = getMissedReason($cell['scheduledAt'], $day['date'], $dayTimeline, $isLiveProg, $progKey, $dailyReports[$day['date']] ?? null, null, null, $historyEntryByDay, $programSchedules);
+                                    $reason  = getMissedReason($cell['scheduledAt'], $day['date'], $dayTimeline, $isLiveProg, $progKey, $dailyReports[$day['date']] ?? null, null, null, $historyEntryByDay, $programSchedules, null, $playlistDisplayName);
                                     $tooltip = 'No emitido (esperado ' . $cell['scheduledAt'] . 'h) · ' . $reason . ' · ✎ Clic para corregir';
                                     $icon    = '✗';
                                     break;
