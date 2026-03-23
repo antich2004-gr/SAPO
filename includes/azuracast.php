@@ -1156,15 +1156,29 @@ function getAzuracastStreamerBroadcasts($username, $startTimestamp, $endTimestam
     if (!empty($apiKey)) $headers['header'] = 'X-API-Key: ' . $apiKey;
     $context = stream_context_create(['http' => $headers]);
 
+    // Helper: convierte timestamp de AzuraCast (int Unix o string ISO 8601) a int Unix
+    $toTs = function($v): int {
+        if (is_null($v) || $v === '') return 0;
+        if (is_numeric($v)) return (int)$v;
+        $ts = strtotime((string)$v);
+        return ($ts !== false) ? $ts : 0;
+    };
+
     // 1. Obtener lista de streamers de la emisora
     $url      = rtrim($apiUrl, '/') . '/station/' . $stationId . '/streamers';
     $response = @file_get_contents($url, false, $context);
     if ($response === false) {
-        error_log("AzuraCast Broadcasts: error al obtener streamers desde $url");
+        error_log("AzuraCast Broadcasts: error HTTP al obtener streamers desde $url");
         return false;
     }
-    $streamers = json_decode($response, true);
-    if (!is_array($streamers)) return false;
+    $decoded = json_decode($response, true);
+    if (!is_array($decoded)) {
+        error_log("AzuraCast Broadcasts: respuesta no válida de streamers (station $stationId): " . substr($response, 0, 200));
+        return false;
+    }
+    // La API puede devolver array plano o {"rows":[...],"total":N}
+    $streamers = isset($decoded['rows']) ? $decoded['rows'] : $decoded;
+    error_log("AzuraCast Broadcasts: " . count($streamers) . " streamers en station $stationId");
 
     // 2. Para cada streamer, obtener sus broadcasts y filtrar por el mes
     $result = [];
@@ -1175,13 +1189,21 @@ function getAzuracastStreamerBroadcasts($username, $startTimestamp, $endTimestam
 
         $url      = rtrim($apiUrl, '/') . '/station/' . $stationId . '/streamers/' . $streamerId . '/broadcasts';
         $response = @file_get_contents($url, false, $context);
-        if ($response === false) continue;
-        $broadcasts = json_decode($response, true);
-        if (!is_array($broadcasts)) continue;
+        if ($response === false) {
+            error_log("AzuraCast Broadcasts: error HTTP al obtener broadcasts de streamer $streamerId");
+            continue;
+        }
+        $decoded = json_decode($response, true);
+        if (!is_array($decoded)) continue;
+        $bcList = isset($decoded['rows']) ? $decoded['rows'] : $decoded;
 
-        foreach ($broadcasts as $bc) {
-            $start = isset($bc['timestamp_start']) ? (int)$bc['timestamp_start'] : 0;
-            $end   = isset($bc['timestamp_end'])   ? (int)$bc['timestamp_end']   : null;
+        error_log("AzuraCast Broadcasts: streamer $streamerId ($displayName) → " . count($bcList) . " broadcasts");
+
+        foreach ($bcList as $bc) {
+            $start = $toTs($bc['timestamp_start'] ?? null);
+            $endRaw = $bc['timestamp_end'] ?? null;
+            $end   = (!is_null($endRaw) && $endRaw !== '' && $endRaw !== 0 && $endRaw !== '0')
+                     ? $toTs($endRaw) : null;
             if (!$start) continue;
             // Descartar broadcasts fuera del rango del mes
             if ($start > $endTimestamp) continue;
@@ -1197,7 +1219,47 @@ function getAzuracastStreamerBroadcasts($username, $startTimestamp, $endTimestam
         }
     }
 
-    error_log("AzuraCast Broadcasts: " . count($result) . " broadcasts para station $stationId en $monthKey");
+    error_log("AzuraCast Broadcasts: total " . count($result) . " broadcasts en rango para station $stationId en $monthKey");
     cacheSet($cacheKey, $result);
     return $result;
+}
+
+/**
+ * Obtener estado "now playing" de una emisora: si hay un DJ en directo ahora mismo.
+ *
+ * @param string $username  Usuario SAPO de la emisora
+ * @return array|null  ['streamer_name'=>string, 'broadcast_start'=>int] o null si no hay directo
+ */
+function getAzuracastNowPlayingLive($username) {
+    $config    = getConfig();
+    $apiUrl    = $config['azuracast_api_url'] ?? '';
+    $apiKey    = $config['azuracast_api_key'] ?? '';
+    if (empty($apiUrl)) return null;
+
+    $userData  = getUserDB($username);
+    $stationId = $userData['azuracast']['station_id'] ?? null;
+    if (empty($stationId)) return null;
+
+    $headers = ['timeout' => 10, 'user_agent' => 'SAPO/1.0'];
+    if (!empty($apiKey)) $headers['header'] = 'X-API-Key: ' . $apiKey;
+    $context  = stream_context_create(['http' => $headers]);
+
+    $url      = rtrim($apiUrl, '/') . '/station/' . $stationId . '/nowplaying';
+    $response = @file_get_contents($url, false, $context);
+    if ($response === false) return null;
+
+    $data = json_decode($response, true);
+    if (!is_array($data)) return null;
+
+    $live = $data['live'] ?? null;
+    if (!is_array($live) || empty($live['is_live'])) return null;
+
+    $streamerName    = $live['streamer_name']   ?? '';
+    $broadcastStart  = $live['broadcast_start'] ?? 0;
+    if (empty($streamerName) && empty($broadcastStart)) return null;
+
+    return [
+        'streamer_name'   => $streamerName,
+        'broadcast_start' => (int)$broadcastStart,
+    ];
 }

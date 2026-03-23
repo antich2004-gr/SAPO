@@ -295,7 +295,27 @@ if ($hasSchedule) {
         }
     }
 
-    // ── Fuente 2 (historial de canciones): programas automáticos + fallback live ──
+    // ── Fuente 2 (Now Playing): si hoy hay un DJ en directo, añadir su sesión ──
+    // Cubre el caso en que los broadcasts registrados no incluyen sesiones activas.
+    if ($targetMonth === date('Y-m')) {
+        $nowLive = getAzuracastNowPlayingLive($trackingUsername);
+        if ($nowLive && $nowLive['broadcast_start'] > 0) {
+            $bStart = (int)$nowLive['broadcast_start'];
+            $dtNow  = new DateTime('@' . $bStart);
+            $dtNow->setTimezone($timezone);
+            $dayNow  = $dtNow->format('Y-m-d');
+            $timeNow = $dtNow->format('H:i');
+            // Solo añadir si no está ya cubierto por la API de broadcasts
+            if (!in_array($timeNow, $liveSessionStarts[$dayNow] ?? [], true)) {
+                $liveSessionStarts[$dayNow][]            = $timeNow;
+                $liveSessionStreamers[$dayNow][$timeNow] = $nowLive['streamer_name'] ?: '(DJ)';
+                $liveSessionDurations[$dayNow][$timeNow] = null; // en curso
+                $liveSessionStartTs[$dayNow][$timeNow]   = $bStart;
+            }
+        }
+    }
+
+    // ── Fuente 3 (historial de canciones): programas automáticos + fallback live ──
     $history = getAzuracastHistory($trackingUsername, $monthStart, $monthEnd);
 
     if ($history === false) {
@@ -1684,7 +1704,11 @@ if ($hasSchedule) {
             }
         ?></pre>
 
-        <p style="margin:10px 0 4px;"><strong>Sesiones de directo detectadas <?php echo isset($broadcasts) && is_array($broadcasts) && !empty($broadcasts) ? '(fuente: API broadcasts AzuraCast ✓)' : '(fuente: historial de canciones — fallback)'; ?>:</strong></p>
+        <p style="margin:10px 0 4px;"><strong>Sesiones de directo detectadas
+        [broadcasts API: <?php echo isset($broadcasts) ? (is_array($broadcasts) ? count($broadcasts) . ' sesiones' : 'ERROR') : 'no ejecutado'; ?>]
+        [now playing: <?php echo isset($nowLive) ? ($nowLive ? 'LIVE "'.htmlEsc($nowLive['streamer_name'] ?? '').'"' : 'no en directo') : 'solo mes actual'; ?>]
+        [fallback historial: <?php echo isset($streamerTsFallback) ? count($streamerTsFallback) . ' días con streamer' : 'n/a'; ?>]
+        :</strong></p>
         <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:120px;"><?php
             if (empty($liveSessionStarts)) {
                 echo "(ningún evento de streamer en el historial de este mes)\n";
