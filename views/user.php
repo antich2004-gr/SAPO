@@ -225,7 +225,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 <button class="tab-button" data-tab="config" onclick="switchTab('config')">Señales horarias</button>
                 <button class="tab-button" data-tab="recordings" onclick="switchTab('recordings'); loadRecordings()">Grabaciones</button>
                 <button class="tab-button" data-tab="parrilla-link" onclick="window.location='?page=parrilla'">Asistente Parrilla</button>
-                <button class="tab-button" data-tab="seguimiento-link" onclick="window.location='?page=seguimiento_emision'">Seguimiento Emisión</button>
+                <button class="tab-button" data-tab="seguimiento-link" onclick="window.location='?page=seguimiento_emision'">Historial de Emisión</button>
             </div>
             
             <div class="tabs-content">
