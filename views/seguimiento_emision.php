@@ -908,11 +908,8 @@ if ($hasSchedule) {
                         // usar el tiempo transcurrido desde el primer tema como estimación
                         $realDurSec = time() - $startTs;
                     }
-                    // Para programas automáticos donde un DJ emite en vivo a través
-                    // de la playlist, usar el streamer del historial si aún no tenemos
-                    if (empty($liveStreamer) && !empty($det['streamer'])) {
-                        $liveStreamer = $det['streamer'];
-                    }
+                    // Guardar el streamer de este det para usarlo después del bloque live
+                    $histDetStreamer = $det['streamer'] ?? '';
                 }
             }
 
@@ -962,10 +959,9 @@ if ($hasSchedule) {
                                                $plContentInfo, $playlistDisplayName);
             }
 
-            // Para directos: streamer, hora real y duración de la sesión.
+            // Para directos registrados: hora real y duración desde cellResult
             $liveStreamer = $cellResult['streamer'] ?? '';
             if ($isLiveDay || isset($livePrograms[$progKey])) {
-                // Fuente 1 (AzuraCast): cellResult['time'] ya es la hora de sesión real
                 if (!$realTime && isset($cellResult['time'])) {
                     $realTime = $cellResult['time'];
                 }
@@ -974,28 +970,35 @@ if ($hasSchedule) {
                     if ($dur !== null) {
                         $realDurSec = $dur;
                     } elseif (isset($liveSessionStartTs[$date][$realTime])) {
-                        // Broadcast aún en curso: mostrar tiempo transcurrido desde el inicio
                         $realDurSec = max(0, time() - $liveSessionStartTs[$date][$realTime]);
                     }
                 }
-                // Fuente 2/manual: cruzar por hora programada si aún faltan datos
-                if (!$liveStreamer || !$realTime) {
-                    foreach ($liveSessionStreamers[$date] ?? [] as $sessionTime => $sName) {
-                        if (liveTiempoCoincide($schTime, $sessionTime)) {
-                            if (!$liveStreamer) $liveStreamer = $sName;
-                            if (!$realTime)     $realTime     = $sessionTime;
-                            if (!$realDurSec) {
-                                $dur = $liveSessionDurations[$date][$sessionTime] ?? null;
-                                if ($dur !== null) {
-                                    $realDurSec = $dur;
-                                } elseif (isset($liveSessionStartTs[$date][$sessionTime])) {
-                                    $realDurSec = max(0, time() - $liveSessionStartTs[$date][$sessionTime]);
-                                }
-                            }
-                            break;
+            }
+
+            // Vincular broadcast al programa por solapamiento con la franja horaria.
+            // Los DJs usan una cuenta compartida sin vínculo a la playlist; el programa
+            // se identifica porque la sesión de conexión coincide con su hora de emisión.
+            // Se aplica a TODOS los programas (automáticos y en directo).
+            if ((!$liveStreamer || !$realDurSec) && $schTime) {
+                foreach ($liveSessionStreamers[$date] ?? [] as $sessionTime => $sName) {
+                    if (!liveTiempoCoincide($schTime, $sessionTime)) continue;
+                    if (!$liveStreamer) $liveStreamer = $sName;
+                    if (!$realTime)     $realTime     = $sessionTime;
+                    if (!$realDurSec) {
+                        $bDur = $liveSessionDurations[$date][$sessionTime] ?? null;
+                        if ($bDur !== null) {
+                            $realDurSec = $bDur;
+                        } elseif (isset($liveSessionStartTs[$date][$sessionTime])) {
+                            $realDurSec = max(0, time() - $liveSessionStartTs[$date][$sessionTime]);
                         }
                     }
+                    break;
                 }
+            }
+
+            // Última opción para automáticos: streamer del historial de canciones
+            if (empty($liveStreamer) && !empty($histDetStreamer ?? '')) {
+                $liveStreamer = $histDetStreamer;
             }
 
             $listadoDetails[$progKey][$date] = [
