@@ -497,15 +497,35 @@ function getMissedReason(
     if ($activeAtStart !== null) {
         $pl = $activeAtStart['playlist'];
         if (isset($programSchedules[$pl])) {
-            // Era un programa programado que se extendió. Si llegamos aquí es porque
-            // la playlist del programa afectado SÍ tiene episodio (P3 no retornó),
-            // así que el problema real es el overrun del programa anterior.
-            $overrunMin = (int)ceil(
-                ($activeAtStart['ts'] + $activeAtStart['duration'] - $schedTs) / 60
-            );
-            $dispName = $playlistDisplayName[$pl] ?? $pl;
-            return "«{$dispName}» aún estaba en emisión al comenzar esta franja"
-                 . " (se extendió ~{$overrunMin} min)";
+            $overrunEndTs = $activeAtStart['ts'] + $activeAtStart['duration'];
+            $overrunMin   = (int)ceil(($overrunEndTs - $schedTs) / 60);
+            $dispName     = $playlistDisplayName[$pl] ?? $pl;
+
+            // Calcular fin programado del slot afectado para saber si el overrun
+            // realmente hizo caducar el slot completo o fue un retraso menor.
+            $schedEndTs = null;
+            foreach ($programSchedules[$programKey] ?? [] as $slot) {
+                if (($slot['startTime'] ?? '') === $scheduledAt && !empty($slot['endTime'])) {
+                    $schedEndTs = mktime(
+                        (int)substr($slot['endTime'], 0, 2),
+                        (int)substr($slot['endTime'], 3, 2),
+                        0,
+                        (int)substr($date, 5, 2),
+                        (int)substr($date, 8, 2),
+                        (int)substr($date, 0, 4)
+                    );
+                    break;
+                }
+            }
+
+            if ($schedEndTs !== null && $overrunEndTs >= $schedEndTs) {
+                // El overrun superó el fin del slot → AzuraCast no pudo activar el programa
+                $slotMinutes = (int)round(($schedEndTs - $schedTs) / 60);
+                return "«{$dispName}» se extendió ~{$overrunMin} min y el slot caducó"
+                     . " — AzuraCast no llegó a activar el programa (slot: {$slotMinutes} min)";
+            }
+            // Overrun menor que el slot: el slot seguía válido; la causa real es otra
+            // (playlist vacía detectada en P3, o fallo técnico en P0). Seguimos analizando.
         }
         // Era música u otro contenido de relleno.
         // Un overrun de ≤ 2 min es el comportamiento normal de AzuraCast cuando un
