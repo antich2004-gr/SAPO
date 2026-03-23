@@ -316,13 +316,30 @@ if ($hasSchedule) {
 
             // Programas automáticos: indexar por playlist
             if ($playlist) {
+                $entryTs  = (int)$playedAt;
+                $entryDur = (int)($entry['duration'] ?? 0);
                 if (!isset($historyMap[$playlist][$dayStr])) {
-                    $historyMap[$playlist][$dayStr] = $timeStr;
+                    $historyMap[$playlist][$dayStr]     = $timeStr;
                     $historyDetails[$playlist][$dayStr] = [
                         'time'     => $timeStr,
                         'title'    => $entry['song']['text'] ?? $entry['text'] ?? '',
-                        'duration' => (int)($entry['duration'] ?? 0),
+                        'start_ts' => $entryTs,
+                        'span_end' => $entryTs + $entryDur,
                     ];
+                } else {
+                    // El historial de AzuraCast viene de más reciente a más antiguo:
+                    // actualizar start_ts/time/title si encontramos un tema más temprano
+                    if ($entryTs < $historyDetails[$playlist][$dayStr]['start_ts']) {
+                        $historyDetails[$playlist][$dayStr]['start_ts'] = $entryTs;
+                        $historyDetails[$playlist][$dayStr]['time']     = $timeStr;
+                        $historyDetails[$playlist][$dayStr]['title']    = $entry['song']['text'] ?? $entry['text'] ?? '';
+                        $historyMap[$playlist][$dayStr]                 = $timeStr;
+                    }
+                    // Mantener el fin más tardío para calcular duración real total
+                    $spanEnd = $entryTs + $entryDur;
+                    if ($spanEnd > $historyDetails[$playlist][$dayStr]['span_end']) {
+                        $historyDetails[$playlist][$dayStr]['span_end'] = $spanEnd;
+                    }
                 }
                 $historyEntryByDay[$dayStr][] = [
                     'playlist' => $playlist,
@@ -872,8 +889,11 @@ if ($hasSchedule) {
             if ($status === 'played') {
                 $det = $historyDetails[$hk2][$date] ?? null;
                 if ($det) {
-                    $epTitle    = $det['title'] ?: null;
-                    $realDurSec = $det['duration'] ?: null;
+                    $epTitle = $det['title'] ?: null;
+                    // Duración real = span desde el primer tema hasta el final del último
+                    $startTs = $det['start_ts'] ?? 0;
+                    $spanEnd = $det['span_end'] ?? 0;
+                    $realDurSec = ($spanEnd > $startTs) ? ($spanEnd - $startTs) : null;
                 }
             }
 
