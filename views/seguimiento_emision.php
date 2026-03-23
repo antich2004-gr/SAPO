@@ -901,6 +901,7 @@ if ($hasSchedule) {
                 'realTime'     => $realTime,
                 'realDurSec'   => $realDurSec,
                 'title'        => $epTitle,
+                'streamer'     => $cellResult['streamer'] ?? '',
                 'missedReason' => $missedReason,
             ];
         }
@@ -961,6 +962,7 @@ if ($hasSchedule) {
                 'realTime'     => $det['realTime']     ?? '',
                 'realDurSec'   => $det['realDurSec']   ?? null,
                 'title'        => $det['title']        ?? '',
+                'streamer'     => $det['streamer']     ?? '',
                 'missedReason' => $det['missedReason'] ?? '',
             ];
         }
@@ -1111,7 +1113,15 @@ if ($hasSchedule) {
                     ><?php echo htmlEsc($cDurTeoStr); ?></span></td>
                 <td><?php echo htmlEsc($cDurRealStr); ?></td>
                 <td class="<?php echo $cDiffClass; ?>"><?php echo htmlEsc($cDiffStr); ?></td>
-                <td class="ld-title"><?php echo $crow['title'] ? htmlEsc($crow['title']) : '<span class="ld-no-data">—</span>'; ?></td>
+                <td class="ld-title"><?php
+                    if ($cIsLive && $crow['streamer']) {
+                        echo htmlEsc($crow['streamer']);
+                    } elseif ($crow['title']) {
+                        echo htmlEsc($crow['title']);
+                    } else {
+                        echo '<span class="ld-no-data">—</span>';
+                    }
+                ?></td>
                 <td>
                     <?php if ($crow['status'] === 'played'): ?>
                         <span class="ld-status-ok">✓</span>
@@ -1276,7 +1286,15 @@ if ($hasSchedule) {
                             ><?php echo htmlEsc($durTeoStr); ?></span></td>
                         <td><?php echo htmlEsc($durRealStr); ?></td>
                         <td class="<?php echo $diffClass; ?>"><?php echo htmlEsc($diffStr); ?></td>
-                        <td class="ld-title"><?php echo $em['title'] ? htmlEsc($em['title']) : '<span class="ld-no-data">—</span>'; ?></td>
+                        <td class="ld-title"><?php
+                            if ($isLive && ($em['streamer'] ?? '')) {
+                                echo htmlEsc($em['streamer']);
+                            } elseif ($em['title']) {
+                                echo htmlEsc($em['title']);
+                            } else {
+                                echo '<span class="ld-no-data">—</span>';
+                            }
+                        ?></td>
                         <td>
                             <?php if ($em['status'] === 'played'): ?>
                                 <span class="ld-status-ok">✓</span>
