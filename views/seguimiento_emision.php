@@ -942,6 +942,7 @@ if ($hasSchedule) {
             $cronologicoRows[] = [
                 'group'        => $groupIdx,
                 'date'         => $date,
+                'dow'          => $dow,
                 'dowLabel'     => $dowLabels[$dow] . ' - ' . sprintf('%02d/%02d', (int)$parts[2], (int)$parts[1]),
                 'progKey'      => $progKey,
                 'progDisplay'  => $progDisplay,
@@ -1090,7 +1091,15 @@ if ($hasSchedule) {
                 <td style="white-space:nowrap;"><?php echo htmlEsc(displayName($crow['progDisplay'])); ?></td>
                 <td><?php echo htmlEsc($crow['schTime']); ?><?php if ($crow['schEnd']): ?><span class="ld-end-time"> –<?php echo htmlEsc($crow['schEnd']); ?></span><?php endif; ?></td>
                 <td><?php echo $crow['realTime'] ? htmlEsc($crow['realTime']) : '<span class="ld-no-data">—</span>'; ?></td>
-                <td><?php echo htmlEsc($cDurTeoStr); ?></td>
+                <td><span class="dur-teo-edit"
+                          data-progkey="<?php echo htmlEsc($cOvKey); ?>"
+                          data-day="<?php echo $crow['dow']; ?>"
+                          data-time="<?php echo htmlEsc($crow['schTime']); ?>"
+                          data-dur="<?php echo (int)$crow['schDurMin']; ?>"
+                          onclick="abrirEditDur(this)"
+                          title="Clic para editar duración teórica"
+                          style="cursor:pointer; border-bottom:1px dashed #94a3b8; white-space:nowrap;"
+                    ><?php echo htmlEsc($cDurTeoStr); ?></span></td>
                 <td><?php echo htmlEsc($cDurRealStr); ?></td>
                 <td class="<?php echo $cDiffClass; ?>"><?php echo htmlEsc($cDiffStr); ?></td>
                 <td class="ld-title"><?php echo $crow['title'] ? htmlEsc($crow['title']) : '<span class="ld-no-data">—</span>'; ?></td>
