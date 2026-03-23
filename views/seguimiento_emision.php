@@ -325,6 +325,7 @@ if ($hasSchedule) {
                     $historyDetails[$playlist][$dayStr] = [
                         'time'     => $timeStr,
                         'title'    => $entry['song']['text'] ?? $entry['text'] ?? '',
+                        'streamer' => $streamer, // DJ conectado en ese momento (si lo hay)
                         'start_ts' => $entryTs,
                         'span_end' => $entryTs + $entryDur,
                     ];
@@ -336,6 +337,10 @@ if ($hasSchedule) {
                         $historyDetails[$playlist][$dayStr]['time']     = $timeStr;
                         $historyDetails[$playlist][$dayStr]['title']    = $entry['song']['text'] ?? $entry['text'] ?? '';
                         $historyMap[$playlist][$dayStr]                 = $timeStr;
+                    }
+                    // Guardar el streamer si aún no tenemos uno
+                    if (empty($historyDetails[$playlist][$dayStr]['streamer']) && $streamer !== '') {
+                        $historyDetails[$playlist][$dayStr]['streamer'] = $streamer;
                     }
                     // Mantener el fin más tardío para calcular duración real total
                     $spanEnd = $entryTs + $entryDur;
@@ -896,7 +901,18 @@ if ($hasSchedule) {
                     // Duración real = span desde el primer tema hasta el final del último
                     $startTs = $det['start_ts'] ?? 0;
                     $spanEnd = $det['span_end'] ?? 0;
-                    $realDurSec = ($spanEnd > $startTs) ? ($spanEnd - $startTs) : null;
+                    if ($spanEnd > $startTs) {
+                        $realDurSec = $spanEnd - $startTs;
+                    } elseif ($startTs > 0 && $date === $today) {
+                        // Una sola entrada en caché (stream en curso con duration=0):
+                        // usar el tiempo transcurrido desde el primer tema como estimación
+                        $realDurSec = time() - $startTs;
+                    }
+                    // Para programas automáticos donde un DJ emite en vivo a través
+                    // de la playlist, usar el streamer del historial si aún no tenemos
+                    if (empty($liveStreamer) && !empty($det['streamer'])) {
+                        $liveStreamer = $det['streamer'];
+                    }
                 }
             }
 
@@ -1205,7 +1221,7 @@ if ($hasSchedule) {
                 <td><?php echo htmlEsc($cDurRealStr); ?></td>
                 <td class="<?php echo $cDiffClass; ?>"><?php echo htmlEsc($cDiffStr); ?></td>
                 <td class="ld-title"><?php
-                    if ($cIsLive && $crow['streamer']) {
+                    if ($crow['streamer']) {
                         echo htmlEsc($crow['streamer']);
                     } elseif ($crow['title']) {
                         echo htmlEsc($crow['title']);
