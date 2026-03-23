@@ -272,6 +272,7 @@ $historyEntryByDay = []; // [Y-m-d][] = ['playlist'=>...,'ts'=>...,'duration'=>s
 $liveSessionStarts    = [];
 $liveSessionStreamers = []; // [Y-m-d => ['HH:MM' => 'nombre_streamer']]
 $liveSessionDurations = []; // [Y-m-d => ['HH:MM' => duracion_en_segundos|null]]
+$liveSessionStartTs   = []; // [Y-m-d => ['HH:MM' => unix_timestamp_inicio]] para broadcasts en curso
 $dayTimeline          = []; // [Y-m-d => [['playlist'=>..., 'time'=>'HH:MM'], ...]]
 $historyError         = false;
 
@@ -290,6 +291,7 @@ if ($hasSchedule) {
             $liveSessionStarts[$dayStr][]            = $timeKey;
             $liveSessionStreamers[$dayStr][$timeKey] = $bc['name'];
             $liveSessionDurations[$dayStr][$timeKey] = $bc['duration']; // null si aún en curso
+            $liveSessionStartTs[$dayStr][$timeKey]   = $bc['start'];    // timestamp Unix exacto
         }
     }
 
@@ -950,8 +952,14 @@ if ($hasSchedule) {
                 if (!$realTime && isset($cellResult['time'])) {
                     $realTime = $cellResult['time'];
                 }
-                if (!$realDurSec && $realTime && isset($liveSessionDurations[$date][$realTime])) {
-                    $realDurSec = $liveSessionDurations[$date][$realTime] ?: null;
+                if (!$realDurSec && $realTime) {
+                    $dur = $liveSessionDurations[$date][$realTime] ?? null;
+                    if ($dur !== null) {
+                        $realDurSec = $dur;
+                    } elseif (isset($liveSessionStartTs[$date][$realTime])) {
+                        // Broadcast aún en curso: mostrar tiempo transcurrido desde el inicio
+                        $realDurSec = max(0, time() - $liveSessionStartTs[$date][$realTime]);
+                    }
                 }
                 // Fuente 2/manual: cruzar por hora programada si aún faltan datos
                 if (!$liveStreamer || !$realTime) {
@@ -959,8 +967,13 @@ if ($hasSchedule) {
                         if (liveTiempoCoincide($schTime, $sessionTime)) {
                             if (!$liveStreamer) $liveStreamer = $sName;
                             if (!$realTime)     $realTime     = $sessionTime;
-                            if (!$realDurSec && isset($liveSessionDurations[$date][$sessionTime])) {
-                                $realDurSec = $liveSessionDurations[$date][$sessionTime] ?: null;
+                            if (!$realDurSec) {
+                                $dur = $liveSessionDurations[$date][$sessionTime] ?? null;
+                                if ($dur !== null) {
+                                    $realDurSec = $dur;
+                                } elseif (isset($liveSessionStartTs[$date][$sessionTime])) {
+                                    $realDurSec = max(0, time() - $liveSessionStartTs[$date][$sessionTime]);
+                                }
                             }
                             break;
                         }
