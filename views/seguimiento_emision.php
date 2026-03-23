@@ -64,9 +64,9 @@ $targetMonth = (isset($_GET['month']) && preg_match('/^\d{4}-\d{2}$/', $_GET['mo
     : date('Y-m');
 
 $currentMonth = date('Y-m');
-if ($targetMonth > $currentMonth) {
-    $targetMonth = $currentMonth;
-}
+$minMonth     = date('Y-m', strtotime('-2 months', strtotime($currentMonth . '-01')));
+if ($targetMonth > $currentMonth) $targetMonth = $currentMonth;
+if ($targetMonth < $minMonth)     $targetMonth = $minMonth;
 
 $year        = (int)substr($targetMonth, 0, 4);
 $month       = (int)substr($targetMonth, 5, 2);
@@ -79,6 +79,7 @@ $stationParam = (!isImpersonating() && isset($_GET['station'])) ? '&station=' . 
 $prevMonth    = date('Y-m', strtotime('-1 month', $monthStart));
 $nextMonth    = date('Y-m', strtotime('+1 month', $monthStart));
 $canGoNext    = ($nextMonth <= $currentMonth);
+$canGoPrev    = ($prevMonth >= $minMonth);
 
 $monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -995,8 +996,12 @@ if ($hasSchedule) {
 
     <!-- ── Navegación de mes ────────────────────────────────────────────────── -->
     <div id="nav-mes" style="padding:14px 24px; background:#f7fafc; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; gap:16px;">
+        <?php if ($canGoPrev): ?>
         <a href="?page=seguimiento_emision&month=<?php echo htmlEsc($prevMonth . $stationParam); ?>"
            class="btn btn-secondary" style="font-size:13px; padding:6px 14px;">← Anterior</a>
+        <?php else: ?>
+        <button class="btn btn-secondary" disabled style="font-size:13px; padding:6px 14px; opacity:.4; cursor:not-allowed;">← Anterior</button>
+        <?php endif; ?>
 
         <span style="font-size:18px; font-weight:700; color:#2d3748; min-width:180px; text-align:center;">
             <?php echo htmlEsc($monthLabel); ?>
