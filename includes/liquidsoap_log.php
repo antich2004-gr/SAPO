@@ -3,15 +3,43 @@
 // Acceso, parseo y consulta del log de Liquidsoap de AzuraCast.
 // Proporciona diagnóstico de causa de emisión perdida con mayor precisión
 // que el historial de reproducción solo.
+//
+// Fuentes de referencia:
+//   AzuraCast ConfigWriter.php  → naming conventions de sources
+//   github.com/AzuraCast/AzuraCast issues #2858, #6066, #6259, #6310,
+//   #6933, #7436, #7476, #4628, #5504, #1557, #7625, #7814
 
 // ── Componentes del log que nos interesan ─────────────────────────────────────
 // Filtramos en parseo para mantener el índice en caché lo más compacto posible.
 const LS_RELEVANT_PREFIXES = [
-    'schedule_switch', 'switch_', 'sequence_', 'autodj_fallback',
-    'live_fallback', 'input_streamer',
-    'lang', 'request', 'decoder',
-    'clock.wallclock', 'safe_fallback', 'error_jingle', 'mksafe',
-    'playlist_', 'cue_playlist_',
+    // Scheduling y switching
+    'schedule_switch',
+    'live_fallback',
+    'interrupting_fallback',
+    'requests_fallback',
+    'autodj_fallback',
+    'dynamic_startup',
+    'safe_fallback',
+    'mksafe',
+    'error_jingle',
+    // Tracks
+    'next_song',
+    'cue_next_song',
+    'playlist_',
+    'cue_playlist_',
+    'single',
+    // API calls (lang = versiones antiguas, azuracast.api = nuevas)
+    'lang',
+    'azuracast.api',
+    // Archivos y decodificación
+    'request',          // request, request.dynamic
+    'decoder',
+    // Reloj y rendimiento
+    'clock.',           // clock.wallclock_main, clock.main, etc.
+    // Directo
+    'input_streamer',
+    // Crossfade (puede causar vacíos)
+    'cross',
 ];
 
 // ── Acceso al log ─────────────────────────────────────────────────────────────
@@ -71,7 +99,7 @@ function _lsFetchRaw(string $username): ?string
 
 /**
  * Parsea el texto crudo del log en un índice compacto por fecha.
- * Solo guarda líneas de nivel ≤ 3 (Info/Warning/Fatal) de componentes relevantes.
+ * Solo guarda líneas de nivel ≤ 3 de componentes relevantes.
  *
  * Formato de cada línea del log:
  *   YYYY/MM/DD HH:MM:SS [componente:nivel] Mensaje
@@ -90,18 +118,16 @@ function _lsParseLog(string $raw): array
         [, $date, $time, $comp, $level, $msg] = $m;
         $level = (int)$level;
 
-        // Descartar debug/trace (nivel 4 y 5)
-        if ($level > 3) continue;
+        if ($level > 3) continue; // descartar debug/trace
 
-        // Descartar componentes que no aportan información de diagnóstico
         $keep = false;
         foreach (LS_RELEVANT_PREFIXES as $prefix) {
             if (str_starts_with($comp, $prefix)) { $keep = true; break; }
         }
         if (!$keep) continue;
 
-        $date            = str_replace('/', '-', $date); // YYYY/MM/DD → YYYY-MM-DD
-        $index[$date][]  = compact('time', 'comp', 'level', 'msg');
+        $date           = str_replace('/', '-', $date); // YYYY/MM/DD → YYYY-MM-DD
+        $index[$date][] = compact('time', 'comp', 'level', 'msg');
     }
 
     return $index;
@@ -121,7 +147,6 @@ function _lsParseLog(string $raw): array
 function computeLiquidsoapSourceId(string $playlistName): string
 {
     // ── Paso 1: getProgrammaticString ────────────────────────────────────────
-    // Elimina caracteres no permitidos, colapsa puntos dobles, espacios→_, minúsculas
     $s = mb_ereg_replace('([^\w\s\d\-_~,;\[\]\(\).])', '', $playlistName) ?? '';
     $s = mb_ereg_replace('([\.]{2,})', '.', $s) ?? '';
     $s = str_replace(' ', '_', $s);
@@ -129,15 +154,12 @@ function computeLiquidsoapSourceId(string $playlistName): string
 
     // ── Paso 2: cleanUpVarName('playlist_' + s) ──────────────────────────────
     $s = 'playlist_' . $s;
-    // Normalizar espacios y eliminar caracteres prohibidos en var names
     $s = strtolower(
         preg_replace(['/[\r\n\t ]+/', '/[\"*\/:<>?\'|]+/'], ' ', strip_tags($s)) ?? ''
     );
-    // Convertir entidades HTML (ñ → n, é → e, etc.) extrayendo la letra base
     $s = html_entity_decode($s, ENT_QUOTES, 'utf-8');
     $s = htmlentities($s, ENT_QUOTES, 'utf-8');
     $s = preg_replace('/(&)([a-z])([a-z]+;)/i', '$2', $s) ?? '';
-    // URL-encode y eliminar caracteres problemáticos en identificadores Liquidsoap
     $s = rawurlencode(str_replace(' ', '_', $s));
     return str_replace(['%', '-', '.'], ['', '_', '_'], $s);
 }
@@ -146,19 +168,18 @@ function computeLiquidsoapSourceId(string $playlistName): string
 
 /**
  * Diagnostica por qué una emisión fue perdida, usando el índice del log de Liquidsoap.
+ * Solo se llama cuando ya se sabe que SÍ había episodio disponible (o estado desconocido)
+ * y que el overrun fue ≤ 15 min — es decir, buscamos un fallo técnico de AzuraCast.
  *
- * Prioridad de causas detectadas:
- *   1.  Programa arrancó tarde (overrun confirmado con minutos exactos)
- *   2.  Playlist vacía, sin cola o no accesible
- *   3.  Archivo de audio no encontrado (ruta exacta)
- *   4.  Archivo de audio corrupto o no decodificable
- *   5.  Error interno de Liquidsoap (lang fatal/error)
- *   6.  Servidor sobrecargado (retraso de reloj acumulado)
- *   7.  Un directo tomó el control en esa franja
- *   8.  AzuraCast activó el AutoDJ fallback (sin contenido programado disponible)
- *   9.  AzuraCast cambió a fuente alternativa (switch_/safe_fallback/mksafe)
- *   10. La jingle de error sonó (indica fallo grave de contenido)
- *   11. Slot expirado: programa anterior se extendió más allá del fin del slot
+ * Causas detectadas (por orden de prioridad):
+ *   1.  Playlist no accesible (M3U no encontrado o ilegible)
+ *   2.  Archivo de audio no encontrado en disco
+ *   3.  Archivo de audio corrupto o no decodificable
+ *   4.  Error / excepción interna de Liquidsoap
+ *   5.  Servidor sobrecargado (retraso de reloj acumulado)
+ *   6.  Un directo tomó el control en esa franja
+ *   7.  AzuraCast activó el fallback de emergencia
+ *   8.  Cascada de fallback completa (AutoDJ no encontró contenido)
  *
  * @param array  $logIndex          Índice parseado (getLiquidsoapLogIndex)
  * @param string $date              Y-m-d de la emisión perdida
@@ -172,203 +193,175 @@ function diagnoseMissedFromLog(
     string $scheduledAt,
     string $liquidsoapSrcId
 ): ?string {
-    // Ventana: 15 min antes (ver qué estaba activo) hasta 90 min después
+    // Ventana: 15 min antes hasta 90 min después del horario programado
     $relevant = _lsQueryWindow($logIndex, $date, $scheduledAt, 15, 90);
     if (empty($relevant)) return null;
 
     $schedMin = _lsToMin($scheduledAt);
 
-    // ── 1. ¿Arrancó pero tarde? ───────────────────────────────────────────────
-    foreach ($relevant as $line) {
-        if ($line['comp'] === $liquidsoapSrcId
-            && (str_contains($line['msg'], 'Prepared') || str_contains($line['msg'], 'Playing'))
-        ) {
-            $lineMin  = _lsToMin(substr($line['time'], 0, 5));
-            $delayMin = $lineMin - $schedMin;
-            if ($delayMin > 2) {
-                return "Empezó con {$delayMin} min de retraso — el programa anterior se alargó";
-            }
-            return null; // Arrancó a tiempo: log no explica el fallo
-        }
-    }
-
-    // ── 2. Playlist vacía, cola exhausted o no accesible ─────────────────────
+    // ── 1. Playlist no accesible (M3U no encontrado o request fallido) ────────
+    // Componente = el ID de source de la playlist (playlist_xxx)
     foreach ($relevant as $line) {
         if ($line['comp'] !== $liquidsoapSrcId) continue;
         $msg = $line['msg'];
-        if (str_contains($msg, "Couldn't read playlist")) {
-            if (preg_match('/from\s+"?([^"]+)"?/', $msg, $m)) {
-                return 'No se pudo leer la playlist: ' . basename(trim($m[1]));
-            }
-            return 'No se pudo leer el archivo de playlist';
-        }
-        if (str_contains($msg, 'Could not queue any track')
-         || str_contains($msg, 'Queue is empty')
-         || str_contains($msg, 'No track available')
+
+        if (str_contains($msg, "Couldn't read playlist")
+         || str_contains($msg, 'request resolution failed')
         ) {
-            return 'La cola de episodios estaba vacía — no había contenido disponible';
-        }
-        if (str_contains($msg, 'request resolution failed')
-         || str_contains($msg, 'Failed to prepare track')
-        ) {
-            return 'Liquidsoap no pudo preparar ningún episodio para su reproducción';
+            return 'Fallo de AzuraCast — la playlist no pudo leerse (archivo M3U inaccesible o vacío)';
         }
         if (str_contains($msg, 'Reload time was set to 0')) {
-            return 'La playlist no pudo recargarse y se quedó sin elementos';
+            return 'Fallo de AzuraCast — la playlist no pudo recargarse';
         }
     }
 
-    // ── 3. Archivo de audio no encontrado ────────────────────────────────────
+    // ── 2. Archivo de audio no encontrado en disco ────────────────────────────
+    // Componente = 'request' o 'request.dynamic'
     foreach ($relevant as $line) {
-        if ($line['comp'] !== 'request' || $line['level'] > 2) continue;
-        if (str_contains($line['msg'], 'Nonexistent file')
-         || str_contains($line['msg'], 'ill-formed URI')
-         || str_contains($line['msg'], 'does not exist')
+        if (!str_starts_with($line['comp'], 'request') || $line['level'] > 2) continue;
+        $msg = $line['msg'];
+
+        if (str_contains($msg, 'Nonexistent file')
+         || str_contains($msg, 'ill-formed URI')
+         || str_contains($msg, 'does not exist')
         ) {
-            if (preg_match('/"([^"]+)"/', $line['msg'], $m)) {
-                return 'Archivo no encontrado: ' . basename($m[1]);
+            if (preg_match('/"([^"]+)"/', $msg, $m)) {
+                return 'Fallo de AzuraCast — archivo no encontrado: ' . basename($m[1]);
             }
-            return 'Archivo de audio no encontrado en disco';
+            return 'Fallo de AzuraCast — archivo de audio no encontrado en disco';
         }
-        if (str_contains($line['msg'], 'Permission denied')) {
-            if (preg_match('/"([^"]+)"/', $line['msg'], $m)) {
-                return 'Sin permiso de lectura: ' . basename($m[1]);
+        if (str_contains($msg, 'Permission denied')) {
+            if (preg_match('/"([^"]+)"/', $msg, $m)) {
+                return 'Fallo de AzuraCast — sin permiso de lectura: ' . basename($m[1]);
             }
-            return 'Sin permiso de lectura del archivo de audio';
+            return 'Fallo de AzuraCast — sin permiso de lectura del archivo de audio';
         }
     }
 
-    // ── 4. Archivo corrupto o no decodificable ────────────────────────────────
+    // ── 3. Archivo corrupto o no decodificable ────────────────────────────────
     foreach ($relevant as $line) {
         if ($line['comp'] !== 'decoder' || $line['level'] > 2) continue;
-        if (str_contains($line['msg'], 'Unable to decode')
-         || str_contains($line['msg'], 'could not decode')
-         || str_contains($line['msg'], 'No decoder')
+        $msg = $line['msg'];
+
+        if (str_contains($msg, 'Unable to decode')
+         || str_contains($msg, 'could not decode')
+         || str_contains($msg, 'No decoder')
         ) {
-            if (preg_match('/"([^"]+)"/', $line['msg'], $m)) {
-                return 'Archivo corrupto o formato no soportado: ' . basename($m[1]);
+            if (preg_match('/"([^"]+)"/', $msg, $m)) {
+                return 'Fallo de AzuraCast — archivo corrupto o formato no soportado: ' . basename($m[1]);
             }
-            return 'Archivo de audio corrupto o con formato no soportado';
+            return 'Fallo de AzuraCast — archivo de audio corrupto o con formato no soportado';
         }
     }
 
-    // ── 5. Error interno de Liquidsoap ────────────────────────────────────────
+    // ── 4. Error / excepción interna de Liquidsoap ───────────────────────────
+    // Componente = 'lang' (versiones antiguas) o 'azuracast.api' (versiones nuevas)
     foreach ($relevant as $line) {
-        if ($line['comp'] !== 'lang' || $line['level'] > 2) continue;
+        if (!in_array($line['comp'], ['lang', 'azuracast.api'], true)) continue;
+        if ($line['level'] > 2) continue;
         $msg = $line['msg'];
-        // Excluir el mensaje de DJ conectado (se diagnostica después)
-        if (str_contains($msg, 'DJ Source connected')) continue;
+
+        if (str_contains($msg, 'DJ Source connected')
+         || str_contains($msg, 'API djon')
+        ) {
+            continue; // DJ conectado — se diagnostica en check 6
+        }
+
+        // nextsong devolvió false = AutoDJ sin cola (no debería ocurrir si hay episodio,
+        // pero podría indicar fallo de sincronización entre AzuraCast y Liquidsoap)
+        if (str_contains($msg, 'API nextsong')
+         && str_contains($msg, 'Response (200): false')
+        ) {
+            return 'Fallo de AzuraCast — el AutoDJ no encontró ningún track en la cola (nextsong = false)';
+        }
+
         if (str_contains($msg, 'Fatal')
          || str_contains($msg, 'Error')
          || str_contains($msg, 'error')
          || str_contains($msg, 'exception')
         ) {
-            // Devolver un fragmento del mensaje para dar contexto real
-            $excerpt = mb_substr(preg_replace('/\s+/', ' ', $msg), 0, 120);
+            $excerpt = mb_substr(preg_replace('/\s+/', ' ', $msg), 0, 100);
             return 'Error interno de Liquidsoap: ' . $excerpt;
         }
     }
 
-    // ── 6. Servidor sobrecargado ──────────────────────────────────────────────
+    // ── 5. Servidor sobrecargado (retraso de reloj) ───────────────────────────
+    // Componentes: clock.wallclock_main, clock.main, clock.*
     foreach ($relevant as $line) {
-        if (!str_contains($line['comp'], 'wallclock')) continue;
-        if (str_contains($line['msg'], 'catchup') || str_contains($line['msg'], 'late')) {
-            if (preg_match('/([\d.]+)\s+seconds?/', $line['msg'], $m)) {
+        if (!str_starts_with($line['comp'], 'clock.')) continue;
+        $msg = $line['msg'];
+
+        if (str_contains($msg, 'Too much latency') || str_contains($msg, 'Resetting active sources')) {
+            return 'Fallo de AzuraCast — sobrecarga crítica del servidor (Liquidsoap reinició las fuentes)';
+        }
+        if (str_contains($msg, 'catchup') || str_contains($msg, 'late')) {
+            if (preg_match('/([\d.]+)\s+seconds?/', $msg, $m)) {
                 $secs = (int)round((float)$m[1]);
-                return "Servidor sobrecargado — retraso de reloj acumulado: {$secs}s";
+                return "Fallo de AzuraCast — servidor sobrecargado (retraso acumulado: {$secs}s)";
             }
-            return 'Servidor sobrecargado en esa franja (retraso de reloj)';
+            return 'Fallo de AzuraCast — servidor sobrecargado (retraso de reloj)';
         }
     }
 
-    // ── 7. Un directo tomó el control ─────────────────────────────────────────
+    // ── 6. Un directo tomó el control ─────────────────────────────────────────
+    // Versión antigua: [lang:3] "DJ Source connected!"
+    // Versión moderna: [lang:3] API djon - Response (200): true  +  [input_streamer:3] Decoding...
     foreach ($relevant as $line) {
-        if ($line['comp'] !== 'lang') continue;
-        if (str_contains($line['msg'], 'DJ Source connected')) {
-            if (preg_match('/DJ[:\s]+(\S+)/i', $line['msg'], $m)) {
-                return 'El directo "' . htmlspecialchars($m[1], ENT_QUOTES) . '" tomó el control en esa franja';
+        $msg     = $line['msg'];
+        $lineMin = _lsToMin(substr($line['time'], 0, 5));
+        if ($lineMin < $schedMin - 5) continue; // Solo si ocurre cerca del horario
+
+        if ($line['comp'] === 'lang' || $line['comp'] === 'azuracast.api') {
+            // Formato antiguo
+            if (str_contains($msg, 'DJ Source connected')) {
+                return 'Un directo tomó el control en esa franja';
             }
+            // Formato moderno (API djon)
+            if (str_contains($msg, 'API djon') && str_contains($msg, 'Response (200): true')) {
+                return 'Un directo tomó el control en esa franja';
+            }
+        }
+
+        // live_fallback cambia a DJ (con transición "forgetful" = cambio de fuente forzado)
+        if ($line['comp'] === 'live_fallback'
+         && str_contains($msg, 'Switch to')
+         && str_contains($msg, 'forgetful')
+        ) {
             return 'Un directo tomó el control en esa franja';
         }
-        if (str_contains($line['msg'], 'Streaming client connected')
-         || str_contains($line['msg'], 'source client connected')
-        ) {
-            return 'Un cliente de streaming se conectó y tomó el control de la franja';
-        }
     }
 
-    // ── 8. AutoDJ fallback ────────────────────────────────────────────────────
+    // ── 7. AzuraCast activó el fallback de emergencia ─────────────────────────
     foreach ($relevant as $line) {
-        if ($line['comp'] === 'autodj_fallback') {
-            $lineMin = _lsToMin(substr($line['time'], 0, 5));
-            if ($lineMin >= $schedMin - 2) {
-                return 'El AutoDJ tomó el control — no había contenido programado disponible en esa franja';
-            }
-        }
-    }
-
-    // ── 9. Cambio a fuente alternativa (switch_ / safe_fallback / mksafe) ────
-    foreach ($relevant as $line) {
-        $comp = $line['comp'];
-        $msg  = $line['msg'];
         $lineMin = _lsToMin(substr($line['time'], 0, 5));
-        if ($lineMin < $schedMin - 1) continue; // Solo después del inicio
+        if ($lineMin < $schedMin - 1) continue;
 
-        if ($comp === 'safe_fallback' && str_contains($msg, 'Switching')) {
-            return 'AzuraCast activó el modo de emergencia (safe fallback): no había fuente de audio válida';
+        if ($line['comp'] === 'safe_fallback' && str_contains($line['msg'], 'Switch to')) {
+            return 'Fallo de AzuraCast — activó el modo de emergencia (safe fallback): fuente de audio inválida';
         }
-        if ($comp === 'mksafe') {
-            return 'AzuraCast activó la fuente segura de emergencia (mksafe)';
-        }
-        if (str_starts_with($comp, 'switch_')
-            && (str_contains($msg, 'Switching to') || str_contains($msg, 'switch'))
-            && !str_contains($msg, $liquidsoapSrcId)
-        ) {
-            // Extraer el nombre del destino si está en el mensaje
-            if (preg_match('/Switching to\s+(\S+)/i', $msg, $m)) {
-                return "AzuraCast cambió a fuente alternativa '{$m[1]}' en lugar de activar este programa";
-            }
-            return 'AzuraCast cambió a una fuente alternativa sin activar este programa';
-        }
-    }
-
-    // ── 10. Jingle de error ───────────────────────────────────────────────────
-    foreach ($relevant as $line) {
         if ($line['comp'] === 'error_jingle') {
-            $lineMin = _lsToMin(substr($line['time'], 0, 5));
-            if ($lineMin >= $schedMin - 1) {
-                return 'Sonó el jingle de error de AzuraCast — fallo grave en la fuente de audio';
-            }
+            return 'Fallo grave de AzuraCast — sonó el jingle de error (fuente de audio completamente inválida)';
+        }
+        if ($line['comp'] === 'mksafe') {
+            return 'Fallo de AzuraCast — activó la fuente segura de emergencia (mksafe)';
         }
     }
 
-    // ── 11. Slot expirado: source nunca apareció pero otros sí estaban activos
-    $sourceHasAnyMsg  = false;
-    $activeOtherComps = [];
+    // ── 8. Cascada de fallback completa ───────────────────────────────────────
+    // Si se ven los 3 escalones (interrupting → requests → autodj) en la ventana,
+    // significa que AzuraCast intentó activar contenido y no encontró nada en ningún nivel.
+    $fallbackSeen = [];
     foreach ($relevant as $line) {
-        if ($line['comp'] === $liquidsoapSrcId) {
-            $sourceHasAnyMsg = true;
-        } elseif (str_starts_with($line['comp'], 'playlist_')
-               || str_starts_with($line['comp'], 'cue_playlist_')
-               || str_starts_with($line['comp'], 'switch_')
-               || $line['comp'] === 'schedule_switch'
-        ) {
-            $activeOtherComps[$line['comp']] = true;
+        $lineMin = _lsToMin(substr($line['time'], 0, 5));
+        if ($lineMin < $schedMin - 2 || $lineMin > $schedMin + 10) continue;
+        if (str_contains($line['msg'], 'Switch to')) {
+            $fallbackSeen[$line['comp']] = true;
         }
     }
-
-    if (!$sourceHasAnyMsg && !empty($activeOtherComps)) {
-        // Intentar identificar qué playlist estaba activa
-        $otherPlaylists = array_filter(
-            array_keys($activeOtherComps),
-            fn($c) => str_starts_with($c, 'playlist_') || str_starts_with($c, 'cue_playlist_')
-        );
-        if (!empty($otherPlaylists)) {
-            // Convertir ID de Liquidsoap de vuelta a nombre legible (best-effort)
-            $otherName = str_replace(['playlist_', 'cue_playlist_', '_'], ['', '', ' '], array_values($otherPlaylists)[0]);
-            return "El slot no llegó a activarse — '{$otherName}' seguía en emisión cuando expiró la franja";
-        }
-        return 'El slot no llegó a activarse — el programa anterior excedió el tiempo asignado';
+    $cascadeComps = ['interrupting_fallback', 'requests_fallback', 'autodj_fallback'];
+    $cascadeCount = count(array_intersect_key($fallbackSeen, array_flip($cascadeComps)));
+    if ($cascadeCount >= 2) {
+        return 'Fallo de AzuraCast — el AutoDJ recorrió la cadena de fallback sin encontrar contenido';
     }
 
     return null;
