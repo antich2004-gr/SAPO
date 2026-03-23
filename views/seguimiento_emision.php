@@ -271,6 +271,7 @@ $historyDetails    = []; // [playlist][Y-m-d] = ['time'=>'HH:MM','title'=>...,'d
 $historyEntryByDay = []; // [Y-m-d][] = ['playlist'=>...,'ts'=>...,'duration'=>secs]
 $liveSessionStarts    = [];
 $liveSessionStreamers = []; // [Y-m-d => ['HH:MM' => 'nombre_streamer']]
+$liveSessionDurations = []; // [Y-m-d => ['HH:MM' => duracion_en_segundos]]
 $dayTimeline          = []; // [Y-m-d => [['playlist'=>..., 'time'=>'HH:MM'], ...]]
 $historyError      = false;
 
@@ -322,22 +323,32 @@ if ($hasSchedule) {
         }
 
         // Agrupar timestamps de streamer en sesiones (gap > 30 min = nueva sesión)
-        // y guardar solo el inicio de cada sesión
+        // y guardar inicio, streamer y duración de cada sesión
         foreach ($streamerTs as $dayStr => $entries) {
             usort($entries, fn($a, $b) => $a['ts'] <=> $b['ts']);
-            $sessionStart = null;
-            $prevTs       = null;
+            $sessionStartTs  = null;
+            $sessionStartKey = null;
+            $prevTs          = null;
             foreach ($entries as $entry) {
-                if ($sessionStart === null || ($entry['ts'] - $prevTs) > 1800) {
-                    // Nueva sesión: guardar inicio
+                if ($sessionStartTs === null || ($entry['ts'] - $prevTs) > 1800) {
+                    // Cerrar sesión anterior
+                    if ($sessionStartKey !== null) {
+                        $liveSessionDurations[$dayStr][$sessionStartKey] = $prevTs - $sessionStartTs;
+                    }
+                    // Nueva sesión
                     $dt = new DateTime('@' . $entry['ts']);
                     $dt->setTimezone($timezone);
                     $timeKey = $dt->format('H:i');
                     $liveSessionStarts[$dayStr][]              = $timeKey;
                     $liveSessionStreamers[$dayStr][$timeKey]   = $entry['name'];
-                    $sessionStart = $entry['ts'];
+                    $sessionStartTs  = $entry['ts'];
+                    $sessionStartKey = $timeKey;
                 }
                 $prevTs = $entry['ts'];
+            }
+            // Cerrar última sesión
+            if ($sessionStartKey !== null) {
+                $liveSessionDurations[$dayStr][$sessionStartKey] = $prevTs - $sessionStartTs;
             }
         }
     }
@@ -891,14 +902,27 @@ if ($hasSchedule) {
                                                $plContentInfo, $playlistDisplayName);
             }
 
-            // Para directos: si cellResult no trajo streamer (fuente 2/manual),
-            // intentar cruzarlo con liveSessionStreamers por coincidencia de hora.
+            // Para directos: streamer, hora real y duración de la sesión.
             $liveStreamer = $cellResult['streamer'] ?? '';
-            if (!$liveStreamer && ($isLiveDay || isset($livePrograms[$progKey]))) {
-                foreach ($liveSessionStreamers[$date] ?? [] as $sessionTime => $sName) {
-                    if (liveTiempoCoincide($schTime, $sessionTime)) {
-                        $liveStreamer = $sName;
-                        break;
+            if ($isLiveDay || isset($livePrograms[$progKey])) {
+                // Fuente 1 (AzuraCast): cellResult['time'] ya es la hora de sesión real
+                if (!$realTime && isset($cellResult['time'])) {
+                    $realTime = $cellResult['time'];
+                }
+                if (!$realDurSec && $realTime && isset($liveSessionDurations[$date][$realTime])) {
+                    $realDurSec = $liveSessionDurations[$date][$realTime] ?: null;
+                }
+                // Fuente 2/manual: cruzar por hora programada si aún faltan datos
+                if (!$liveStreamer || !$realTime) {
+                    foreach ($liveSessionStreamers[$date] ?? [] as $sessionTime => $sName) {
+                        if (liveTiempoCoincide($schTime, $sessionTime)) {
+                            if (!$liveStreamer) $liveStreamer = $sName;
+                            if (!$realTime)     $realTime     = $sessionTime;
+                            if (!$realDurSec && isset($liveSessionDurations[$date][$sessionTime])) {
+                                $realDurSec = $liveSessionDurations[$date][$sessionTime] ?: null;
+                            }
+                            break;
+                        }
                     }
                 }
             }
