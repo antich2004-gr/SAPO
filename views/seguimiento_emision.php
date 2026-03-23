@@ -528,11 +528,33 @@ function getMissedReason(
             // (playlist vacía detectada en P3, o fallo técnico en P0). Seguimos analizando.
         }
         // Era música u otro contenido de relleno.
-        // Un overrun de ≤ 2 min es el comportamiento normal de AzuraCast cuando un
-        // track de relleno termina su ciclo natural: no explica por qué el programa
-        // no llegó a sonar después. Solo lo reportamos si la invasión fue significativa.
+        // Antes de reportarlo como causa, verificar si la playlist estaba vacía en ese momento:
+        // si todos los archivos son posteriores a la emisión, el relleno sonaba porque no había
+        // episodio — esa es la causa raíz, no el relleno en sí.
         $overrunMin = (int)ceil((($activeAtStart['ts'] + $activeAtStart['duration']) - $schedTs) / 60);
         if ($overrunMin > 2) {
+            // ¿Playlist estaba vacía ese día? Comprobamos mtime antes de concluir
+            if ($playlistContentInfo !== null) {
+                $n = (int)$playlistContentInfo['num_songs'];
+                $earliestMtime = $playlistContentInfo['earliest_mtime'] ?? null;
+                if ($n === 0) {
+                    return 'La playlist está vacía — no había episodio disponible';
+                }
+                if ($earliestMtime !== null && $earliestMtime > $schedTs) {
+                    $uploadedDate = date('d/m/Y', $earliestMtime);
+                    $sample = $playlistContentInfo['sample'] ?? [];
+                    $ep = null;
+                    if (!empty($sample[0])) {
+                        $t = $sample[0]['title'] ?? '';
+                        $p = $sample[0]['path']  ?? '';
+                        $ep = $t !== '' ? $t : ($p !== '' ? basename($p) : null);
+                    }
+                    $epStr = $ep !== null ? ' («' . $ep . '»)' : '';
+                    $noun  = $n === 1 ? 'episodio' : 'episodios';
+                    return "Sin episodio ese día — el contenido se subió el {$uploadedDate}"
+                         . " ({$n} {$noun} disponibles actualmente{$epStr})";
+                }
+            }
             return 'Contenido de relleno invadió la franja (se extendió ~' . $overrunMin . ' min sobre el horario)';
         }
         // Overrun mínimo: caemos al diagnóstico genérico de abajo
