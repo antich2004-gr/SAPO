@@ -2043,7 +2043,7 @@ function ordenarResumen(criterio) {
 // ── Vista cronológica: filtro y paginación ────────────────────────────────────
 var _cronoFiltro = null;   // null | 'played' | 'missed'
 var _cronoPagina = 1;
-var _cronoPorPag = 30;
+var _cronoPorPag = 60;
 
 function _cronoVisibleRows() {
     var all = Array.from(document.querySelectorAll('#crono-tbody .crono-row'));
