@@ -891,9 +891,21 @@ if ($hasSchedule) {
                                                $plContentInfo, $playlistDisplayName);
             }
 
+            // Para directos: si cellResult no trajo streamer (fuente 2/manual),
+            // intentar cruzarlo con liveSessionStreamers por coincidencia de hora.
+            $liveStreamer = $cellResult['streamer'] ?? '';
+            if (!$liveStreamer && ($isLiveDay || isset($livePrograms[$progKey]))) {
+                foreach ($liveSessionStreamers[$date] ?? [] as $sessionTime => $sName) {
+                    if (liveTiempoCoincide($schTime, $sessionTime)) {
+                        $liveStreamer = $sName;
+                        break;
+                    }
+                }
+            }
+
             $listadoDetails[$progKey][$date] = [
                 'status'       => $status,
-                'isLive'       => $isLiveDay,
+                'isLive'       => $isLiveDay || isset($livePrograms[$progKey]),
                 'isManual'     => !empty($cellResult['manual']),
                 'schTime'      => $schTime,
                 'schEnd'       => $schEnd,
@@ -901,7 +913,7 @@ if ($hasSchedule) {
                 'realTime'     => $realTime,
                 'realDurSec'   => $realDurSec,
                 'title'        => $epTitle,
-                'streamer'     => $cellResult['streamer'] ?? '',
+                'streamer'     => $liveStreamer,
                 'missedReason' => $missedReason,
             ];
         }
