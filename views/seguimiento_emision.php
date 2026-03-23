@@ -462,7 +462,14 @@ function getMissedReason(
         }
     }
 
-    // ── PRIORIDAD 3: Historial API — diagnóstico por timestamp exacto ────────
+    // ── PRIORIDAD 3: ¿Había episodio? (estado actual de la playlist) ─────────
+    // Se comprueba antes del historial de AzuraCast: si no hay episodio, el
+    // resto del análisis (qué sonaba, quién invadió) es irrelevante.
+    if ($playlistContentInfo !== null && (int)$playlistContentInfo['num_songs'] === 0) {
+        return 'La playlist está vacía — no hay ningún episodio disponible';
+    }
+
+    // ── PRIORIDAD 4: Historial API — diagnóstico por timestamp exacto ────────
     $entries = $dayTimeline[$date] ?? [];
     if (empty($entries)) {
         return 'Sin actividad en AzuraCast ese día (posible corte de señal)';
@@ -490,8 +497,9 @@ function getMissedReason(
     if ($activeAtStart !== null) {
         $pl = $activeAtStart['playlist'];
         if (isset($programSchedules[$pl])) {
-            // Era un programa programado que se extendió (el overrunBy lo mostrará aparte,
-            // pero si no se captó allí —overrun < 10 min— damos contexto aquí)
+            // Era un programa programado que se extendió. Si llegamos aquí es porque
+            // la playlist del programa afectado SÍ tiene episodio (P3 no retornó),
+            // así que el problema real es el overrun del programa anterior.
             $overrunMin = (int)ceil(
                 ($activeAtStart['ts'] + $activeAtStart['duration'] - $schedTs) / 60
             );
@@ -505,11 +513,6 @@ function getMissedReason(
         // no llegó a sonar después. Solo lo reportamos si la invasión fue significativa.
         $overrunMin = (int)ceil((($activeAtStart['ts'] + $activeAtStart['duration']) - $schedTs) / 60);
         if ($overrunMin > 2) {
-            // Antes de culpar al relleno, comprobar si la playlist estaba vacía.
-            // Una playlist vacía es la causa real; el relleno es solo la consecuencia.
-            if ($playlistContentInfo !== null && (int)$playlistContentInfo['num_songs'] === 0) {
-                return 'La playlist está vacía — no hay ningún episodio disponible';
-            }
             return 'Contenido de relleno invadió la franja (se extendió ~' . $overrunMin . ' min sobre el horario)';
         }
         // Overrun mínimo: caemos al diagnóstico genérico de abajo
