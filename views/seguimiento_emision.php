@@ -897,7 +897,9 @@ if ($hasSchedule) {
                 $azName    = $historyNameMap[$effectiveKey] ?? $effectiveKey;
                 $lsSrcId   = computeLiquidsoapSourceId($azName);
                 // Contenido actual de la playlist (best-effort; null si no disponible)
-                $plContentInfo = (!($isLiveDay || isset($livePrograms[$progKey])) && $hasSchedule)
+                // Comprobar playlist solo si este día concreto NO es live (aunque el programa
+                // tenga otros días live). En días live no hay playlist que analizar.
+                $plContentInfo = (!$isLiveDay && $hasSchedule)
                     ? getPlaylistContentInfo($trackingUsername, $azName)
                     : null;
                 $missedReason = getMissedReason($schTime, $date, $dayTimeline,
