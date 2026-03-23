@@ -533,29 +533,39 @@ function getMissedReason(
         // episodio — esa es la causa raíz, no el relleno en sí.
         $overrunMin = (int)ceil((($activeAtStart['ts'] + $activeAtStart['duration']) - $schedTs) / 60);
         if ($overrunMin > 2) {
-            // ¿Playlist estaba vacía ese día? Comprobamos mtime antes de concluir
+            // Antes de reportar "relleno invadió", diagnosticar la causa raíz
+            // usando el contenido actual de la playlist + mtime de los archivos.
             if ($playlistContentInfo !== null) {
                 $n = (int)$playlistContentInfo['num_songs'];
-                $earliestMtime = $playlistContentInfo['earliest_mtime'] ?? null;
                 if ($n === 0) {
-                    return 'La playlist está vacía — no había episodio disponible';
+                    return 'Sin episodio disponible — la playlist estaba vacía';
                 }
-                if ($earliestMtime !== null && $earliestMtime > $schedTs) {
-                    $uploadedDate = date('d/m/Y', $earliestMtime);
+                $earliestMtime = $playlistContentInfo['earliest_mtime'] ?? null;
+                // Helper para construir el nombre del episodio de muestra
+                $buildEpStr = function() use ($playlistContentInfo): string {
                     $sample = $playlistContentInfo['sample'] ?? [];
-                    $ep = null;
-                    if (!empty($sample[0])) {
-                        $t = $sample[0]['title'] ?? '';
-                        $p = $sample[0]['path']  ?? '';
-                        $ep = $t !== '' ? $t : ($p !== '' ? basename($p) : null);
-                    }
-                    $epStr = $ep !== null ? ' («' . $ep . '»)' : '';
-                    $noun  = $n === 1 ? 'episodio' : 'episodios';
+                    if (empty($sample[0])) return '';
+                    $t = $sample[0]['title'] ?? '';
+                    $p = $sample[0]['path']  ?? '';
+                    $ep = $t !== '' ? $t : ($p !== '' ? basename($p) : null);
+                    return $ep !== null ? ' («' . $ep . '»)' : '';
+                };
+                $noun = $n === 1 ? 'episodio' : 'episodios';
+                if ($earliestMtime !== null && $earliestMtime > $schedTs) {
+                    // Confirmado: todos los archivos son posteriores a la emisión
+                    $uploadedDate = date('d/m/Y', $earliestMtime);
                     return "Sin episodio ese día — el contenido se subió el {$uploadedDate}"
-                         . " ({$n} {$noun} disponibles actualmente{$epStr})";
+                         . " ({$n} {$noun} actualmente{$buildEpStr()})";
                 }
+                if ($earliestMtime !== null) {
+                    // Archivos existían antes de la emisión, pero el programa no arrancó
+                    return "La playlist tenía {$n} {$noun}{$buildEpStr()} — el programa no se activó (posible fallo técnico)";
+                }
+                // No se pudo determinar cuándo se subió el contenido
+                return "Posiblemente sin episodio ese día — la playlist tiene {$n} {$noun} actualmente{$buildEpStr()}";
             }
-            return 'Contenido de relleno invadió la franja (se extendió ~' . $overrunMin . ' min sobre el horario)';
+            // Sin datos de playlist: mensaje honesto sobre la incertidumbre
+            return 'AzuraCast continuó con relleno — posiblemente sin episodio disponible ese día';
         }
         // Overrun mínimo: caemos al diagnóstico genérico de abajo
     }
