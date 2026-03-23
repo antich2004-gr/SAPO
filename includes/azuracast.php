@@ -294,8 +294,9 @@ function _azFetchPlaylistFileSample(string $username, int $playlistId): array
 
         if ($title === '' && $path === '') continue;
 
-        // mtime = fecha de subida/modificación del fichero en AzuraCast (Unix timestamp)
-        $mtime = isset($file['mtime']) ? (int)$file['mtime'] : null;
+        // mtime = fecha de subida/modificación del fichero (distintos nombres según versión de AzuraCast)
+        $rawMtime = $file['mtime'] ?? $file['modified_at'] ?? $file['path_modified_time'] ?? null;
+        $mtime    = ($rawMtime !== null && (int)$rawMtime > 0) ? (int)$rawMtime : null;
         if ($mtime !== null && ($minMtime === null || $mtime < $minMtime)) {
             $minMtime = $mtime;
         }

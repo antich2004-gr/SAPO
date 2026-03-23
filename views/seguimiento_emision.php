@@ -533,81 +533,143 @@ function getMissedReason(
         // episodio — esa es la causa raíz, no el relleno en sí.
         $overrunMin = (int)ceil((($activeAtStart['ts'] + $activeAtStart['duration']) - $schedTs) / 60);
         if ($overrunMin > 2) {
-            // Antes de reportar "relleno invadió", diagnosticar la causa raíz
-            // usando el contenido actual de la playlist + mtime de los archivos.
+            // Diagnosticar la causa raíz usando:
+            //  1. mtime de los ficheros (si AzuraCast lo devuelve)
+            //  2. Cross-reference con el historial de emisiones del mes
             if ($playlistContentInfo !== null) {
-                $n = (int)$playlistContentInfo['num_songs'];
+                $n             = (int)($playlistContentInfo['num_songs'] ?? 0);
+                $earliestMtime = $playlistContentInfo['earliest_mtime']  ?? null;
+                $lastBefore    = $playlistContentInfo['last_played_before'] ?? null; // ['date','title']
+                $firstAfter    = $playlistContentInfo['first_played_after']  ?? null;
+                $currentTitle  = $playlistContentInfo['sample'][0]['title']  ?? '';
+                $currentPath   = $playlistContentInfo['sample'][0]['path']   ?? '';
+                $epLabel       = $currentTitle !== '' ? $currentTitle
+                               : ($currentPath !== '' ? basename($currentPath) : '');
+
                 if ($n === 0) {
-                    return 'Sin episodio disponible — la playlist estaba vacía';
+                    return 'Sin episodio ese día — la playlist estaba vacía';
                 }
-                $earliestMtime = $playlistContentInfo['earliest_mtime'] ?? null;
-                // Helper para construir el nombre del episodio de muestra
-                $buildEpStr = function() use ($playlistContentInfo): string {
-                    $sample = $playlistContentInfo['sample'] ?? [];
-                    if (empty($sample[0])) return '';
-                    $t = $sample[0]['title'] ?? '';
-                    $p = $sample[0]['path']  ?? '';
-                    $ep = $t !== '' ? $t : ($p !== '' ? basename($p) : null);
-                    return $ep !== null ? ' («' . $ep . '»)' : '';
-                };
-                $noun = $n === 1 ? 'episodio' : 'episodios';
+
+                // ── Método 1: mtime ───────────────────────────────────────────
                 if ($earliestMtime !== null && $earliestMtime > $schedTs) {
-                    // Confirmado: todos los archivos son posteriores a la emisión
-                    $uploadedDate = date('d/m/Y', $earliestMtime);
-                    return "Sin episodio ese día — el contenido se subió el {$uploadedDate}"
-                         . " ({$n} {$noun} actualmente{$buildEpStr()})";
+                    $noun = $n === 1 ? 'episodio' : 'episodios';
+                    $ep   = $epLabel !== '' ? ' («' . $epLabel . '»)' : '';
+                    return "Sin episodio ese día — el contenido se subió el "
+                         . date('d/m/Y', $earliestMtime)
+                         . " ({$n} {$noun}{$ep})";
                 }
                 if ($earliestMtime !== null) {
-                    // Archivos existían antes de la emisión, pero el programa no arrancó
-                    return "La playlist tenía {$n} {$noun}{$buildEpStr()} — el programa no se activó (posible fallo técnico)";
+                    // Archivos existían antes → playlist tenía contenido → fallo técnico
+                    $ep = $epLabel !== '' ? ' («' . $epLabel . '»)' : '';
+                    return "La playlist tenía contenido{$ep} — el programa no se activó (fallo técnico de AzuraCast)";
                 }
-                // No se pudo determinar cuándo se subió el contenido
-                return "Posiblemente sin episodio ese día — la playlist tiene {$n} {$noun} actualmente{$buildEpStr()}";
+
+                // ── Método 2: cruzar episodios del historial ──────────────────
+                // Lógica: si el episodio cambió entre la última emisión anterior y
+                // la primera posterior, el episodio nuevo llegó DESPUÉS del fallo.
+                if ($firstAfter !== null) {
+                    $afterDateStr  = date('d/m', strtotime($firstAfter['date']));
+                    $afterTitle    = $firstAfter['title'] ?? '';
+                    if ($lastBefore !== null) {
+                        $beforeDateStr = date('d/m', strtotime($lastBefore['date']));
+                        $beforeTitle   = $lastBefore['title'] ?? '';
+                        if ($beforeTitle !== '' && $afterTitle !== '' && $beforeTitle !== $afterTitle) {
+                            // Episodio distinto antes y después → el nuevo llegó tras el fallo
+                            return "Sin episodio ese día — el episodio del {$beforeDateStr} ya se había emitido"
+                                 . " y el siguiente se subió antes del {$afterDateStr}";
+                        }
+                        if ($beforeTitle !== '' && $afterTitle !== '' && $beforeTitle === $afterTitle) {
+                            // Mismo episodio antes y después → estaba disponible ese día → fallo técnico
+                            return "La playlist tenía el episodio del {$beforeDateStr} — el programa no se activó (fallo técnico de AzuraCast)";
+                        }
+                    } else {
+                        // Sin antecedentes: la primera emisión fue el día $firstAfter
+                        return "Sin episodio ese día — el programa se emitió por primera vez el {$afterDateStr}";
+                    }
+                }
+
+                // Sin emisión posterior pero sí anterior: comparar episodio actual vs. último emitido
+                if ($lastBefore !== null) {
+                    $beforeDateStr = date('d/m', strtotime($lastBefore['date']));
+                    $beforeTitle   = $lastBefore['title'] ?? '';
+                    if ($epLabel !== '' && $beforeTitle !== '' && $epLabel === $beforeTitle) {
+                        // El episodio actual es el mismo que el último emitido → seguía en la playlist → fallo técnico
+                        return "La playlist tenía el episodio del {$beforeDateStr} — el programa no se activó (fallo técnico de AzuraCast)";
+                    }
+                    if ($epLabel !== '' && $beforeTitle !== '' && $epLabel !== $beforeTitle) {
+                        // El episodio actual es distinto → el del día de la emisión ya se eliminó y el nuevo no estaba listo
+                        return "Sin episodio ese día — el episodio emitido el {$beforeDateStr} ya no está en la playlist";
+                    }
+                }
+
+                // Sin datos suficientes para cruzar: inferir del comportamiento (relleno = slot entero vacío)
+                return 'Sin episodio ese día';
             }
-            // Sin datos de playlist: mensaje honesto sobre la incertidumbre
-            return 'AzuraCast continuó con relleno — posiblemente sin episodio disponible ese día';
+            // Sin datos de playlist en absoluto
+            return 'Sin episodio ese día';
         }
         // Overrun mínimo: caemos al diagnóstico genérico de abajo
     }
 
     // No había contenido activo al inicio (o el relleno era residual).
-    // Si tenemos datos actuales de la playlist, daremos un diagnóstico preciso.
+    // Misma lógica de diagnóstico que el bloque de overrun.
     if ($playlistContentInfo !== null) {
-        $n = (int)$playlistContentInfo['num_songs'];
+        $n             = (int)($playlistContentInfo['num_songs'] ?? 0);
+        $earliestMtime = $playlistContentInfo['earliest_mtime']  ?? null;
+        $lastBefore    = $playlistContentInfo['last_played_before'] ?? null;
+        $firstAfter    = $playlistContentInfo['first_played_after']  ?? null;
+        $currentTitle  = $playlistContentInfo['sample'][0]['title'] ?? '';
+        $currentPath   = $playlistContentInfo['sample'][0]['path']  ?? '';
+        $epLabel       = $currentTitle !== '' ? $currentTitle
+                       : ($currentPath !== '' ? basename($currentPath) : '');
+
         if ($n === 0) {
-            return 'La playlist está vacía — no había episodio disponible';
+            return 'Sin episodio ese día — la playlist estaba vacía';
         }
-        // La playlist tiene contenido ahora. Comprobar si todos los archivos
-        // se subieron DESPUÉS del horario de emisión (earliest_mtime > $schedTs).
-        $earliestMtime = $playlistContentInfo['earliest_mtime'] ?? null;
+
         if ($earliestMtime !== null && $earliestMtime > $schedTs) {
-            // Todos los archivos son posteriores a la emisión → la playlist estaba vacía ese día
-            $uploadedDate = date('d/m/Y', $earliestMtime);
-            $sample = $playlistContentInfo['sample'] ?? [];
-            $ep = null;
-            if (!empty($sample[0])) {
-                $t = $sample[0]['title'] ?? '';
-                $p = $sample[0]['path']  ?? '';
-                $ep = $t !== '' ? $t : ($p !== '' ? basename($p) : null);
+            $noun = $n === 1 ? 'episodio' : 'episodios';
+            $ep   = $epLabel !== '' ? ' («' . $epLabel . '»)' : '';
+            return "Sin episodio ese día — el contenido se subió el "
+                 . date('d/m/Y', $earliestMtime) . " ({$n} {$noun}{$ep})";
+        }
+        if ($earliestMtime !== null) {
+            $ep = $epLabel !== '' ? ' («' . $epLabel . '»)' : '';
+            return "La playlist tenía contenido{$ep} — el programa no se activó (fallo técnico de AzuraCast)";
+        }
+
+        // Cross-reference con historial
+        if ($firstAfter !== null) {
+            $afterDateStr = date('d/m', strtotime($firstAfter['date']));
+            $afterTitle   = $firstAfter['title'] ?? '';
+            if ($lastBefore !== null) {
+                $beforeDateStr = date('d/m', strtotime($lastBefore['date']));
+                $beforeTitle   = $lastBefore['title'] ?? '';
+                if ($beforeTitle !== '' && $afterTitle !== '' && $beforeTitle !== $afterTitle) {
+                    return "Sin episodio ese día — el episodio del {$beforeDateStr} ya se había emitido"
+                         . " y el siguiente se subió antes del {$afterDateStr}";
+                }
+                if ($beforeTitle !== '' && $afterTitle !== '' && $beforeTitle === $afterTitle) {
+                    return "La playlist tenía el episodio del {$beforeDateStr} — el programa no se activó (fallo técnico de AzuraCast)";
+                }
+            } else {
+                return "Sin episodio ese día — el programa se emitió por primera vez el {$afterDateStr}";
             }
-            $epStr = $ep !== null ? ' («' . $ep . '»)' : '';
-            $noun  = $n === 1 ? 'episodio' : 'episodios';
-            return "Sin episodio ese día — el contenido se subió el {$uploadedDate}"
-                 . " ({$n} {$noun} disponibles actualmente{$epStr})";
         }
-        // Había archivos antes de la emisión: causa desconocida
-        $sample = $playlistContentInfo['sample'] ?? [];
-        $ep = null;
-        if (!empty($sample[0])) {
-            $t = $sample[0]['title'] ?? '';
-            $p = $sample[0]['path']  ?? '';
-            $ep = $t !== '' ? $t : ($p !== '' ? basename($p) : null);
+        if ($lastBefore !== null) {
+            $beforeDateStr = date('d/m', strtotime($lastBefore['date']));
+            $beforeTitle   = $lastBefore['title'] ?? '';
+            if ($epLabel !== '' && $beforeTitle !== '' && $epLabel === $beforeTitle) {
+                return "La playlist tenía el episodio del {$beforeDateStr} — el programa no se activó (fallo técnico de AzuraCast)";
+            }
+            if ($epLabel !== '' && $beforeTitle !== '' && $epLabel !== $beforeTitle) {
+                return "Sin episodio ese día — el episodio emitido el {$beforeDateStr} ya no está en la playlist";
+            }
         }
-        $epStr = $ep !== null ? ' («' . $ep . '»)' : '';
-        $noun  = $n === 1 ? 'episodio' : 'episodios';
-        return "La playlist tiene {$n} {$noun}{$epStr} — el programa no se activó (causa desconocida)";
+
+        return 'Sin episodio ese día';
     }
-    return 'Sin episodio disponible — la playlist estaba vacía';
+    return 'Sin episodio ese día';
 }
 
 // ── Helper: estado de una celda ───────────────────────────────────────────────
@@ -912,6 +974,31 @@ if ($hasSchedule) {
                 $plContentInfo = (!$isLiveDay && $hasSchedule)
                     ? getPlaylistContentInfo($trackingUsername, $azName)
                     : null;
+
+                // Enriquecer con datos del historial: último y primer episodio emitido
+                // antes/después de $date — permite determinar si había episodio ese día.
+                if ($plContentInfo !== null && isset($historyDetails[$azName])) {
+                    $hDates = array_keys($historyDetails[$azName]);
+                    sort($hDates);
+                    $lastBefore = null;
+                    $firstAfter = null;
+                    foreach ($hDates as $hd) {
+                        if ($hd < $date) {
+                            $lastBefore = $hd;
+                        } elseif ($hd > $date && $firstAfter === null) {
+                            $firstAfter = $hd;
+                        }
+                    }
+                    $plContentInfo['last_played_before'] = $lastBefore !== null ? [
+                        'date'  => $lastBefore,
+                        'title' => $historyDetails[$azName][$lastBefore]['title'] ?? '',
+                    ] : null;
+                    $plContentInfo['first_played_after'] = $firstAfter !== null ? [
+                        'date'  => $firstAfter,
+                        'title' => $historyDetails[$azName][$firstAfter]['title'] ?? '',
+                    ] : null;
+                }
+
                 $missedReason = getMissedReason($schTime, $date, $dayTimeline,
                                                $isLiveDay || isset($livePrograms[$progKey]),
                                                $effectiveKey, $dailyRep,
