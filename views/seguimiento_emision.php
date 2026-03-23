@@ -318,7 +318,11 @@ if ($hasSchedule) {
 
             // Acumular timestamps de streamer para agrupar después
             if ($streamer !== '') {
-                $streamerTs[$dayStr][] = ['ts' => (int)$playedAt, 'name' => $streamer];
+                $streamerTs[$dayStr][] = [
+                    'ts'       => (int)$playedAt,
+                    'name'     => $streamer,
+                    'duration' => (int)($entry['duration'] ?? 0),
+                ];
             }
         }
 
@@ -329,11 +333,12 @@ if ($hasSchedule) {
             $sessionStartTs  = null;
             $sessionStartKey = null;
             $prevTs          = null;
+            $prevDur         = 0;
             foreach ($entries as $entry) {
                 if ($sessionStartTs === null || ($entry['ts'] - $prevTs) > 1800) {
-                    // Cerrar sesión anterior
+                    // Cerrar sesión anterior: fin = último ts + duración de ese tema
                     if ($sessionStartKey !== null) {
-                        $liveSessionDurations[$dayStr][$sessionStartKey] = $prevTs - $sessionStartTs;
+                        $liveSessionDurations[$dayStr][$sessionStartKey] = ($prevTs + $prevDur) - $sessionStartTs;
                     }
                     // Nueva sesión
                     $dt = new DateTime('@' . $entry['ts']);
@@ -344,11 +349,12 @@ if ($hasSchedule) {
                     $sessionStartTs  = $entry['ts'];
                     $sessionStartKey = $timeKey;
                 }
-                $prevTs = $entry['ts'];
+                $prevTs  = $entry['ts'];
+                $prevDur = $entry['duration'];
             }
             // Cerrar última sesión
             if ($sessionStartKey !== null) {
-                $liveSessionDurations[$dayStr][$sessionStartKey] = $prevTs - $sessionStartTs;
+                $liveSessionDurations[$dayStr][$sessionStartKey] = ($prevTs + $prevDur) - $sessionStartTs;
             }
         }
     }
@@ -1616,7 +1622,13 @@ if ($hasSchedule) {
                 echo "(ningún evento de streamer en el historial de este mes)\n";
             } else {
                 foreach ($liveSessionStarts as $d => $times) {
-                    echo htmlEsc("$d: " . implode(', ', $times) . "\n");
+                    foreach ($times as $t) {
+                        $sName = $liveSessionStreamers[$d][$t] ?? '(sin nombre)';
+                        $sDur  = isset($liveSessionDurations[$d][$t])
+                            ? round($liveSessionDurations[$d][$t] / 60) . ' min'
+                            : '(sin dur)';
+                        echo htmlEsc("$d $t → streamer: \"$sName\" | duración: $sDur\n");
+                    }
                 }
             }
         ?></pre>
