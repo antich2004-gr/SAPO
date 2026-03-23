@@ -1125,3 +1125,79 @@ function getAzuracastHistory($username, $startTimestamp, $endTimestamp) {
     cacheSet($cacheKey, $data);
     return $data;
 }
+
+/**
+ * Obtener broadcasts de todos los streamers de una emisora para un mes dado.
+ * Fuente fiable para saber exactamente cuándo emitió cada DJ y cuánto duró.
+ *
+ * @param string $username  Usuario SAPO de la emisora
+ * @param int $startTimestamp  Unix timestamp inicio del rango (primer día del mes)
+ * @param int $endTimestamp    Unix timestamp fin del rango (último día del mes)
+ * @return array|false  Array de ['name'=>string, 'start'=>int, 'end'=>int|null, 'duration'=>int|null]
+ *                      o false si hay error de API
+ */
+function getAzuracastStreamerBroadcasts($username, $startTimestamp, $endTimestamp) {
+    $monthKey = date('Y-m', $startTimestamp);
+    $cacheKey = "streamer_broadcasts_{$username}_{$monthKey}";
+    $cached   = cacheGet($cacheKey, 3600);
+    if ($cached !== null) return $cached;
+
+    $config    = getConfig();
+    $apiUrl    = $config['azuracast_api_url'] ?? '';
+    $apiKey    = $config['azuracast_api_key'] ?? '';
+
+    if (empty($apiUrl)) return false;
+
+    $userData  = getUserDB($username);
+    $stationId = $userData['azuracast']['station_id'] ?? null;
+    if (empty($stationId)) return false;
+
+    $headers = ['timeout' => 20, 'user_agent' => 'SAPO/1.0'];
+    if (!empty($apiKey)) $headers['header'] = 'X-API-Key: ' . $apiKey;
+    $context = stream_context_create(['http' => $headers]);
+
+    // 1. Obtener lista de streamers de la emisora
+    $url      = rtrim($apiUrl, '/') . '/station/' . $stationId . '/streamers';
+    $response = @file_get_contents($url, false, $context);
+    if ($response === false) {
+        error_log("AzuraCast Broadcasts: error al obtener streamers desde $url");
+        return false;
+    }
+    $streamers = json_decode($response, true);
+    if (!is_array($streamers)) return false;
+
+    // 2. Para cada streamer, obtener sus broadcasts y filtrar por el mes
+    $result = [];
+    foreach ($streamers as $streamer) {
+        $streamerId  = $streamer['id'] ?? null;
+        $displayName = trim($streamer['display_name'] ?? '') ?: trim($streamer['streamer_username'] ?? '');
+        if (!$streamerId) continue;
+
+        $url      = rtrim($apiUrl, '/') . '/station/' . $stationId . '/streamers/' . $streamerId . '/broadcasts';
+        $response = @file_get_contents($url, false, $context);
+        if ($response === false) continue;
+        $broadcasts = json_decode($response, true);
+        if (!is_array($broadcasts)) continue;
+
+        foreach ($broadcasts as $bc) {
+            $start = isset($bc['timestamp_start']) ? (int)$bc['timestamp_start'] : 0;
+            $end   = isset($bc['timestamp_end'])   ? (int)$bc['timestamp_end']   : null;
+            if (!$start) continue;
+            // Descartar broadcasts fuera del rango del mes
+            if ($start > $endTimestamp) continue;
+            if ($end !== null && $end < $startTimestamp) continue;
+
+            $duration = ($end !== null && $end > $start) ? ($end - $start) : null;
+            $result[] = [
+                'name'     => $displayName,
+                'start'    => $start,
+                'end'      => $end,
+                'duration' => $duration,
+            ];
+        }
+    }
+
+    error_log("AzuraCast Broadcasts: " . count($result) . " broadcasts para station $stationId en $monthKey");
+    cacheSet($cacheKey, $result);
+    return $result;
+}
