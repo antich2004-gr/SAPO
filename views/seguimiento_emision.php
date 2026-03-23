@@ -1117,6 +1117,13 @@ if ($hasSchedule) {
         </table>
         </div>
 
+        <!-- Paginación inferior -->
+        <div style="display:flex; justify-content:flex-end; align-items:center; gap:6px; margin-top:14px; padding-top:10px; border-top:1px solid #e2e8f0;">
+            <button id="crono-prev-bot" onclick="cronoPrev()" class="btn btn-secondary" style="font-size:11px; padding:3px 10px;" disabled>← Anterior</button>
+            <span id="crono-page-info-bot" style="font-size:12px; color:#4a5568; white-space:nowrap;"></span>
+            <button id="crono-next-bot" onclick="cronoNext()" class="btn btn-secondary" style="font-size:11px; padding:3px 10px;">Siguiente →</button>
+        </div>
+
         <?php else: ?>
         <p style="color:#718096; font-size:13px; margin:0;">No hay datos de programación disponibles.</p>
         <?php endif; ?>
@@ -2080,12 +2087,15 @@ function _cronoRender() {
     }
 
     // Paginación
-    var pi = document.getElementById('crono-page-info');
-    if (pi) pi.textContent = pages > 1 ? 'Página ' + _cronoPagina + ' de ' + pages : '';
-    var prev = document.getElementById('crono-prev');
-    var next = document.getElementById('crono-next');
-    if (prev) prev.disabled = _cronoPagina <= 1;
-    if (next) next.disabled = _cronoPagina >= pages;
+    var pageText = pages > 1 ? 'Página ' + _cronoPagina + ' de ' + pages : '';
+    ['', '-bot'].forEach(function(sfx) {
+        var pi   = document.getElementById('crono-page-info' + sfx);
+        var prev = document.getElementById('crono-prev' + sfx);
+        var next = document.getElementById('crono-next' + sfx);
+        if (pi)   pi.textContent  = pageText;
+        if (prev) prev.disabled   = _cronoPagina <= 1;
+        if (next) next.disabled   = _cronoPagina >= pages;
+    });
 }
 
 function filtrarCronologico(status) {
