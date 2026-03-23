@@ -543,7 +543,14 @@ function getMissedReason(
         if ($fromLog !== null) return $fromLog;
     }
 
-    return 'Fallo de AzuraCast — la playlist no se activó';
+    // Si el log no aporta evidencia de fallo técnico y el episodio es 'available'
+    // (confirmado que sí había contenido), entonces sí es un fallo de AzuraCast.
+    // En caso 'unknown' (no podemos confirmarlo), la causa más probable es falta de episodio.
+    if ($epStatus === 'available') {
+        return 'Fallo de AzuraCast — la playlist no se activó';
+    }
+
+    return 'Sin episodio disponible';
 }
 
 // ── Helper: estado de una celda ───────────────────────────────────────────────
