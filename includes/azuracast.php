@@ -213,14 +213,17 @@ function getPlaylistContentInfo(string $username, string $playlistName, int $cac
     if (!$found) return null;
 
     $result = [
-        'num_songs'   => (int)($found['num_songs'] ?? 0),
-        'playlist_id' => (int)($found['id']        ?? 0),
-        'sample'      => [],
+        'num_songs'        => (int)($found['num_songs'] ?? 0),
+        'playlist_id'      => (int)($found['id']        ?? 0),
+        'sample'           => [],
+        'earliest_mtime'   => null, // Unix ts del fichero más antiguo (proxy de fecha de subida)
     ];
 
-    // 2. Si hay ficheros, obtener una muestra con metadatos
+    // 2. Si hay ficheros, obtener una muestra con metadatos y el mtime más antiguo
     if ($result['num_songs'] > 0 && $result['playlist_id'] > 0) {
-        $result['sample'] = _azFetchPlaylistFileSample($username, $result['playlist_id']);
+        $fetched = _azFetchPlaylistFileSample($username, $result['playlist_id']);
+        $result['sample']         = $fetched['sample'];
+        $result['earliest_mtime'] = $fetched['min_mtime'];
     }
 
     cacheSet($cacheKey, $result);
@@ -235,6 +238,9 @@ function getPlaylistContentInfo(string $username, string $playlistName, int $cac
  *
  * @return array Array de entradas ['title', 'artist', 'path'] — vacío si no se obtiene nada
  */
+/**
+ * @return array{sample: array<array{title:string,artist:string,path:string,mtime:int|null}>, min_mtime: int|null}
+ */
 function _azFetchPlaylistFileSample(string $username, int $playlistId): array
 {
     $config    = getConfig();
@@ -243,7 +249,7 @@ function _azFetchPlaylistFileSample(string $username, int $playlistId): array
     $userData  = getUserDB($username);
     $stationId = $userData['azuracast']['station_id'] ?? null;
 
-    if (empty($apiUrl) || empty($stationId) || empty($apiKey)) return [];
+    if (empty($apiUrl) || empty($stationId) || empty($apiKey)) return ['sample' => [], 'min_mtime' => null];
 
     $context = stream_context_create(['http' => [
         'timeout'    => 10,
@@ -256,16 +262,18 @@ function _azFetchPlaylistFileSample(string $username, int $playlistId): array
          . http_build_query(['playlist_id' => $playlistId, 'rowCount' => 20, 'current' => 1]);
 
     $response = @file_get_contents($url, false, $context);
-    if ($response === false) return [];
+    if ($response === false) return ['sample' => [], 'min_mtime' => null];
 
     $data = @json_decode($response, true);
-    if (!is_array($data)) return [];
+    if (!is_array($data)) return ['sample' => [], 'min_mtime' => null];
 
     // La respuesta puede ser un array directo o tener una clave 'rows'
     $rows = isset($data['rows']) ? $data['rows'] : $data;
-    if (!is_array($rows)) return [];
+    if (!is_array($rows)) return ['sample' => [], 'min_mtime' => null];
 
-    $sample = [];
+    $sample   = [];
+    $minMtime = null;
+
     foreach ($rows as $file) {
         if (!is_array($file)) continue;
 
@@ -286,11 +294,18 @@ function _azFetchPlaylistFileSample(string $username, int $playlistId): array
 
         if ($title === '' && $path === '') continue;
 
-        $sample[] = compact('title', 'artist', 'path');
-        if (count($sample) >= 3) break;
+        // mtime = fecha de subida/modificación del fichero en AzuraCast (Unix timestamp)
+        $mtime = isset($file['mtime']) ? (int)$file['mtime'] : null;
+        if ($mtime !== null && ($minMtime === null || $mtime < $minMtime)) {
+            $minMtime = $mtime;
+        }
+
+        if (count($sample) < 3) {
+            $sample[] = ['title' => $title, 'artist' => $artist, 'path' => $path, 'mtime' => $mtime];
+        }
     }
 
-    return $sample;
+    return ['sample' => $sample, 'min_mtime' => $minMtime];
 }
 
 /**
