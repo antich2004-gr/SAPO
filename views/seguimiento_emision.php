@@ -438,7 +438,7 @@ function getMissedReason(
         $entries = $dayTimeline[$date] ?? [];
         return empty($entries)
             ? 'Sin actividad en AzuraCast ese día (posible corte de señal)'
-            : 'Sin stream detectado';
+            : null; // Fila roja sin datos ya indica que no hubo emisión
     }
 
     // ── PRIORIDAD 1: Informe diario — carpeta vacía ──────────────────────────
