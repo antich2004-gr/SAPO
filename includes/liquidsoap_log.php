@@ -193,9 +193,17 @@ function diagnoseMissedFromLog(
     string $scheduledAt,
     string $liquidsoapSrcId
 ): ?string {
+    // Si el log no tiene ninguna línea para esa fecha, ha rotado (AzuraCast
+    // conserva solo los últimos MB del log; fechas antiguas desaparecen).
+    if (empty($logIndex[$date] ?? [])) {
+        return 'Fallo de AzuraCast — log de Liquidsoap no disponible para esa fecha (posible rotación del log)';
+    }
+
     // Ventana: 15 min antes hasta 90 min después del horario programado
     $relevant = _lsQueryWindow($logIndex, $date, $scheduledAt, 15, 90);
-    if (empty($relevant)) return null;
+    if (empty($relevant)) {
+        return 'Fallo de AzuraCast — sin actividad en el log de Liquidsoap en esa franja horaria';
+    }
 
     $schedMin = _lsToMin($scheduledAt);
 
@@ -362,6 +370,47 @@ function diagnoseMissedFromLog(
     $cascadeCount = count(array_intersect_key($fallbackSeen, array_flip($cascadeComps)));
     if ($cascadeCount >= 2) {
         return 'Fallo de AzuraCast — el AutoDJ recorrió la cadena de fallback sin encontrar contenido';
+    }
+
+    // ── 9. schedule_switch: ¿qué fuente activó el programador? ───────────────
+    // schedule_switch logea qué source se selecciona en cada transición.
+    // Si hay transiciones cerca del horario pero ninguna es nuestra playlist,
+    // podemos indicar qué se activó en su lugar.
+    $switchedTo = null;
+    $ourSrcActivated = false;
+    foreach ($relevant as $line) {
+        if ($line['comp'] !== 'schedule_switch') continue;
+        $lineMin = _lsToMin(substr($line['time'], 0, 5));
+        if ($lineMin < $schedMin - 2 || $lineMin > $schedMin + 5) continue;
+        $msg = $line['msg'];
+        if (!str_contains($msg, 'Switch to')) continue;
+
+        if (str_contains($msg, $liquidsoapSrcId)) {
+            $ourSrcActivated = true; // La playlist sí se activó; el fallo es posterior
+            break;
+        }
+        if (preg_match('/Switch to\s+(\S+)/i', $msg, $m)) {
+            $switchedTo = $m[1];
+        }
+    }
+    if (!$ourSrcActivated && $switchedTo !== null) {
+        return "Fallo de AzuraCast — el programador activó «{$switchedTo}» en lugar de la playlist";
+    }
+
+    // ── 10. Nuestra playlist no aparece en el log del día ─────────────────
+    // Si el source ID de la playlist no se menciona en ninguna línea de todo
+    // el día, el scheduler nunca intentó activarla.
+    $srcMentionedToday = false;
+    foreach (($logIndex[$date] ?? []) as $line) {
+        if (str_starts_with($line['comp'], $liquidsoapSrcId)
+         || str_contains($line['msg'], $liquidsoapSrcId)
+        ) {
+            $srcMentionedToday = true;
+            break;
+        }
+    }
+    if (!$srcMentionedToday) {
+        return 'Fallo de AzuraCast — la playlist no aparece en el log de ese día (el programador no la activó)';
     }
 
     return null;
