@@ -505,6 +505,11 @@ function getMissedReason(
         // no llegó a sonar después. Solo lo reportamos si la invasión fue significativa.
         $overrunMin = (int)ceil((($activeAtStart['ts'] + $activeAtStart['duration']) - $schedTs) / 60);
         if ($overrunMin > 2) {
+            // Antes de culpar al relleno, comprobar si la playlist estaba vacía.
+            // Una playlist vacía es la causa real; el relleno es solo la consecuencia.
+            if ($playlistContentInfo !== null && (int)$playlistContentInfo['num_songs'] === 0) {
+                return 'La playlist está vacía — no hay ningún episodio disponible';
+            }
             return 'Contenido de relleno invadió la franja (se extendió ~' . $overrunMin . ' min sobre el horario)';
         }
         // Overrun mínimo: caemos al diagnóstico genérico de abajo
