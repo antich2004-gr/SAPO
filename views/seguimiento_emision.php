@@ -271,18 +271,37 @@ $historyDetails    = []; // [playlist][Y-m-d] = ['time'=>'HH:MM','title'=>...,'d
 $historyEntryByDay = []; // [Y-m-d][] = ['playlist'=>...,'ts'=>...,'duration'=>secs]
 $liveSessionStarts    = [];
 $liveSessionStreamers = []; // [Y-m-d => ['HH:MM' => 'nombre_streamer']]
-$liveSessionDurations = []; // [Y-m-d => ['HH:MM' => duracion_en_segundos]]
+$liveSessionDurations = []; // [Y-m-d => ['HH:MM' => duracion_en_segundos|null]]
 $dayTimeline          = []; // [Y-m-d => [['playlist'=>..., 'time'=>'HH:MM'], ...]]
-$historyError      = false;
+$historyError         = false;
 
 if ($hasSchedule) {
+    // ── Fuente 1 (fiable): broadcasts por streamer desde la API de AzuraCast ──
+    // Cada broadcast tiene inicio exacto, fin exacto y nombre del DJ registrado.
+    $broadcasts = getAzuracastStreamerBroadcasts($trackingUsername, $monthStart, $monthEnd);
+    if (is_array($broadcasts)) {
+        // Ordenar por inicio para que la primera sesión del día se registre primero
+        usort($broadcasts, fn($a, $b) => $a['start'] <=> $b['start']);
+        foreach ($broadcasts as $bc) {
+            $dt = new DateTime('@' . $bc['start']);
+            $dt->setTimezone($timezone);
+            $dayStr  = $dt->format('Y-m-d');
+            $timeKey = $dt->format('H:i');
+            $liveSessionStarts[$dayStr][]            = $timeKey;
+            $liveSessionStreamers[$dayStr][$timeKey] = $bc['name'];
+            $liveSessionDurations[$dayStr][$timeKey] = $bc['duration']; // null si aún en curso
+        }
+    }
+
+    // ── Fuente 2 (historial de canciones): programas automáticos + fallback live ──
     $history = getAzuracastHistory($trackingUsername, $monthStart, $monthEnd);
 
     if ($history === false) {
         $historyError = true;
     } elseif (is_array($history)) {
-        // Recoger timestamps con streamer por día para luego agrupar en sesiones
-        $streamerTs = []; // [Y-m-d => [timestamp, ...]] ordenados asc
+        // Recoger timestamps con streamer por día para fallback si la API de
+        // broadcasts no devolvió datos (emisoras sin streamers registrados en AzuraCast)
+        $streamerTsFallback = [];
 
         foreach ($history as $entry) {
             $playlist = $entry['playlist'] ?? null;
@@ -299,26 +318,23 @@ if ($hasSchedule) {
             if ($playlist) {
                 if (!isset($historyMap[$playlist][$dayStr])) {
                     $historyMap[$playlist][$dayStr] = $timeStr;
-                    // Guardar detalles del primer episodio emitido ese día
                     $historyDetails[$playlist][$dayStr] = [
                         'time'     => $timeStr,
                         'title'    => $entry['song']['text'] ?? $entry['text'] ?? '',
                         'duration' => (int)($entry['duration'] ?? 0),
                     ];
                 }
-                // Todas las entradas del día (para detectar sobretiempo)
                 $historyEntryByDay[$dayStr][] = [
                     'playlist' => $playlist,
                     'ts'       => (int)$playedAt,
                     'duration' => (int)($entry['duration'] ?? 0),
                 ];
-                // Timeline para diagnóstico de emisiones perdidas
                 $dayTimeline[$dayStr][] = ['playlist' => $playlist, 'time' => $timeStr];
             }
 
-            // Acumular timestamps de streamer para agrupar después
+            // Acumular para fallback de live (solo si broadcasts no lo cubrió)
             if ($streamer !== '') {
-                $streamerTs[$dayStr][] = [
+                $streamerTsFallback[$dayStr][] = [
                     'ts'       => (int)$playedAt,
                     'name'     => $streamer,
                     'duration' => (int)($entry['duration'] ?? 0),
@@ -326,35 +342,34 @@ if ($hasSchedule) {
             }
         }
 
-        // Agrupar timestamps de streamer en sesiones (gap > 30 min = nueva sesión)
-        // y guardar inicio, streamer y duración de cada sesión
-        foreach ($streamerTs as $dayStr => $entries) {
-            usort($entries, fn($a, $b) => $a['ts'] <=> $b['ts']);
-            $sessionStartTs  = null;
-            $sessionStartKey = null;
-            $prevTs          = null;
-            $prevDur         = 0;
-            foreach ($entries as $entry) {
-                if ($sessionStartTs === null || ($entry['ts'] - $prevTs) > 1800) {
-                    // Cerrar sesión anterior: fin = último ts + duración de ese tema
-                    if ($sessionStartKey !== null) {
-                        $liveSessionDurations[$dayStr][$sessionStartKey] = ($prevTs + $prevDur) - $sessionStartTs;
+        // Fallback: si no se obtuvieron broadcasts de la API, inferir sesiones
+        // desde el campo streamer del historial de canciones
+        if (empty($broadcasts)) {
+            foreach ($streamerTsFallback as $dayStr => $entries) {
+                usort($entries, fn($a, $b) => $a['ts'] <=> $b['ts']);
+                $sessionStartTs  = null;
+                $sessionStartKey = null;
+                $prevTs          = null;
+                $prevDur         = 0;
+                foreach ($entries as $entry) {
+                    if ($sessionStartTs === null || ($entry['ts'] - $prevTs) > 1800) {
+                        if ($sessionStartKey !== null) {
+                            $liveSessionDurations[$dayStr][$sessionStartKey] = ($prevTs + $prevDur) - $sessionStartTs ?: null;
+                        }
+                        $dt = new DateTime('@' . $entry['ts']);
+                        $dt->setTimezone($timezone);
+                        $timeKey = $dt->format('H:i');
+                        $liveSessionStarts[$dayStr][]            = $timeKey;
+                        $liveSessionStreamers[$dayStr][$timeKey] = $entry['name'];
+                        $sessionStartTs  = $entry['ts'];
+                        $sessionStartKey = $timeKey;
                     }
-                    // Nueva sesión
-                    $dt = new DateTime('@' . $entry['ts']);
-                    $dt->setTimezone($timezone);
-                    $timeKey = $dt->format('H:i');
-                    $liveSessionStarts[$dayStr][]              = $timeKey;
-                    $liveSessionStreamers[$dayStr][$timeKey]   = $entry['name'];
-                    $sessionStartTs  = $entry['ts'];
-                    $sessionStartKey = $timeKey;
+                    $prevTs  = $entry['ts'];
+                    $prevDur = $entry['duration'];
                 }
-                $prevTs  = $entry['ts'];
-                $prevDur = $entry['duration'];
-            }
-            // Cerrar última sesión
-            if ($sessionStartKey !== null) {
-                $liveSessionDurations[$dayStr][$sessionStartKey] = ($prevTs + $prevDur) - $sessionStartTs;
+                if ($sessionStartKey !== null) {
+                    $liveSessionDurations[$dayStr][$sessionStartKey] = ($prevTs + $prevDur) - $sessionStartTs ?: null;
+                }
             }
         }
     }
@@ -1616,7 +1631,7 @@ if ($hasSchedule) {
             }
         ?></pre>
 
-        <p style="margin:10px 0 4px;"><strong>Directos detectados vía historial AzuraCast (inicio de sesión DJ):</strong></p>
+        <p style="margin:10px 0 4px;"><strong>Sesiones de directo detectadas <?php echo isset($broadcasts) && is_array($broadcasts) && !empty($broadcasts) ? '(fuente: API broadcasts AzuraCast ✓)' : '(fuente: historial de canciones — fallback)'; ?>:</strong></p>
         <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:120px;"><?php
             if (empty($liveSessionStarts)) {
                 echo "(ningún evento de streamer en el historial de este mes)\n";
@@ -1624,9 +1639,9 @@ if ($hasSchedule) {
                 foreach ($liveSessionStarts as $d => $times) {
                     foreach ($times as $t) {
                         $sName = $liveSessionStreamers[$d][$t] ?? '(sin nombre)';
-                        $sDur  = isset($liveSessionDurations[$d][$t])
+                        $sDur  = isset($liveSessionDurations[$d][$t]) && $liveSessionDurations[$d][$t] !== null
                             ? round($liveSessionDurations[$d][$t] / 60) . ' min'
-                            : '(sin dur)';
+                            : '(en curso o sin datos)';
                         echo htmlEsc("$d $t → streamer: \"$sName\" | duración: $sDur\n");
                     }
                 }
