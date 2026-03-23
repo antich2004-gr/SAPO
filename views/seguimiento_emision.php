@@ -543,22 +543,37 @@ function getMissedReason(
     if ($playlistContentInfo !== null) {
         $n = (int)$playlistContentInfo['num_songs'];
         if ($n === 0) {
-            return 'La playlist está vacía — no hay ningún episodio disponible';
+            return 'La playlist está vacía — no había episodio disponible';
         }
-        // La playlist tiene contenido: construir mensaje con título si lo hay
+        // La playlist tiene contenido ahora. Comprobar si todos los archivos
+        // se subieron DESPUÉS del horario de emisión (earliest_mtime > $schedTs).
+        $earliestMtime = $playlistContentInfo['earliest_mtime'] ?? null;
+        if ($earliestMtime !== null && $earliestMtime > $schedTs) {
+            // Todos los archivos son posteriores a la emisión → la playlist estaba vacía ese día
+            $uploadedDate = date('d/m/Y', $earliestMtime);
+            $sample = $playlistContentInfo['sample'] ?? [];
+            $ep = null;
+            if (!empty($sample[0])) {
+                $t = $sample[0]['title'] ?? '';
+                $p = $sample[0]['path']  ?? '';
+                $ep = $t !== '' ? $t : ($p !== '' ? basename($p) : null);
+            }
+            $epStr = $ep !== null ? ' («' . $ep . '»)' : '';
+            $noun  = $n === 1 ? 'episodio' : 'episodios';
+            return "Sin episodio ese día — el contenido se subió el {$uploadedDate}"
+                 . " ({$n} {$noun} disponibles actualmente{$epStr})";
+        }
+        // Había archivos antes de la emisión: causa desconocida
         $sample = $playlistContentInfo['sample'] ?? [];
         $ep = null;
         if (!empty($sample[0])) {
-            $title = $sample[0]['title'] ?? '';
-            $path  = $sample[0]['path']  ?? '';
-            // Preferir título de metadatos; si no, usar nombre de fichero
-            $ep = $title !== '' ? $title : ($path !== '' ? basename($path) : null);
+            $t = $sample[0]['title'] ?? '';
+            $p = $sample[0]['path']  ?? '';
+            $ep = $t !== '' ? $t : ($p !== '' ? basename($p) : null);
         }
         $epStr = $ep !== null ? ' («' . $ep . '»)' : '';
         $noun  = $n === 1 ? 'episodio' : 'episodios';
-        // La playlist tiene contenido AHORA, pero el episodio puede haberse subido después del fallo.
-        // Mostramos la causa más probable sin afirmar con certeza.
-        return "Posiblemente sin episodio ese día — la playlist tiene {$n} {$noun} actualmente{$epStr}";
+        return "La playlist tiene {$n} {$noun}{$epStr} — el programa no se activó (causa desconocida)";
     }
     return 'Sin episodio disponible — la playlist estaba vacía';
 }
