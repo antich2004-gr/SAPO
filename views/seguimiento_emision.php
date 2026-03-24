@@ -58,6 +58,18 @@ if (!isAdmin() || isImpersonating()) {
     }
 }
 
+// ── Registro en tiempo real de emisiones ──────────────────────────────────────
+require_once INCLUDES_DIR . '/emission_recorder.php';
+
+// Disparador de page-load con cooldown de 5 min (respaldo al cron de 10 min).
+// Solo registra si hay slots ya pasados que aún no están en el log.
+$_erCooldownKey = 'er_last_run_' . $trackingUsername;
+if (cacheGet($_erCooldownKey, 300) === null) {
+    cacheSet($_erCooldownKey, time());
+    try { erRecordUser($trackingUsername); } catch (Throwable $_erEx) { /* silencioso */ }
+}
+unset($_erCooldownKey, $_erEx);
+
 // ── Correcciones manuales ─────────────────────────────────────────────────────
 $overrides = loadOverrides($trackingUsername);
 
@@ -714,11 +726,14 @@ function getMissedReason(
         $overrunEndTs = $activeAtStart['ts'] + $activeAtStart['duration'];
         $overrunMin   = (int)ceil(($overrunEndTs - $schedTs) / 60);
 
-        // Buscar el fin programado del slot (para saber si el overrun lo agotó)
+        // Buscar el fin programado del slot (para saber si el overrun lo agotó).
+        // AzuraCast a veces devuelve como endTime la hora de inicio de la siguiente
+        // ocurrencia (misma hora, semana siguiente), dando un slot de 0 min — en ese
+        // caso descartamos el dato y usamos el umbral conservador.
         $schedEndTs = null;
         foreach ($programSchedules[$programKey] ?? [] as $slot) {
             if (($slot['startTime'] ?? '') === $scheduledAt && !empty($slot['endTime'])) {
-                $schedEndTs = mktime(
+                $candidate = mktime(
                     (int)substr($slot['endTime'], 0, 2),
                     (int)substr($slot['endTime'], 3, 2),
                     0,
@@ -726,6 +741,11 @@ function getMissedReason(
                     (int)substr($date, 8, 2),
                     (int)substr($date, 0, 4)
                 );
+                // Ignorar si el fin calculado es igual o anterior al inicio
+                // (endTime = "misma hora" → dato incorrecto de AzuraCast)
+                if ($candidate > $schedTs) {
+                    $schedEndTs = $candidate;
+                }
                 break;
             }
         }
@@ -738,10 +758,10 @@ function getMissedReason(
             $slotMin = (int)round(($schedEndTs - $schedTs) / 60);
             return "«{$dispName}» se alargó {$overrunMin} min y el slot caducó ({$slotMin} min)";
         } elseif ($schedEndTs === null && $overrunMin > 15) {
-            // Sin dato de fin de slot: umbral conservador de 15 min
+            // Sin dato de fin de slot fiable: umbral conservador de 15 min
             return "«{$dispName}» se alargó {$overrunMin} min sobre su horario";
         }
-        // Overrun menor que el slot → no es la causa; seguir analizando
+        // Overrun menor que el slot (o slot con datos infiables y ≤15 min) → no es la causa
     }
 
     // ── PRIORIDAD 3: Fallo de AzuraCast ──────────────────────────────────────
@@ -1102,12 +1122,20 @@ if ($hasSchedule) {
                     ] : null;
                 }
 
-                $missedReason = getMissedReason($schTime, $date, $dayTimeline,
-                                               $isLiveDay || isset($livePrograms[$progKey]),
-                                               $effectiveKey, $dailyRep,
-                                               $liquidsoapLog, $lsSrcId,
-                                               $historyEntryByDay, $programSchedules,
-                                               $plContentInfo, $playlistDisplayName);
+                // Preferir el diagnóstico registrado en tiempo real (más fiable):
+                // capturado a los pocos minutos del fallo, cuando la playlist
+                // aún estaba vacía y el log de Liquidsoap era fresco.
+                $erRecord = erGetRecord($trackingUsername, $date, $effectiveKey, $schTime ?? '');
+                if ($erRecord !== null && !empty($erRecord['reason'])) {
+                    $missedReason = $erRecord['reason'];
+                } else {
+                    $missedReason = getMissedReason($schTime, $date, $dayTimeline,
+                                                   $isLiveDay || isset($livePrograms[$progKey]),
+                                                   $effectiveKey, $dailyRep,
+                                                   $liquidsoapLog, $lsSrcId,
+                                                   $historyEntryByDay, $programSchedules,
+                                                   $plContentInfo, $playlistDisplayName);
+                }
             }
 
             // Para directos registrados: hora real y duración desde cellResult
@@ -1747,8 +1775,9 @@ if ($hasSchedule) {
                                     } else {
                                         $cls             = 'celda-directo-emitido';
                                         $liveEnd         = $liveCell['scheduledEnd'] ?? null;
-                                        $_liveTitle      = $listadoDetails[$progKey][$day['date']]['title'] ?? null;
-                                        $_liveStreamer    = $liveCell['streamer'] ?? '';
+                                        $_liveDetRow     = $listadoDetails[$progKey][$day['date']] ?? [];
+                                        $_liveTitle      = $_liveDetRow['title'] ?? null;
+                                        $_liveStreamer    = $_liveDetRow['streamer'] ?? $liveCell['streamer'] ?? '';
                                         $tooltip    = 'Directo emitido ' . $liveCell['time'] . 'h' . ($liveEnd ? ' - ' . $liveEnd . 'h' : '') . ' (esperado ' . $liveCell['scheduledAt'] . 'h)'
                                                     . ($_liveStreamer ? ' · ' . $_liveStreamer : '')
                                                     . ($_liveTitle ? ' · ' . $_liveTitle : '');
@@ -1756,7 +1785,8 @@ if ($hasSchedule) {
                                     }
                                 } elseif ($liveStatus === 'missed') {
                                     $cls     = 'celda-directo-perdido';
-                                    $reason  = getMissedReason($liveCell['scheduledAt'], $day['date'], $dayTimeline, true, $linkedLiveKey, $dailyReports[$day['date']] ?? null, null, null, $historyEntryByDay, $programSchedules, null, $playlistDisplayName);
+                                    $reason  = $listadoDetails[$progKey][$day['date']]['missedReason']
+                                             ?? getMissedReason($liveCell['scheduledAt'], $day['date'], $dayTimeline, true, $linkedLiveKey, $dailyReports[$day['date']] ?? null, null, null, $historyEntryByDay, $programSchedules, null, $playlistDisplayName);
                                     $tooltip = 'Directo no emitido (esperado ' . $liveCell['scheduledAt'] . 'h) · ' . $reason . ' · ✎ Clic para corregir';
                                     $icon    = '📡';
                                 } elseif ($liveStatus === 'expected') {
@@ -1786,8 +1816,9 @@ if ($hasSchedule) {
                                         $isManualCell = true;
                                     } else {
                                         $cls             = $isLiveProg ? 'celda-directo-emitido' : 'celda-emitida';
-                                        $_epTitle        = $listadoDetails[$progKey][$day['date']]['title'] ?? null;
-                                        $_epStreamer      = $isLiveProg ? ($cell['streamer'] ?? '') : '';
+                                        $_detRow         = $listadoDetails[$progKey][$day['date']] ?? [];
+                                        $_epTitle        = $_detRow['title'] ?? null;
+                                        $_epStreamer      = $_detRow['streamer'] ?? ($isLiveProg ? ($cell['streamer'] ?? '') : '');
                                         $tooltip  = 'Emitido a las ' . $cell['time'] . 'h (esperado ' . $cell['scheduledAt'] . 'h)'
                                                   . ($_epStreamer ? ' · ' . $_epStreamer : '')
                                                   . ($_epTitle ? ' · ' . $_epTitle : '');
@@ -1796,7 +1827,8 @@ if ($hasSchedule) {
                                     break;
                                 case 'missed':
                                     $cls     = 'celda-perdida';
-                                    $reason  = getMissedReason($cell['scheduledAt'], $day['date'], $dayTimeline, $isLiveProg, $progKey, $dailyReports[$day['date']] ?? null, null, null, $historyEntryByDay, $programSchedules, null, $playlistDisplayName);
+                                    $reason  = $listadoDetails[$progKey][$day['date']]['missedReason']
+                                             ?? getMissedReason($cell['scheduledAt'], $day['date'], $dayTimeline, $isLiveProg, $progKey, $dailyReports[$day['date']] ?? null, null, null, $historyEntryByDay, $programSchedules, null, $playlistDisplayName);
                                     $tooltip = 'No emitido (esperado ' . $cell['scheduledAt'] . 'h) · ' . $reason . ' · ✎ Clic para corregir';
                                     $icon    = '✗';
                                     break;
@@ -2837,7 +2869,10 @@ _cronoRender();
         inp.value = cur > 0 ? cur : 60;
         document.getElementById('edit-dur-error').style.display = 'none';
         var r = el.getBoundingClientRect();
-        pop.style.top  = (r.bottom + 6 + window.scrollY) + 'px';
+        // position:fixed es relativo al viewport → NO sumar scrollY
+        var top = r.bottom + 6;
+        if (top + 160 > window.innerHeight) top = r.top - 160 - 6; // si no cabe abajo, abrir arriba
+        pop.style.top  = Math.max(4, top) + 'px';
         pop.style.left = Math.min(r.left, window.innerWidth - 230) + 'px';
         pop.style.display = 'block';
         inp.focus();

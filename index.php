@@ -1609,8 +1609,12 @@ if (isset($_POST['action']) && $_POST['action'] === 'update_slot_duration' && is
 
     $info = getProgramInfo($username, $programName);
     if ($info === null) {
-        echo json_encode(['success' => false, 'error' => 'Programa no encontrado']);
-        exit;
+        // Diagnóstico: listar claves disponibles
+        $allProgs = loadProgramsDB($username);
+        $keys = array_keys($allProgs['programs'] ?? []);
+        error_log("[update_slot_duration] MISS — user=[$username] name=[$programName] hex=[" . bin2hex($programName) . "] available_keys=[" . implode('|', $keys) . "]");
+        // Programa existe en AzuraCast pero aún no está en la BD de SAPO → crear entrada mínima
+        $info = [];
     }
 
     // Construir array de slots (migrando formato legacy si es necesario)
