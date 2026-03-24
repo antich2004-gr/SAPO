@@ -1923,187 +1923,185 @@ if ($hasSchedule) {
     <?php endif; ?>
 
 
-    <!-- ── Debug (solo con ?debug=1) ────────────────────────────────────────── -->
-    <?php if (isset($_GET['debug']) && $_GET['debug'] === '1'): ?>
-    <div style="padding:16px 24px 24px; border-top:2px dashed #f59e0b; background:#fffbeb; font-size:12px; font-family:monospace;">
-        <strong style="color:#92400e;">🔍 DEBUG — solo visible con ?debug=1</strong>
-        <?php
-        // Diagnóstico streamer (también emitido como comentario HTML para Ctrl+U)
-        $dbgStreamerHex  = isset($dbgStreamerSample) ? $dbgStreamerSample['hex']  : '(no hay entradas con streamer)';
-        $dbgStreamerRaw  = isset($dbgStreamerSample) ? $dbgStreamerSample['raw']  : '';
-        $dbgMapJson      = json_encode($streamerDisplayNames, JSON_UNESCAPED_UNICODE);
-        echo "<!-- SAPO_DBG streamer_hex=[$dbgStreamerHex] streamer_raw=[$dbgStreamerRaw] map=$dbgMapJson -->\n";
-        ?>
-
-        <p style="margin:10px 0 4px;"><strong>Programas en BD de SAPO (todos):</strong></p>
-        <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:200px;"><?php
-            foreach ($dbPrograms as $k => $v) {
-                $t = $v['playlist_type'] ?? '?';
-                $o = $v['orphaned'] ?? false;
-                $slots = !empty($v['schedule_slots']) ? count($v['schedule_slots']).' slot(s)' : (!empty($v['schedule_days']) ? 'formato antiguo' : 'SIN HORARIO');
-                echo htmlEsc("[$t" . ($o?' HUÉRFANO':'') . "] $k  →  $slots\n");
-            }
-            if (empty($dbPrograms)) echo '(vacío — no hay programas en la BD de SAPO)';
-        ?></pre>
-
-        <p style="margin:10px 0 4px;"><strong>Directos cargados en seguimiento (livePrograms):</strong></p>
-        <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:160px;"><?php
-            foreach ($livePrograms as $key => $_) {
-                $display = $displayNameMap[$key] ?? $key;
-                $slots   = $programSchedules[$key] ?? [];
-                echo htmlEsc("Clave SAPO: $key\n");
-                echo htmlEsc("  Display:  $display\n");
-                $dowL = ['D','L','M','X','J','V','S'];
-                foreach ($slots as $s) {
-                    echo htmlEsc("  Slot: " . $dowL[$s['dayOfWeek']] . " " . $s['startTime'] . "-" . $s['endTime'] . "\n");
-                }
-            }
-            if (empty($livePrograms)) echo '(ningún directo cargado)';
-        ?></pre>
-
-        <p style="margin:10px 0 4px;"><strong>Mapa streamers (username → display_name):</strong></p>
-        <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:80px;"><?php
-            if (empty($streamerDisplayNames)) {
-                echo "(vacío — API no disponible o sin streamers registrados)\n";
-            } else {
-                foreach ($streamerDisplayNames as $u => $d) {
-                    echo htmlEsc("$u → $d\n");
-                }
-            }
-            if (!empty($dbgStreamerSample)) {
-                echo "\nPrimer streamer del historial:\n";
-                echo htmlEsc("  raw: [" . $dbgStreamerSample['raw'] . "]\n");
-                echo htmlEsc("  hex: " . $dbgStreamerSample['hex'] . "\n");
-            }
-        ?></pre>
-
-        <p style="margin:10px 0 4px;"><strong>Informes diarios — directos del mes:</strong></p>
-        <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:120px;"><?php
-            $dbgReportsPath = getReportsPath($trackingUsername);
-            echo htmlEsc("Ruta informes: " . ($dbgReportsPath ?: '(base_path no configurado)') . "\n");
-            if (empty($liveEmissionsPerDay)) {
-                echo "(sin informes con directos para este mes)\n";
-            } else {
-                foreach ($liveEmissionsPerDay as $d => $times) {
-                    echo htmlEsc("$d: " . implode(', ', $times) . "\n");
-                }
-            }
-        ?></pre>
-
-        <p style="margin:10px 0 4px;"><strong>Emisiones en directo detectadas en el log (con detalle):</strong></p>
-        <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:160px;"><?php
-            if (empty($liveEmissionsDetails)) {
-                echo "(sin detalle de emisiones — formato de informe no reconocido o sin informes)\n";
-            } else {
-                foreach ($liveEmissionsDetails as $dateStr => $byTime) {
-                    foreach ($byTime as $startT => $det) {
-                        $end = $det['end'] ?? '(aún activo)';
-                        $dur = $det['durSec'] ? round($det['durSec']/60).' min' : '—';
-                        echo htmlEsc("$dateStr $startT → $end | $dur | streamer: " . ($det['streamer'] ?: '(vacío)') . "\n");
-                    }
-                }
-            }
-        ?></pre>
-
-        <p style="margin:10px 0 4px;"><strong>Sesiones de directo detectadas
-        [broadcasts API: <?php echo isset($broadcasts) ? (is_array($broadcasts) ? count($broadcasts) . ' sesiones' : 'ERROR') : 'no ejecutado'; ?>]
-        [now playing: <?php echo isset($nowLive) ? ($nowLive ? 'LIVE "'.htmlEsc($nowLive['streamer_name'] ?? '').'"' : 'no en directo') : 'solo mes actual'; ?>]
-        [fallback historial: <?php echo isset($streamerTsFallback) ? count($streamerTsFallback) . ' días con streamer' : 'n/a'; ?>]
-        :</strong></p>
-        <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:120px;"><?php
-            if (empty($liveSessionStarts)) {
-                echo "(ningún evento de streamer en el historial de este mes)\n";
-            } else {
-                foreach ($liveSessionStarts as $d => $times) {
-                    foreach ($times as $t) {
-                        $sName = $liveSessionStreamers[$d][$t] ?? '(sin nombre)';
-                        $sDur  = isset($liveSessionDurations[$d][$t]) && $liveSessionDurations[$d][$t] !== null
-                            ? round($liveSessionDurations[$d][$t] / 60) . ' min'
-                            : '(en curso o sin datos)';
-                        echo htmlEsc("$d $t → streamer: \"$sName\" | duración: $sDur\n");
-                    }
-                }
-            }
-        ?></pre>
-
-        <p style="margin:10px 0 4px;"><strong>Diagnóstico oyentes — muestra de entradas del historial:</strong></p>
-        <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:160px;"><?php
-            $dbgSample = [];
-            foreach ($historyEntryByDay as $dbgDay => $dbgEntries) {
-                foreach ($dbgEntries as $dbgE) {
-                    $dbgSample[] = $dbgE;
-                    if (count($dbgSample) >= 3) break 2;
-                }
-            }
-            if (empty($dbgSample)) {
-                echo "(sin entradas en historyEntryByDay)\n";
-            } else {
-                foreach ($dbgSample as $idx => $dbgE) {
-                    echo htmlEsc("Entrada $idx: playlist=[" . ($dbgE['playlist'] ?? 'NULL') . "]"
-                        . " ts=" . ($dbgE['ts'] ?? '?')
-                        . " dur=" . ($dbgE['duration'] ?? '?')
-                        . " listeners_unique=" . ($dbgE['listeners_unique'] ?? 'CAMPO NO EXISTE') . "\n");
-                }
-                $hasListeners = array_filter($dbgSample, fn($e) => ($e['listeners_unique'] ?? 0) > 0);
-                echo htmlEsc("\nEntradas con listeners_unique > 0: " . count($hasListeners) . " de " . count($dbgSample) . "\n");
-                $totalEntries = array_sum(array_map('count', $historyEntryByDay));
-                echo htmlEsc("Total entradas historyEntryByDay: $totalEntries\n");
-            }
-        ?></pre>
-
-        <p style="margin:10px 0 4px;"><strong>Filas calculadas del listado (últimos 7 días con datos):</strong></p>
-        <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:200px;"><?php
-            $cutoff = date('Y-m-d', strtotime('-7 days'));
-            $shown  = 0;
-            // Recopilar todas las filas con sus datos clave
-            $allRows = [];
-            foreach ($listadoDetails as $progKey => $byDate) {
-                foreach ($byDate as $date => $row) {
-                    $allRows[] = array_merge($row, ['program' => $progKey, 'date' => $date]);
-                }
-            }
-            // Ordenar por fecha desc
-            usort($allRows, fn($a,$b) => strcmp($b['date'], $a['date']));
-            foreach ($allRows as $row) {
-                if ($row['date'] < $cutoff) continue;
-                if ($row['status'] === 'missed' && !$row['realTime']) continue;
-                $shown++;
-                $dur = $row['realDurSec'] !== null
-                    ? round($row['realDurSec'] / 60) . 'min' : '—';
-                $schDurMin = $row['schDurMin'] ?? 0;
-                $diffMin   = ($row['realDurSec'] !== null && $schDurMin > 0)
-                    ? round($row['realDurSec'] / 60) - $schDurMin : null;
-                $diff = $diffMin !== null ? sprintf('%+d', $diffMin) . 'min' : '—';
-                echo htmlEsc(sprintf(
-                    "%s | %-28s | H.Real=%-5s | Dur=%-7s | Diff=%-7s | Ep=%-25s | src=%s\n",
-                    $row['date'],
-                    substr($row['program'], 0, 28),
-                    $row['realTime'] ?? '—',
-                    $dur,
-                    $diff,
-                    substr($row['title'] ?? '—', 0, 25),
-                    $row['durSource'] ?? '?'
-                ));
-            }
-            if (!$shown) echo "(sin filas con datos en los últimos 7 días)\n";
-        ?></pre>
-
-        <p style="margin:10px 0 4px;"><strong>Historial del mes — playlists (programas automáticos):</strong></p>
-        <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:160px;"><?php
-            if ($historyError) {
-                echo 'ERROR al obtener historial (¿API Key configurada?)';
-            } elseif (empty($historyMap)) {
-                echo '(vacío — sin datos de historial para este mes)';
-            } else {
-                foreach ($historyMap as $playlist => $dayData) {
-                    echo htmlEsc("$playlist: " . count($dayData) . " día(s) — " . implode(', ', array_keys($dayData)) . "\n");
-                }
-            }
-        ?></pre>
-    </div>
-    <?php endif; ?>
-
     </div><!-- /vista-detalle -->
+
+<!-- ── Debug (solo con ?debug=1) ────────────────────────────────────────── -->
+<?php if (isset($_GET['debug']) && $_GET['debug'] === '1'): ?>
+<div style="padding:16px 24px 24px; border-top:2px dashed #f59e0b; background:#fffbeb; font-size:12px; font-family:monospace;">
+    <strong style="color:#92400e;">🔍 DEBUG — solo visible con ?debug=1</strong>
+    <?php
+    // Diagnóstico streamer (también emitido como comentario HTML para Ctrl+U)
+    $dbgStreamerHex  = isset($dbgStreamerSample) ? $dbgStreamerSample['hex']  : '(no hay entradas con streamer)';
+    $dbgStreamerRaw  = isset($dbgStreamerSample) ? $dbgStreamerSample['raw']  : '';
+    $dbgMapJson      = json_encode($streamerDisplayNames, JSON_UNESCAPED_UNICODE);
+    echo "<!-- SAPO_DBG streamer_hex=[$dbgStreamerHex] streamer_raw=[$dbgStreamerRaw] map=$dbgMapJson -->\n";
+    ?>
+
+    <p style="margin:10px 0 4px;"><strong>Programas en BD de SAPO (todos):</strong></p>
+    <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:200px;"><?php
+        foreach ($dbPrograms as $k => $v) {
+            $t = $v['playlist_type'] ?? '?';
+            $o = $v['orphaned'] ?? false;
+            $slots = !empty($v['schedule_slots']) ? count($v['schedule_slots']).' slot(s)' : (!empty($v['schedule_days']) ? 'formato antiguo' : 'SIN HORARIO');
+            echo htmlEsc("[$t" . ($o?' HUÉRFANO':'') . "] $k  →  $slots\n");
+        }
+        if (empty($dbPrograms)) echo '(vacío — no hay programas en la BD de SAPO)';
+    ?></pre>
+
+    <p style="margin:10px 0 4px;"><strong>Directos cargados en seguimiento (livePrograms):</strong></p>
+    <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:160px;"><?php
+        foreach ($livePrograms as $key => $_) {
+            $display = $displayNameMap[$key] ?? $key;
+            $slots   = $programSchedules[$key] ?? [];
+            echo htmlEsc("Clave SAPO: $key\n");
+            echo htmlEsc("  Display:  $display\n");
+            $dowL = ['D','L','M','X','J','V','S'];
+            foreach ($slots as $s) {
+                echo htmlEsc("  Slot: " . $dowL[$s['dayOfWeek']] . " " . $s['startTime'] . "-" . $s['endTime'] . "\n");
+            }
+        }
+        if (empty($livePrograms)) echo '(ningún directo cargado)';
+    ?></pre>
+
+    <p style="margin:10px 0 4px;"><strong>Mapa streamers (username → display_name):</strong></p>
+    <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:80px;"><?php
+        if (empty($streamerDisplayNames)) {
+            echo "(vacío — API no disponible o sin streamers registrados)\n";
+        } else {
+            foreach ($streamerDisplayNames as $u => $d) {
+                echo htmlEsc("$u → $d\n");
+            }
+        }
+        if (!empty($dbgStreamerSample)) {
+            echo "\nPrimer streamer del historial:\n";
+            echo htmlEsc("  raw: [" . $dbgStreamerSample['raw'] . "]\n");
+            echo htmlEsc("  hex: " . $dbgStreamerSample['hex'] . "\n");
+        }
+    ?></pre>
+
+    <p style="margin:10px 0 4px;"><strong>Informes diarios — directos del mes:</strong></p>
+    <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:120px;"><?php
+        $dbgReportsPath = getReportsPath($trackingUsername);
+        echo htmlEsc("Ruta informes: " . ($dbgReportsPath ?: '(base_path no configurado)') . "\n");
+        if (empty($liveEmissionsPerDay)) {
+            echo "(sin informes con directos para este mes)\n";
+        } else {
+            foreach ($liveEmissionsPerDay as $d => $times) {
+                echo htmlEsc("$d: " . implode(', ', $times) . "\n");
+            }
+        }
+    ?></pre>
+
+    <p style="margin:10px 0 4px;"><strong>Emisiones en directo detectadas en el log (con detalle):</strong></p>
+    <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:160px;"><?php
+        if (empty($liveEmissionsDetails)) {
+            echo "(sin detalle de emisiones — formato de informe no reconocido o sin informes)\n";
+        } else {
+            foreach ($liveEmissionsDetails as $dateStr => $byTime) {
+                foreach ($byTime as $startT => $det) {
+                    $end = $det['end'] ?? '(aún activo)';
+                    $dur = $det['durSec'] ? round($det['durSec']/60).' min' : '—';
+                    echo htmlEsc("$dateStr $startT → $end | $dur | streamer: " . ($det['streamer'] ?: '(vacío)') . "\n");
+                }
+            }
+        }
+    ?></pre>
+
+    <p style="margin:10px 0 4px;"><strong>Sesiones de directo detectadas
+    [broadcasts API: <?php echo isset($broadcasts) ? (is_array($broadcasts) ? count($broadcasts) . ' sesiones' : 'ERROR') : 'no ejecutado'; ?>]
+    [now playing: <?php echo isset($nowLive) ? ($nowLive ? 'LIVE "'.htmlEsc($nowLive['streamer_name'] ?? '').'"' : 'no en directo') : 'solo mes actual'; ?>]
+    [fallback historial: <?php echo isset($streamerTsFallback) ? count($streamerTsFallback) . ' días con streamer' : 'n/a'; ?>]
+    :</strong></p>
+    <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:120px;"><?php
+        if (empty($liveSessionStarts)) {
+            echo "(ningún evento de streamer en el historial de este mes)\n";
+        } else {
+            foreach ($liveSessionStarts as $d => $times) {
+                foreach ($times as $t) {
+                    $sName = $liveSessionStreamers[$d][$t] ?? '(sin nombre)';
+                    $sDur  = isset($liveSessionDurations[$d][$t]) && $liveSessionDurations[$d][$t] !== null
+                        ? round($liveSessionDurations[$d][$t] / 60) . ' min'
+                        : '(en curso o sin datos)';
+                    echo htmlEsc("$d $t → streamer: \"$sName\" | duración: $sDur\n");
+                }
+            }
+        }
+    ?></pre>
+
+    <p style="margin:10px 0 4px;"><strong>Diagnóstico oyentes — muestra de entradas del historial:</strong></p>
+    <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:160px;"><?php
+        $dbgSample = [];
+        foreach ($historyEntryByDay as $dbgDay => $dbgEntries) {
+            foreach ($dbgEntries as $dbgE) {
+                $dbgSample[] = $dbgE;
+                if (count($dbgSample) >= 3) break 2;
+            }
+        }
+        if (empty($dbgSample)) {
+            echo "(sin entradas en historyEntryByDay)\n";
+        } else {
+            foreach ($dbgSample as $idx => $dbgE) {
+                echo htmlEsc("Entrada $idx: playlist=[" . ($dbgE['playlist'] ?? 'NULL') . "]"
+                    . " ts=" . ($dbgE['ts'] ?? '?')
+                    . " dur=" . ($dbgE['duration'] ?? '?')
+                    . " listeners_unique=" . ($dbgE['listeners_unique'] ?? 'CAMPO NO EXISTE') . "\n");
+            }
+            $hasListeners = array_filter($dbgSample, fn($e) => ($e['listeners_unique'] ?? 0) > 0);
+            echo htmlEsc("\nEntradas con listeners_unique > 0: " . count($hasListeners) . " de " . count($dbgSample) . "\n");
+            $totalEntries = array_sum(array_map('count', $historyEntryByDay));
+            echo htmlEsc("Total entradas historyEntryByDay: $totalEntries\n");
+        }
+    ?></pre>
+
+    <p style="margin:10px 0 4px;"><strong>Filas calculadas del listado (últimos 7 días con datos):</strong></p>
+    <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:200px;"><?php
+        $cutoff = date('Y-m-d', strtotime('-7 days'));
+        $shown  = 0;
+        $allRows = [];
+        foreach ($listadoDetails as $progKey => $byDate) {
+            foreach ($byDate as $date => $row) {
+                $allRows[] = array_merge($row, ['program' => $progKey, 'date' => $date]);
+            }
+        }
+        usort($allRows, fn($a,$b) => strcmp($b['date'], $a['date']));
+        foreach ($allRows as $row) {
+            if ($row['date'] < $cutoff) continue;
+            if ($row['status'] === 'missed' && !$row['realTime']) continue;
+            $shown++;
+            $dur = $row['realDurSec'] !== null
+                ? round($row['realDurSec'] / 60) . 'min' : '—';
+            $schDurMin = $row['schDurMin'] ?? 0;
+            $diffMin   = ($row['realDurSec'] !== null && $schDurMin > 0)
+                ? round($row['realDurSec'] / 60) - $schDurMin : null;
+            $diff = $diffMin !== null ? sprintf('%+d', $diffMin) . 'min' : '—';
+            echo htmlEsc(sprintf(
+                "%s | %-28s | H.Real=%-5s | Dur=%-7s | Diff=%-7s | Ep=%-25s | src=%s\n",
+                $row['date'],
+                substr($row['program'], 0, 28),
+                $row['realTime'] ?? '—',
+                $dur,
+                $diff,
+                substr($row['title'] ?? '—', 0, 25),
+                $row['durSource'] ?? '?'
+            ));
+        }
+        if (!$shown) echo "(sin filas con datos en los últimos 7 días)\n";
+    ?></pre>
+
+    <p style="margin:10px 0 4px;"><strong>Historial del mes — playlists (programas automáticos):</strong></p>
+    <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:160px;"><?php
+        if ($historyError) {
+            echo 'ERROR al obtener historial (¿API Key configurada?)';
+        } elseif (empty($historyMap)) {
+            echo '(vacío — sin datos de historial para este mes)';
+        } else {
+            foreach ($historyMap as $playlist => $dayData) {
+                echo htmlEsc("$playlist: " . count($dayData) . " día(s) — " . implode(', ', array_keys($dayData)) . "\n");
+            }
+        }
+    ?></pre>
+</div>
+<?php endif; ?>
 
 </div><!-- /card -->
 
