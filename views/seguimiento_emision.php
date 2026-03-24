@@ -35,6 +35,9 @@ if (!isAdmin() || isImpersonating()) {
                     <?php if (isset($_GET['month'])): ?>
                     <input type="hidden" name="month" value="<?php echo htmlEsc($_GET['month']); ?>">
                     <?php endif; ?>
+                    <?php if (isset($_GET['debug']) && $_GET['debug'] === '1'): ?>
+                    <input type="hidden" name="debug" value="1">
+                    <?php endif; ?>
                     <div class="form-group">
                         <label>Emisora</label>
                         <select name="station" class="form-control">
@@ -76,6 +79,7 @@ $monthEnd    = mktime(23, 59, 59, $month, $daysInMonth, $year);
 
 // Construir base URL preservando station si aplica
 $stationParam = (!isImpersonating() && isset($_GET['station'])) ? '&station=' . urlencode($trackingUsername) : '';
+$debugParam   = (isset($_GET['debug']) && $_GET['debug'] === '1') ? '&debug=1' : '';
 $prevMonth    = date('Y-m', strtotime('-1 month', $monthStart));
 $nextMonth    = date('Y-m', strtotime('+1 month', $monthStart));
 $canGoNext    = ($nextMonth <= $currentMonth);
@@ -914,6 +918,7 @@ if ($hasSchedule) {
 
             $epTitle    = null;
             $realDurSec = null;
+            $durSource  = 'none';
             if ($status === 'played') {
                 $det = $historyDetails[$hk2][$date] ?? null;
                 if ($det) {
@@ -923,10 +928,14 @@ if ($hasSchedule) {
                     $spanEnd = $det['span_end'] ?? 0;
                     if ($spanEnd > $startTs) {
                         $realDurSec = $spanEnd - $startTs;
+                        $durSource  = 'history-span';
                     } elseif ($startTs > 0 && $date === $today) {
                         // Una sola entrada en caché (stream en curso con duration=0):
                         // usar el tiempo transcurrido desde el primer tema como estimación
                         $realDurSec = time() - $startTs;
+                        $durSource  = 'history-elapsed';
+                    } else {
+                        $durSource = 'history-noSpan(startTs=' . $startTs . ',spanEnd=' . $spanEnd . ')';
                     }
                     // Guardar el streamer de este det para usarlo después del bloque live
                     $histDetStreamer = $det['streamer'] ?? '';
@@ -981,6 +990,7 @@ if ($hasSchedule) {
 
             // Para directos registrados: hora real y duración desde cellResult
             $liveStreamer = $cellResult['streamer'] ?? '';
+            $durSource    = 'none';
             if ($isLiveDay || isset($livePrograms[$progKey])) {
                 if (!$realTime && isset($cellResult['time'])) {
                     $realTime = $cellResult['time'];
@@ -989,8 +999,12 @@ if ($hasSchedule) {
                     $dur = $liveSessionDurations[$date][$realTime] ?? null;
                     if ($dur !== null) {
                         $realDurSec = $dur;
+                        $durSource  = 'broadcasts(direct)';
                     } elseif (isset($liveSessionStartTs[$date][$realTime])) {
                         $realDurSec = max(0, time() - $liveSessionStartTs[$date][$realTime]);
+                        $durSource  = 'elapsed(direct)';
+                    } else {
+                        $durSource = 'live-noEnd(' . ($liveSessionDurations[$date][$realTime] ?? 'noKey') . ')';
                     }
                 }
             }
@@ -1008,8 +1022,12 @@ if ($hasSchedule) {
                         $bDur = $liveSessionDurations[$date][$sessionTime] ?? null;
                         if ($bDur !== null) {
                             $realDurSec = $bDur;
+                            $durSource  = 'broadcasts(vincular)';
                         } elseif (isset($liveSessionStartTs[$date][$sessionTime])) {
                             $realDurSec = max(0, time() - $liveSessionStartTs[$date][$sessionTime]);
+                            $durSource  = 'elapsed(vincular)';
+                        } else {
+                            $durSource = 'vincular-noEnd(sessions=' . implode(',', array_keys($liveSessionDurations[$date] ?? [])) . ')';
                         }
                     }
                     break;
@@ -1033,6 +1051,7 @@ if ($hasSchedule) {
                 'title'        => $epTitle,
                 'streamer'     => $liveStreamer,
                 'missedReason' => $missedReason,
+                'durSource'    => $durSource,
             ];
         }
     }
@@ -1133,7 +1152,7 @@ if ($hasSchedule) {
     <!-- ── Navegación de mes ────────────────────────────────────────────────── -->
     <div id="nav-mes" style="padding:14px 24px; background:#f7fafc; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; gap:16px;">
         <?php if ($canGoPrev): ?>
-        <a href="?page=seguimiento_emision&month=<?php echo htmlEsc($prevMonth . $stationParam); ?>"
+        <a href="?page=seguimiento_emision&month=<?php echo htmlEsc($prevMonth . $stationParam . $debugParam); ?>"
            class="btn btn-secondary" style="font-size:13px; padding:6px 14px;">← Anterior</a>
         <?php else: ?>
         <button class="btn btn-secondary" disabled style="font-size:13px; padding:6px 14px; opacity:.4; cursor:not-allowed;">← Anterior</button>
@@ -1144,7 +1163,7 @@ if ($hasSchedule) {
         </span>
 
         <?php if ($canGoNext): ?>
-            <a href="?page=seguimiento_emision&month=<?php echo htmlEsc($nextMonth . $stationParam); ?>"
+            <a href="?page=seguimiento_emision&month=<?php echo htmlEsc($nextMonth . $stationParam . $debugParam); ?>"
                class="btn btn-secondary" style="font-size:13px; padding:6px 14px;">Siguiente →</a>
         <?php else: ?>
             <button class="btn btn-secondary" disabled style="font-size:13px; padding:6px 14px; opacity:.4; cursor:not-allowed;">Siguiente →</button>
@@ -1723,6 +1742,43 @@ if ($hasSchedule) {
                     }
                 }
             }
+        ?></pre>
+
+        <p style="margin:10px 0 4px;"><strong>Filas calculadas del listado (últimos 7 días con datos):</strong></p>
+        <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:200px;"><?php
+            $cutoff = date('Y-m-d', strtotime('-7 days'));
+            $shown  = 0;
+            // Recopilar todas las filas con sus datos clave
+            $allRows = [];
+            foreach ($listadoDetails as $progKey => $byDate) {
+                foreach ($byDate as $date => $row) {
+                    $allRows[] = array_merge($row, ['program' => $progKey, 'date' => $date]);
+                }
+            }
+            // Ordenar por fecha desc
+            usort($allRows, fn($a,$b) => strcmp($b['date'], $a['date']));
+            foreach ($allRows as $row) {
+                if ($row['date'] < $cutoff) continue;
+                if ($row['status'] === 'missed' && !$row['realTime']) continue;
+                $shown++;
+                $dur = $row['realDurSec'] !== null
+                    ? round($row['realDurSec'] / 60) . 'min' : '—';
+                $schDurMin = $row['schDurMin'] ?? 0;
+                $diffMin   = ($row['realDurSec'] !== null && $schDurMin > 0)
+                    ? round($row['realDurSec'] / 60) - $schDurMin : null;
+                $diff = $diffMin !== null ? sprintf('%+d', $diffMin) . 'min' : '—';
+                echo htmlEsc(sprintf(
+                    "%s | %-28s | H.Real=%-5s | Dur=%-7s | Diff=%-7s | Ep=%-25s | src=%s\n",
+                    $row['date'],
+                    substr($row['program'], 0, 28),
+                    $row['realTime'] ?? '—',
+                    $dur,
+                    $diff,
+                    substr($row['title'] ?? '—', 0, 25),
+                    $row['durSource'] ?? '?'
+                ));
+            }
+            if (!$shown) echo "(sin filas con datos en los últimos 7 días)\n";
         ?></pre>
 
         <p style="margin:10px 0 4px;"><strong>Historial del mes — playlists (programas automáticos):</strong></p>
