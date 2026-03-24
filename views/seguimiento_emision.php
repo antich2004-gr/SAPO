@@ -1747,8 +1747,9 @@ if ($hasSchedule) {
                                     } else {
                                         $cls             = 'celda-directo-emitido';
                                         $liveEnd         = $liveCell['scheduledEnd'] ?? null;
-                                        $_liveTitle      = $listadoDetails[$progKey][$day['date']]['title'] ?? null;
-                                        $_liveStreamer    = $liveCell['streamer'] ?? '';
+                                        $_liveDetRow     = $listadoDetails[$progKey][$day['date']] ?? [];
+                                        $_liveTitle      = $_liveDetRow['title'] ?? null;
+                                        $_liveStreamer    = $_liveDetRow['streamer'] ?? $liveCell['streamer'] ?? '';
                                         $tooltip    = 'Directo emitido ' . $liveCell['time'] . 'h' . ($liveEnd ? ' - ' . $liveEnd . 'h' : '') . ' (esperado ' . $liveCell['scheduledAt'] . 'h)'
                                                     . ($_liveStreamer ? ' · ' . $_liveStreamer : '')
                                                     . ($_liveTitle ? ' · ' . $_liveTitle : '');
@@ -1756,7 +1757,8 @@ if ($hasSchedule) {
                                     }
                                 } elseif ($liveStatus === 'missed') {
                                     $cls     = 'celda-directo-perdido';
-                                    $reason  = getMissedReason($liveCell['scheduledAt'], $day['date'], $dayTimeline, true, $linkedLiveKey, $dailyReports[$day['date']] ?? null, null, null, $historyEntryByDay, $programSchedules, null, $playlistDisplayName);
+                                    $reason  = $listadoDetails[$progKey][$day['date']]['missedReason']
+                                             ?? getMissedReason($liveCell['scheduledAt'], $day['date'], $dayTimeline, true, $linkedLiveKey, $dailyReports[$day['date']] ?? null, null, null, $historyEntryByDay, $programSchedules, null, $playlistDisplayName);
                                     $tooltip = 'Directo no emitido (esperado ' . $liveCell['scheduledAt'] . 'h) · ' . $reason . ' · ✎ Clic para corregir';
                                     $icon    = '📡';
                                 } elseif ($liveStatus === 'expected') {
@@ -1786,8 +1788,9 @@ if ($hasSchedule) {
                                         $isManualCell = true;
                                     } else {
                                         $cls             = $isLiveProg ? 'celda-directo-emitido' : 'celda-emitida';
-                                        $_epTitle        = $listadoDetails[$progKey][$day['date']]['title'] ?? null;
-                                        $_epStreamer      = $isLiveProg ? ($cell['streamer'] ?? '') : '';
+                                        $_detRow         = $listadoDetails[$progKey][$day['date']] ?? [];
+                                        $_epTitle        = $_detRow['title'] ?? null;
+                                        $_epStreamer      = $_detRow['streamer'] ?? ($isLiveProg ? ($cell['streamer'] ?? '') : '');
                                         $tooltip  = 'Emitido a las ' . $cell['time'] . 'h (esperado ' . $cell['scheduledAt'] . 'h)'
                                                   . ($_epStreamer ? ' · ' . $_epStreamer : '')
                                                   . ($_epTitle ? ' · ' . $_epTitle : '');
@@ -1796,7 +1799,8 @@ if ($hasSchedule) {
                                     break;
                                 case 'missed':
                                     $cls     = 'celda-perdida';
-                                    $reason  = getMissedReason($cell['scheduledAt'], $day['date'], $dayTimeline, $isLiveProg, $progKey, $dailyReports[$day['date']] ?? null, null, null, $historyEntryByDay, $programSchedules, null, $playlistDisplayName);
+                                    $reason  = $listadoDetails[$progKey][$day['date']]['missedReason']
+                                             ?? getMissedReason($cell['scheduledAt'], $day['date'], $dayTimeline, $isLiveProg, $progKey, $dailyReports[$day['date']] ?? null, null, null, $historyEntryByDay, $programSchedules, null, $playlistDisplayName);
                                     $tooltip = 'No emitido (esperado ' . $cell['scheduledAt'] . 'h) · ' . $reason . ' · ✎ Clic para corregir';
                                     $icon    = '✗';
                                     break;
