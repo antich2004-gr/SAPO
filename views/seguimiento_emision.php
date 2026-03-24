@@ -337,8 +337,7 @@ if ($hasSchedule) {
             $playlist = $entry['playlist'] ?? null;
             $streamer = trim($entry['streamer'] ?? '');
             if ($streamer !== '') {
-                static $dbgStreamerSample = null;
-                if ($dbgStreamerSample === null) {
+                if (!isset($dbgStreamerSample)) {
                     $dbgStreamerSample = ['raw' => $streamer, 'hex' => bin2hex($streamer)];
                 }
                 if (!empty($streamerDisplayNames)) {
