@@ -439,6 +439,21 @@ if ($hasSchedule) {
 // $streamerDisplayNames ya asignado dentro del bloque hasSchedule (si aplica).
 if (!isset($streamerDisplayNames)) $streamerDisplayNames = [];
 
+// Complementar el mapa con nombres reales extraídos del historial de AzuraCast
+// (liveSessionStreamers tiene display_names válidos del fallback del historial).
+// Esto permite normalizar aunque la API de streamers no responda.
+if (empty($streamerDisplayNames) && !empty($liveSessionStreamers)) {
+    foreach ($liveSessionStreamers as $dayNames) {
+        foreach ($dayNames as $sName) {
+            if ($sName && $sName !== '(DJ)') {
+                // Usar como display_name; como clave usar versión ascii simplificada
+                $key = mb_strtolower(preg_replace('/[^a-z0-9]/i', '', $sName));
+                if ($key) $streamerDisplayNames[$key] = $sName;
+            }
+        }
+    }
+}
+
 // ── 3. Calcular días del mes: número, día semana, fecha Y-m-d ─────────────────
 $days = [];
 for ($d = 1; $d <= $daysInMonth; $d++) {
@@ -496,6 +511,11 @@ if ($reportsPath && is_dir($reportsPath)) {
                 $endTime   = preg_match('/^\d{2}:\d{2}/', $endRaw, $me)
                              ? $me[0] : null;                             // HH:MM o null
                 $streamer  = trim($m[4]);
+                // El log de Liquidsoap puede estar en Latin-1 (Á=0xC1, no UTF-8 0xC3 0x81).
+                // Si el string no es UTF-8 válido, convertir desde ISO-8859-1.
+                if ($streamer !== '' && !mb_check_encoding($streamer, 'UTF-8')) {
+                    $streamer = mb_convert_encoding($streamer, 'UTF-8', 'ISO-8859-1');
+                }
                 $durSec    = null;
                 if ($endTime) {
                     $startMin = (int)substr($startTime,0,2)*60 + (int)substr($startTime,3,2);
@@ -1298,9 +1318,10 @@ if ($hasSchedule) {
                 <button id="btn-vista-detalle"   onclick="toggleVista('detalle')"   class="btn btn-secondary" style="font-size:12px; padding:4px 12px;">⊞ Rejilla</button>
             </div>
             <div id="filtros-cronologico" style="display:flex; align-items:center; gap:6px;">
-                <span style="font-size:11px; color:#718096;">Filtrar por:</span>
-                <button id="btn-filtro-fallados" onclick="filtrarCronologico('missed')" class="btn" style="font-size:11px; padding:3px 10px; background:#fc8181; color:#fff; border:1px solid #f56565; border-radius:4px;">Fallados</button>
-                <button id="btn-filtro-correctos" onclick="filtrarCronologico('played')" class="btn" style="font-size:11px; padding:3px 10px; background:#68d391; color:#fff; border:1px solid #48bb78; border-radius:4px;">Correctos</button>
+                <span style="font-size:11px; color:#718096;">Mostrar:</span>
+                <button id="btn-filtro-fallados"  onclick="toggleFiltroCrono('missed')" class="btn btn-filtro-crono btn-filtro-activo" data-filtro="missed" style="font-size:11px; padding:3px 10px; background:#fc8181; color:#fff; border:1px solid #f56565; border-radius:4px;">❌ Fallados</button>
+                <button id="btn-filtro-correctos" onclick="toggleFiltroCrono('played')" class="btn btn-filtro-crono btn-filtro-activo" data-filtro="played" style="font-size:11px; padding:3px 10px; background:#68d391; color:#fff; border:1px solid #48bb78; border-radius:4px;">✓ Correctos</button>
+                <button id="btn-filtro-directos"  onclick="toggleFiltroCrono('live')"   class="btn btn-filtro-crono btn-filtro-activo" data-filtro="live"   style="font-size:11px; padding:3px 10px; background:#63b3ed; color:#fff; border:1px solid #4299e1; border-radius:4px;">📡 Directos</button>
             </div>
         </div>
 
@@ -1368,7 +1389,7 @@ if ($hasSchedule) {
                 $cRowCls  = $crow['status'] === 'played' ? 'ld-row-ok' : 'ld-row-missed';
                 $cGroup   = (int)$crow['group'];
             ?>
-            <tr class="crono-row <?php echo $cRowCls; ?>" data-status="<?php echo $crow['status']; ?>" data-group="<?php echo $cGroup; ?>">
+            <tr class="crono-row <?php echo $cRowCls; ?>" data-status="<?php echo $crow['status']; ?>" data-group="<?php echo $cGroup; ?>" data-live="<?php echo $cIsLive ? '1' : '0'; ?>">
                 <td style="white-space:nowrap;"><?php if ($cIsLive): ?><span class="ld-badge-live" title="Emisión en directo">📡</span> <?php endif; ?><?php echo htmlEsc($crow['dowLabel']); ?></td>
                 <td style="white-space:nowrap;"><?php echo htmlEsc(displayName($crow['progDisplay'])); ?></td>
                 <td><?php echo htmlEsc($crow['schTime']); ?><?php if ($crow['schEnd']): ?><span class="ld-end-time"> –<?php echo htmlEsc($crow['schEnd']); ?></span><?php endif; ?></td>
@@ -1792,6 +1813,13 @@ if ($hasSchedule) {
     <?php if (isset($_GET['debug']) && $_GET['debug'] === '1'): ?>
     <div style="padding:16px 24px 24px; border-top:2px dashed #f59e0b; background:#fffbeb; font-size:12px; font-family:monospace;">
         <strong style="color:#92400e;">🔍 DEBUG — solo visible con ?debug=1</strong>
+        <?php
+        // Diagnóstico streamer (también emitido como comentario HTML para Ctrl+U)
+        $dbgStreamerHex  = isset($dbgStreamerSample) ? $dbgStreamerSample['hex']  : '(no hay entradas con streamer)';
+        $dbgStreamerRaw  = isset($dbgStreamerSample) ? $dbgStreamerSample['raw']  : '';
+        $dbgMapJson      = json_encode($streamerDisplayNames, JSON_UNESCAPED_UNICODE);
+        echo "<!-- SAPO_DBG streamer_hex=[$dbgStreamerHex] streamer_raw=[$dbgStreamerRaw] map=$dbgMapJson -->\n";
+        ?>
 
         <p style="margin:10px 0 4px;"><strong>Programas en BD de SAPO (todos):</strong></p>
         <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:200px;"><?php
@@ -2424,18 +2452,30 @@ function ordenarResumen(criterio) {
 }
 
 // ── Vista cronológica: filtro y paginación ────────────────────────────────────
-var _cronoFiltro = null;   // null | 'played' | 'missed'
+// Filtros independientes: cada clave true=mostrar, false=ocultar
+var _cronoFiltros = { missed: true, played: true, live: true };
 var _cronoPagina = 1;
 var _cronoPorPag = 60;
 
+function _rowVisible(r) {
+    var status = r.dataset.status;   // 'played' | 'missed'
+    var isLive = r.dataset.live === '1';
+    // Si es directo y directos están ocultos → ocultar
+    if (isLive && !_cronoFiltros.live) return false;
+    // Si es directo y está activo el filtro live, respetar también el estado
+    if (status === 'missed' && !_cronoFiltros.missed) return false;
+    if (status === 'played' && !_cronoFiltros.played) return false;
+    return true;
+}
+
 function _cronoVisibleRows() {
     var all = Array.from(document.querySelectorAll('#crono-tbody .crono-row'));
-    return _cronoFiltro ? all.filter(function(r) { return r.dataset.status === _cronoFiltro; }) : all;
+    return all.filter(_rowVisible);
 }
 
 function _cronoRender() {
     var all    = Array.from(document.querySelectorAll('#crono-tbody .crono-row'));
-    var shown  = _cronoFiltro ? all.filter(function(r) { return r.dataset.status === _cronoFiltro; }) : all;
+    var shown  = all.filter(_rowVisible);
     var total  = shown.length;
     var pages  = Math.max(1, Math.ceil(total / _cronoPorPag));
     if (_cronoPagina > pages) _cronoPagina = pages;
@@ -2474,13 +2514,17 @@ function _cronoRender() {
     });
 }
 
-function filtrarCronologico(status) {
-    _cronoFiltro = (_cronoFiltro === status) ? null : status;
+function toggleFiltroCrono(filtro) {
+    _cronoFiltros[filtro] = !_cronoFiltros[filtro];
     _cronoPagina = 1;
-    var bf = document.getElementById('btn-filtro-fallados');
-    var bc = document.getElementById('btn-filtro-correctos');
-    if (bf) bf.style.opacity = (!_cronoFiltro || _cronoFiltro === 'missed') ? '1' : '0.4';
-    if (bc) bc.style.opacity = (!_cronoFiltro || _cronoFiltro === 'played') ? '1' : '0.4';
+    // Actualizar aspecto visual de cada botón
+    document.querySelectorAll('.btn-filtro-crono').forEach(function(btn) {
+        var f = btn.dataset.filtro;
+        var activo = _cronoFiltros[f];
+        btn.classList.toggle('btn-filtro-activo', activo);
+        btn.style.opacity = activo ? '1' : '0.45';
+        btn.style.textDecoration = activo ? '' : 'line-through';
+    });
     _cronoRender();
 }
 
