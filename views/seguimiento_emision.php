@@ -337,11 +337,9 @@ if ($hasSchedule) {
             $playlist = $entry['playlist'] ?? null;
             $streamer = trim($entry['streamer'] ?? '');
             if ($streamer !== '') {
-                static $dbgLogged = false;
-                if (!$dbgLogged) {
-                    $hex = bin2hex($streamer);
-                    error_log("SAPO_DBG streamer raw=[$streamer] hex=[$hex] map=" . json_encode($streamerDisplayNames));
-                    $dbgLogged = true;
+                static $dbgStreamerSample = null;
+                if ($dbgStreamerSample === null) {
+                    $dbgStreamerSample = ['raw' => $streamer, 'hex' => bin2hex($streamer)];
                 }
                 if (!empty($streamerDisplayNames)) {
                     $streamer = normalizeStreamerName($streamer, $streamerDisplayNames);
@@ -1830,6 +1828,11 @@ if ($hasSchedule) {
                 foreach ($streamerDisplayNames as $u => $d) {
                     echo htmlEsc("$u → $d\n");
                 }
+            }
+            if (!empty($dbgStreamerSample)) {
+                echo "\nPrimer streamer del historial:\n";
+                echo htmlEsc("  raw: [" . $dbgStreamerSample['raw'] . "]\n");
+                echo htmlEsc("  hex: " . $dbgStreamerSample['hex'] . "\n");
             }
         ?></pre>
 
