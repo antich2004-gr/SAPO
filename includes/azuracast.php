@@ -1415,7 +1415,7 @@ function getAzuracastListeners(string $username, int $startTs, int $endTs): ?arr
         ];
     }
 
-    cacheSet($cacheKey, $result, 3600);
+    cacheSet($cacheKey, $result);
     return $result;
 }
 
