@@ -280,6 +280,9 @@ $liveSessionStartTs   = []; // [Y-m-d => ['HH:MM' => unix_timestamp_inicio]] par
 $dayTimeline          = []; // [Y-m-d => [['playlist'=>..., 'time'=>'HH:MM'], ...]]
 $historyError         = false;
 
+// Mapa username→display_name para normalizar el campo streamer del historial.
+$streamerDisplayNames = $hasSchedule ? getAzuracastStreamerDisplayNames($trackingUsername) : [];
+
 if ($hasSchedule) {
     // ── Fuente 1 (fiable): broadcasts por streamer desde la API de AzuraCast ──
     // Cada broadcast tiene inicio exacto, fin exacto y nombre del DJ registrado.
@@ -332,6 +335,10 @@ if ($hasSchedule) {
         foreach ($history as $entry) {
             $playlist = $entry['playlist'] ?? null;
             $streamer = trim($entry['streamer'] ?? '');
+            // Normalizar: el historial devuelve el username; mapear al display_name si existe
+            if ($streamer !== '' && isset($streamerDisplayNames[$streamer])) {
+                $streamer = $streamerDisplayNames[$streamer];
+            }
             $playedAt = $entry['played_at'] ?? null;
             if (!$playedAt) continue;
 
@@ -1075,7 +1082,8 @@ if ($hasSchedule) {
                 foreach ($liveEmissionsDetails[$date] as $emStart => $emDet) {
                     if (!liveTiempoCoincide($realTime, $emStart)) continue;
                     if (empty($liveStreamer) && !empty($emDet['streamer'])) {
-                        $liveStreamer = $emDet['streamer'];
+                        $raw = $emDet['streamer'];
+                        $liveStreamer = $streamerDisplayNames[$raw] ?? $raw;
                     }
                     if (!$realDurSec && $emDet['durSec'] > 0) {
                         $realDurSec   = $emDet['durSec'];
