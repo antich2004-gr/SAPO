@@ -135,16 +135,22 @@ $emMonth = [
 foreach ($erLog as $_emEntry) {
     $_emD = $_emEntry['date'] ?? '';
     if (!$_emD || $_emD < $_emStartDate || $_emD > $_emCurDate) continue;
-    $_emSt  = $_emEntry['status'] ?? '';
-    $_emOk  = ($_emSt === 'played');
+    $_emSt     = $_emEntry['status'] ?? '';
+    $_emOk     = ($_emSt === 'played');
+    // Detectar directos: campo is_live explícito, o ausencia de playlist_songs (entradas antiguas)
+    $_emIsLive = $_emEntry['is_live'] ?? !isset($_emEntry['playlist_songs']);
     if (!isset($emMonth['byDay'][$_emD])) $emMonth['byDay'][$_emD] = ['ok'=>0,'failed'=>0,'details'=>[]];
-    $emMonth['total']++;
-    if ($_emOk) { $emMonth['ok']++; $emMonth['byDay'][$_emD]['ok']++; }
-    else        { $emMonth['failed']++; $emMonth['byDay'][$_emD]['failed']++; }
+    // Solo contabilizar en total/ok/failed si es emisión automática
+    if (!$_emIsLive) {
+        $emMonth['total']++;
+        if ($_emOk) { $emMonth['ok']++; $emMonth['byDay'][$_emD]['ok']++; }
+        else        { $emMonth['failed']++; $emMonth['byDay'][$_emD]['failed']++; }
+    }
     $emMonth['byDay'][$_emD]['details'][] = [
         'program' => $_emEntry['program'] ?? '',
         'time'    => $_emEntry['scheduled_at'] ?? '',
         'status'  => $_emSt,
+        'is_live' => $_emIsLive,
         'reason'  => $_emEntry['reason'] ?? '',
     ];
 }
@@ -709,13 +715,21 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         <?php if (empty($_emDayData['details'])): ?>
                                         <div style="color:#9ca3af;font-style:italic;">Sin emisiones registradas</div>
                                         <?php else: ?>
-                                        <?php foreach ($_emDayData['details'] as $_emDet): ?>
+                                        <?php foreach ($_emDayData['details'] as $_emDet):
+                                            if ($_emDet['status'] === 'played') {
+                                                $_emIcon = '✅';
+                                            } elseif (!empty($_emDet['is_live'])) {
+                                                $_emIcon = '🎙️'; // directo no presentado — no es fallo de Radiobot
+                                            } else {
+                                                $_emIcon = '❌';
+                                            }
+                                        ?>
                                         <div style="display:flex;gap:6px;align-items:flex-start;padding:1px 0;">
-                                            <span><?php echo $_emDet['status'] === 'played' ? '✅' : '❌'; ?></span>
+                                            <span><?php echo $_emIcon; ?></span>
                                             <div>
                                                 <span style="color:#f9fafb;"><?php echo htmlEsc($_emDet['time']); ?></span>
                                                 <span style="color:#cbd5e0;"> <?php echo htmlEsc($_emDet['program']); ?></span>
-                                                <?php if ($_emDet['status'] !== 'played' && $_emDet['reason']): ?>
+                                                <?php if ($_emDet['status'] !== 'played' && !$_emDet['is_live'] && $_emDet['reason']): ?>
                                                 <div style="color:#fca5a5;font-size:10px;"><?php echo htmlEsc($_emDet['reason']); ?></div>
                                                 <?php endif; ?>
                                             </div>

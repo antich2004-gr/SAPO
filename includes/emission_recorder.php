@@ -345,6 +345,7 @@ function erRecordUser(string $username): int {
                         'program'      => $name,
                         'scheduled_at' => $scheduledAt,
                         'status'       => 'played',
+                        'is_live'      => false,
                         'real_time'    => $realTime,
                         'recorded_at'  => date('Y-m-d H:i:s'),
                     ];
@@ -368,6 +369,7 @@ function erRecordUser(string $username): int {
                         'program'        => $name,
                         'scheduled_at'   => $scheduledAt,
                         'status'         => 'missed',
+                        'is_live'        => false,
                         'reason'         => $reason,
                         'playlist_songs' => $plInfo !== null ? (int)($plInfo['num_songs'] ?? -1) : -1,
                         'recorded_at'    => date('Y-m-d H:i:s'),
@@ -440,6 +442,7 @@ function erRecordUser(string $username): int {
                         'program'      => $liveName,
                         'scheduled_at' => $scheduledAt,
                         'status'       => 'played',
+                        'is_live'      => true,
                         'real_time'    => $realTime,
                         'recorded_at'  => date('Y-m-d H:i:s'),
                     ];
@@ -461,6 +464,7 @@ function erRecordUser(string $username): int {
                         'program'      => $liveName,
                         'scheduled_at' => $scheduledAt,
                         'status'       => 'missed',
+                        'is_live'      => true,
                         'reason'       => $reason,
                         'recorded_at'  => date('Y-m-d H:i:s'),
                     ];
