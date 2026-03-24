@@ -700,8 +700,9 @@ function getMissedReason(
         return 'Sin actividad en AzuraCast ese día (posible corte de señal)';
     }
 
-    // ── PRIORIDAD 2: Contenido anterior se alargó más de 15 min ──────────────
-    // (umbral basado en la ventana de gracia de AzuraCast para schedules)
+    // ── PRIORIDAD 2: Contenido anterior ocupó la franja completa ────────────
+    // Solo se considera causa si el overrun llegó o superó el fin del slot.
+    // Un overrun menor no impide que AzuraCast active el programa después.
     $activeAtStart = null;
     foreach ($historyEntryByDay[$date] ?? [] as $he) {
         if ($he['ts'] <= $schedTs && ($he['ts'] + $he['duration']) > $schedTs) {
@@ -710,12 +711,37 @@ function getMissedReason(
         }
     }
     if ($activeAtStart !== null) {
-        $overrunMin = (int)ceil(($activeAtStart['ts'] + $activeAtStart['duration'] - $schedTs) / 60);
-        if ($overrunMin > 15) {
-            $pl       = $activeAtStart['playlist'];
-            $dispName = $playlistDisplayName[$pl] ?? $pl;
+        $overrunEndTs = $activeAtStart['ts'] + $activeAtStart['duration'];
+        $overrunMin   = (int)ceil(($overrunEndTs - $schedTs) / 60);
+
+        // Buscar el fin programado del slot (para saber si el overrun lo agotó)
+        $schedEndTs = null;
+        foreach ($programSchedules[$programKey] ?? [] as $slot) {
+            if (($slot['startTime'] ?? '') === $scheduledAt && !empty($slot['endTime'])) {
+                $schedEndTs = mktime(
+                    (int)substr($slot['endTime'], 0, 2),
+                    (int)substr($slot['endTime'], 3, 2),
+                    0,
+                    (int)substr($date, 5, 2),
+                    (int)substr($date, 8, 2),
+                    (int)substr($date, 0, 4)
+                );
+                break;
+            }
+        }
+
+        $pl       = $activeAtStart['playlist'];
+        $dispName = $playlistDisplayName[$pl] ?? $pl;
+
+        if ($schedEndTs !== null && $overrunEndTs >= $schedEndTs) {
+            // El overrun consumió el slot entero: esta es la causa real
+            $slotMin = (int)round(($schedEndTs - $schedTs) / 60);
+            return "«{$dispName}» se alargó {$overrunMin} min y el slot caducó ({$slotMin} min)";
+        } elseif ($schedEndTs === null && $overrunMin > 15) {
+            // Sin dato de fin de slot: umbral conservador de 15 min
             return "«{$dispName}» se alargó {$overrunMin} min sobre su horario";
         }
+        // Overrun menor que el slot → no es la causa; seguir analizando
     }
 
     // ── PRIORIDAD 3: Fallo de AzuraCast ──────────────────────────────────────
@@ -1401,7 +1427,7 @@ if ($hasSchedule) {
                           data-dur="<?php echo (int)$crow['schDurMin']; ?>"
                           onclick="abrirEditDur(this)"
                           title="Clic para editar duración teórica"
-                          style="cursor:pointer; border-bottom:1px dashed #94a3b8; white-space:nowrap;"
+                          style="cursor:pointer; border-bottom:1px dashed #94a3b8; white-space:nowrap; display:inline-block; min-width:44px; text-align:center;"
                     ><?php echo htmlEsc($cDurTeoStr); ?></span></td>
                 <td><?php echo htmlEsc($cDurRealStr); ?></td>
                 <td class="<?php echo $cDiffClass; ?>"><?php echo htmlEsc($cDiffStr); ?></td>
