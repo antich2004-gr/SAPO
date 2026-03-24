@@ -288,7 +288,7 @@ function diagnoseMissedFromLog(
          || str_contains($msg, 'error')
          || str_contains($msg, 'exception')
         ) {
-            $excerpt = mb_substr(preg_replace('/\s+/', ' ', $msg), 0, 100);
+            $excerpt = substr(preg_replace('/\s+/', ' ', $msg), 0, 100);
             return 'Error interno de Liquidsoap: ' . $excerpt;
         }
     }
