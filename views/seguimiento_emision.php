@@ -1039,6 +1039,21 @@ if ($hasSchedule) {
                 $liveStreamer = $histDetStreamer;
             }
 
+            // Estimación para directos pasados sin duración real:
+            // si sabemos cuándo empezó y cuándo debería acabar, calculamos la diferencia.
+            // Los broadcasts de AzuraCast solo conservan los últimos N; para los más
+            // antiguos el fallback del historial da duración=0 → usamos schEnd como tope.
+            $durEstimated = false;
+            if (!$realDurSec && $status === 'played' && $realTime && $schEnd && $date < $today) {
+                $realMins = (int)substr($realTime, 0, 2) * 60 + (int)substr($realTime, 3, 2);
+                $endMins  = (int)substr($schEnd, 0, 2) * 60 + (int)substr($schEnd, 3, 2);
+                if ($endMins > $realMins) {
+                    $realDurSec   = ($endMins - $realMins) * 60;
+                    $durEstimated = true;
+                    $durSource    = 'estimated(schEnd-realStart)';
+                }
+            }
+
             $listadoDetails[$progKey][$date] = [
                 'status'       => $status,
                 'isLive'       => $isLiveDay || isset($livePrograms[$progKey]),
@@ -1048,6 +1063,7 @@ if ($hasSchedule) {
                 'schDurMin'    => $schDurMin,
                 'realTime'     => $realTime,
                 'realDurSec'   => $realDurSec,
+                'durEstimated' => $durEstimated,
                 'title'        => $epTitle,
                 'streamer'     => $liveStreamer,
                 'missedReason' => $missedReason,
@@ -1110,6 +1126,7 @@ if ($hasSchedule) {
                 'schDurMin'    => $det['schDurMin']    ?? 0,
                 'realTime'     => $det['realTime']     ?? '',
                 'realDurSec'   => $det['realDurSec']   ?? null,
+                'durEstimated' => $det['durEstimated'] ?? false,
                 'title'        => $det['title']        ?? '',
                 'streamer'     => $det['streamer']     ?? '',
                 'missedReason' => $det['missedReason'] ?? '',
@@ -1233,8 +1250,9 @@ if ($hasSchedule) {
                 $cDiffClass  = '';
                 if (!empty($crow['realDurSec'])) {
                     $cRealMin    = (int)round($crow['realDurSec'] / 60);
-                    $cDurRealStr = $cRealMin . ' min';
-                    if ($crow['schDurMin'] > 0) {
+                    $cEstPrefix  = !empty($crow['durEstimated']) ? '~' : '';
+                    $cDurRealStr = $cEstPrefix . $cRealMin . ' min';
+                    if ($crow['schDurMin'] > 0 && empty($crow['durEstimated'])) {
                         $cDiff      = $cRealMin - $crow['schDurMin'];
                         $cDiffStr   = ($cDiff >= 0 ? '+' : '') . $cDiff . ' min';
                         $cDiffClass = $cDiff > 5 ? 'ld-diff-over' : ($cDiff < -5 ? 'ld-diff-under' : 'ld-diff-ok');
@@ -1404,8 +1422,9 @@ if ($hasSchedule) {
                         $diffClass  = '';
                         if (!empty($em['realDurSec'])) {
                             $realMin    = (int)round($em['realDurSec'] / 60);
-                            $durRealStr = $realMin . ' min';
-                            if ($em['schDurMin'] > 0) {
+                            $estPrefix  = !empty($em['durEstimated']) ? '~' : '';
+                            $durRealStr = $estPrefix . $realMin . ' min';
+                            if ($em['schDurMin'] > 0 && empty($em['durEstimated'])) {
                                 $diff      = $realMin - $em['schDurMin'];
                                 $diffStr   = ($diff >= 0 ? '+' : '') . $diff . ' min';
                                 $diffClass = $diff > 5 ? 'ld-diff-over' : ($diff < -5 ? 'ld-diff-under' : 'ld-diff-ok');
