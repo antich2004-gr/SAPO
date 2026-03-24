@@ -119,6 +119,46 @@ foreach ($podcasts as $podcast) {
 
 usort($dashboardAlerts['warning'], fn($a, $b) => $a['days'] <=> $b['days']);
 
+// ── Dashboard: resumen de emisión del mes en curso ────────────────────────────
+$erLog = erLoadLog($_SESSION['username']);
+$_emCurYear  = (int)date('Y');
+$_emCurMonth = (int)date('n');
+$_emCurDate  = date('Y-m-d');
+$_emMonthNames = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto',
+                  'septiembre','octubre','noviembre','diciembre'];
+$emMonth = [
+    'total'       => 0,
+    'ok'          => 0,
+    'failed'      => 0,
+    'byDay'       => [],
+    'monthName'   => $_emMonthNames[$_emCurMonth - 1],
+    'year'        => $_emCurYear,
+    'month'       => $_emCurMonth,
+    'daysInMonth' => (int)date('t'),
+    'firstDow'    => (int)date('N', mktime(0, 0, 0, $_emCurMonth, 1, $_emCurYear)),
+];
+$_emPrefix = sprintf('%04d-%02d', $_emCurYear, $_emCurMonth);
+foreach ($erLog as $_emEntry) {
+    $_emD = $_emEntry['date'] ?? '';
+    if (!$_emD || substr($_emD, 0, 7) !== $_emPrefix) continue;
+    $_emSt  = $_emEntry['status'] ?? '';
+    $_emOk  = ($_emSt === 'played');
+    if (!isset($emMonth['byDay'][$_emD])) $emMonth['byDay'][$_emD] = ['ok'=>0,'failed'=>0,'details'=>[]];
+    $emMonth['total']++;
+    if ($_emOk) { $emMonth['ok']++; $emMonth['byDay'][$_emD]['ok']++; }
+    else        { $emMonth['failed']++; $emMonth['byDay'][$_emD]['failed']++; }
+    $emMonth['byDay'][$_emD]['details'][] = [
+        'program' => $_emEntry['program'] ?? '',
+        'time'    => $_emEntry['scheduled_at'] ?? '',
+        'status'  => $_emSt,
+        'reason'  => $_emEntry['reason'] ?? '',
+    ];
+}
+foreach ($emMonth['byDay'] as &$_emBd) {
+    usort($_emBd['details'], fn($a, $b) => strcmp($a['time'], $b['time']));
+}
+unset($_emBd);
+
 // ── Dashboard: carpetas vacías en AzuraCast ───────────────────────────────────
 $azPlaylists = getAzuracastPlaylists($_SESSION['username']);
 if (is_array($azPlaylists)) {
@@ -489,7 +529,226 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                         </div>
                     </div>
 
-                    <!-- ③ HERRAMIENTAS -->
+                    <!-- ③ EMISIONES DEL MES -->
+                    <style>
+                        .em-cal-grid {
+                            display: grid;
+                            grid-template-columns: repeat(7, 1fr);
+                            gap: 4px;
+                        }
+                        .em-cal-header {
+                            text-align: center;
+                            font-size: 11px;
+                            font-weight: 700;
+                            color: #9ca3af;
+                            padding: 4px 0;
+                            text-transform: uppercase;
+                            letter-spacing: .04em;
+                        }
+                        .em-day-wrap {
+                            position: relative;
+                        }
+                        .em-day-cell {
+                            border-radius: 6px;
+                            padding: 5px 2px;
+                            text-align: center;
+                            font-size: 12px;
+                            font-weight: 600;
+                            cursor: default;
+                            min-height: 34px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            line-height: 1.2;
+                            flex-direction: column;
+                            gap: 1px;
+                        }
+                        .em-day-dot {
+                            width: 5px;
+                            height: 5px;
+                            border-radius: 50%;
+                            background: currentColor;
+                            opacity: .45;
+                        }
+                        .em-day-tooltip {
+                            display: none;
+                            position: absolute;
+                            bottom: calc(100% + 6px);
+                            left: 50%;
+                            transform: translateX(-50%);
+                            background: #1a202c;
+                            color: #e2e8f0;
+                            font-size: 11px;
+                            line-height: 1.65;
+                            padding: 7px 10px;
+                            border-radius: 7px;
+                            white-space: nowrap;
+                            z-index: 9999;
+                            box-shadow: 0 4px 14px rgba(0,0,0,.35);
+                            min-width: 160px;
+                            max-width: 240px;
+                            white-space: normal;
+                            pointer-events: none;
+                        }
+                        .em-day-tooltip::after {
+                            content: '';
+                            position: absolute;
+                            top: 100%;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            border: 5px solid transparent;
+                            border-top-color: #1a202c;
+                        }
+                        .em-day-wrap:hover .em-day-tooltip { display: block; }
+                        /* Adjust tooltip for first 2 columns */
+                        .em-day-wrap.em-col-1 .em-day-tooltip,
+                        .em-day-wrap.em-col-2 .em-day-tooltip {
+                            left: 0; transform: none;
+                        }
+                        .em-day-wrap.em-col-1 .em-day-tooltip::after,
+                        .em-day-wrap.em-col-2 .em-day-tooltip::after {
+                            left: 16px;
+                        }
+                        /* Adjust tooltip for last 2 columns */
+                        .em-day-wrap.em-col-6 .em-day-tooltip,
+                        .em-day-wrap.em-col-7 .em-day-tooltip {
+                            left: auto; right: 0; transform: none;
+                        }
+                        .em-day-wrap.em-col-6 .em-day-tooltip::after,
+                        .em-day-wrap.em-col-7 .em-day-tooltip::after {
+                            left: auto; right: 16px; transform: none;
+                        }
+                    </style>
+                    <div style="margin-bottom: 30px;">
+                        <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #2d3748; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span style="background:#6366f1;color:white;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">📡</span>
+                            Emisiones — <?php echo ucfirst($emMonth['monthName']) . ' ' . $emMonth['year']; ?>
+                            <a href="?page=seguimiento_emision" style="margin-left:auto;font-size:12px;color:#6366f1;text-decoration:none;font-weight:500;white-space:nowrap;">Ver historial completo →</a>
+                        </h3>
+
+                        <div style="border:1px solid #e2e8f0;border-radius:10px;padding:20px;background:#fff;">
+
+                            <?php if ($emMonth['total'] === 0): ?>
+                            <p style="color:#718096;font-size:13px;margin:0 0 16px 0;">
+                                Sin datos de emisión registrados este mes. Los datos se generan automáticamente con el cron de SAPO.
+                            </p>
+                            <?php else:
+                                $_emPct = round($emMonth['ok'] / $emMonth['total'] * 100);
+                                $_emBarColor = $_emPct >= 90 ? '#10b981' : ($_emPct >= 70 ? '#d97706' : '#e53e3e');
+                            ?>
+                            <!-- Metric summary -->
+                            <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap;">
+                                <div style="display:flex;align-items:baseline;gap:4px;">
+                                    <span style="font-size:36px;font-weight:800;color:#1a202c;line-height:1;"><?php echo $emMonth['ok']; ?></span>
+                                    <span style="font-size:16px;color:#718096;font-weight:600;">/<?php echo $emMonth['total']; ?></span>
+                                    <span style="font-size:13px;color:#4a5568;margin-left:4px;">emisiones OK</span>
+                                </div>
+                                <div style="flex:1;min-width:120px;">
+                                    <div style="display:flex;justify-content:space-between;font-size:11px;color:#718096;margin-bottom:4px;">
+                                        <span><?php echo $emMonth['failed']; ?> fallo<?php echo $emMonth['failed'] !== 1 ? 's' : ''; ?></span>
+                                        <span style="font-weight:700;color:<?php echo $_emBarColor; ?>"><?php echo $_emPct; ?>%</span>
+                                    </div>
+                                    <div style="background:#e5e7eb;border-radius:4px;height:6px;overflow:hidden;">
+                                        <div style="background:<?php echo $_emBarColor; ?>;width:<?php echo $_emPct; ?>%;height:100%;border-radius:4px;transition:width .3s;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+
+                            <!-- Calendar -->
+                            <div class="em-cal-grid">
+                                <!-- Day headers -->
+                                <?php foreach (['L','M','X','J','V','S','D'] as $_emDh): ?>
+                                <div class="em-cal-header"><?php echo $_emDh; ?></div>
+                                <?php endforeach; ?>
+
+                                <!-- Blank offset cells for first week -->
+                                <?php for ($_emOff = 1; $_emOff < $emMonth['firstDow']; $_emOff++): ?>
+                                <div></div>
+                                <?php endfor; ?>
+
+                                <!-- Day cells -->
+                                <?php for ($_emDay = 1; $_emDay <= $emMonth['daysInMonth']; $_emDay++):
+                                    $_emDayStr = sprintf('%04d-%02d-%02d', $emMonth['year'], $emMonth['month'], $_emDay);
+                                    $_emDayData = $emMonth['byDay'][$_emDayStr] ?? null;
+                                    $_emIsFuture = $_emDayStr > $_emCurDate;
+                                    $_emIsToday  = $_emDayStr === $_emCurDate;
+
+                                    // Determine column (1=Mon..7=Sun)
+                                    $_emCol = (int)date('N', mktime(0,0,0,$emMonth['month'],$_emDay,$emMonth['year']));
+
+                                    if ($_emIsFuture) {
+                                        $_emBg   = '#f9fafb';
+                                        $_emTxt  = '#9ca3af';
+                                        $_emDot  = false;
+                                    } elseif ($_emDayData === null) {
+                                        $_emBg   = '#f3f4f6';
+                                        $_emTxt  = '#9ca3af';
+                                        $_emDot  = false;
+                                    } elseif ($_emDayData['failed'] === 0) {
+                                        $_emBg   = '#d1fae5';
+                                        $_emTxt  = '#065f46';
+                                        $_emDot  = true;
+                                    } elseif ($_emDayData['ok'] === 0) {
+                                        $_emBg   = '#fee2e2';
+                                        $_emTxt  = '#991b1b';
+                                        $_emDot  = true;
+                                    } else {
+                                        $_emBg   = '#fef3c7';
+                                        $_emTxt  = '#92400e';
+                                        $_emDot  = true;
+                                    }
+                                    if ($_emIsToday) $_emBg = ($_emDayData === null) ? '#eff6ff' : $_emBg;
+                                    $_emTodayRing = $_emIsToday ? 'box-shadow:0 0 0 2px #6366f1;' : '';
+                                ?>
+                                <div class="em-day-wrap em-col-<?php echo $_emCol; ?>">
+                                    <div class="em-day-cell"
+                                         style="background:<?php echo $_emBg; ?>;color:<?php echo $_emTxt; ?>;<?php echo $_emTodayRing; ?>">
+                                        <?php echo $_emDay; ?>
+                                        <?php if ($_emDot): ?><div class="em-day-dot"></div><?php endif; ?>
+                                    </div>
+                                    <?php if (!$_emIsFuture): ?>
+                                    <div class="em-day-tooltip">
+                                        <div style="font-weight:700;margin-bottom:4px;border-bottom:1px solid #4a5568;padding-bottom:3px;">
+                                            <?php
+                                                $_emDayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+                                                $_emDow = (int)date('w', mktime(0,0,0,$emMonth['month'],$_emDay,$emMonth['year']));
+                                                echo $_emDayNames[$_emDow] . ' ' . $_emDay . ' ' . ucfirst($emMonth['monthName']);
+                                            ?>
+                                        </div>
+                                        <?php if (empty($_emDayData['details'])): ?>
+                                        <div style="color:#9ca3af;font-style:italic;">Sin emisiones registradas</div>
+                                        <?php else: ?>
+                                        <?php foreach ($_emDayData['details'] as $_emDet): ?>
+                                        <div style="display:flex;gap:6px;align-items:flex-start;padding:1px 0;">
+                                            <span><?php echo $_emDet['status'] === 'played' ? '✅' : '❌'; ?></span>
+                                            <div>
+                                                <span style="color:#f9fafb;"><?php echo htmlEsc($_emDet['time']); ?></span>
+                                                <span style="color:#cbd5e0;"> <?php echo htmlEsc($_emDet['program']); ?></span>
+                                                <?php if ($_emDet['status'] !== 'played' && $_emDet['reason']): ?>
+                                                <div style="color:#fca5a5;font-size:10px;"><?php echo htmlEsc($_emDet['reason']); ?></div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                        <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    </div>
+                                    <?php endif; ?>
+                                </div>
+                                <?php endfor; ?>
+                            </div>
+
+                            <!-- Legend -->
+                            <div style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;font-size:11px;color:#6b7280;">
+                                <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#d1fae5;margin-right:4px;vertical-align:middle;"></span>Todo OK</span>
+                                <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#fef3c7;margin-right:4px;vertical-align:middle;"></span>Fallos parciales</span>
+                                <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#fee2e2;margin-right:4px;vertical-align:middle;"></span>Todo fallido</span>
+                                <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#f3f4f6;margin-right:4px;vertical-align:middle;"></span>Sin datos</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ④ HERRAMIENTAS -->
                     <div style="margin-bottom: 30px;">
                         <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #2d3748; display: flex; align-items: center; gap: 8px;">
                             <span style="background:#d97706;color:white;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;line-height:1;">⚙</span>
