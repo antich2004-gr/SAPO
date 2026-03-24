@@ -335,9 +335,22 @@ if ($hasSchedule) {
         foreach ($history as $entry) {
             $playlist = $entry['playlist'] ?? null;
             $streamer = trim($entry['streamer'] ?? '');
-            // Normalizar: el historial devuelve el username; mapear al display_name si existe
-            if ($streamer !== '' && isset($streamerDisplayNames[$streamer])) {
-                $streamer = $streamerDisplayNames[$streamer];
+            // Normalizar: el historial puede devolver el username o un display_name
+            // truncado/corrupto (e.g. "gora" por "Ágora" con Á multibyte perdida).
+            // Intentar match exacto por username primero; si falla, buscar el streamer
+            // cuyo username o display_name contiene el valor recibido como subcadena.
+            if ($streamer !== '') {
+                if (isset($streamerDisplayNames[$streamer])) {
+                    $streamer = $streamerDisplayNames[$streamer];
+                } elseif (!empty($streamerDisplayNames)) {
+                    foreach ($streamerDisplayNames as $uname => $dname) {
+                        if (mb_stripos($uname, $streamer) !== false
+                            || mb_stripos($dname, $streamer) !== false) {
+                            $streamer = $dname;
+                            break;
+                        }
+                    }
+                }
             }
             $playedAt = $entry['played_at'] ?? null;
             if (!$playedAt) continue;
@@ -1083,7 +1096,20 @@ if ($hasSchedule) {
                     if (!liveTiempoCoincide($realTime, $emStart)) continue;
                     if (empty($liveStreamer) && !empty($emDet['streamer'])) {
                         $raw = $emDet['streamer'];
-                        $liveStreamer = $streamerDisplayNames[$raw] ?? $raw;
+                        if (isset($streamerDisplayNames[$raw])) {
+                            $liveStreamer = $streamerDisplayNames[$raw];
+                        } elseif (!empty($streamerDisplayNames)) {
+                            $liveStreamer = $raw;
+                            foreach ($streamerDisplayNames as $uname => $dname) {
+                                if (mb_stripos($uname, $raw) !== false
+                                    || mb_stripos($dname, $raw) !== false) {
+                                    $liveStreamer = $dname;
+                                    break;
+                                }
+                            }
+                        } else {
+                            $liveStreamer = $raw;
+                        }
                     }
                     if (!$realDurSec && $emDet['durSec'] > 0) {
                         $realDurSec   = $emDet['durSec'];
