@@ -1503,7 +1503,7 @@ if ($hasSchedule) {
                 </tr>
             </thead>
             <tbody id="crono-tbody">
-            <?php foreach ($cronologicoRows as $crow):
+            <?php $cPrevDate = null; foreach ($cronologicoRows as $crow):
                 $cDurTeoStr  = ($crow['schDurMin'] > 0) ? $crow['schDurMin'] . ' min' : '—';
                 $cDurRealStr = '—';
                 $cDiffStr    = '—';
@@ -1524,11 +1524,13 @@ if ($hasSchedule) {
                 if ($crow['realTime'] && !empty($crow['realDurSec']) && empty($crow['durEstimated'])) {
                     $cRealEndTime = date('H:i', strtotime($crow['realTime']) + (int)$crow['realDurSec']);
                 }
-                $cOvKey   = ($cIsLive && $crow['linkedLiveKey']) ? $crow['linkedLiveKey'] : $crow['progKey'];
-                $cRowCls  = $crow['status'] === 'played' ? 'ld-row-ok' : 'ld-row-missed';
-                $cGroup   = (int)$crow['group'];
+                $cOvKey      = ($cIsLive && $crow['linkedLiveKey']) ? $crow['linkedLiveKey'] : $crow['progKey'];
+                $cRowCls     = $crow['status'] === 'played' ? 'ld-row-ok' : 'ld-row-missed';
+                $cGroup      = (int)$crow['group'];
+                $cDayBreak   = ($cPrevDate !== null && $crow['date'] !== $cPrevDate);
+                $cPrevDate   = $crow['date'];
             ?>
-            <tr class="crono-row <?php echo $cRowCls; ?>" data-status="<?php echo $crow['status']; ?>" data-group="<?php echo $cGroup; ?>" data-live="<?php echo $cIsLive ? '1' : '0'; ?>">
+            <tr class="crono-row <?php echo $cRowCls; ?><?php if ($cDayBreak) echo ' crono-day-break'; ?>" data-status="<?php echo $crow['status']; ?>" data-group="<?php echo $cGroup; ?>" data-live="<?php echo $cIsLive ? '1' : '0'; ?>">
                 <td style="white-space:nowrap;"><?php if ($cIsLive): ?><span class="ld-badge-live" title="Emisión en directo">📡</span> <?php endif; ?><?php echo htmlEsc($crow['dowLabel']); ?></td>
                 <td style="white-space:nowrap;"><?php echo htmlEsc(displayName($crow['progDisplay'])); ?></td>
                 <td><?php echo htmlEsc($crow['schTime']); ?><?php if ($crow['schEnd']): ?><span class="ld-end-time"> –<?php echo htmlEsc($crow['schEnd']); ?></span><?php endif; ?></td>
@@ -2468,6 +2470,7 @@ if ($hasSchedule) {
 /* Estados de fila */
 .ld-row-ok   td { background: #f0fff4; }
 .ld-row-missed td { background: #fff5f5; }
+.crono-day-break td { border-top: 2px solid #e2e8f0; }
 .ld-row-reason td {
     background: #fffbf0;
     color: #744210;
