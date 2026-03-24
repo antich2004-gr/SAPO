@@ -355,6 +355,19 @@ function diagnoseMissedFromLog(
         }
     }
 
+    // ── 7b. AutoDJ cae a blank tras la señal horaria ─────────────────────────
+    // Patrón: [switch.XX] Switch to blank.1 en los primeros minutos del slot.
+    // La señal horaria se emitió correctamente pero no había ningún track
+    // en cola para el programa (AzuraCast no lo tenía pre-cargado en ese instante).
+    foreach ($relevant as $line) {
+        $lineMin = _lsToMin(substr($line['time'], 0, 5));
+        if ($lineMin < $schedMin || $lineMin > $schedMin + 5) continue;
+        if (!str_starts_with($line['comp'], 'switch.')) continue;
+        if (str_contains($line['msg'], 'Switch to blank')) {
+            return 'La señal horaria se emitió pero AzuraCast no tenía el programa en cola (AutoDJ cayó a blank sin contenido)';
+        }
+    }
+
     // ── 8. Cascada de fallback completa ───────────────────────────────────────
     // Si se ven los 3 escalones (interrupting → requests → autodj) en la ventana,
     // significa que AzuraCast intentó activar contenido y no encontró nada en ningún nivel.
