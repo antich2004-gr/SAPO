@@ -725,14 +725,15 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                                 $_emIcon = '❌';
                                             }
                                         ?>
+                                        <?php
+                                            $_emLiveMissed = !empty($_emDet['is_live']) && $_emDet['status'] !== 'played';
+                                            $_emRowColor   = $_emLiveMissed ? '#fca5a5' : '#cbd5e0';
+                                        ?>
                                         <div style="display:flex;gap:6px;align-items:flex-start;padding:1px 0;">
                                             <span><?php echo $_emIcon; ?></span>
                                             <div>
                                                 <span style="color:#f9fafb;"><?php echo htmlEsc($_emDet['time']); ?></span>
-                                                <span style="color:#cbd5e0;"> <?php echo htmlEsc($_emDet['program']); ?></span>
-                                                <?php if ($_emDet['status'] !== 'played' && !$_emDet['is_live'] && $_emDet['reason']): ?>
-                                                <div style="color:#fca5a5;font-size:10px;"><?php echo htmlEsc($_emDet['reason']); ?></div>
-                                                <?php endif; ?>
+                                                <span style="color:<?php echo $_emRowColor; ?>;"> <?php echo htmlEsc($_emDet['program']); ?></span>
                                             </div>
                                         </div>
                                         <?php endforeach; ?>
