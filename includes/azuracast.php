@@ -1139,7 +1139,10 @@ function getAzuracastHistory($username, $startTimestamp, $endTimestamp) {
 function getAzuracastStreamerBroadcasts($username, $startTimestamp, $endTimestamp) {
     $monthKey = date('Y-m', $startTimestamp);
     $cacheKey = "streamer_broadcasts_{$username}_{$monthKey}";
-    $cached   = cacheGet($cacheKey, 3600);
+    // Mes actual: TTL corto (10 min) para reflejar pronto los directos terminados.
+    // Meses pasados: TTL largo (6 h) ya que no cambian.
+    $cacheTTL = ($monthKey === date('Y-m')) ? 600 : 21600;
+    $cached   = cacheGet($cacheKey, $cacheTTL);
     if ($cached !== null) return $cached;
 
     $config    = getConfig();
@@ -1180,24 +1183,51 @@ function getAzuracastStreamerBroadcasts($username, $startTimestamp, $endTimestam
     $streamers = isset($decoded['rows']) ? $decoded['rows'] : $decoded;
     error_log("AzuraCast Broadcasts: " . count($streamers) . " streamers en station $stationId");
 
-    // 2. Para cada streamer, obtener sus broadcasts y filtrar por el mes
+    // 2. Para cada streamer, obtener sus broadcasts (con paginación) y filtrar por el mes
     $result = [];
     foreach ($streamers as $streamer) {
         $streamerId  = $streamer['id'] ?? null;
         $displayName = trim($streamer['display_name'] ?? '') ?: trim($streamer['streamer_username'] ?? '');
         if (!$streamerId) continue;
 
-        $url      = rtrim($apiUrl, '/') . '/station/' . $stationId . '/streamers/' . $streamerId . '/broadcasts';
-        $response = @file_get_contents($url, false, $context);
-        if ($response === false) {
-            error_log("AzuraCast Broadcasts: error HTTP al obtener broadcasts de streamer $streamerId");
-            continue;
-        }
-        $decoded = json_decode($response, true);
-        if (!is_array($decoded)) continue;
-        $bcList = isset($decoded['rows']) ? $decoded['rows'] : $decoded;
+        $bcList  = [];
+        $baseUrl = rtrim($apiUrl, '/') . '/station/' . $stationId . '/streamers/' . $streamerId . '/broadcasts';
+        $page    = 1;
+        $maxPages = 20; // límite de seguridad
+        do {
+            $url      = $baseUrl . '?page=' . $page;
+            $response = @file_get_contents($url, false, $context);
+            if ($response === false) {
+                error_log("AzuraCast Broadcasts: error HTTP al obtener broadcasts de streamer $streamerId página $page");
+                break;
+            }
+            $decoded = json_decode($response, true);
+            if (!is_array($decoded)) break;
 
-        error_log("AzuraCast Broadcasts: streamer $streamerId ($displayName) → " . count($bcList) . " broadcasts");
+            // La API puede devolver array plano o {rows, total, per_page, page}
+            if (isset($decoded['rows'])) {
+                $rows    = $decoded['rows'];
+                $total   = (int)($decoded['total']    ?? count($rows));
+                $perPage = (int)($decoded['per_page'] ?? count($rows));
+            } else {
+                $rows    = $decoded;
+                $total   = count($rows);
+                $perPage = count($rows);
+            }
+
+            if (empty($rows)) break;
+            $bcList = array_merge($bcList, $rows);
+
+            // Parar si ya hemos recogido todos los broadcasts
+            if (count($bcList) >= $total) break;
+
+            // Parar si la página actual devuelve menos filas que per_page (última página)
+            if (count($rows) < $perPage) break;
+
+            $page++;
+        } while ($page <= $maxPages);
+
+        error_log("AzuraCast Broadcasts: streamer $streamerId ($displayName) → " . count($bcList) . " broadcasts (". ($page-1) ." páginas)");
 
         foreach ($bcList as $bc) {
             $start = $toTs($bc['timestamp_start'] ?? null);
