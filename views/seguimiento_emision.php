@@ -292,6 +292,9 @@ $liveSessionStartTs   = []; // [Y-m-d => ['HH:MM' => unix_timestamp_inicio]] par
 $dayTimeline          = []; // [Y-m-d => [['playlist'=>..., 'time'=>'HH:MM'], ...]]
 $historyError         = false;
 
+// Log de conexiones de oyentes reales para el mes (null = endpoint no disponible)
+$monthListeners = $hasSchedule ? getAzuracastListeners($trackingUsername, $monthStart, $monthEnd) : null;
+
 if ($hasSchedule) {
     // ── Fuente 1 (fiable): broadcasts por streamer desde la API de AzuraCast ──
     // Cada broadcast tiene inicio exacto, fin exacto y nombre del DJ registrado.
@@ -1227,33 +1230,56 @@ if ($hasSchedule) {
                 }
             }
 
-            // Media de oyentes únicos durante la emisión
+            // Media de oyentes durante la emisión
             $avgListeners = null;
-            if ($status === 'played' && !empty($historyEntryByDay[$date])) {
+            if ($status === 'played') {
                 $isLiveProg = $isLiveDay || isset($livePrograms[$progKey]);
-                $samples    = [];
-                if (!$isLiveProg && isset($startTs, $spanEnd) && $spanEnd > $startTs) {
-                    foreach ($historyEntryByDay[$date] as $he) {
-                        if (($he['playlist'] ?? '') === $hk2
-                            && $he['ts'] >= $startTs && $he['ts'] <= $spanEnd
-                            && ($he['listeners_unique'] ?? 0) > 0) {
-                            $samples[] = $he['listeners_unique'];
+
+                // ── Método 1 (preciso): log de conexiones individuales del mes ──
+                if (!empty($monthListeners)) {
+                    $emStartTs = null;
+                    $emEndTs   = null;
+                    if (!$isLiveProg && isset($startTs, $spanEnd) && $spanEnd > $startTs) {
+                        $emStartTs = $startTs;
+                        $emEndTs   = $spanEnd;
+                    } elseif ($isLiveProg && $realTime && $realDurSec) {
+                        $lsTs = $liveSessionStartTs[$date][$realTime] ?? null;
+                        if ($lsTs) {
+                            $emStartTs = $lsTs;
+                            $emEndTs   = $lsTs + (int)$realDurSec;
                         }
                     }
-                } elseif ($isLiveProg && $realTime && $realDurSec) {
-                    $lsTs = $liveSessionStartTs[$date][$realTime] ?? null;
-                    if ($lsTs) {
-                        $lsEnd = $lsTs + (int)$realDurSec;
+                    if ($emStartTs && $emEndTs) {
+                        $avgListeners = calcListenersAvg($monthListeners, $emStartTs, $emEndTs);
+                    }
+                }
+
+                // ── Método 2 (fallback): listeners_unique por canción del historial ──
+                if ($avgListeners === null && !empty($historyEntryByDay[$date])) {
+                    $samples = [];
+                    if (!$isLiveProg && isset($startTs, $spanEnd) && $spanEnd > $startTs) {
                         foreach ($historyEntryByDay[$date] as $he) {
-                            if ($he['ts'] >= $lsTs && $he['ts'] <= $lsEnd
+                            if (($he['playlist'] ?? '') === $hk2
+                                && $he['ts'] >= $startTs && $he['ts'] <= $spanEnd
                                 && ($he['listeners_unique'] ?? 0) > 0) {
                                 $samples[] = $he['listeners_unique'];
                             }
                         }
+                    } elseif ($isLiveProg && $realTime && $realDurSec) {
+                        $lsTs = $liveSessionStartTs[$date][$realTime] ?? null;
+                        if ($lsTs) {
+                            $lsEnd = $lsTs + (int)$realDurSec;
+                            foreach ($historyEntryByDay[$date] as $he) {
+                                if ($he['ts'] >= $lsTs && $he['ts'] <= $lsEnd
+                                    && ($he['listeners_unique'] ?? 0) > 0) {
+                                    $samples[] = $he['listeners_unique'];
+                                }
+                            }
+                        }
                     }
-                }
-                if (!empty($samples)) {
-                    $avgListeners = (int)round(array_sum($samples) / count($samples));
+                    if (!empty($samples)) {
+                        $avgListeners = (int)round(array_sum($samples) / count($samples));
+                    }
                 }
             }
 
@@ -2125,6 +2151,26 @@ if ($hasSchedule) {
             foreach ($historyMap as $playlist => $dayData) {
                 echo htmlEsc("$playlist: " . count($dayData) . " día(s) — " . implode(', ', array_keys($dayData)) . "\n");
             }
+        }
+    ?></pre>
+
+    <p style="margin:10px 0 4px;"><strong>Diagnóstico oyentes — log de conexiones del mes (getAzuracastListeners):</strong></p>
+    <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:160px;"><?php
+        if ($monthListeners === null) {
+            echo "⚠ Endpoint /listeners no disponible o sin datos.\n";
+        } elseif (empty($monthListeners)) {
+            echo "✓ Endpoint OK — sin oyentes externos registrados este mes.\n";
+        } else {
+            echo htmlEsc("✓ Endpoint OK — " . count($monthListeners) . " conexiones de oyentes reales este mes.\n\n");
+            foreach (array_slice($monthListeners, 0, 5) as $i => $l) {
+                echo htmlEsc(sprintf("  [%d] on=%s until=%s dur=%ds\n",
+                    $i,
+                    date('d/m H:i', $l['connected_on']),
+                    date('d/m H:i', $l['connected_until']),
+                    $l['connected_time']
+                ));
+            }
+            if (count($monthListeners) > 5) echo htmlEsc("  ... (" . (count($monthListeners) - 5) . " más)\n");
         }
     ?></pre>
 
