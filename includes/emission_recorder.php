@@ -312,7 +312,6 @@ function erRecordUser(string $username): int {
                 if ($slot['dow'] !== $dow) continue;
                 $scheduledAt = $slot['startTime'];
                 $key = erKey($date, $name, $scheduledAt);
-                if (isset($log[$key])) continue;
 
                 $schedTs = mktime(
                     (int)substr($scheduledAt, 0, 2),
@@ -320,6 +319,15 @@ function erRecordUser(string $username): int {
                     0, (int)$mo, (int)$dy, (int)$yr
                 );
                 $elapsed = ($now - $schedTs) / 60;
+
+                // Saltar entradas ya confirmadas como emitidas.
+                // Las entradas 'missed' recientes (<2 h) se re-evalúan por
+                // si la caché de historial estaba desactualizada al registrarlas.
+                if (isset($log[$key])) {
+                    if ($log[$key]['status'] === 'played') continue;
+                    if ($elapsed > 120) continue;
+                }
+
                 if ($elapsed < ER_GRACE_MINUTES) continue;
                 if ($elapsed > 60 * 48)          continue;
 
@@ -385,7 +393,6 @@ function erRecordUser(string $username): int {
                 if ($slot['dow'] !== $dow) continue;
                 $scheduledAt = $slot['startTime'];
                 $key = erKey($date, $liveName, $scheduledAt);
-                if (isset($log[$key])) continue;
 
                 $schedTs = mktime(
                     (int)substr($scheduledAt, 0, 2),
@@ -393,6 +400,13 @@ function erRecordUser(string $username): int {
                     0, (int)$mo, (int)$dy, (int)$yr
                 );
                 $elapsed = ($now - $schedTs) / 60;
+
+                // Igual que para automáticos: re-evaluar 'missed' recientes (<2 h)
+                if (isset($log[$key])) {
+                    if ($log[$key]['status'] === 'played') continue;
+                    if ($elapsed > 120) continue;
+                }
+
                 if ($elapsed < ER_GRACE_MINUTES) continue;
                 if ($elapsed > 60 * 48)          continue;
 
