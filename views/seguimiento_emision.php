@@ -336,8 +336,16 @@ if ($hasSchedule) {
         foreach ($history as $entry) {
             $playlist = $entry['playlist'] ?? null;
             $streamer = trim($entry['streamer'] ?? '');
-            if ($streamer !== '' && !empty($streamerDisplayNames)) {
-                $streamer = normalizeStreamerName($streamer, $streamerDisplayNames);
+            if ($streamer !== '') {
+                static $dbgLogged = false;
+                if (!$dbgLogged) {
+                    $hex = bin2hex($streamer);
+                    error_log("SAPO_DBG streamer raw=[$streamer] hex=[$hex] map=" . json_encode($streamerDisplayNames));
+                    $dbgLogged = true;
+                }
+                if (!empty($streamerDisplayNames)) {
+                    $streamer = normalizeStreamerName($streamer, $streamerDisplayNames);
+                }
             }
             $playedAt = $entry['played_at'] ?? null;
             if (!$playedAt) continue;
