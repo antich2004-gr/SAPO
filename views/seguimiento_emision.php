@@ -1151,8 +1151,8 @@ if ($hasSchedule) {
                 <span style="color:#718096; font-size:13px;">📻 <strong><?php echo htmlEsc($trackingStation); ?></strong></span>
             </div>
             <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;" class="no-print">
-                <?php if (isAdmin()): ?>
-                <a href="?" class="btn btn-secondary" style="font-size:13px;"><span class="btn-icon">⚙️</span> Panel Admin</a>
+                <?php if (isAdmin() || isImpersonating()): ?>
+                <a href="<?php echo isImpersonating() ? '?action=stop_impersonating' : '?'; ?>" class="btn btn-secondary" style="font-size:13px;"><span class="btn-icon">⚙️</span> Panel Admin</a>
                 <?php
                 $debugBaseUrl = '?page=seguimiento_emision'
                     . ($stationParam ? $stationParam : '')
