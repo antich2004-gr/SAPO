@@ -1299,6 +1299,15 @@ function getAzuracastStreamerBroadcasts($username, $startTimestamp, $endTimestam
     }
 
     error_log("AzuraCast Broadcasts: total " . count($result) . " broadcasts en rango para station $stationId en $monthKey");
+    // Guardar también el mapa username→display_name como efecto secundario,
+    // para que getAzuracastStreamerDisplayNames lo encuentre en caché sin segunda llamada.
+    $nameMap = [];
+    foreach ($streamers as $s) {
+        $u = trim($s['streamer_username'] ?? '');
+        $d = trim($s['display_name']      ?? '') ?: $u;
+        if ($u !== '') $nameMap[$u] = $d;
+    }
+    cacheSet("streamer_names_{$username}", $nameMap);
     cacheSet($cacheKey, $result);
     return $result;
 }
