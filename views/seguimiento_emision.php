@@ -439,6 +439,21 @@ if ($hasSchedule) {
 // $streamerDisplayNames ya asignado dentro del bloque hasSchedule (si aplica).
 if (!isset($streamerDisplayNames)) $streamerDisplayNames = [];
 
+// Complementar el mapa con nombres reales extraídos del historial de AzuraCast
+// (liveSessionStreamers tiene display_names válidos del fallback del historial).
+// Esto permite normalizar aunque la API de streamers no responda.
+if (empty($streamerDisplayNames) && !empty($liveSessionStreamers)) {
+    foreach ($liveSessionStreamers as $dayNames) {
+        foreach ($dayNames as $sName) {
+            if ($sName && $sName !== '(DJ)') {
+                // Usar como display_name; como clave usar versión ascii simplificada
+                $key = mb_strtolower(preg_replace('/[^a-z0-9]/i', '', $sName));
+                if ($key) $streamerDisplayNames[$key] = $sName;
+            }
+        }
+    }
+}
+
 // ── 3. Calcular días del mes: número, día semana, fecha Y-m-d ─────────────────
 $days = [];
 for ($d = 1; $d <= $daysInMonth; $d++) {
@@ -496,6 +511,11 @@ if ($reportsPath && is_dir($reportsPath)) {
                 $endTime   = preg_match('/^\d{2}:\d{2}/', $endRaw, $me)
                              ? $me[0] : null;                             // HH:MM o null
                 $streamer  = trim($m[4]);
+                // El log de Liquidsoap puede estar en Latin-1 (Á=0xC1, no UTF-8 0xC3 0x81).
+                // Si el string no es UTF-8 válido, convertir desde ISO-8859-1.
+                if ($streamer !== '' && !mb_check_encoding($streamer, 'UTF-8')) {
+                    $streamer = mb_convert_encoding($streamer, 'UTF-8', 'ISO-8859-1');
+                }
                 $durSec    = null;
                 if ($endTime) {
                     $startMin = (int)substr($startTime,0,2)*60 + (int)substr($startTime,3,2);
