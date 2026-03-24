@@ -42,10 +42,10 @@
     <!-- Sección: Introducción -->
     <div id="introduccion" style="margin-bottom: 40px;">
         <h3>🐸 ¿Qué es SAPO?</h3>
-        <p>SAPO (Sistema de Automatización de Podcasts) es una aplicación web que facilita la gestión de suscripciones de podcasts para <strong>Radiobot</strong>.</p>
+        <p>SAPO (Sistema de Automatización de Podcasts) es una aplicación web para la <strong>administración y vigilancia de las estaciones en Radiobot</strong>, así como la gestión de suscripciones de podcast y grabaciones.</p>
 
         <div style="background: #edf2f7; padding: 15px; border-radius: 8px; margin: 15px 0;">
-            <strong>🎯 Objetivo:</strong> Simplificar la administración de tus podcasts mediante una interfaz web intuitiva, sin necesidad de editar archivos de configuración manualmente.
+            <strong>🎯 Objetivo:</strong> Centralizar en una interfaz web intuitiva todo lo necesario para gestionar tu emisora: podcasts, parrilla de programación, historial de emisiones y grabaciones, sin necesidad de editar archivos de configuración manualmente.
         </div>
 
         <p><strong>Funcionalidades principales:</strong></p>
@@ -58,6 +58,9 @@
             <li>✅ Ejecutar descargas de episodios nuevos</li>
             <li>✅ Importar y exportar listas de podcasts</li>
             <li>✅ Ver listado de últimas descargas realizadas</li>
+            <li>✅ Gestionar la parrilla de programación de tu emisora</li>
+            <li>✅ Consultar el historial de emisiones mes a mes con estadísticas detalladas</li>
+            <li>✅ Acceder y descargar grabaciones almacenadas en Radiobot</li>
         </ul>
     </div>
 
