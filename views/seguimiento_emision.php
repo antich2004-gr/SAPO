@@ -329,6 +329,10 @@ if ($hasSchedule) {
         // broadcasts no devolvió datos (emisoras sin streamers registrados en AzuraCast)
         $streamerTsFallback = [];
 
+        // Mapa username→display_name: getAzuracastStreamerBroadcasts ya lo habrá
+        // guardado en caché como efecto secundario (llamada justo arriba).
+        $streamerDisplayNames = getAzuracastStreamerDisplayNames($trackingUsername);
+
         foreach ($history as $entry) {
             $playlist = $entry['playlist'] ?? null;
             $streamer = trim($entry['streamer'] ?? '');
@@ -441,9 +445,8 @@ if ($hasSchedule) {
     }
 }
 
-// Mapa username→display_name. getAzuracastStreamerBroadcasts ya lo habrá guardado
-// en caché como efecto secundario, así que esta llamada es instantánea.
-$streamerDisplayNames = $hasSchedule ? getAzuracastStreamerDisplayNames($trackingUsername) : [];
+// $streamerDisplayNames ya asignado dentro del bloque hasSchedule (si aplica).
+if (!isset($streamerDisplayNames)) $streamerDisplayNames = [];
 
 // ── 3. Calcular días del mes: número, día semana, fecha Y-m-d ─────────────────
 $days = [];
