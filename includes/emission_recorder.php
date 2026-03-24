@@ -365,23 +365,58 @@ function erRecordUser(string $username): int {
                     }
                     // Playlist (capturar AHORA con TTL=0 para forzar lectura fresca)
                     $plInfo  = getPlaylistContentInfo($username, $name, 0);
-                    $lsSrcId = computeLiquidsoapSourceId($name);
 
-                    $reason = _erDiagnose(
-                        $scheduledAt, $date, $schedTs, $name, false,
-                        $dailyReportCache[$date] ?? null,
-                        $liqLog, $lsSrcId, $histByDay, $plInfo
-                    );
-                    $log[$key] = [
-                        'date'           => $date,
-                        'program'        => $name,
-                        'scheduled_at'   => $scheduledAt,
-                        'status'         => 'missed',
-                        'is_live'        => false,
-                        'reason'         => $reason,
-                        'playlist_songs' => $plInfo !== null ? (int)($plInfo['num_songs'] ?? -1) : -1,
-                        'recorded_at'    => date('Y-m-d H:i:s'),
-                    ];
+                    // ── Fallback directo: playlist vacía + streamer en el slot ─────────
+                    // Programas que siempre emiten en vivo tienen playlist vacía;
+                    // si hay un broadcast de streamer coincidente, se considera emitido.
+                    if ($plInfo !== null && (int)($plInfo['num_songs'] ?? -1) === 0) {
+                        if (!isset($broadcastCache[$date])) {
+                            $dayStart = mktime(0,  0,  0, (int)$mo, (int)$dy, (int)$yr);
+                            $dayEnd   = mktime(23, 59, 59, (int)$mo, (int)$dy, (int)$yr);
+                            $br = getAzuracastStreamerBroadcasts($username, $dayStart, $dayEnd);
+                            $broadcastCache[$date] = is_array($br) ? $br : [];
+                        }
+                        $sMin = (int)substr($scheduledAt, 0, 2) * 60 + (int)substr($scheduledAt, 3, 2);
+                        foreach ($broadcastCache[$date] as $br) {
+                            $brDt = new DateTime('@' . (int)$br['start']);
+                            $brDt->setTimezone($tz);
+                            if ($brDt->format('Y-m-d') !== $date) continue;
+                            $brStr  = $brDt->format('H:i');
+                            $brMins = (int)substr($brStr, 0, 2) * 60 + (int)substr($brStr, 3, 2);
+                            $diff   = $brMins - $sMin;
+                            if ($diff < 0) $diff += 1440;
+                            if ($diff <= 30) { $played = true; $realTime = $brStr; break; }
+                        }
+                    }
+
+                    if ($played) {
+                        $log[$key] = [
+                            'date'         => $date,
+                            'program'      => $name,
+                            'scheduled_at' => $scheduledAt,
+                            'status'       => 'played',
+                            'is_live'      => true,
+                            'real_time'    => $realTime,
+                            'recorded_at'  => date('Y-m-d H:i:s'),
+                        ];
+                    } else {
+                        $lsSrcId = computeLiquidsoapSourceId($name);
+                        $reason = _erDiagnose(
+                            $scheduledAt, $date, $schedTs, $name, false,
+                            $dailyReportCache[$date] ?? null,
+                            $liqLog, $lsSrcId, $histByDay, $plInfo
+                        );
+                        $log[$key] = [
+                            'date'           => $date,
+                            'program'        => $name,
+                            'scheduled_at'   => $scheduledAt,
+                            'status'         => 'missed',
+                            'is_live'        => false,
+                            'reason'         => $reason,
+                            'playlist_songs' => $plInfo !== null ? (int)($plInfo['num_songs'] ?? -1) : -1,
+                            'recorded_at'    => date('Y-m-d H:i:s'),
+                        ];
+                    }
                 }
                 $newCount++;
             }
