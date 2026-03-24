@@ -1439,6 +1439,10 @@ if ($hasSchedule) {
                 }
                 $cIsLive  = $crow['isLive'];
                 $cIsManual= $crow['isManual'];
+                $cRealEndTime = null;
+                if ($cIsLive && $crow['realTime'] && !empty($crow['realDurSec']) && empty($crow['durEstimated'])) {
+                    $cRealEndTime = date('H:i', strtotime($crow['realTime']) + (int)$crow['realDurSec']);
+                }
                 $cOvKey   = ($cIsLive && $crow['linkedLiveKey']) ? $crow['linkedLiveKey'] : $crow['progKey'];
                 $cRowCls  = $crow['status'] === 'played' ? 'ld-row-ok' : 'ld-row-missed';
                 $cGroup   = (int)$crow['group'];
@@ -1447,7 +1451,14 @@ if ($hasSchedule) {
                 <td style="white-space:nowrap;"><?php if ($cIsLive): ?><span class="ld-badge-live" title="Emisión en directo">📡</span> <?php endif; ?><?php echo htmlEsc($crow['dowLabel']); ?></td>
                 <td style="white-space:nowrap;"><?php echo htmlEsc(displayName($crow['progDisplay'])); ?></td>
                 <td><?php echo htmlEsc($crow['schTime']); ?><?php if ($crow['schEnd']): ?><span class="ld-end-time"> –<?php echo htmlEsc($crow['schEnd']); ?></span><?php endif; ?></td>
-                <td><?php echo $crow['realTime'] ? htmlEsc($crow['realTime']) : '<span class="ld-no-data">—</span>'; ?></td>
+                <td style="white-space:nowrap;"><?php
+                    if ($crow['realTime']) {
+                        echo htmlEsc($crow['realTime']);
+                        if ($cRealEndTime) echo '<span class="ld-end-time"> –' . htmlEsc($cRealEndTime) . '</span>';
+                    } else {
+                        echo '<span class="ld-no-data">—</span>';
+                    }
+                ?></td>
                 <td><span class="dur-teo-edit"
                           data-progkey="<?php echo htmlEsc($cOvKey); ?>"
                           data-day="<?php echo $crow['dow']; ?>"
