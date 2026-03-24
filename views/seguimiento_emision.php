@@ -2026,6 +2026,31 @@ if ($hasSchedule) {
             }
         ?></pre>
 
+        <p style="margin:10px 0 4px;"><strong>Diagnóstico oyentes — muestra de entradas del historial:</strong></p>
+        <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:160px;"><?php
+            $dbgSample = [];
+            foreach ($historyEntryByDay as $dbgDay => $dbgEntries) {
+                foreach ($dbgEntries as $dbgE) {
+                    $dbgSample[] = $dbgE;
+                    if (count($dbgSample) >= 3) break 2;
+                }
+            }
+            if (empty($dbgSample)) {
+                echo "(sin entradas en historyEntryByDay)\n";
+            } else {
+                foreach ($dbgSample as $idx => $dbgE) {
+                    echo htmlEsc("Entrada $idx: playlist=[" . ($dbgE['playlist'] ?? 'NULL') . "]"
+                        . " ts=" . ($dbgE['ts'] ?? '?')
+                        . " dur=" . ($dbgE['duration'] ?? '?')
+                        . " listeners_unique=" . ($dbgE['listeners_unique'] ?? 'CAMPO NO EXISTE') . "\n");
+                }
+                $hasListeners = array_filter($dbgSample, fn($e) => ($e['listeners_unique'] ?? 0) > 0);
+                echo htmlEsc("\nEntradas con listeners_unique > 0: " . count($hasListeners) . " de " . count($dbgSample) . "\n");
+                $totalEntries = array_sum(array_map('count', $historyEntryByDay));
+                echo htmlEsc("Total entradas historyEntryByDay: $totalEntries\n");
+            }
+        ?></pre>
+
         <p style="margin:10px 0 4px;"><strong>Filas calculadas del listado (últimos 7 días con datos):</strong></p>
         <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:200px;"><?php
             $cutoff = date('Y-m-d', strtotime('-7 days'));
