@@ -280,9 +280,6 @@ $liveSessionStartTs   = []; // [Y-m-d => ['HH:MM' => unix_timestamp_inicio]] par
 $dayTimeline          = []; // [Y-m-d => [['playlist'=>..., 'time'=>'HH:MM'], ...]]
 $historyError         = false;
 
-// Mapa username→display_name para normalizar el campo streamer del historial.
-$streamerDisplayNames = $hasSchedule ? getAzuracastStreamerDisplayNames($trackingUsername) : [];
-
 if ($hasSchedule) {
     // ── Fuente 1 (fiable): broadcasts por streamer desde la API de AzuraCast ──
     // Cada broadcast tiene inicio exacto, fin exacto y nombre del DJ registrado.
@@ -443,6 +440,10 @@ if ($hasSchedule) {
         }
     }
 }
+
+// Mapa username→display_name. getAzuracastStreamerBroadcasts ya lo habrá guardado
+// en caché como efecto secundario, así que esta llamada es instantánea.
+$streamerDisplayNames = $hasSchedule ? getAzuracastStreamerDisplayNames($trackingUsername) : [];
 
 // ── 3. Calcular días del mes: número, día semana, fecha Y-m-d ─────────────────
 $days = [];
