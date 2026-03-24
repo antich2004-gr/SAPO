@@ -397,9 +397,10 @@ if ($hasSchedule) {
                     }
                 }
                 $historyEntryByDay[$dayStr][] = [
-                    'playlist' => $playlist,
-                    'ts'       => (int)$playedAt,
-                    'duration' => (int)($entry['duration'] ?? 0),
+                    'playlist'         => $playlist,
+                    'ts'               => (int)$playedAt,
+                    'duration'         => (int)($entry['duration'] ?? 0),
+                    'listeners_unique' => (int)($entry['listeners']['unique'] ?? 0),
                 ];
                 $dayTimeline[$dayStr][] = ['playlist' => $playlist, 'time' => $timeStr];
             }
@@ -1222,6 +1223,36 @@ if ($hasSchedule) {
                 }
             }
 
+            // Media de oyentes únicos durante la emisión
+            $avgListeners = null;
+            if ($status === 'played' && !empty($historyEntryByDay[$date])) {
+                $isLiveProg = $isLiveDay || isset($livePrograms[$progKey]);
+                $samples    = [];
+                if (!$isLiveProg && isset($startTs, $spanEnd) && $spanEnd > $startTs) {
+                    foreach ($historyEntryByDay[$date] as $he) {
+                        if (($he['playlist'] ?? '') === $hk2
+                            && $he['ts'] >= $startTs && $he['ts'] <= $spanEnd
+                            && ($he['listeners_unique'] ?? 0) > 0) {
+                            $samples[] = $he['listeners_unique'];
+                        }
+                    }
+                } elseif ($isLiveProg && $realTime && $realDurSec) {
+                    $lsTs = $liveSessionStartTs[$date][$realTime] ?? null;
+                    if ($lsTs) {
+                        $lsEnd = $lsTs + (int)$realDurSec;
+                        foreach ($historyEntryByDay[$date] as $he) {
+                            if ($he['ts'] >= $lsTs && $he['ts'] <= $lsEnd
+                                && ($he['listeners_unique'] ?? 0) > 0) {
+                                $samples[] = $he['listeners_unique'];
+                            }
+                        }
+                    }
+                }
+                if (!empty($samples)) {
+                    $avgListeners = (int)round(array_sum($samples) / count($samples));
+                }
+            }
+
             $listadoDetails[$progKey][$date] = [
                 'status'       => $status,
                 'isLive'       => $isLiveDay || isset($livePrograms[$progKey]),
@@ -1236,6 +1267,7 @@ if ($hasSchedule) {
                 'streamer'     => $liveStreamer,
                 'missedReason' => $missedReason,
                 'durSource'    => $durSource,
+                'avgListeners' => $avgListeners,
             ];
         }
     }
@@ -1298,6 +1330,7 @@ if ($hasSchedule) {
                 'title'        => $det['title']        ?? '',
                 'streamer'     => $det['streamer']     ?? '',
                 'missedReason' => $det['missedReason'] ?? '',
+                'avgListeners' => $det['avgListeners'] ?? null,
             ];
         }
     }
@@ -1418,6 +1451,7 @@ if ($hasSchedule) {
                     <th>Dur. real</th>
                     <th>Diferencia</th>
                     <th id="crono-th-episodio">Episodio emitido/Streamer</th>
+                    <th>Oyentes</th>
                     <th>Estado</th>
                 </tr>
             </thead>
@@ -1479,6 +1513,11 @@ if ($hasSchedule) {
                         echo '<span class="ld-no-data">—</span>';
                     }
                 ?></td>
+                <td style="text-align:center;"><?php
+                    echo $crow['avgListeners'] !== null
+                        ? htmlEsc($crow['avgListeners'])
+                        : '<span class="ld-no-data">—</span>';
+                ?></td>
                 <td>
                     <?php if ($crow['status'] === 'played'): ?>
                         <span class="ld-status-ok">✓</span>
@@ -1494,7 +1533,7 @@ if ($hasSchedule) {
             </tr>
             <?php if ($crow['status'] === 'missed' && $crow['missedReason']): ?>
             <tr class="crono-row-reason ld-row-reason" data-group="<?php echo $cGroup; ?>">
-                <td colspan="9">ℹ️ <?php echo htmlEsc($crow['missedReason']); ?></td>
+                <td colspan="10">ℹ️ <?php echo htmlEsc($crow['missedReason']); ?></td>
             </tr>
             <?php endif; ?>
             <?php endforeach; ?>
@@ -1597,6 +1636,7 @@ if ($hasSchedule) {
                             <th>Dur. real</th>
                             <th>Diferencia</th>
                             <th id="crono-th-episodio-bot">Episodio emitido/Streamer</th>
+                            <th>Oyentes</th>
                             <th>Estado</th>
                         </tr>
                     </thead>
@@ -1653,6 +1693,11 @@ if ($hasSchedule) {
                                 echo '<span class="ld-no-data">—</span>';
                             }
                         ?></td>
+                        <td style="text-align:center;"><?php
+                            echo ($em['avgListeners'] ?? null) !== null
+                                ? htmlEsc($em['avgListeners'])
+                                : '<span class="ld-no-data">—</span>';
+                        ?></td>
                         <td>
                             <?php if ($em['status'] === 'played'): ?>
                                 <span class="ld-status-ok">✓</span>
@@ -1670,7 +1715,7 @@ if ($hasSchedule) {
                     </tr>
                     <?php if ($em['status'] === 'missed' && $em['missedReason']): ?>
                     <tr class="ld-row-reason">
-                        <td colspan="8">ℹ️ <?php echo htmlEsc($em['missedReason']); ?></td>
+                        <td colspan="9">ℹ️ <?php echo htmlEsc($em['missedReason']); ?></td>
                     </tr>
                     <?php endif; ?>
                     <?php endforeach; ?>
