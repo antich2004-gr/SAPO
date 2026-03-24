@@ -119,28 +119,22 @@ foreach ($podcasts as $podcast) {
 
 usort($dashboardAlerts['warning'], fn($a, $b) => $a['days'] <=> $b['days']);
 
-// ── Dashboard: resumen de emisión del mes en curso ────────────────────────────
-$erLog = erLoadLog($_SESSION['username']);
-$_emCurYear  = (int)date('Y');
-$_emCurMonth = (int)date('n');
+// ── Dashboard: resumen de las últimas 4 semanas (ventana deslizante de 28 días) ─
+$erLog       = erLoadLog($_SESSION['username']);
 $_emCurDate  = date('Y-m-d');
-$_emMonthNames = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto',
-                  'septiembre','octubre','noviembre','diciembre'];
+$_emStartDate = date('Y-m-d', strtotime('-27 days'));
 $emMonth = [
-    'total'       => 0,
-    'ok'          => 0,
-    'failed'      => 0,
-    'byDay'       => [],
-    'monthName'   => $_emMonthNames[$_emCurMonth - 1],
-    'year'        => $_emCurYear,
-    'month'       => $_emCurMonth,
-    'daysInMonth' => (int)date('t'),
-    'firstDow'    => (int)date('N', mktime(0, 0, 0, $_emCurMonth, 1, $_emCurYear)),
+    'total'     => 0,
+    'ok'        => 0,
+    'failed'    => 0,
+    'byDay'     => [],
+    'startDate' => $_emStartDate,
+    'endDate'   => $_emCurDate,
+    'startDow'  => (int)date('N', strtotime($_emStartDate)),
 ];
-$_emPrefix = sprintf('%04d-%02d', $_emCurYear, $_emCurMonth);
 foreach ($erLog as $_emEntry) {
     $_emD = $_emEntry['date'] ?? '';
-    if (!$_emD || substr($_emD, 0, 7) !== $_emPrefix) continue;
+    if (!$_emD || $_emD < $_emStartDate || $_emD > $_emCurDate) continue;
     $_emSt  = $_emEntry['status'] ?? '';
     $_emOk  = ($_emSt === 'played');
     if (!isset($emMonth['byDay'][$_emD])) $emMonth['byDay'][$_emD] = ['ok'=>0,'failed'=>0,'details'=>[]];
@@ -622,7 +616,13 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     <div style="margin-bottom: 30px;">
                         <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #2d3748; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <span style="background:#6366f1;color:white;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">📡</span>
-                            Emisiones — <?php echo ucfirst($emMonth['monthName']) . ' ' . $emMonth['year']; ?>
+                            Emisiones — últimas 4 semanas
+                            <span style="font-size:12px;color:#9ca3af;font-weight:400;margin-left:6px;"><?php
+                                $_emMonthNamesShort = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+                                $_emS = explode('-', $emMonth['startDate']);
+                                $_emE = explode('-', $emMonth['endDate']);
+                                echo $_emS[2] . ' ' . $_emMonthNamesShort[(int)$_emS[1]-1] . ' – ' . $_emE[2] . ' ' . $_emMonthNamesShort[(int)$_emE[1]-1];
+                            ?></span>
                             <a href="?page=seguimiento_emision" style="margin-left:auto;font-size:12px;color:#6366f1;text-decoration:none;font-weight:500;white-space:nowrap;">Ver historial completo →</a>
                         </h3>
 
@@ -662,59 +662,49 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 <div class="em-cal-header"><?php echo $_emDh; ?></div>
                                 <?php endforeach; ?>
 
-                                <!-- Blank offset cells for first week -->
-                                <?php for ($_emOff = 1; $_emOff < $emMonth['firstDow']; $_emOff++): ?>
+                                <!-- Blank offset cells for first partial week -->
+                                <?php for ($_emOff = 1; $_emOff < $emMonth['startDow']; $_emOff++): ?>
                                 <div></div>
                                 <?php endfor; ?>
 
-                                <!-- Day cells -->
-                                <?php for ($_emDay = 1; $_emDay <= $emMonth['daysInMonth']; $_emDay++):
-                                    $_emDayStr = sprintf('%04d-%02d-%02d', $emMonth['year'], $emMonth['month'], $_emDay);
+                                <!-- Day cells: 28 days starting from startDate -->
+                                <?php
+                                $_emDayNames  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+                                $_emMonthNamesLong = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+                                $_emBaseTs = strtotime($emMonth['startDate']);
+                                for ($_emI = 0; $_emI < 28; $_emI++):
+                                    $_emTs     = $_emBaseTs + $_emI * 86400;
+                                    $_emDayStr = date('Y-m-d', $_emTs);
+                                    $_emDayNum = (int)date('j', $_emTs);
                                     $_emDayData = $emMonth['byDay'][$_emDayStr] ?? null;
-                                    $_emIsFuture = $_emDayStr > $_emCurDate;
-                                    $_emIsToday  = $_emDayStr === $_emCurDate;
+                                    $_emIsToday = $_emDayStr === $_emCurDate;
+                                    $_emCol     = (int)date('N', $_emTs);
+                                    $_emDowIdx  = (int)date('w', $_emTs);
+                                    $_emMonIdx  = (int)date('n', $_emTs) - 1;
 
-                                    // Determine column (1=Mon..7=Sun)
-                                    $_emCol = (int)date('N', mktime(0,0,0,$emMonth['month'],$_emDay,$emMonth['year']));
-
-                                    if ($_emIsFuture) {
-                                        $_emBg   = '#f9fafb';
-                                        $_emTxt  = '#9ca3af';
-                                        $_emDot  = false;
-                                    } elseif ($_emDayData === null) {
-                                        $_emBg   = '#f3f4f6';
-                                        $_emTxt  = '#9ca3af';
-                                        $_emDot  = false;
+                                    if ($_emDayData === null) {
+                                        $_emBg  = '#f3f4f6'; $_emTxt = '#9ca3af'; $_emDot = false;
                                     } elseif ($_emDayData['failed'] === 0) {
-                                        $_emBg   = '#d1fae5';
-                                        $_emTxt  = '#065f46';
-                                        $_emDot  = true;
+                                        $_emBg  = '#d1fae5'; $_emTxt = '#065f46'; $_emDot = true;
                                     } elseif ($_emDayData['ok'] === 0) {
-                                        $_emBg   = '#fee2e2';
-                                        $_emTxt  = '#991b1b';
-                                        $_emDot  = true;
+                                        $_emBg  = '#fee2e2'; $_emTxt = '#991b1b'; $_emDot = true;
                                     } else {
-                                        $_emBg   = '#fef3c7';
-                                        $_emTxt  = '#92400e';
-                                        $_emDot  = true;
+                                        $_emBg  = '#fef3c7'; $_emTxt = '#92400e'; $_emDot = true;
                                     }
-                                    if ($_emIsToday) $_emBg = ($_emDayData === null) ? '#eff6ff' : $_emBg;
+                                    if ($_emIsToday) {
+                                        $_emBg = ($_emDayData === null) ? '#eff6ff' : $_emBg;
+                                    }
                                     $_emTodayRing = $_emIsToday ? 'box-shadow:0 0 0 2px #6366f1;' : '';
                                 ?>
                                 <div class="em-day-wrap em-col-<?php echo $_emCol; ?>">
                                     <div class="em-day-cell"
                                          style="background:<?php echo $_emBg; ?>;color:<?php echo $_emTxt; ?>;<?php echo $_emTodayRing; ?>">
-                                        <?php echo $_emDay; ?>
+                                        <?php echo $_emDayNum; ?>
                                         <?php if ($_emDot): ?><div class="em-day-dot"></div><?php endif; ?>
                                     </div>
-                                    <?php if (!$_emIsFuture): ?>
                                     <div class="em-day-tooltip">
                                         <div style="font-weight:700;margin-bottom:4px;border-bottom:1px solid #4a5568;padding-bottom:3px;">
-                                            <?php
-                                                $_emDayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-                                                $_emDow = (int)date('w', mktime(0,0,0,$emMonth['month'],$_emDay,$emMonth['year']));
-                                                echo $_emDayNames[$_emDow] . ' ' . $_emDay . ' ' . ucfirst($emMonth['monthName']);
-                                            ?>
+                                            <?php echo $_emDayNames[$_emDowIdx] . ' ' . $_emDayNum . ' ' . ucfirst($_emMonthNamesLong[$_emMonIdx]); ?>
                                         </div>
                                         <?php if (empty($_emDayData['details'])): ?>
                                         <div style="color:#9ca3af;font-style:italic;">Sin emisiones registradas</div>
@@ -733,7 +723,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         <?php endforeach; ?>
                                         <?php endif; ?>
                                     </div>
-                                    <?php endif; ?>
                                 </div>
                                 <?php endfor; ?>
                             </div>
