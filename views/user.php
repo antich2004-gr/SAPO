@@ -137,8 +137,10 @@ foreach ($erLog as $_emEntry) {
     if (!$_emD || $_emD < $_emStartDate || $_emD > $_emCurDate) continue;
     $_emSt     = $_emEntry['status'] ?? '';
     $_emOk     = ($_emSt === 'played');
-    // Detectar directos: campo is_live explícito, o ausencia de playlist_songs (entradas antiguas)
-    $_emIsLive = $_emEntry['is_live'] ?? !isset($_emEntry['playlist_songs']);
+    // Detectar directos: campo is_live explícito (entradas nuevas), o bien
+    // entrada antigua missed sin playlist_songs (solo las missed automáticas tienen ese campo).
+    // Las played antiguas sin is_live se tratan como automáticas para no perder conteo.
+    $_emIsLive = $_emEntry['is_live'] ?? ($_emSt === 'missed' && !isset($_emEntry['playlist_songs']));
     if (!isset($emMonth['byDay'][$_emD])) $emMonth['byDay'][$_emD] = ['ok'=>0,'failed'=>0,'details'=>[]];
     // Solo contabilizar en total/ok/failed si es emisión automática
     if (!$_emIsLive) {
@@ -622,13 +624,12 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                     <div style="margin-bottom: 30px;">
                         <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #2d3748; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <span style="background:#6366f1;color:white;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">📡</span>
-                            Emisiones — últimas 4 semanas
-                            <span style="font-size:12px;color:#9ca3af;font-weight:400;margin-left:6px;"><?php
-                                $_emMonthNamesShort = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+                            Emisiones <?php
+                                $_emMNS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
                                 $_emS = explode('-', $emMonth['startDate']);
                                 $_emE = explode('-', $emMonth['endDate']);
-                                echo $_emS[2] . ' ' . $_emMonthNamesShort[(int)$_emS[1]-1] . ' – ' . $_emE[2] . ' ' . $_emMonthNamesShort[(int)$_emE[1]-1];
-                            ?></span>
+                                echo $_emS[2] . ' ' . $_emMNS[(int)$_emS[1]-1] . ' – ' . $_emE[2] . ' ' . $_emMNS[(int)$_emE[1]-1];
+                            ?>
                             <a href="?page=seguimiento_emision" style="margin-left:auto;font-size:12px;color:#6366f1;text-decoration:none;font-weight:500;white-space:nowrap;">Ver historial completo →</a>
                         </h3>
 
@@ -716,10 +717,10 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         <div style="color:#9ca3af;font-style:italic;">Sin emisiones registradas</div>
                                         <?php else: ?>
                                         <?php foreach ($_emDayData['details'] as $_emDet):
-                                            if ($_emDet['status'] === 'played') {
+                                            if (!empty($_emDet['is_live'])) {
+                                                $_emIcon = '🎙️'; // directo (emitido o no) — no afecta al estado de Radiobot
+                                            } elseif ($_emDet['status'] === 'played') {
                                                 $_emIcon = '✅';
-                                            } elseif (!empty($_emDet['is_live'])) {
-                                                $_emIcon = '🎙️'; // directo no presentado — no es fallo de Radiobot
                                             } else {
                                                 $_emIcon = '❌';
                                             }
