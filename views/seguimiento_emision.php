@@ -442,9 +442,11 @@ $dowLabels = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 
 // ── Cargar informes diarios del mes ──────────────────────────────────────────
 // dailyReports[Y-m-d] = parsed report (carpetas_vacias, errores_podget, emisiones_directo…)
-// liveEmissionsPerDay[Y-m-d] = ['HH:MM', ...] — horas de inicio de directos
-$dailyReports        = [];
-$liveEmissionsPerDay = [];
+// liveEmissionsPerDay[Y-m-d]   = ['HH:MM', ...] — horas de inicio de directos
+// liveEmissionsDetails[Y-m-d][HH:MM] = ['streamer'=>str, 'end'=>'HH:MM'|null, 'durSec'=>int|null]
+$dailyReports         = [];
+$liveEmissionsPerDay  = [];
+$liveEmissionsDetails = [];
 
 $reportsPath = getReportsPath($trackingUsername);
 if ($reportsPath && is_dir($reportsPath)) {
@@ -458,13 +460,40 @@ if ($reportsPath && is_dir($reportsPath)) {
         $rd = parseReportFile($fn);
         if (!$rd) continue;
         $dailyReports[$day['date']] = $rd;
-        // Extraer horas de directos para la detección de emisiones en vivo
+        // Extraer horas + datos completos de directos
+        // Formato del informe: - DD-MM-YYYY HH:MM:SS → HH:MM:SS desde DJ NombreStreamer
+        //                   o: - DD-MM-YYYY HH:MM:SS → (aún activo) desde DJ NombreStreamer
         if (!empty($rd['emisiones_directo'])) {
             $times = [];
             foreach ($rd['emisiones_directo'] as $entry) {
-                if (preg_match('/^-\s+[\d-]+\s+(\d{2}:\d{2})/', $entry, $m)) {
-                    $times[] = $m[1];
+                if (!preg_match(
+                    '/^-\s+[\d-]+\s+(\d{2}:\d{2})(?::\d{2})?\s+→\s+((\d{2}:\d{2})(?::\d{2})?|\(aún activo\))\s+desde\s+(?:DJ|Icecast)\s+(.+)$/u',
+                    $entry, $m
+                )) {
+                    // Fallback: solo extraer la hora si el formato no coincide exactamente
+                    if (preg_match('/^-\s+[\d-]+\s+(\d{2}:\d{2})/', $entry, $mf)) {
+                        $times[] = $mf[1];
+                    }
+                    continue;
                 }
+                $startTime = $m[1];                                       // HH:MM
+                $endRaw    = $m[2];                                       // HH:MM:SS o "(aún activo)"
+                $endTime   = preg_match('/^\d{2}:\d{2}/', $endRaw, $me)
+                             ? $me[0] : null;                             // HH:MM o null
+                $streamer  = trim($m[4]);
+                $durSec    = null;
+                if ($endTime) {
+                    $startMin = (int)substr($startTime,0,2)*60 + (int)substr($startTime,3,2);
+                    $endMin   = (int)substr($endTime,0,2)*60   + (int)substr($endTime,3,2);
+                    if ($endMin < $startMin) $endMin += 1440; // cruce medianoche
+                    if ($endMin > $startMin) $durSec = ($endMin - $startMin) * 60;
+                }
+                $times[] = $startTime;
+                $liveEmissionsDetails[$day['date']][$startTime] = [
+                    'streamer' => $streamer,
+                    'end'      => $endTime,
+                    'durSec'   => $durSec,
+                ];
             }
             if ($times) $liveEmissionsPerDay[$day['date']] = $times;
         }
@@ -1037,6 +1066,24 @@ if ($hasSchedule) {
             // Última opción para automáticos: streamer del historial de canciones
             if (empty($liveStreamer) && !empty($histDetStreamer ?? '')) {
                 $liveStreamer = $histDetStreamer;
+            }
+
+            // Informe diario: fuente de streamer y duración real más fiable para
+            // directos cuando AzuraCast no registra el timestamp_end del broadcast.
+            // El informe lo genera cliente_rrll.sh leyendo el log de Liquidsoap.
+            if ($realTime && isset($liveEmissionsDetails[$date])) {
+                foreach ($liveEmissionsDetails[$date] as $emStart => $emDet) {
+                    if (!liveTiempoCoincide($realTime, $emStart)) continue;
+                    if (empty($liveStreamer) && !empty($emDet['streamer'])) {
+                        $liveStreamer = $emDet['streamer'];
+                    }
+                    if (!$realDurSec && $emDet['durSec'] > 0) {
+                        $realDurSec   = $emDet['durSec'];
+                        $durEstimated = false;
+                        $durSource    = 'report(liquidsoap)';
+                    }
+                    break;
+                }
             }
 
             // Estimación para directos pasados sin duración real:
@@ -1738,15 +1785,16 @@ if ($hasSchedule) {
             }
         ?></pre>
 
-        <p style="margin:10px 0 4px;"><strong>Emisiones en directo detectadas en el log:</strong></p>
+        <p style="margin:10px 0 4px;"><strong>Emisiones en directo detectadas en el log (con detalle):</strong></p>
         <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:160px;"><?php
-            if (empty($liveEmissionsPerDay)) {
-                echo "(ninguna emisión en directo encontrada en el log para este mes)\n";
+            if (empty($liveEmissionsDetails)) {
+                echo "(sin detalle de emisiones — formato de informe no reconocido o sin informes)\n";
             } else {
-                foreach ($liveEmissionsPerDay as $dateStr => $ems) {
-                    foreach ($ems as $em) {
-                        $end = $em['end'] ?? '(aún activo)';
-                        echo htmlEsc("$dateStr: " . $em['start'] . " → $end\n");
+                foreach ($liveEmissionsDetails as $dateStr => $byTime) {
+                    foreach ($byTime as $startT => $det) {
+                        $end = $det['end'] ?? '(aún activo)';
+                        $dur = $det['durSec'] ? round($det['durSec']/60).' min' : '—';
+                        echo htmlEsc("$dateStr $startT → $end | $dur | streamer: " . ($det['streamer'] ?: '(vacío)') . "\n");
                     }
                 }
             }
