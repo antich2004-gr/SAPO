@@ -404,7 +404,7 @@ if ($hasSchedule) {
                     'playlist'         => $playlist,
                     'ts'               => (int)$playedAt,
                     'duration'         => (int)($entry['duration'] ?? 0),
-                    'listeners_unique' => (int)($entry['listeners']['unique'] ?? 0),
+                    'listeners_unique' => (int)($entry['listeners_start'] ?? 0),
                 ];
                 $dayTimeline[$dayStr][] = ['playlist' => $playlist, 'time' => $timeStr];
             }
