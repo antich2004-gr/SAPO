@@ -147,8 +147,8 @@ function _lsParseLog(string $raw): array
 function computeLiquidsoapSourceId(string $playlistName): string
 {
     // ── Paso 1: getProgrammaticString ────────────────────────────────────────
-    $s = mb_ereg_replace('([^\w\s\d\-_~,;\[\]\(\).])', '', $playlistName) ?? '';
-    $s = mb_ereg_replace('([\.]{2,})', '.', $s) ?? '';
+    $s = preg_replace('/([^\w\s\d\-_~,;\[\]\(\).])/u', '', $playlistName) ?? '';
+    $s = preg_replace('/([\.]{2,})/', '.', $s) ?? '';
     $s = str_replace(' ', '_', $s);
     $s = mb_strtolower($s);
 
