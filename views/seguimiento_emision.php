@@ -2127,6 +2127,73 @@ if ($hasSchedule) {
             }
         }
     ?></pre>
+
+    <p style="margin:10px 0 4px;"><strong>Diagnóstico API Analytics de oyentes — resolución hour (últimas 24h):</strong></p>
+    <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:300px;"><?php
+        $dbgConfig    = getConfig();
+        $dbgApiUrl    = $dbgConfig['azuracast_api_url'] ?? '';
+        $dbgApiKey    = $dbgConfig['azuracast_api_key'] ?? '';
+        $dbgUserData  = getUserDB($trackingUsername);
+        $dbgStationId = $dbgUserData['azuracast']['station_id'] ?? null;
+
+        if (empty($dbgApiUrl) || empty($dbgStationId)) {
+            echo "No configurado: apiUrl=[" . htmlEsc($dbgApiUrl) . "] stationId=[" . htmlEsc((string)$dbgStationId) . "]\n";
+        } else {
+            $dbgHeaders  = ['timeout' => 15, 'user_agent' => 'SAPO/1.0'];
+            if (!empty($dbgApiKey)) $dbgHeaders['header'] = 'X-API-Key: ' . $dbgApiKey;
+            $dbgCtx = stream_context_create(['http' => $dbgHeaders]);
+
+            // Endpoint analytics con resolución horaria (últimas 24h)
+            $dbgStart = urlencode(date('c', strtotime('-24 hours')));
+            $dbgEnd   = urlencode(date('c'));
+            $dbgAnalyticsUrl = rtrim($dbgApiUrl, '/') . '/station/' . $dbgStationId
+                . '/listeners?resolution=hour&start=' . $dbgStart . '&end=' . $dbgEnd;
+
+            echo htmlEsc("URL: $dbgAnalyticsUrl\n\n");
+            $dbgResp = @file_get_contents($dbgAnalyticsUrl, false, $dbgCtx);
+
+            if ($dbgResp === false) {
+                // Intentar endpoint alternativo
+                $dbgAnalyticsUrl2 = rtrim($dbgApiUrl, '/') . '/station/' . $dbgStationId
+                    . '/history?start=' . $dbgStart . '&end=' . $dbgEnd . '&rows=5';
+                echo htmlEsc("⚠ /listeners falló. Probando /history con 5 filas:\nURL: $dbgAnalyticsUrl2\n\n");
+                $dbgResp = @file_get_contents($dbgAnalyticsUrl2, false, $dbgCtx);
+                if ($dbgResp === false) {
+                    echo "✗ Ambos endpoints fallaron. ¿API accesible?\n";
+                } else {
+                    $dbgData = json_decode($dbgResp, true);
+                    echo htmlEsc("Respuesta /history (5 entradas):\n");
+                    if (is_array($dbgData)) {
+                        foreach (array_slice($dbgData, 0, 5) as $dbgEntry) {
+                            echo htmlEsc(json_encode(array_intersect_key($dbgEntry, array_flip([
+                                'played_at','duration','playlist','listeners','listeners_unique','listeners_total'
+                            ])), JSON_UNESCAPED_UNICODE) . "\n");
+                        }
+                    } else {
+                        echo htmlEsc("Respuesta no es JSON: " . substr($dbgResp, 0, 200) . "\n");
+                    }
+                }
+            } else {
+                $dbgData = json_decode($dbgResp, true);
+                echo htmlEsc("✓ Endpoint /listeners respondió. Tipo: " . gettype($dbgData) . "\n\n");
+                if (is_array($dbgData)) {
+                    echo htmlEsc("Claves top-level: " . implode(', ', array_keys($dbgData)) . "\n\n");
+                    // Mostrar primeras entradas para ver la estructura
+                    $dbgItems = $dbgData['data'] ?? $dbgData;
+                    if (is_array($dbgItems)) {
+                        echo htmlEsc("Total entradas: " . count($dbgItems) . "\n");
+                        foreach (array_slice($dbgItems, 0, 6) as $dbgItem) {
+                            echo htmlEsc(json_encode($dbgItem, JSON_UNESCAPED_UNICODE) . "\n");
+                        }
+                    } else {
+                        echo htmlEsc("Respuesta completa: " . substr($dbgResp, 0, 500) . "\n");
+                    }
+                } else {
+                    echo htmlEsc("No es JSON válido: " . substr($dbgResp, 0, 300) . "\n");
+                }
+            }
+        }
+    ?></pre>
 </div>
 <?php endif; ?>
 
