@@ -2518,11 +2518,11 @@ var _cronoPorPag = 60;
 function _rowVisible(r) {
     var status = r.dataset.status;   // 'played' | 'missed'
     var isLive = r.dataset.live === '1';
-    // Si es directo y directos están ocultos → ocultar
-    if (isLive && !_cronoFiltros.live) return false;
-    // Si es directo y está activo el filtro live, respetar también el estado
-    if (status === 'missed' && !_cronoFiltros.missed) return false;
-    if (status === 'played' && !_cronoFiltros.played) return false;
+    // Directos: controlados únicamente por el filtro de tipo (live)
+    if (isLive) return _cronoFiltros.live;
+    // Programas: controlados por el filtro de estado
+    if (status === 'missed') return _cronoFiltros.missed;
+    if (status === 'played') return _cronoFiltros.played;
     return true;
 }
 
