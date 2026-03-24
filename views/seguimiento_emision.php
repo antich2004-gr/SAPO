@@ -345,7 +345,11 @@ if ($hasSchedule) {
         // guardado en caché como efecto secundario (llamada justo arriba).
         $streamerDisplayNames = getAzuracastStreamerDisplayNames($trackingUsername);
 
+        $dbgRawListenersSample = null;
         foreach ($history as $entry) {
+            if ($dbgRawListenersSample === null) {
+                $dbgRawListenersSample = json_encode(array_intersect_key($entry, array_flip(['listeners', 'listeners_unique', 'listeners_total'])));
+            }
             $playlist = $entry['playlist'] ?? null;
             $streamer = trim($entry['streamer'] ?? '');
             if ($streamer !== '') {
@@ -2028,7 +2032,13 @@ if ($hasSchedule) {
         }
     ?></pre>
 
-    <p style="margin:10px 0 4px;"><strong>Diagnóstico oyentes — muestra de entradas del historial:</strong></p>
+    <p style="margin:10px 0 4px;"><strong>Diagnóstico oyentes — campos raw de la primera entrada del historial:</strong></p>
+    <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:80px;"><?php
+        echo htmlEsc("Campos listeners en raw API: " . ($dbgRawListenersSample ?? '(no hay entradas)') . "\n");
+        echo htmlEsc("Primera entrada raw completa: " . (isset($history[0]) ? json_encode($history[0], JSON_UNESCAPED_UNICODE) : '(vacío)') . "\n");
+    ?></pre>
+
+    <p style="margin:10px 0 4px;"><strong>Diagnóstico oyentes — muestra de entradas procesadas (historyEntryByDay):</strong></p>
     <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:160px;"><?php
         $dbgSample = [];
         foreach ($historyEntryByDay as $dbgDay => $dbgEntries) {
