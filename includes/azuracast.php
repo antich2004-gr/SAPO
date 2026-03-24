@@ -1055,10 +1055,12 @@ function getStationStorageAlert($username, $thresholdBytes = 524288000) {
  * @return array|false Array de entradas del historial o false si hay error
  */
 function getAzuracastHistory($username, $startTimestamp, $endTimestamp) {
-    // Caché de 1 hora por emisora+mes
+    // Meses pasados: caché de 1 hora. Mes actual: caché de 5 min (puede haber nuevas emisiones)
     $monthKey  = date('Y-m', $startTimestamp);
+    $isCurrentMonth = ($monthKey === date('Y-m'));
+    $cacheTtl  = $isCurrentMonth ? 300 : 3600;
     $cacheKey  = "history_{$username}_{$monthKey}";
-    $cached    = cacheGet($cacheKey, 3600);
+    $cached    = cacheGet($cacheKey, $cacheTtl);
     if ($cached !== null) {
         return $cached;
     }
