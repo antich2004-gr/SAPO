@@ -1174,6 +1174,9 @@ function getAzuracastStreamerDisplayNames($username) {
     cacheSet($cacheKey, $map);
     return $map;
 }
+
+/**
+ * Obtener broadcasts de todos los streamers de una emisora para un mes dado.
  * Fuente fiable para saber exactamente cuándo emitió cada DJ y cuánto duró.
  *
  * @param string $username  Usuario SAPO de la emisora
