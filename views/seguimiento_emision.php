@@ -1440,7 +1440,7 @@ if ($hasSchedule) {
                 $cIsLive  = $crow['isLive'];
                 $cIsManual= $crow['isManual'];
                 $cRealEndTime = null;
-                if ($cIsLive && $crow['realTime'] && !empty($crow['realDurSec']) && empty($crow['durEstimated'])) {
+                if ($crow['realTime'] && !empty($crow['realDurSec']) && empty($crow['durEstimated'])) {
                     $cRealEndTime = date('H:i', strtotime($crow['realTime']) + (int)$crow['realDurSec']);
                 }
                 $cOvKey   = ($cIsLive && $crow['linkedLiveKey']) ? $crow['linkedLiveKey'] : $crow['progKey'];
