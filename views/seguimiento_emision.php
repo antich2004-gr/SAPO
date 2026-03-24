@@ -336,8 +336,13 @@ if ($hasSchedule) {
         foreach ($history as $entry) {
             $playlist = $entry['playlist'] ?? null;
             $streamer = trim($entry['streamer'] ?? '');
-            if ($streamer !== '' && !empty($streamerDisplayNames)) {
-                $streamer = normalizeStreamerName($streamer, $streamerDisplayNames);
+            if ($streamer !== '') {
+                if (!isset($dbgStreamerSample)) {
+                    $dbgStreamerSample = ['raw' => $streamer, 'hex' => bin2hex($streamer)];
+                }
+                if (!empty($streamerDisplayNames)) {
+                    $streamer = normalizeStreamerName($streamer, $streamerDisplayNames);
+                }
             }
             $playedAt = $entry['played_at'] ?? null;
             if (!$playedAt) continue;
@@ -1822,6 +1827,11 @@ if ($hasSchedule) {
                 foreach ($streamerDisplayNames as $u => $d) {
                     echo htmlEsc("$u → $d\n");
                 }
+            }
+            if (!empty($dbgStreamerSample)) {
+                echo "\nPrimer streamer del historial:\n";
+                echo htmlEsc("  raw: [" . $dbgStreamerSample['raw'] . "]\n");
+                echo htmlEsc("  hex: " . $dbgStreamerSample['hex'] . "\n");
             }
         ?></pre>
 
