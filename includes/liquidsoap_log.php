@@ -150,7 +150,7 @@ function computeLiquidsoapSourceId(string $playlistName): string
     $s = preg_replace('/([^\w\s\d\-_~,;\[\]\(\).])/u', '', $playlistName) ?? '';
     $s = preg_replace('/([\.]{2,})/', '.', $s) ?? '';
     $s = str_replace(' ', '_', $s);
-    $s = mb_strtolower($s);
+    $s = strtolower(iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $s) ?: $s);
 
     // ── Paso 2: cleanUpVarName('playlist_' + s) ──────────────────────────────
     $s = 'playlist_' . $s;
