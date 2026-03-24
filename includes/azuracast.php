@@ -1127,7 +1127,53 @@ function getAzuracastHistory($username, $startTimestamp, $endTimestamp) {
 }
 
 /**
- * Obtener broadcasts de todos los streamers de una emisora para un mes dado.
+ * Obtener mapa username→display_name de todos los streamers registrados en AzuraCast.
+ * Útil para normalizar el campo `streamer` del historial (que devuelve el username)
+ * al nombre a mostrar configurado en AzuraCast.
+ *
+ * @param string $username  Usuario SAPO de la emisora
+ * @return array  [username => display_name]  (vacío si error o sin streamers)
+ */
+function getAzuracastStreamerDisplayNames($username) {
+    $cacheKey = "streamer_names_{$username}";
+    $cached   = cacheGet($cacheKey, 3600); // TTL 1 h (nombres cambian poco)
+    if ($cached !== null) return $cached;
+
+    $config    = getConfig();
+    $stations  = $config['stations'] ?? [];
+    $stCfg     = null;
+    foreach ($stations as $s) {
+        if (($s['sapo_username'] ?? '') === $username) { $stCfg = $s; break; }
+    }
+    if (!$stCfg) { cacheSet($cacheKey, []); return []; }
+
+    $apiUrl    = rtrim($stCfg['azuracast_url'] ?? '', '/');
+    $apiKey    = $stCfg['azuracast_api_key'] ?? '';
+    $stationId = $stCfg['azuracast_station_id'] ?? '';
+    if (!$apiUrl || !$apiKey || !$stationId) { cacheSet($cacheKey, []); return []; }
+
+    $context  = stream_context_create(['http' => [
+        'method'  => 'GET',
+        'header'  => "X-API-Key: $apiKey\r\nAccept: application/json\r\n",
+        'timeout' => 10,
+        'ignore_errors' => true,
+    ]]);
+    $url      = "$apiUrl/api/station/$stationId/streamers";
+    $response = @file_get_contents($url, false, $context);
+    if ($response === false) { cacheSet($cacheKey, []); return []; }
+    $decoded  = json_decode($response, true);
+    if (!is_array($decoded)) { cacheSet($cacheKey, []); return []; }
+    $rows     = isset($decoded['rows']) ? $decoded['rows'] : $decoded;
+
+    $map = [];
+    foreach ($rows as $streamer) {
+        $uname = trim($streamer['streamer_username'] ?? '');
+        $dname = trim($streamer['display_name'] ?? '') ?: $uname;
+        if ($uname !== '') $map[$uname] = $dname;
+    }
+    cacheSet($cacheKey, $map);
+    return $map;
+}
  * Fuente fiable para saber exactamente cuándo emitió cada DJ y cuánto duró.
  *
  * @param string $username  Usuario SAPO de la emisora
