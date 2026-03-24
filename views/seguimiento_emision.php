@@ -1806,6 +1806,17 @@ if ($hasSchedule) {
             if (empty($livePrograms)) echo '(ningún directo cargado)';
         ?></pre>
 
+        <p style="margin:10px 0 4px;"><strong>Mapa streamers (username → display_name):</strong></p>
+        <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:80px;"><?php
+            if (empty($streamerDisplayNames)) {
+                echo "(vacío — API no disponible o sin streamers registrados)\n";
+            } else {
+                foreach ($streamerDisplayNames as $u => $d) {
+                    echo htmlEsc("$u → $d\n");
+                }
+            }
+        ?></pre>
+
         <p style="margin:10px 0 4px;"><strong>Informes diarios — directos del mes:</strong></p>
         <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:120px;"><?php
             $dbgReportsPath = getReportsPath($trackingUsername);
