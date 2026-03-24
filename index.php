@@ -30,6 +30,7 @@ require_once INCLUDES_DIR . '/liquidsoap_log.php';
 require_once INCLUDES_DIR . '/time_signals.php';
 require_once INCLUDES_DIR . '/recordings.php';
 require_once INCLUDES_DIR . '/overrides.php';
+require_once INCLUDES_DIR . '/emission_recorder.php';
 
 initSession();
 
