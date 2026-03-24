@@ -714,11 +714,14 @@ function getMissedReason(
         $overrunEndTs = $activeAtStart['ts'] + $activeAtStart['duration'];
         $overrunMin   = (int)ceil(($overrunEndTs - $schedTs) / 60);
 
-        // Buscar el fin programado del slot (para saber si el overrun lo agotó)
+        // Buscar el fin programado del slot (para saber si el overrun lo agotó).
+        // AzuraCast a veces devuelve como endTime la hora de inicio de la siguiente
+        // ocurrencia (misma hora, semana siguiente), dando un slot de 0 min — en ese
+        // caso descartamos el dato y usamos el umbral conservador.
         $schedEndTs = null;
         foreach ($programSchedules[$programKey] ?? [] as $slot) {
             if (($slot['startTime'] ?? '') === $scheduledAt && !empty($slot['endTime'])) {
-                $schedEndTs = mktime(
+                $candidate = mktime(
                     (int)substr($slot['endTime'], 0, 2),
                     (int)substr($slot['endTime'], 3, 2),
                     0,
@@ -726,6 +729,11 @@ function getMissedReason(
                     (int)substr($date, 8, 2),
                     (int)substr($date, 0, 4)
                 );
+                // Ignorar si el fin calculado es igual o anterior al inicio
+                // (endTime = "misma hora" → dato incorrecto de AzuraCast)
+                if ($candidate > $schedTs) {
+                    $schedEndTs = $candidate;
+                }
                 break;
             }
         }
@@ -738,10 +746,10 @@ function getMissedReason(
             $slotMin = (int)round(($schedEndTs - $schedTs) / 60);
             return "«{$dispName}» se alargó {$overrunMin} min y el slot caducó ({$slotMin} min)";
         } elseif ($schedEndTs === null && $overrunMin > 15) {
-            // Sin dato de fin de slot: umbral conservador de 15 min
+            // Sin dato de fin de slot fiable: umbral conservador de 15 min
             return "«{$dispName}» se alargó {$overrunMin} min sobre su horario";
         }
-        // Overrun menor que el slot → no es la causa; seguir analizando
+        // Overrun menor que el slot (o slot con datos infiables y ≤15 min) → no es la causa
     }
 
     // ── PRIORIDAD 3: Fallo de AzuraCast ──────────────────────────────────────
