@@ -1417,7 +1417,7 @@ if ($hasSchedule) {
                     <th>Dur. teórica</th>
                     <th>Dur. real</th>
                     <th>Diferencia</th>
-                    <th>Episodio emitido/Streamer</th>
+                    <th id="crono-th-episodio">Episodio emitido/Streamer</th>
                     <th>Estado</th>
                 </tr>
             </thead>
@@ -1585,7 +1585,7 @@ if ($hasSchedule) {
                             <th>Dur. teórica</th>
                             <th>Dur. real</th>
                             <th>Diferencia</th>
-                            <th>Episodio emitido/Streamer</th>
+                            <th id="crono-th-episodio-bot">Episodio emitido/Streamer</th>
                             <th>Estado</th>
                         </tr>
                     </thead>
@@ -2582,6 +2582,12 @@ function toggleFiltroCrono(filtro) {
         btn.classList.toggle('btn-filtro-activo', activo);
         btn.style.opacity = activo ? '1' : '0.45';
         btn.style.textDecoration = activo ? '' : 'line-through';
+    });
+    // Actualizar cabecera columna episodio según visibilidad de directos
+    var textoEpisodio = _cronoFiltros.live ? 'Episodio emitido/Streamer' : 'Episodio emitido';
+    ['crono-th-episodio', 'crono-th-episodio-bot'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = textoEpisodio;
     });
     _cronoRender();
 }
