@@ -2837,7 +2837,10 @@ _cronoRender();
         inp.value = cur > 0 ? cur : 60;
         document.getElementById('edit-dur-error').style.display = 'none';
         var r = el.getBoundingClientRect();
-        pop.style.top  = (r.bottom + 6 + window.scrollY) + 'px';
+        // position:fixed es relativo al viewport → NO sumar scrollY
+        var top = r.bottom + 6;
+        if (top + 160 > window.innerHeight) top = r.top - 160 - 6; // si no cabe abajo, abrir arriba
+        pop.style.top  = Math.max(4, top) + 'px';
         pop.style.left = Math.min(r.left, window.innerWidth - 230) + 'px';
         pop.style.display = 'block';
         inp.focus();
