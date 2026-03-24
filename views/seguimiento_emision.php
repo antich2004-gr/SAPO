@@ -1417,7 +1417,7 @@ if ($hasSchedule) {
                     <th>Dur. teórica</th>
                     <th>Dur. real</th>
                     <th>Diferencia</th>
-                    <th>Episodio emitido</th>
+                    <th>Episodio emitido/Streamer</th>
                     <th>Estado</th>
                 </tr>
             </thead>
@@ -1585,7 +1585,7 @@ if ($hasSchedule) {
                             <th>Dur. teórica</th>
                             <th>Dur. real</th>
                             <th>Diferencia</th>
-                            <th>Episodio emitido</th>
+                            <th>Episodio emitido/Streamer</th>
                             <th>Estado</th>
                         </tr>
                     </thead>
