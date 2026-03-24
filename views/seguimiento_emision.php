@@ -1434,7 +1434,24 @@ if ($hasSchedule) {
         <?php if ($hasSchedule && !empty($cronologicoRows)): ?>
         <!-- Cabecera: stats + paginación -->
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid #e2e8f0; gap:12px; flex-wrap:wrap;">
-            <span id="crono-stats" style="font-size:13px; color:#718096;"></span>
+            <!-- Stats bar: mismo formato que la rejilla -->
+            <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; color:#4a5568; font-size:13px;">
+                <?php
+                $cronoEsperadas = $totals['emite_ok'] + $totals['faltan'];
+                $cronoLivefaltan = $totals['live_esperados'] - $totals['live_efectivos'];
+                ?>
+                <span style="font-weight:600; color:#4a5568;">Emisiones:</span>
+                <span>Esperadas <strong id="crono-stat-esperadas"><?php echo $cronoEsperadas; ?></strong></span>
+                <span>Emitidas <strong id="crono-stat-emitidas" style="color:#276749;"><?php echo $totals['emite_ok']; ?></strong></span>
+                <span>Faltan <strong id="crono-stat-faltan" style="color:#c53030;"><?php echo $totals['faltan']; ?></strong></span>
+                <?php if ($totals['live_esperados'] > 0): ?>
+                <span style="color:#cbd5e0;">|</span>
+                <span style="font-weight:600; color:#2563eb;">Directos:</span>
+                <span>Esperados <strong id="crono-stat-live-esp"><?php echo $totals['live_esperados']; ?></strong></span>
+                <span>Emitidos <strong id="crono-stat-live-emit" style="color:#1d4ed8;"><?php echo $totals['live_efectivos']; ?></strong></span>
+                <span>Faltan <strong id="crono-stat-live-falt" style="color:#b91c1c;"><?php echo $cronoLivefaltan; ?></strong></span>
+                <?php endif; ?>
+            </div>
             <div style="display:flex; align-items:center; gap:6px;">
                 <button id="crono-prev" onclick="cronoPrev()" class="btn btn-secondary" style="font-size:11px; padding:3px 10px;" disabled>← Anterior</button>
                 <span id="crono-page-info" style="font-size:12px; color:#4a5568; white-space:nowrap;"></span>
