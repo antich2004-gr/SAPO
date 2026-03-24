@@ -1318,9 +1318,10 @@ if ($hasSchedule) {
                 <button id="btn-vista-detalle"   onclick="toggleVista('detalle')"   class="btn btn-secondary" style="font-size:12px; padding:4px 12px;">⊞ Rejilla</button>
             </div>
             <div id="filtros-cronologico" style="display:flex; align-items:center; gap:6px;">
-                <span style="font-size:11px; color:#718096;">Filtrar por:</span>
-                <button id="btn-filtro-fallados" onclick="filtrarCronologico('missed')" class="btn" style="font-size:11px; padding:3px 10px; background:#fc8181; color:#fff; border:1px solid #f56565; border-radius:4px;">Fallados</button>
-                <button id="btn-filtro-correctos" onclick="filtrarCronologico('played')" class="btn" style="font-size:11px; padding:3px 10px; background:#68d391; color:#fff; border:1px solid #48bb78; border-radius:4px;">Correctos</button>
+                <span style="font-size:11px; color:#718096;">Mostrar:</span>
+                <button id="btn-filtro-fallados"  onclick="toggleFiltroCrono('missed')" class="btn btn-filtro-crono btn-filtro-activo" data-filtro="missed" style="font-size:11px; padding:3px 10px; background:#fc8181; color:#fff; border:1px solid #f56565; border-radius:4px;">❌ Fallados</button>
+                <button id="btn-filtro-correctos" onclick="toggleFiltroCrono('played')" class="btn btn-filtro-crono btn-filtro-activo" data-filtro="played" style="font-size:11px; padding:3px 10px; background:#68d391; color:#fff; border:1px solid #48bb78; border-radius:4px;">✓ Correctos</button>
+                <button id="btn-filtro-directos"  onclick="toggleFiltroCrono('live')"   class="btn btn-filtro-crono btn-filtro-activo" data-filtro="live"   style="font-size:11px; padding:3px 10px; background:#63b3ed; color:#fff; border:1px solid #4299e1; border-radius:4px;">📡 Directos</button>
             </div>
         </div>
 
@@ -2451,18 +2452,30 @@ function ordenarResumen(criterio) {
 }
 
 // ── Vista cronológica: filtro y paginación ────────────────────────────────────
-var _cronoFiltro = null;   // null | 'played' | 'missed'
+// Filtros independientes: cada clave true=mostrar, false=ocultar
+var _cronoFiltros = { missed: true, played: true, live: true };
 var _cronoPagina = 1;
 var _cronoPorPag = 60;
 
+function _rowVisible(r) {
+    var status = r.dataset.status;   // 'played' | 'missed'
+    var isLive = r.dataset.live === '1';
+    // Si es directo y directos están ocultos → ocultar
+    if (isLive && !_cronoFiltros.live) return false;
+    // Si es directo y está activo el filtro live, respetar también el estado
+    if (status === 'missed' && !_cronoFiltros.missed) return false;
+    if (status === 'played' && !_cronoFiltros.played) return false;
+    return true;
+}
+
 function _cronoVisibleRows() {
     var all = Array.from(document.querySelectorAll('#crono-tbody .crono-row'));
-    return _cronoFiltro ? all.filter(function(r) { return r.dataset.status === _cronoFiltro; }) : all;
+    return all.filter(_rowVisible);
 }
 
 function _cronoRender() {
     var all    = Array.from(document.querySelectorAll('#crono-tbody .crono-row'));
-    var shown  = _cronoFiltro ? all.filter(function(r) { return r.dataset.status === _cronoFiltro; }) : all;
+    var shown  = all.filter(_rowVisible);
     var total  = shown.length;
     var pages  = Math.max(1, Math.ceil(total / _cronoPorPag));
     if (_cronoPagina > pages) _cronoPagina = pages;
@@ -2501,13 +2514,17 @@ function _cronoRender() {
     });
 }
 
-function filtrarCronologico(status) {
-    _cronoFiltro = (_cronoFiltro === status) ? null : status;
+function toggleFiltroCrono(filtro) {
+    _cronoFiltros[filtro] = !_cronoFiltros[filtro];
     _cronoPagina = 1;
-    var bf = document.getElementById('btn-filtro-fallados');
-    var bc = document.getElementById('btn-filtro-correctos');
-    if (bf) bf.style.opacity = (!_cronoFiltro || _cronoFiltro === 'missed') ? '1' : '0.4';
-    if (bc) bc.style.opacity = (!_cronoFiltro || _cronoFiltro === 'played') ? '1' : '0.4';
+    // Actualizar aspecto visual de cada botón
+    document.querySelectorAll('.btn-filtro-crono').forEach(function(btn) {
+        var f = btn.dataset.filtro;
+        var activo = _cronoFiltros[f];
+        btn.classList.toggle('btn-filtro-activo', activo);
+        btn.style.opacity = activo ? '1' : '0.45';
+        btn.style.textDecoration = activo ? '' : 'line-through';
+    });
     _cronoRender();
 }
 
