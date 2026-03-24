@@ -1153,6 +1153,16 @@ if ($hasSchedule) {
             <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;" class="no-print">
                 <?php if (isAdmin()): ?>
                 <a href="?" class="btn btn-secondary" style="font-size:13px;"><span class="btn-icon">⚙️</span> Panel Admin</a>
+                <?php
+                $debugBaseUrl = '?page=seguimiento_emision'
+                    . ($stationParam ? $stationParam : '')
+                    . ($targetMonth !== date('Y-m') ? '&month=' . $targetMonth : '');
+                if ($debugParam):
+                ?>
+                <a href="<?php echo htmlEsc($debugBaseUrl); ?>" class="btn btn-secondary" style="font-size:12px; background:#fef3c7; border-color:#f59e0b; color:#92400e;">🔍 Debug ON</a>
+                <?php else: ?>
+                <a href="<?php echo htmlEsc($debugBaseUrl . '&debug=1'); ?>" class="btn btn-secondary" style="font-size:12px; color:#94a3b8;">🔍 Debug</a>
+                <?php endif; ?>
                 <?php else: ?>
                 <a href="?" class="btn btn-secondary" style="font-size:13px;"><span class="btn-icon">←</span> Volver</a>
                 <?php endif; ?>
