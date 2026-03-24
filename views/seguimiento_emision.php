@@ -1792,6 +1792,13 @@ if ($hasSchedule) {
     <?php if (isset($_GET['debug']) && $_GET['debug'] === '1'): ?>
     <div style="padding:16px 24px 24px; border-top:2px dashed #f59e0b; background:#fffbeb; font-size:12px; font-family:monospace;">
         <strong style="color:#92400e;">🔍 DEBUG — solo visible con ?debug=1</strong>
+        <?php
+        // Diagnóstico streamer (también emitido como comentario HTML para Ctrl+U)
+        $dbgStreamerHex  = isset($dbgStreamerSample) ? $dbgStreamerSample['hex']  : '(no hay entradas con streamer)';
+        $dbgStreamerRaw  = isset($dbgStreamerSample) ? $dbgStreamerSample['raw']  : '';
+        $dbgMapJson      = json_encode($streamerDisplayNames, JSON_UNESCAPED_UNICODE);
+        echo "<!-- SAPO_DBG streamer_hex=[$dbgStreamerHex] streamer_raw=[$dbgStreamerRaw] map=$dbgMapJson -->\n";
+        ?>
 
         <p style="margin:10px 0 4px;"><strong>Programas en BD de SAPO (todos):</strong></p>
         <pre style="background:#fff;padding:8px;border:1px solid #e2e8f0;overflow:auto;max-height:200px;"><?php
