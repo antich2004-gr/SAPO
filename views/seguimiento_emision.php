@@ -58,6 +58,18 @@ if (!isAdmin() || isImpersonating()) {
     }
 }
 
+// ── Registro en tiempo real de emisiones ──────────────────────────────────────
+require_once INCLUDES_DIR . '/emission_recorder.php';
+
+// Disparador de page-load con cooldown de 5 min (respaldo al cron de 10 min).
+// Solo registra si hay slots ya pasados que aún no están en el log.
+$_erCooldownKey = 'er_last_run_' . $trackingUsername;
+if (cacheGet($_erCooldownKey, 300) === null) {
+    cacheSet($_erCooldownKey, time());
+    try { erRecordUser($trackingUsername); } catch (Throwable $_erEx) { /* silencioso */ }
+}
+unset($_erCooldownKey, $_erEx);
+
 // ── Correcciones manuales ─────────────────────────────────────────────────────
 $overrides = loadOverrides($trackingUsername);
 
@@ -1110,12 +1122,20 @@ if ($hasSchedule) {
                     ] : null;
                 }
 
-                $missedReason = getMissedReason($schTime, $date, $dayTimeline,
-                                               $isLiveDay || isset($livePrograms[$progKey]),
-                                               $effectiveKey, $dailyRep,
-                                               $liquidsoapLog, $lsSrcId,
-                                               $historyEntryByDay, $programSchedules,
-                                               $plContentInfo, $playlistDisplayName);
+                // Preferir el diagnóstico registrado en tiempo real (más fiable):
+                // capturado a los pocos minutos del fallo, cuando la playlist
+                // aún estaba vacía y el log de Liquidsoap era fresco.
+                $erRecord = erGetRecord($trackingUsername, $date, $effectiveKey, $schTime ?? '');
+                if ($erRecord !== null && !empty($erRecord['reason'])) {
+                    $missedReason = $erRecord['reason'];
+                } else {
+                    $missedReason = getMissedReason($schTime, $date, $dayTimeline,
+                                                   $isLiveDay || isset($livePrograms[$progKey]),
+                                                   $effectiveKey, $dailyRep,
+                                                   $liquidsoapLog, $lsSrcId,
+                                                   $historyEntryByDay, $programSchedules,
+                                                   $plContentInfo, $playlistDisplayName);
+                }
             }
 
             // Para directos registrados: hora real y duración desde cellResult
