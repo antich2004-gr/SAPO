@@ -336,22 +336,8 @@ if ($hasSchedule) {
         foreach ($history as $entry) {
             $playlist = $entry['playlist'] ?? null;
             $streamer = trim($entry['streamer'] ?? '');
-            // Normalizar: el historial puede devolver el username o un display_name
-            // truncado/corrupto (e.g. "gora" por "Ágora" con Á multibyte perdida).
-            // Intentar match exacto por username primero; si falla, buscar el streamer
-            // cuyo username o display_name contiene el valor recibido como subcadena.
-            if ($streamer !== '') {
-                if (isset($streamerDisplayNames[$streamer])) {
-                    $streamer = $streamerDisplayNames[$streamer];
-                } elseif (!empty($streamerDisplayNames)) {
-                    foreach ($streamerDisplayNames as $uname => $dname) {
-                        if (mb_stripos($uname, $streamer) !== false
-                            || mb_stripos($dname, $streamer) !== false) {
-                            $streamer = $dname;
-                            break;
-                        }
-                    }
-                }
+            if ($streamer !== '' && !empty($streamerDisplayNames)) {
+                $streamer = normalizeStreamerName($streamer, $streamerDisplayNames);
             }
             $playedAt = $entry['played_at'] ?? null;
             if (!$playedAt) continue;
@@ -533,6 +519,38 @@ $liquidsoapLog = $hasSchedule ? getLiquidsoapLogIndex($trackingUsername) : null;
 function timeToMinutes($time) {
     [$h, $m] = explode(':', $time);
     return (int)$h * 60 + (int)$m;
+}
+
+/**
+ * Normaliza un nombre de streamer tal como lo devuelve AzuraCast al nombre
+ * a mostrar configurado. AzuraCast puede devolver en el historial el username
+ * o un display_name con bytes UTF-8 truncados al inicio (ej. Á=0xC3 0x81
+ * queda solo como 0x81, haciendo que "Ágora" aparezca como "\x81gora").
+ *
+ * Estrategia:
+ * 1. Match exacto por username → devuelve display_name
+ * 2. Eliminar bytes de continuación UTF-8 huérfanos del inicio (0x80-0xBF)
+ *    y buscar el display_name que contiene el resultado como subcadena
+ * 3. Sin match → devuelve el valor original
+ */
+function normalizeStreamerName(string $raw, array $displayNames): string {
+    if (empty($displayNames)) return $raw;
+
+    // 1. Match exacto por username
+    if (isset($displayNames[$raw])) return $displayNames[$raw];
+
+    // 2. Limpiar bytes de continuación UTF-8 huérfanos al inicio y buscar
+    $clean = preg_replace('/^[\x80-\xBF]+/', '', $raw);
+    if ($clean === '') return $raw;
+
+    foreach ($displayNames as $uname => $dname) {
+        // ¿el username coincide con el valor limpio?
+        if (mb_stripos($uname, $clean) !== false) return $dname;
+        // ¿el display_name contiene el valor limpio como subcadena?
+        if (mb_stripos($dname, $clean) !== false) return $dname;
+    }
+
+    return $raw;
 }
 
 // Devuelve true si una emisión en directo (con startTime) se solapa con la
@@ -1099,21 +1117,7 @@ if ($hasSchedule) {
                 foreach ($liveEmissionsDetails[$date] as $emStart => $emDet) {
                     if (!liveTiempoCoincide($realTime, $emStart)) continue;
                     if (empty($liveStreamer) && !empty($emDet['streamer'])) {
-                        $raw = $emDet['streamer'];
-                        if (isset($streamerDisplayNames[$raw])) {
-                            $liveStreamer = $streamerDisplayNames[$raw];
-                        } elseif (!empty($streamerDisplayNames)) {
-                            $liveStreamer = $raw;
-                            foreach ($streamerDisplayNames as $uname => $dname) {
-                                if (mb_stripos($uname, $raw) !== false
-                                    || mb_stripos($dname, $raw) !== false) {
-                                    $liveStreamer = $dname;
-                                    break;
-                                }
-                            }
-                        } else {
-                            $liveStreamer = $raw;
-                        }
+                        $liveStreamer = normalizeStreamerName($emDet['streamer'], $streamerDisplayNames);
                     }
                     if (!$realDurSec && $emDet['durSec'] > 0) {
                         $realDurSec   = $emDet['durSec'];
