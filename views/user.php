@@ -717,6 +717,8 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                         <div style="color:#9ca3af;font-style:italic;">Sin emisiones registradas</div>
                                         <?php else: ?>
                                         <?php foreach ($_emDayData['details'] as $_emDet):
+                                            // Ocultar directos fallidos; solo mostrar directos emitidos
+                                            if (!empty($_emDet['is_live']) && $_emDet['status'] !== 'played') continue;
                                             if (!empty($_emDet['is_live'])) {
                                                 $_emIcon = '🎙️'; // directo (emitido o no) — no afecta al estado de Radiobot
                                             } elseif ($_emDet['status'] === 'played') {
