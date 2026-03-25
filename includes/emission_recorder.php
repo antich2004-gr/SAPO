@@ -161,6 +161,30 @@ function _erDiagnose(
     if (!$isLive && $plInfo !== null) {
         $numSongs = (int)($plInfo['num_songs'] ?? 0);
         if ($numSongs > 0) {
+            // ¿Se descargó tarde? Buscar en podcasts_hoy del informe diario.
+            // Si llegó mientras sonaba el programa anterior (≤90 min antes del slot),
+            // AzuraCast puede no haberlo indexado a tiempo.
+            $dlLateTime = null;
+            if ($dailyReport && !empty($dailyReport['podcasts_hoy'])) {
+                $normKey = _erNorm($programKey);
+                foreach ($dailyReport['podcasts_hoy'] as $dl) {
+                    if (_erNorm($dl['podcast']) !== $normKey) continue;
+                    // fecha: "DD-MM-YYYY HH:MM:SS"
+                    if (preg_match('/^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2})/', $dl['fecha'], $m)) {
+                        $dlTs = mktime((int)$m[4], (int)$m[5], 0, (int)$m[2], (int)$m[1], (int)$m[3]);
+                        $minsBeforeSlot = ($schedTs - $dlTs) / 60;
+                        if ($minsBeforeSlot >= 0 && $minsBeforeSlot <= 90) {
+                            $dlLateTime = substr($dl['fecha'], 11, 5); // HH:MM
+                        }
+                    }
+                    break;
+                }
+            }
+
+            if ($dlLateTime !== null) {
+                return "Tiene {$numSongs} episodio(s) en playlist — el episodio llegó a las {$dlLateTime} "
+                     . "(mientras sonaba el programa anterior), posiblemente sin tiempo de indexarse";
+            }
             if ($smallOverrunPlaylist !== null) {
                 return "Tiene {$numSongs} episodio(s) en playlist — «{$smallOverrunPlaylist}» "
                      . "invadió {$smallOverrunMin} min de este slot, posible causa de que no se activara";
