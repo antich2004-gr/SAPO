@@ -163,7 +163,7 @@ function _erDiagnose(
         if ($numSongs > 0) {
             if ($smallOverrunPlaylist !== null) {
                 return "Tiene {$numSongs} episodio(s) en playlist — «{$smallOverrunPlaylist}» "
-                     . "terminó {$smallOverrunMin} min tarde, posiblemente impidiendo la activación del slot";
+                     . "invadió {$smallOverrunMin} min de este slot, posible causa de que no se activara";
             }
             return "Tiene {$numSongs} episodio(s) en playlist — no se activó (causa desconocida)";
         }
