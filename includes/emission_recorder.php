@@ -139,12 +139,19 @@ function _erDiagnose(
     }
 
     // ── P3: Contenido anterior agotó el slot ──────────────────────────────────
+    $smallOverrunPlaylist = null;
+    $smallOverrunMin      = 0;
     foreach ($histByDay[$date] as $he) {
         if ($he['ts'] <= $schedTs && ($he['ts'] + $he['duration']) > $schedTs) {
             $overrunEndTs = $he['ts'] + $he['duration'];
             $overrunMin   = (int)ceil(($overrunEndTs - $schedTs) / 60);
             if ($overrunMin > 15) {
                 return "«{$he['playlist']}» se alargó {$overrunMin} min sobre su horario";
+            }
+            // Overrun pequeño (≤15 min): guardarlo para enriquecer P4 si procede
+            if ($overrunMin >= 1) {
+                $smallOverrunPlaylist = $he['playlist'];
+                $smallOverrunMin      = $overrunMin;
             }
             break;
         }
@@ -154,6 +161,10 @@ function _erDiagnose(
     if (!$isLive && $plInfo !== null) {
         $numSongs = (int)($plInfo['num_songs'] ?? 0);
         if ($numSongs > 0) {
+            if ($smallOverrunPlaylist !== null) {
+                return "Tiene {$numSongs} episodio(s) en playlist — «{$smallOverrunPlaylist}» "
+                     . "terminó {$smallOverrunMin} min tarde, posiblemente impidiendo la activación del slot";
+            }
             return "Tiene {$numSongs} episodio(s) en playlist — no se activó (causa desconocida)";
         }
     }
