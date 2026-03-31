@@ -147,10 +147,10 @@ function _lsParseLog(string $raw): array
 function computeLiquidsoapSourceId(string $playlistName): string
 {
     // ── Paso 1: getProgrammaticString ────────────────────────────────────────
-    $s = mb_ereg_replace('([^\w\s\d\-_~,;\[\]\(\).])', '', $playlistName) ?? '';
-    $s = mb_ereg_replace('([\.]{2,})', '.', $s) ?? '';
+    $s = preg_replace('/([^\w\s\d\-_~,;\[\]\(\).])/u', '', $playlistName) ?? '';
+    $s = preg_replace('/([\.]{2,})/', '.', $s) ?? '';
     $s = str_replace(' ', '_', $s);
-    $s = mb_strtolower($s);
+    $s = strtolower(iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $s) ?: $s);
 
     // ── Paso 2: cleanUpVarName('playlist_' + s) ──────────────────────────────
     $s = 'playlist_' . $s;
@@ -288,7 +288,7 @@ function diagnoseMissedFromLog(
          || str_contains($msg, 'error')
          || str_contains($msg, 'exception')
         ) {
-            $excerpt = mb_substr(preg_replace('/\s+/', ' ', $msg), 0, 100);
+            $excerpt = substr(preg_replace('/\s+/', ' ', $msg), 0, 100);
             return 'Error interno de Liquidsoap: ' . $excerpt;
         }
     }
@@ -352,6 +352,19 @@ function diagnoseMissedFromLog(
         }
         if ($line['comp'] === 'mksafe') {
             return 'Fallo de AzuraCast — activó la fuente segura de emergencia (mksafe)';
+        }
+    }
+
+    // ── 7b. AutoDJ cae a blank tras la señal horaria ─────────────────────────
+    // Patrón: [switch.XX] Switch to blank.1 en los primeros minutos del slot.
+    // La señal horaria se emitió correctamente pero no había ningún track
+    // en cola para el programa (AzuraCast no lo tenía pre-cargado en ese instante).
+    foreach ($relevant as $line) {
+        $lineMin = _lsToMin(substr($line['time'], 0, 5));
+        if ($lineMin < $schedMin || $lineMin > $schedMin + 5) continue;
+        if (!str_starts_with($line['comp'], 'switch.')) continue;
+        if (str_contains($line['msg'], 'Switch to blank')) {
+            return 'La señal horaria se emitió pero AzuraCast no tenía el programa en cola (AutoDJ cayó a blank sin contenido)';
         }
     }
 

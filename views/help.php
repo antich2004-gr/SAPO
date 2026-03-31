@@ -34,6 +34,7 @@
             <li><a href="#ultimas-descargas">Ver últimas descargas</a></li>
             <li><a href="#senales-horarias">🔔 Señales horarias</a></li>
             <li><a href="#grabaciones">🎙️ Grabaciones</a></li>
+            <li><a href="#historial-emision">📊 Historial de Emisión</a></li>
             <li><a href="#faq">Preguntas frecuentes (FAQ)</a></li>
         </ul>
     </div>
@@ -41,10 +42,10 @@
     <!-- Sección: Introducción -->
     <div id="introduccion" style="margin-bottom: 40px;">
         <h3>🐸 ¿Qué es SAPO?</h3>
-        <p>SAPO (Sistema de Automatización de Podcasts) es una aplicación web que facilita la gestión de suscripciones de podcasts para <strong>Radiobot</strong>.</p>
+        <p>SAPO (Sistema de Automatización de Podcasts) es una aplicación web para la <strong>administración y vigilancia de las estaciones en Radiobot</strong>, así como la gestión de suscripciones de podcast y grabaciones.</p>
 
         <div style="background: #edf2f7; padding: 15px; border-radius: 8px; margin: 15px 0;">
-            <strong>🎯 Objetivo:</strong> Simplificar la administración de tus podcasts mediante una interfaz web intuitiva, sin necesidad de editar archivos de configuración manualmente.
+            <strong>🎯 Objetivo:</strong> Centralizar en una interfaz web intuitiva todo lo necesario para gestionar tu emisora: podcasts, parrilla de programación, historial de emisiones y grabaciones, sin necesidad de editar archivos de configuración manualmente.
         </div>
 
         <p><strong>Funcionalidades principales:</strong></p>
@@ -57,6 +58,9 @@
             <li>✅ Ejecutar descargas de episodios nuevos</li>
             <li>✅ Importar y exportar listas de podcasts</li>
             <li>✅ Ver listado de últimas descargas realizadas</li>
+            <li>✅ Gestionar la parrilla de programación de tu emisora</li>
+            <li>✅ Consultar el historial de emisiones mes a mes con estadísticas detalladas</li>
+            <li>✅ Acceder y descargar grabaciones almacenadas en Radiobot</li>
         </ul>
     </div>
 
@@ -743,6 +747,72 @@
 
         <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 15px 0;">
             <strong>⚠️ Importante:</strong> La eliminación de grabaciones es permanente e irreversible. Asegúrate de que no necesitas un archivo antes de borrarlo.
+        </div>
+    </div>
+
+    <!-- Sección: Historial de Emisión -->
+    <div id="historial-emision" style="margin-bottom: 40px;">
+        <h3>📊 Historial de Emisión</h3>
+        <p>El <strong>Historial de Emisión</strong> te permite consultar qué programas se han emitido en tu emisora mes a mes, con información detallada sobre horarios reales, duraciones y oyentes.</p>
+        <p>Accede desde el botón <strong>Historial de Emisión</strong> en el menú principal.</p>
+
+        <h4>Navegación por meses</h4>
+        <p>Usa los botones <strong>← Anterior</strong> y <strong>Siguiente →</strong> para moverte entre meses. Los datos del mes en curso se actualizan en tiempo real.</p>
+
+        <h4>Vistas disponibles</h4>
+        <div style="background: #f7fafc; padding: 15px; border-radius: 8px; margin: 15px 0;">
+            <p style="margin-top:0;"><strong>≡ Vista cronológica</strong> — Lista todas las emisiones del mes ordenadas de más reciente a más antigua. Muestra fecha, programa, horario teórico y real, duración, episodio/streamer, oyentes y estado.</p>
+            <p><strong>☰ Vista por programas</strong> — Agrupa las emisiones por programa, con un resumen de emisiones correctas y fallidas. Ideal para detectar patrones de fallos en un programa concreto.</p>
+            <p style="margin-bottom:0;"><strong>⊞ Rejilla</strong> — Vista de calendario mensual con una celda por programa y día. Permite ver de un vistazo qué días se emitió cada programa.</p>
+        </div>
+
+        <h4>Filtros (Vista cronológica)</h4>
+        <p>En la vista cronológica puedes filtrar qué tipos de emisión se muestran mediante tres botones independientes:</p>
+        <ul>
+            <li><strong>❌ Fallados</strong> — Muestra las emisiones que no se produjeron (programas automáticos que no se emitieron en su franja horaria).</li>
+            <li><strong>✓ Correctos</strong> — Muestra las emisiones que se produjeron correctamente.</li>
+            <li><strong>📡 Directos</strong> — Muestra las emisiones en directo (con streamer conectado). Es un filtro de <em>tipo</em>: activo solo él muestra todos los directos independientemente de si fueron correctos o fallidos.</li>
+        </ul>
+        <div style="background: #ebf8ff; border-left: 4px solid #4299e1; padding: 12px 15px; border-radius: 4px; margin: 10px 0;">
+            <strong>💡 Consejo:</strong> Puedes combinar filtros libremente. Por ejemplo, <em>Correctos + Directos</em> muestra programas correctos junto con todos los directos; <em>Directos</em> solo muestra únicamente todos los directos del mes.
+        </div>
+
+        <h4>Columnas de la tabla</h4>
+        <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:13px; margin: 10px 0;">
+            <thead>
+                <tr style="background:#edf2f7;">
+                    <th style="padding:8px; text-align:left; border:1px solid #e2e8f0;">Columna</th>
+                    <th style="padding:8px; text-align:left; border:1px solid #e2e8f0;">Descripción</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>Fecha</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;">Día y fecha de la emisión. El icono 📡 indica que es una emisión en directo.</td></tr>
+                <tr style="background:#f7fafc;"><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>Programa</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;">Nombre del programa según la configuración de SAPO.</td></tr>
+                <tr><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>H. Teórica</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;">Franja horaria planificada en la parrilla (inicio – fin).</td></tr>
+                <tr style="background:#f7fafc;"><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>H. Real</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;">Hora real de inicio y fin de la emisión registrada por AzuraCast.</td></tr>
+                <tr><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>Dur. Teórica</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;">Duración planificada según la parrilla. Se puede editar haciendo clic sobre el valor.</td></tr>
+                <tr style="background:#f7fafc;"><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>Dur. Real</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;">Duración real de la emisión. El prefijo <code>~</code> indica que es una estimación.</td></tr>
+                <tr><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>Diferencia</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;">Diferencia entre la duración real y la teórica. En verde si está dentro del margen, en naranja/rojo si hay desviación significativa.</td></tr>
+                <tr style="background:#f7fafc;"><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>Episodio emitido / Streamer</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;">Para programas automáticos: título del episodio. Para directos: nombre del streamer conectado.</td></tr>
+                <tr><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>Oyentes</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;">Media de oyentes durante la emisión, calculada a partir de las muestras registradas por AzuraCast al inicio de cada canción emitida.</td></tr>
+                <tr style="background:#f7fafc;"><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>Estado</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>✓</strong> emitida correctamente · <strong>✗</strong> no emitida (rojo).</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <h4>Exportar el historial</h4>
+        <p>Desde cualquier vista puedes exportar el historial del mes en dos formatos:</p>
+        <ul>
+            <li><strong>PDF</strong> — Genera un documento PDF listo para archivar o compartir.</li>
+            <li><strong>Imagen</strong> — Captura la vista actual como imagen PNG.</li>
+        </ul>
+
+        <h4>Corregir emisiones fallidas manualmente</h4>
+        <p>Si una emisión aparece como fallida (✗) pero en realidad sí se emitió, puedes marcarla manualmente haciendo clic sobre el icono ✗. Esto registra una corrección manual que quedará guardada.</p>
+
+        <div style="background: #fff5f5; border-left: 4px solid #fc8181; padding: 12px 15px; border-radius: 4px; margin: 10px 0;">
+            <strong>⚠️ Ten en cuenta:</strong> El historial depende de los datos registrados por AzuraCast. Si AzuraCast no tiene datos de un periodo (por ejemplo, porque la emisora estuvo inactiva), no se mostrarán emisiones para esas fechas.
         </div>
     </div>
 

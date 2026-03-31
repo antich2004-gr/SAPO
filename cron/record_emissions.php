@@ -19,6 +19,7 @@ require_once INCLUDES_DIR . '/database.php';
 require_once INCLUDES_DIR . '/azuracast.php';
 require_once INCLUDES_DIR . '/programs.php';
 require_once INCLUDES_DIR . '/reports.php';
+require_once INCLUDES_DIR . '/liquidsoap_log.php';
 require_once INCLUDES_DIR . '/emission_recorder.php';
 
 // ─────────────────────────────────────────────────────────────────────────────

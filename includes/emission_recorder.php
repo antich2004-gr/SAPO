@@ -75,8 +75,8 @@ function _erNorm(string $s): string {
     $s = preg_replace('/\s*[-–]\s*\(di?recto\)\s*$/ui', '', $s);
     $s = preg_replace('/\s*\(di?recto\)\s*$/ui', '', $s);
     $s = preg_replace('/\s*\(\d+h\d*\)\s*$/u', '', $s);
-    $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', mb_strtolower(trim($s)));
-    return preg_replace('/\s+/', ' ', trim($ascii !== false ? $ascii : mb_strtolower(trim($s))));
+    $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', strtolower(trim($s)));
+    return preg_replace('/\s+/', ' ', trim($ascii !== false ? $ascii : strtolower(trim($s))));
 }
 
 /**
@@ -139,12 +139,19 @@ function _erDiagnose(
     }
 
     // ── P3: Contenido anterior agotó el slot ──────────────────────────────────
+    $smallOverrunPlaylist = null;
+    $smallOverrunMin      = 0;
     foreach ($histByDay[$date] as $he) {
         if ($he['ts'] <= $schedTs && ($he['ts'] + $he['duration']) > $schedTs) {
             $overrunEndTs = $he['ts'] + $he['duration'];
             $overrunMin   = (int)ceil(($overrunEndTs - $schedTs) / 60);
             if ($overrunMin > 15) {
                 return "«{$he['playlist']}» se alargó {$overrunMin} min sobre su horario";
+            }
+            // Overrun pequeño (≤15 min): guardarlo para enriquecer P4 si procede
+            if ($overrunMin >= 1) {
+                $smallOverrunPlaylist = $he['playlist'];
+                $smallOverrunMin      = $overrunMin;
             }
             break;
         }
@@ -154,6 +161,34 @@ function _erDiagnose(
     if (!$isLive && $plInfo !== null) {
         $numSongs = (int)($plInfo['num_songs'] ?? 0);
         if ($numSongs > 0) {
+            // ¿Se descargó tarde? Buscar en podcasts_hoy del informe diario.
+            // Si llegó mientras sonaba el programa anterior (≤90 min antes del slot),
+            // AzuraCast puede no haberlo indexado a tiempo.
+            $dlLateTime = null;
+            if ($dailyReport && !empty($dailyReport['podcasts_hoy'])) {
+                $normKey = _erNorm($programKey);
+                foreach ($dailyReport['podcasts_hoy'] as $dl) {
+                    if (_erNorm($dl['podcast']) !== $normKey) continue;
+                    // fecha: "DD-MM-YYYY HH:MM:SS"
+                    if (preg_match('/^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2})/', $dl['fecha'], $m)) {
+                        $dlTs = mktime((int)$m[4], (int)$m[5], 0, (int)$m[2], (int)$m[1], (int)$m[3]);
+                        $minsBeforeSlot = ($schedTs - $dlTs) / 60;
+                        if ($minsBeforeSlot >= 0 && $minsBeforeSlot <= 90) {
+                            $dlLateTime = substr($dl['fecha'], 11, 5); // HH:MM
+                        }
+                    }
+                    break;
+                }
+            }
+
+            if ($dlLateTime !== null) {
+                return "Tiene {$numSongs} episodio(s) en playlist — el episodio llegó a las {$dlLateTime} "
+                     . "(mientras sonaba el programa anterior), posiblemente sin tiempo de indexarse";
+            }
+            if ($smallOverrunPlaylist !== null) {
+                return "Tiene {$numSongs} episodio(s) en playlist — «{$smallOverrunPlaylist}» "
+                     . "invadió {$smallOverrunMin} min de este slot, posible causa de que no se activara";
+            }
             return "Tiene {$numSongs} episodio(s) en playlist — no se activó (causa desconocida)";
         }
     }
@@ -312,7 +347,6 @@ function erRecordUser(string $username): int {
                 if ($slot['dow'] !== $dow) continue;
                 $scheduledAt = $slot['startTime'];
                 $key = erKey($date, $name, $scheduledAt);
-                if (isset($log[$key])) continue;
 
                 $schedTs = mktime(
                     (int)substr($scheduledAt, 0, 2),
@@ -320,6 +354,15 @@ function erRecordUser(string $username): int {
                     0, (int)$mo, (int)$dy, (int)$yr
                 );
                 $elapsed = ($now - $schedTs) / 60;
+
+                // Saltar entradas ya confirmadas como emitidas.
+                // Las entradas 'missed' recientes (<2 h) se re-evalúan por
+                // si la caché de historial estaba desactualizada al registrarlas.
+                if (isset($log[$key])) {
+                    if ($log[$key]['status'] === 'played') continue;
+                    if ($elapsed > 120) continue;
+                }
+
                 if ($elapsed < ER_GRACE_MINUTES) continue;
                 if ($elapsed > 60 * 48)          continue;
 
@@ -345,6 +388,7 @@ function erRecordUser(string $username): int {
                         'program'      => $name,
                         'scheduled_at' => $scheduledAt,
                         'status'       => 'played',
+                        'is_live'      => false,
                         'real_time'    => $realTime,
                         'recorded_at'  => date('Y-m-d H:i:s'),
                     ];
@@ -356,22 +400,58 @@ function erRecordUser(string $username): int {
                     }
                     // Playlist (capturar AHORA con TTL=0 para forzar lectura fresca)
                     $plInfo  = getPlaylistContentInfo($username, $name, 0);
-                    $lsSrcId = computeLiquidsoapSourceId($name);
 
-                    $reason = _erDiagnose(
-                        $scheduledAt, $date, $schedTs, $name, false,
-                        $dailyReportCache[$date] ?? null,
-                        $liqLog, $lsSrcId, $histByDay, $plInfo
-                    );
-                    $log[$key] = [
-                        'date'           => $date,
-                        'program'        => $name,
-                        'scheduled_at'   => $scheduledAt,
-                        'status'         => 'missed',
-                        'reason'         => $reason,
-                        'playlist_songs' => $plInfo !== null ? (int)($plInfo['num_songs'] ?? -1) : -1,
-                        'recorded_at'    => date('Y-m-d H:i:s'),
-                    ];
+                    // ── Fallback directo: playlist vacía + streamer en el slot ─────────
+                    // Programas que siempre emiten en vivo tienen playlist vacía;
+                    // si hay un broadcast de streamer coincidente, se considera emitido.
+                    if ($plInfo !== null && (int)($plInfo['num_songs'] ?? -1) === 0) {
+                        if (!isset($broadcastCache[$date])) {
+                            $dayStart = mktime(0,  0,  0, (int)$mo, (int)$dy, (int)$yr);
+                            $dayEnd   = mktime(23, 59, 59, (int)$mo, (int)$dy, (int)$yr);
+                            $br = getAzuracastStreamerBroadcasts($username, $dayStart, $dayEnd);
+                            $broadcastCache[$date] = is_array($br) ? $br : [];
+                        }
+                        $sMin = (int)substr($scheduledAt, 0, 2) * 60 + (int)substr($scheduledAt, 3, 2);
+                        foreach ($broadcastCache[$date] as $br) {
+                            $brDt = new DateTime('@' . (int)$br['start']);
+                            $brDt->setTimezone($tz);
+                            if ($brDt->format('Y-m-d') !== $date) continue;
+                            $brStr  = $brDt->format('H:i');
+                            $brMins = (int)substr($brStr, 0, 2) * 60 + (int)substr($brStr, 3, 2);
+                            $diff   = $brMins - $sMin;
+                            if ($diff < 0) $diff += 1440;
+                            if ($diff <= 30) { $played = true; $realTime = $brStr; break; }
+                        }
+                    }
+
+                    if ($played) {
+                        $log[$key] = [
+                            'date'         => $date,
+                            'program'      => $name,
+                            'scheduled_at' => $scheduledAt,
+                            'status'       => 'played',
+                            'is_live'      => true,
+                            'real_time'    => $realTime,
+                            'recorded_at'  => date('Y-m-d H:i:s'),
+                        ];
+                    } else {
+                        $lsSrcId = computeLiquidsoapSourceId($name);
+                        $reason = _erDiagnose(
+                            $scheduledAt, $date, $schedTs, $name, false,
+                            $dailyReportCache[$date] ?? null,
+                            $liqLog, $lsSrcId, $histByDay, $plInfo
+                        );
+                        $log[$key] = [
+                            'date'           => $date,
+                            'program'        => $name,
+                            'scheduled_at'   => $scheduledAt,
+                            'status'         => 'missed',
+                            'is_live'        => false,
+                            'reason'         => $reason,
+                            'playlist_songs' => $plInfo !== null ? (int)($plInfo['num_songs'] ?? -1) : -1,
+                            'recorded_at'    => date('Y-m-d H:i:s'),
+                        ];
+                    }
                 }
                 $newCount++;
             }
@@ -383,7 +463,6 @@ function erRecordUser(string $username): int {
                 if ($slot['dow'] !== $dow) continue;
                 $scheduledAt = $slot['startTime'];
                 $key = erKey($date, $liveName, $scheduledAt);
-                if (isset($log[$key])) continue;
 
                 $schedTs = mktime(
                     (int)substr($scheduledAt, 0, 2),
@@ -391,6 +470,13 @@ function erRecordUser(string $username): int {
                     0, (int)$mo, (int)$dy, (int)$yr
                 );
                 $elapsed = ($now - $schedTs) / 60;
+
+                // Igual que para automáticos: re-evaluar 'missed' recientes (<2 h)
+                if (isset($log[$key])) {
+                    if ($log[$key]['status'] === 'played') continue;
+                    if ($elapsed > 120) continue;
+                }
+
                 if ($elapsed < ER_GRACE_MINUTES) continue;
                 if ($elapsed > 60 * 48)          continue;
 
@@ -440,6 +526,7 @@ function erRecordUser(string $username): int {
                         'program'      => $liveName,
                         'scheduled_at' => $scheduledAt,
                         'status'       => 'played',
+                        'is_live'      => true,
                         'real_time'    => $realTime,
                         'recorded_at'  => date('Y-m-d H:i:s'),
                     ];
@@ -461,6 +548,7 @@ function erRecordUser(string $username): int {
                         'program'      => $liveName,
                         'scheduled_at' => $scheduledAt,
                         'status'       => 'missed',
+                        'is_live'      => true,
                         'reason'       => $reason,
                         'recorded_at'  => date('Y-m-d H:i:s'),
                     ];

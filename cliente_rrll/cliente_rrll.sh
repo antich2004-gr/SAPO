@@ -886,13 +886,29 @@ INFORME="$INFORMES_DIR/Informe_diario_${DIA}_${MES}_${ANO}.log"
 
     echo
     echo "🔍 Errores Podget:"
-    awk '
-        BEGIN {categoria=""; nombre=""; url=""; errores=0}
-        /^Category:/ {categoria = substr($0, index($0,$2)); next}
-        /^Name:/ {nombre = substr($0, index($0,$2)); next}
-        /^Downloading feed index from/ {url = $NF; next}
-        /Already downloaded/ {next}
+    _HOY_HIST=$(date +%Y-%m-%d)
+
+    # Podcasts que descargaron un fichero hoy (para suprimir falsos positivos)
+    _DESCARGADOS_HOY=""
+    if [[ -f "$RENOMBRADOS_HISTORICO" ]]; then
+        _DESCARGADOS_HOY=$(grep "^${_HOY_HIST}" "$RENOMBRADOS_HISTORICO" \
+            | sed -n 's|.*Podcasts/[^/]*/\([^/]*\)/.*|\1|p' \
+            | sort -u \
+            | tr '\n' '|')
+    fi
+
+    awk -v ok_names="$_DESCARGADOS_HOY" '
+        BEGIN {
+            categoria=""; nombre=""; url=""; errores=0
+            split(ok_names, ok_arr, "|")
+            for (i in ok_arr) ok_map[ok_arr[i]] = 1
+        }
+        /^Categor/ {categoria = substr($0, index($0,$2)); next}
+        /^Nombre:/ {nombre = substr($0, index($0,$2)); next}
+        /^Descargando/ {url = $NF; next}
+        /Ya descargado/ {next}
         /(ERROR|Error|Error de lectura|en las cabeceras|failed|No enclosures|404|Feed not found|Error Downloading Feed)/ {
+            if (nombre in ok_map) next
             print "  ⚠️  " categoria " | " nombre " | " url " → " $0
             errores=1
         }

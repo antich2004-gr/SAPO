@@ -1055,10 +1055,12 @@ function getStationStorageAlert($username, $thresholdBytes = 524288000) {
  * @return array|false Array de entradas del historial o false si hay error
  */
 function getAzuracastHistory($username, $startTimestamp, $endTimestamp) {
-    // Caché de 1 hora por emisora+mes
+    // Meses pasados: caché de 1 hora. Mes actual: caché de 5 min (puede haber nuevas emisiones)
     $monthKey  = date('Y-m', $startTimestamp);
+    $isCurrentMonth = ($monthKey === date('Y-m'));
+    $cacheTtl  = $isCurrentMonth ? 300 : 3600;
     $cacheKey  = "history_{$username}_{$monthKey}";
-    $cached    = cacheGet($cacheKey, 3600);
+    $cached    = cacheGet($cacheKey, $cacheTtl);
     if ($cached !== null) {
         return $cached;
     }
@@ -1350,4 +1352,104 @@ function getAzuracastNowPlayingLive($username) {
         'streamer_name'   => $streamerName,
         'broadcast_start' => (int)$broadcastStart,
     ];
+}
+
+/**
+ * Devuelve el log de conexiones de oyentes para un periodo dado.
+ *
+ * Cada entrada contiene:
+ *   connected_on    (int)  — timestamp Unix de conexión
+ *   connected_until (int)  — timestamp Unix de desconexión
+ *   connected_time  (int)  — segundos conectado
+ *   mount_is_local  (bool) — true = mount interno (Liquidsoap, relays)
+ *   user_agent      (str)
+ *
+ * Se excluyen automáticamente las conexiones internas (Liquidsoap, mounts
+ * locales) para que solo queden oyentes reales externos.
+ *
+ * Caché por emisora+mes (1 hora).
+ */
+function getAzuracastListeners(string $username, int $startTs, int $endTs): ?array
+{
+    $monthKey = date('Y-m', $startTs);
+    $cacheKey = "listeners_{$username}_{$monthKey}";
+    $cached   = cacheGet($cacheKey, 3600);
+    if ($cached !== null) return $cached;
+
+    $config    = getConfig();
+    $apiUrl    = $config['azuracast_api_url'] ?? '';
+    $apiKey    = $config['azuracast_api_key'] ?? '';
+    if (empty($apiUrl)) return null;
+
+    $userData  = getUserDB($username);
+    $stationId = $userData['azuracast']['station_id'] ?? null;
+    if (empty($stationId)) return null;
+
+    $headers = ['timeout' => 20, 'user_agent' => 'SAPO/1.0'];
+    if (!empty($apiKey)) $headers['header'] = 'X-API-Key: ' . $apiKey;
+    $ctx = stream_context_create(['http' => $headers]);
+
+    $url = rtrim($apiUrl, '/') . '/station/' . $stationId . '/listeners'
+         . '?start=' . urlencode(date('c', $startTs))
+         . '&end='   . urlencode(date('c', $endTs));
+
+    $response = @file_get_contents($url, false, $ctx);
+    if ($response === false) return null;
+
+    $raw = json_decode($response, true);
+    if (!is_array($raw)) return null;
+
+    // Filtrar conexiones internas: Liquidsoap y mounts locales
+    $result = [];
+    foreach ($raw as $entry) {
+        if (!empty($entry['mount_is_local'])) continue;
+        $ua = strtolower($entry['user_agent'] ?? '');
+        if (str_contains($ua, 'liquidsoap')) continue;
+
+        $connOn    = (int)($entry['connected_on']    ?? 0);
+        $connUntil = (int)($entry['connected_until'] ?? 0);
+        if (!$connOn || !$connUntil) continue;
+
+        $result[] = [
+            'connected_on'    => $connOn,
+            'connected_until' => $connUntil,
+            'connected_time'  => (int)($entry['connected_time'] ?? ($connUntil - $connOn)),
+        ];
+    }
+
+    cacheSet($cacheKey, $result);
+    return $result;
+}
+
+/**
+ * Calcula la media de oyentes simultáneos para una franja horaria concreta,
+ * usando el log de conexiones individuales de getAzuracastListeners().
+ *
+ * Muestrea cada $stepSec segundos dentro del intervalo [startTs, endTs]
+ * y cuenta cuántos oyentes estaban conectados en cada punto.
+ *
+ * @param array $listeners  Array de conexiones (resultado de getAzuracastListeners)
+ * @param int   $startTs    Inicio de la emisión (timestamp Unix)
+ * @param int   $endTs      Fin de la emisión (timestamp Unix)
+ * @param int   $stepSec    Resolución del muestreo en segundos (default 5 min)
+ * @return int|null         Media redondeada, o null si no hay datos
+ */
+function calcListenersAvg(array $listeners, int $startTs, int $endTs, int $stepSec = 300): ?int
+{
+    if (empty($listeners) || $endTs <= $startTs) return null;
+
+    $samples = [];
+    for ($t = $startTs; $t <= $endTs; $t += $stepSec) {
+        $count = 0;
+        foreach ($listeners as $l) {
+            if ($l['connected_on'] <= $t && $l['connected_until'] >= $t) {
+                $count++;
+            }
+        }
+        $samples[] = $count;
+    }
+
+    if (empty($samples)) return null;
+    $avg = array_sum($samples) / count($samples);
+    return $avg > 0 ? (int)round($avg) : null;
 }
