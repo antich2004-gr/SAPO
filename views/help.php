@@ -111,7 +111,7 @@
         <h4>2. Panel principal</h4>
         <p>Una vez dentro verás cinco pestañas en el menú superior:</p>
         <ul>
-            <li><strong>🏠 Mi SAPO:</strong> Dashboard principal con alertas, resumen de podcasts y grabaciones, herramientas (descargas e importar/exportar) y últimos episodios descargados</li>
+            <li><strong>🏠 Mi SAPO:</strong> Dashboard principal con alertas, resumen de podcasts y grabaciones, resumen diario del estado de emisiones, herramientas (descargas e importar/exportar) y últimos episodios descargados</li>
             <li><strong>🎙️ Mis Podcasts:</strong> Lista, gestión y búsqueda de tus podcasts suscritos</li>
             <li><strong>🔔 Señales horarias:</strong> Configurar clips de audio que suenan a horas fijas</li>
             <li><strong>🎙️ Grabaciones:</strong> Gestionar el archivo de grabaciones de emisiones en directo</li>
@@ -122,7 +122,7 @@
     <!-- Sección: Mi SAPO -->
     <div id="mi-sapo" style="margin-bottom: 40px;">
         <h3>🏠 Mi SAPO (Dashboard)</h3>
-        <p>La pestaña <strong>"Mi SAPO"</strong> es la pantalla de inicio y el centro de control de la aplicación. Al entrar, verás un resumen completo del estado de tu emisora dividido en cuatro bloques:</p>
+        <p>La pestaña <strong>"Mi SAPO"</strong> es la pantalla de inicio y el centro de control de la aplicación. Al entrar, verás un resumen completo del estado de tu emisora dividido en cinco bloques:</p>
 
         <h4 style="margin-top: 25px;">① Alertas</h4>
         <p>Panel de alertas que se muestra solo cuando hay situaciones que requieren atención. Se organiza en dos acordeones desplegables:</p>
@@ -155,7 +155,17 @@
             </li>
         </ul>
 
-        <h4 style="margin-top: 25px;">③ Herramientas</h4>
+        <h4 style="margin-top: 25px;">③ Resumen diario del estado de emisiones</h4>
+        <p>Calendario visual con el estado de las emisiones de cada día. El día en curso se va actualizando sobre la marcha según se emiten los programas. Al posicionarse sobre cada día se visualiza un globo que indica el detalle de todos los programas emitidos ese día y su resultado.</p>
+        <p><strong>Leyenda:</strong></p>
+        <ul>
+            <li><span style="color:#276749;">■ Verde</span> — Todo OK</li>
+            <li><span style="color:#744210;">■ Amarillo</span> — Fallos parciales</li>
+            <li><span style="color:#822727;">■ Rojo</span> — Todo fallado</li>
+            <li><span style="color:#6b7280;">■ Blanco/Gris</span> — Sin datos</li>
+        </ul>
+
+        <h4 style="margin-top: 25px;">④ Herramientas</h4>
         <p>Acceso rápido a las dos operaciones más habituales:</p>
         <ul>
             <li>
@@ -166,7 +176,7 @@
             </li>
         </ul>
 
-        <h4 style="margin-top: 25px;">④ Últimos episodios descargados</h4>
+        <h4 style="margin-top: 25px;">⑤ Últimos episodios descargados</h4>
         <p>Listado de los episodios de podcast descargados más recientemente, con nombre del podcast, archivo y fecha de descarga. Útil para comprobar de un vistazo que las descargas están funcionando correctamente.</p>
     </div>
 
