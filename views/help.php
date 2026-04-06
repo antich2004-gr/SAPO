@@ -111,7 +111,7 @@
         <h4>2. Panel principal</h4>
         <p>Una vez dentro verás cinco pestañas en el menú superior:</p>
         <ul>
-            <li><strong>🏠 Mi SAPO:</strong> Dashboard principal con alertas, resumen de podcasts y grabaciones, herramientas (descargas e importar/exportar) y últimos episodios descargados</li>
+            <li><strong>🏠 Mi SAPO:</strong> Dashboard principal con alertas, resumen de podcasts y grabaciones, resumen diario del estado de emisiones, herramientas (descargas e importar/exportar) y últimos episodios descargados</li>
             <li><strong>🎙️ Mis Podcasts:</strong> Lista, gestión y búsqueda de tus podcasts suscritos</li>
             <li><strong>🔔 Señales horarias:</strong> Configurar clips de audio que suenan a horas fijas</li>
             <li><strong>🎙️ Grabaciones:</strong> Gestionar el archivo de grabaciones de emisiones en directo</li>
@@ -122,7 +122,7 @@
     <!-- Sección: Mi SAPO -->
     <div id="mi-sapo" style="margin-bottom: 40px;">
         <h3>🏠 Mi SAPO (Dashboard)</h3>
-        <p>La pestaña <strong>"Mi SAPO"</strong> es la pantalla de inicio y el centro de control de la aplicación. Al entrar, verás un resumen completo del estado de tu emisora dividido en cuatro bloques:</p>
+        <p>La pestaña <strong>"Mi SAPO"</strong> es la pantalla de inicio y el centro de control de la aplicación. Al entrar, verás un resumen completo del estado de tu emisora dividido en cinco bloques:</p>
 
         <h4 style="margin-top: 25px;">① Alertas</h4>
         <p>Panel de alertas que se muestra solo cuando hay situaciones que requieren atención. Se organiza en dos acordeones desplegables:</p>
@@ -155,7 +155,17 @@
             </li>
         </ul>
 
-        <h4 style="margin-top: 25px;">③ Herramientas</h4>
+        <h4 style="margin-top: 25px;">③ Resumen diario del estado de emisiones</h4>
+        <p>Calendario visual con el estado de las emisiones de cada día. El día en curso se va actualizando sobre la marcha según se emiten los programas. Al posicionarse sobre cada día se visualiza un globo que indica el detalle de todos los programas emitidos ese día y su resultado.</p>
+        <p><strong>Leyenda:</strong></p>
+        <ul>
+            <li><span style="color:#276749;">■ Verde</span> — Todo OK</li>
+            <li><span style="color:#744210;">■ Amarillo</span> — Fallos parciales</li>
+            <li><span style="color:#822727;">■ Rojo</span> — Todo fallado</li>
+            <li><span style="color:#6b7280;">■ Blanco/Gris</span> — Sin datos</li>
+        </ul>
+
+        <h4 style="margin-top: 25px;">④ Herramientas</h4>
         <p>Acceso rápido a las dos operaciones más habituales:</p>
         <ul>
             <li>
@@ -166,7 +176,7 @@
             </li>
         </ul>
 
-        <h4 style="margin-top: 25px;">④ Últimos episodios descargados</h4>
+        <h4 style="margin-top: 25px;">⑤ Últimos episodios descargados</h4>
         <p>Listado de los episodios de podcast descargados más recientemente, con nombre del podcast, archivo y fecha de descarga. Útil para comprobar de un vistazo que las descargas están funcionando correctamente.</p>
     </div>
 
@@ -782,20 +792,20 @@
         <table style="width:100%; border-collapse:collapse; font-size:13px; margin: 10px 0;">
             <thead>
                 <tr style="background:#edf2f7;">
-                    <th style="padding:8px; text-align:left; border:1px solid #e2e8f0;">Columna</th>
-                    <th style="padding:8px; text-align:left; border:1px solid #e2e8f0;">Descripción</th>
+                    <th style="padding:8px; text-align:left; border:1px solid #e2e8f0; color:#2d3748;">Columna</th>
+                    <th style="padding:8px; text-align:left; border:1px solid #e2e8f0; color:#2d3748;">Descripción</th>
                 </tr>
             </thead>
             <tbody>
                 <tr><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>Fecha</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;">Día y fecha de la emisión. El icono 📡 indica que es una emisión en directo.</td></tr>
                 <tr style="background:#f7fafc;"><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>Programa</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;">Nombre del programa según la configuración de SAPO.</td></tr>
                 <tr><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>H. Teórica</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;">Franja horaria planificada en la parrilla (inicio – fin).</td></tr>
-                <tr style="background:#f7fafc;"><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>H. Real</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;">Hora real de inicio y fin de la emisión registrada por AzuraCast.</td></tr>
+                <tr style="background:#f7fafc;"><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>H. Real</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;">Hora real de inicio y fin de la emisión registrada por Radiobot.</td></tr>
                 <tr><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>Dur. Teórica</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;">Duración planificada según la parrilla. Se puede editar haciendo clic sobre el valor.</td></tr>
                 <tr style="background:#f7fafc;"><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>Dur. Real</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;">Duración real de la emisión. El prefijo <code>~</code> indica que es una estimación.</td></tr>
                 <tr><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>Diferencia</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;">Diferencia entre la duración real y la teórica. En verde si está dentro del margen, en naranja/rojo si hay desviación significativa.</td></tr>
                 <tr style="background:#f7fafc;"><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>Episodio emitido / Streamer</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;">Para programas automáticos: título del episodio. Para directos: nombre del streamer conectado.</td></tr>
-                <tr><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>Oyentes</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;">Media de oyentes durante la emisión, calculada a partir de las muestras registradas por AzuraCast al inicio de cada canción emitida.</td></tr>
+                <tr><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>Oyentes</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;">Media de oyentes durante la emisión, calculada a partir de las muestras registradas por Radiobot al inicio de cada canción emitida.</td></tr>
                 <tr style="background:#f7fafc;"><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>Estado</strong></td><td style="padding:7px 8px; border:1px solid #e2e8f0;"><strong>✓</strong> emitida correctamente · <strong>✗</strong> no emitida (rojo).</td></tr>
             </tbody>
         </table>
@@ -812,7 +822,7 @@
         <p>Si una emisión aparece como fallida (✗) pero en realidad sí se emitió, puedes marcarla manualmente haciendo clic sobre el icono ✗. Esto registra una corrección manual que quedará guardada.</p>
 
         <div style="background: #fff5f5; border-left: 4px solid #fc8181; padding: 12px 15px; border-radius: 4px; margin: 10px 0;">
-            <strong>⚠️ Ten en cuenta:</strong> El historial depende de los datos registrados por AzuraCast. Si AzuraCast no tiene datos de un periodo (por ejemplo, porque la emisora estuvo inactiva), no se mostrarán emisiones para esas fechas.
+            <strong>⚠️ Ten en cuenta:</strong> El historial depende de los datos registrados por Radiobot. Si Radiobot no tiene datos de un periodo (por ejemplo, porque la emisora estuvo inactiva), no se mostrarán emisiones para esas fechas.
         </div>
     </div>
 
