@@ -27,6 +27,12 @@
     /* Bordes */
     --border-color: #e5e7eb;
     --border-radius: 0.5rem;
+
+    /* Espaciado */
+    --spacing-xs: 0.25rem;   /* 4px  */
+    --spacing-sm: 0.5rem;    /* 8px  */
+    --spacing-md: 1rem;      /* 16px */
+    --spacing-lg: 1.5rem;    /* 24px */
 }
 
 /* Reset y base */
@@ -84,7 +90,7 @@ body {
     border: none;
     border-radius: var(--border-radius);
     padding: 20px;
-    margin-bottom: 14px;
+    margin-bottom: var(--spacing-md);
     box-shadow: var(--shadow-sm);
     transition: transform 0.3s, box-shadow 0.3s;
     animation: fadeIn 0.3s ease-out;
@@ -113,7 +119,7 @@ h3 {
 
 /* Formularios */
 .form-group {
-    margin-bottom: 14px;
+    margin-bottom: var(--spacing-md);
 }
 
 label {
@@ -126,6 +132,13 @@ label {
 label small {
     font-weight: normal;
     color: #666;
+}
+
+.field-hint {
+    display: block;
+    margin-top: var(--spacing-xs);
+    color: #6b7280;
+    font-size: 0.8rem;
 }
 
 input[type="text"],
@@ -258,7 +271,7 @@ textarea {
 .alert {
     padding: 10px 16px;
     border-radius: var(--border-radius);
-    margin-bottom: 14px;
+    margin-bottom: var(--spacing-md);
     border: none;
     box-shadow: var(--shadow-sm);
     animation: fadeIn 0.3s ease-out;
@@ -434,9 +447,9 @@ textarea {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: var(--spacing-md);
     flex-wrap: wrap;
-    gap: 15px;
+    gap: var(--spacing-md);
 }
 
 /* Listas de podcasts */
@@ -637,7 +650,7 @@ textarea {
 }
 
 .modal-content .form-group {
-    margin-bottom: 14px;
+    margin-bottom: var(--spacing-md);
 }
 
 .modal-content .form-group:last-child {
@@ -721,8 +734,8 @@ table tbody tr:hover {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 8px;
-    margin: 18px 0;
+    gap: var(--spacing-sm);
+    margin: var(--spacing-md) 0;
     flex-wrap: wrap;
 }
 
@@ -825,7 +838,7 @@ table tbody tr:hover {
 
     .nav-buttons {
         flex-direction: column;
-        align-items: stretch;
+        align-items: flex-start;
     }
 
     .tabs {
@@ -908,8 +921,9 @@ table tbody tr:hover {
     h3 { font-size: 1rem; }
 
     .btn {
-        font-size: 12px;
-        padding: 0.35rem 0.75rem;
+        font-size: 0.875rem;
+        padding: 0.5rem 0.875rem;
+        min-height: 44px;
     }
 
     .tab-button {
