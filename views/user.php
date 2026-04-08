@@ -250,13 +250,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
         <!-- LISTADO CON PESTAÑAS -->
         
         <div class="tabs-container">
-            <div class="tabs-header">
-                <button class="tab-button active" data-tab="misapo" onclick="switchTab('misapo'); loadDashboardStats()">Mi SAPO</button>
-                <button class="tab-button" data-tab="podcasts" onclick="switchTab('podcasts')">Mis Podcasts</button>
-                <button class="tab-button" data-tab="config" onclick="switchTab('config')">Señales horarias</button>
-                <button class="tab-button" data-tab="recordings" onclick="switchTab('recordings'); loadRecordings()">Grabaciones</button>
-            </div>
-            
             <div class="tabs-content">
                 <!-- PESTAÑA 0: MI SAPO (dashboard) -->
                 <div id="tab-misapo" class="tab-panel active">

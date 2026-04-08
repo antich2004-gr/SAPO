@@ -351,8 +351,7 @@ textarea {
 .tabs-content {
     background: white;
     border: 1px solid var(--border-color);
-    border-top: none;
-    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    border-radius: var(--border-radius);
     padding: 20px;
 }
 
