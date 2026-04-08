@@ -24,7 +24,7 @@
             <li><a href="#ultimas-descargas">Ver últimas descargas</a></li>
             <li><a href="#senales-horarias">🔔 Señales horarias</a></li>
             <li><a href="#grabaciones">🎙️ Grabaciones</a></li>
-            <li><a href="#historial-emision">📊 Historial de Emisión</a></li>
+            <li><a href="#historial-emision">📊 Seguimiento de Emisiones</a></li>
             <li><a href="#faq">Preguntas frecuentes (FAQ)</a></li>
         </ul>
     </div>
@@ -98,21 +98,27 @@
         <p>Si eres usuario de una emisora, inicia sesión con las credenciales que te proporcionó el administrador.</p>
         <p>Si eres administrador, puedes crear usuarios desde el panel de administración.</p>
 
-        <h4>2. Panel principal</h4>
-        <p>Una vez dentro verás cinco pestañas en el menú superior:</p>
+        <h4>2. Barra de navegación</h4>
+        <p>Una vez dentro verás una barra de navegación en la parte superior con acceso a todas las secciones:</p>
         <ul>
             <li><strong>🏠 Mi SAPO:</strong> Dashboard principal con alertas, resumen de podcasts y grabaciones, resumen diario del estado de emisiones, herramientas (descargas e importar/exportar) y últimos episodios descargados</li>
             <li><strong>🎙️ Mis Podcasts:</strong> Lista, gestión y búsqueda de tus podcasts suscritos</li>
-            <li><strong>🔔 Señales horarias:</strong> Configurar clips de audio que suenan a horas fijas</li>
-            <li><strong>🎙️ Grabaciones:</strong> Gestionar el archivo de grabaciones de emisiones en directo</li>
-            <li><strong>📅 Asistente Parrilla:</strong> Acceso directo al asistente de parrilla de programación</li>
+            <li><strong>📋 Parrilla:</strong> Gestión de la parrilla de programación semanal y widget embebible</li>
+            <li><strong>📊 Seguimiento:</strong> Historial de emisiones mes a mes con vistas cronológica, por programas y en rejilla</li>
+            <li><strong>🔧 Herramientas</strong> (menú desplegable):
+                <ul>
+                    <li><strong>⏰ Señales horarias:</strong> Configurar clips de audio que suenan a horas fijas</li>
+                    <li><strong>🎙️ Grabaciones:</strong> Gestionar el archivo de grabaciones de emisiones en directo</li>
+                </ul>
+            </li>
+            <li><strong>❓ Ayuda:</strong> Esta página de documentación</li>
         </ul>
     </div>
 
     <!-- Sección: Mi SAPO -->
     <div id="mi-sapo" style="margin-bottom: 40px;">
         <h3>🏠 Mi SAPO (Dashboard)</h3>
-        <p>La pestaña <strong>"Mi SAPO"</strong> es la pantalla de inicio y el centro de control de la aplicación. Al entrar, verás un resumen completo del estado de tu emisora dividido en cinco bloques:</p>
+        <p>La sección <strong>"Mi SAPO"</strong> es la pantalla de inicio y el centro de control de la aplicación. Al entrar, verás un resumen completo del estado de tu emisora dividido en cinco bloques:</p>
 
         <h4 style="margin-top: 25px;">① Alertas</h4>
         <p>Panel de alertas que se muestra solo cuando hay situaciones que requieren atención. Se organiza en dos acordeones desplegables:</p>
@@ -197,7 +203,7 @@
         </div>
 
         <h4>⚙️ Caducidad por defecto</h4>
-        <p>En la parte superior de la pestaña "Mis Podcasts" hay un campo <strong>Caducidad por defecto</strong> que establece el valor inicial de caducidad para los nuevos podcasts que añadas. Cámbialo antes de añadir un podcast si quieres que use un valor distinto al actual.</p>
+        <p>En la parte superior de la sección "Mis Podcasts" hay un campo <strong>Caducidad por defecto</strong> que establece el valor inicial de caducidad para los nuevos podcasts que añadas. Cámbialo antes de añadir un podcast si quieres que use un valor distinto al actual.</p>
 
         <h4>✏️ Editar un podcast</h4>
         <ol>
@@ -367,7 +373,7 @@
 
         <h4>¿Cómo usar la búsqueda?</h4>
         <ol>
-            <li>En la pestaña <strong>"Mis Podcasts"</strong>, localiza el campo de búsqueda en la parte superior</li>
+            <li>En la sección <strong>"Mis Podcasts"</strong>, localiza el campo de búsqueda en la parte superior</li>
             <li>Escribe el nombre (o parte del nombre) del podcast que buscas</li>
             <li>Los resultados se muestran automáticamente mientras escribes</li>
             <li>Para volver a la vista normal, borra el texto del campo de búsqueda</li>
@@ -489,8 +495,8 @@
 
         <h4>Ejecutar descargas</h4>
         <ol>
-            <li>Ve a la pestaña <strong>"Mi SAPO"</strong></li>
-            <li>En la sección <strong>"Herramientas"</strong>, haz clic en <strong>"▶️ Ejecutar Descargas"</strong></li>
+            <li>En la sección <strong>"Mi SAPO"</strong>, localiza el bloque <strong>"Herramientas"</strong></li>
+            <li>Haz clic en <strong>"▶️ Ejecutar Descargas"</strong></li>
             <li>Confirma la acción</li>
             <li>El proceso se ejecuta en segundo plano</li>
         </ol>
@@ -567,15 +573,15 @@
         <h4>📤 Exportar tu lista de podcasts</h4>
         <p>Descarga un archivo <code>serverlist.txt</code> con todos tus podcasts configurados.</p>
         <ol>
-            <li>Ve a la pestaña <strong>"Mi SAPO"</strong> y localiza la sección <strong>"Herramientas"</strong></li>
-            <li>En el bloque "Importar / Exportar", haz clic en <strong>"📤 Descargar mi serverlist.txt"</strong></li>
+            <li>En la sección <strong>"Mi SAPO"</strong>, localiza el bloque <strong>"Herramientas"</strong></li>
+            <li>En el apartado "Importar / Exportar", haz clic en <strong>"📤 Descargar mi serverlist.txt"</strong></li>
             <li>El archivo se descargará automáticamente a tu computadora</li>
         </ol>
 
         <h4>📥 Importar una lista de podcasts</h4>
         <p>Sube un archivo <code>serverlist.txt</code> existente para agregar múltiples podcasts de una vez.</p>
         <ol>
-            <li>Ve a la pestaña <strong>"Mi SAPO"</strong> y localiza la sección <strong>"Herramientas"</strong></li>
+            <li>En la sección <strong>"Mi SAPO"</strong>, localiza el bloque <strong>"Herramientas"</strong></li>
             <li>En el bloque "Importar / Exportar", selecciona tu archivo <code>serverlist.txt</code></li>
             <li>Haz clic en <strong>"📥 Importar"</strong></li>
         </ol>
@@ -597,7 +603,7 @@
     <!-- Sección: Ver últimas descargas -->
     <div id="ultimas-descargas" style="margin-bottom: 40px;">
         <h3>📋 Ver últimas descargas</h3>
-        <p>En la pestaña <strong>"Mi SAPO"</strong>, en el bloque <strong>"Últimos episodios descargados"</strong>, puedes ver un listado de los episodios descargados recientemente.</p>
+        <p>En la sección <strong>"Mi SAPO"</strong>, en el bloque <strong>"Últimos episodios descargados"</strong>, puedes ver un listado de los episodios descargados recientemente.</p>
 
         <h4>¿Qué muestra?</h4>
         <ul>
@@ -621,6 +627,7 @@
     <!-- Sección: Señales horarias -->
     <div id="senales-horarias" style="margin-bottom: 40px;">
         <h3>🔔 Señales horarias</h3>
+        <p>Accede desde <strong>🔧 Herramientas → ⏰ Señales horarias</strong> en la barra de navegación superior.</p>
         <p>Las señales horarias son clips de audio que se reproducen automáticamente a horas fijas (en punto, cada media hora, cada cuarto de hora…) intercalándose de forma fluida con la música de tu emisora mediante Liquidsoap.</p>
 
         <div style="background: #e6fffa; border-left: 4px solid #38b2ac; padding: 15px; margin: 15px 0;">
@@ -692,6 +699,7 @@
     <!-- Sección: Grabaciones -->
     <div id="grabaciones" style="margin-bottom: 40px;">
         <h3>🎙️ Grabaciones</h3>
+        <p>Accede desde <strong>🔧 Herramientas → 🎙️ Grabaciones</strong> en la barra de navegación superior.</p>
         <p>La sección de Grabaciones te permite gestionar el archivo de grabaciones de tu emisora en Radiobot: consultar cuántas grabaciones tienes, cuánto espacio ocupan y configurar durante cuántos días se conservan antes de eliminarse automáticamente.</p>
 
         <div style="background: #e6fffa; border-left: 4px solid #38b2ac; padding: 15px; margin: 15px 0;">
@@ -752,9 +760,9 @@
 
     <!-- Sección: Historial de Emisión -->
     <div id="historial-emision" style="margin-bottom: 40px;">
-        <h3>📊 Historial de Emisión</h3>
-        <p>El <strong>Historial de Emisión</strong> te permite consultar qué programas se han emitido en tu emisora mes a mes, con información detallada sobre horarios reales, duraciones y oyentes.</p>
-        <p>Accede desde el botón <strong>Historial de Emisión</strong> en el menú principal.</p>
+        <h3>📊 Seguimiento de Emisiones</h3>
+        <p>El <strong>Seguimiento</strong> te permite consultar qué programas se han emitido en tu emisora mes a mes, con información detallada sobre horarios reales, duraciones y oyentes.</p>
+        <p>Accede desde <strong>📊 Seguimiento</strong> en la barra de navegación superior.</p>
 
         <h4>Navegación por meses</h4>
         <p>Usa los botones <strong>← Anterior</strong> y <strong>Siguiente →</strong> para moverte entre meses. Los datos del mes en curso se actualizan en tiempo real.</p>
