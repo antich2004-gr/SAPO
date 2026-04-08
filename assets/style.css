@@ -403,8 +403,12 @@ textarea {
     color: white;
 }
 
+.nav-spacer {
+    flex: 1;
+}
+
 .nav-link-logout {
-    margin-left: auto;
+    margin-left: 0;
     color: rgba(255,255,255,0.6);
 }
 

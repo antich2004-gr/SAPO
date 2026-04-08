@@ -38,19 +38,21 @@
         <?php if (isAdmin() && !isImpersonating()): ?>
             <a href="?" class="nav-link <?php echo ($currentPage === '') ? 'active' : ''; ?>">⚙️ Admin</a>
             <a href="?page=seguimiento_emision" class="nav-link <?php echo ($currentPage === 'seguimiento_emision') ? 'active' : ''; ?>">📊 Seguimiento</a>
+            <div class="nav-spacer"></div>
             <a href="?page=help" class="nav-link <?php echo ($currentPage === 'help') ? 'active' : ''; ?>">❓ Ayuda</a>
         <?php else: ?>
             <a href="?" class="nav-link <?php echo ($isHomePage && $currentTab === '') ? 'active' : ''; ?>">🏠 Mi SAPO</a>
+            <a href="?page=seguimiento_emision" class="nav-link <?php echo ($currentPage === 'seguimiento_emision') ? 'active' : ''; ?>">📊 Seguimiento</a>
             <a href="?tab=podcasts" class="nav-link <?php echo ($isHomePage && $currentTab === 'podcasts') ? 'active' : ''; ?>">🎙️ Mis Podcasts</a>
             <a href="?page=parrilla" class="nav-link <?php echo ($currentPage === 'parrilla') ? 'active' : ''; ?>">📋 Parrilla</a>
-            <a href="?page=seguimiento_emision" class="nav-link <?php echo ($currentPage === 'seguimiento_emision') ? 'active' : ''; ?>">📊 Seguimiento</a>
             <div class="nav-dropdown">
                 <button class="nav-link nav-dropdown-trigger <?php echo ($isHomePage && in_array($currentTab, ['config','recordings'])) ? 'active' : ''; ?>">🔧 Herramientas</button>
                 <div class="nav-dropdown-menu">
                     <a href="?tab=config" class="nav-dropdown-item <?php echo ($currentTab === 'config') ? 'active' : ''; ?>">⏰ Señales horarias</a>
-                    <a href="?tab=recordings" class="nav-dropdown-item <?php echo ($currentTab === 'recordings') ? 'active' : ''; ?>">🎙️ Grabaciones</a>
+                    <a href="?tab=recordings" class="nav-dropdown-item <?php echo ($currentTab === 'recordings') ? 'active' : ''; ?>">🔴 Grabaciones</a>
                 </div>
             </div>
+            <div class="nav-spacer"></div>
             <a href="?page=help" class="nav-link <?php echo (in_array($currentPage, ['help','help_parrilla'])) ? 'active' : ''; ?>">❓ Ayuda</a>
         <?php endif; ?>
         <form method="POST" style="margin:0;">
