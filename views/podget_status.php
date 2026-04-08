@@ -4,11 +4,7 @@
 <div class="card">
     <h2>Estado de Podget</h2>
 
-    <div class="nav-buttons" style="margin-bottom: 20px;">
-        <a href="index.php" class="btn btn-secondary">← Volver al panel</a>
-    </div>
-
-    <div class="alert alert-info">
+<div class="alert alert-info">
         <strong>ℹ️ Información:</strong><br>
         Esta página muestra el estado de las descargas de Podget.
         Los registros se actualizan automáticamente cuando se ejecutan las descargas.

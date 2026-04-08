@@ -3,17 +3,7 @@
 ?>
 
 <div class="card">
-    <div class="nav-buttons" style="margin-bottom: 30px;">
-        <h2>📖 Ayuda - Cómo usar SAPO</h2>
-        <div style="text-align: right;">
-            <?php if (isLoggedIn()): ?>
-                <p style="margin: 0 0 10px 0; color: #4a5568; font-size: 14px;">Conectado como <strong><?php echo htmlEsc($_SESSION['station_name']); ?></strong></p>
-            <?php endif; ?>
-            <a href="<?php echo basename($_SERVER['PHP_SELF']); ?>" class="btn btn-secondary">
-                <span class="btn-icon">⬅️</span> Volver
-            </a>
-        </div>
-    </div>
+    <h2 style="margin-bottom: 30px;">📖 Ayuda - Cómo usar SAPO</h2>
 
     <!-- Índice de contenidos -->
     <div id="indice" style="background: #f7fafc; border-left: 4px solid #667eea; padding: 20px; margin-bottom: 30px;">

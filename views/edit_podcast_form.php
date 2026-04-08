@@ -12,10 +12,7 @@ $userCategories = getUserCategories($_SESSION['username']);
 ?>
 
 <div class="card">
-    <div class="nav-buttons">
-        <h2>Editar Podcast</h2>
-        <a href="<?php echo basename($_SERVER['PHP_SELF']); ?>" class="btn btn-secondary">Volver al listado</a>
-    </div>
+    <h2 style="margin-bottom: var(--spacing-md);">Editar Podcast</h2>
     
     <form method="POST" style="margin-top: 20px;">
         <input type="hidden" name="action" value="edit_podcast">

@@ -5,17 +5,9 @@
 <div class="card">
     <div class="nav-buttons" style="margin-bottom: 30px;">
         <h2>📅 Ayuda - Parrilla de programación</h2>
-        <div style="text-align: right;">
-            <?php if (isLoggedIn()): ?>
-                <p style="margin: 0 0 10px 0; color: #4a5568; font-size: 14px;">Conectado como <strong><?php echo htmlEsc($_SESSION['station_name']); ?></strong></p>
-            <?php endif; ?>
-            <a href="<?php echo basename($_SERVER['PHP_SELF']); ?>?page=help" class="btn btn-secondary" style="margin-right: 10px;">
-                <span class="btn-icon">📖</span> Ayuda General
-            </a>
-            <a href="<?php echo basename($_SERVER['PHP_SELF']); ?>" class="btn btn-secondary">
-                <span class="btn-icon">⬅️</span> Volver al Dashboard
-            </a>
-        </div>
+        <a href="?page=help" class="btn btn-secondary">
+            <span class="btn-icon">📖</span> Ayuda General
+        </a>
     </div>
 
     <!-- Índice de contenidos -->
