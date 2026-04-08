@@ -23,6 +23,37 @@ function showToast(mensaje, tipo = 'info', duracion = 3500) {
 }
 
 /**
+ * Activar tab según parámetro ?tab= de la URL al cargar la página
+ */
+document.addEventListener('DOMContentLoaded', function () {
+    const tab = new URLSearchParams(window.location.search).get('tab');
+    if (tab && document.getElementById('tab-' + tab)) {
+        if (tab === 'recordings') {
+            switchTab('recordings');
+            if (typeof loadRecordings === 'function') loadRecordings();
+        } else if (tab === 'config') {
+            switchTab('config');
+        } else {
+            switchTab(tab);
+        }
+    }
+
+    // Toggle dropdown de nav en móvil (clic)
+    document.querySelectorAll('.nav-dropdown-trigger').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const dropdown = btn.closest('.nav-dropdown');
+            dropdown.classList.toggle('open');
+        });
+    });
+    document.addEventListener('click', function () {
+        document.querySelectorAll('.nav-dropdown.open').forEach(function (d) {
+            d.classList.remove('open');
+        });
+    });
+});
+
+/**
  * Cambiar pestaña
  */
 function switchTab(tabName) {
