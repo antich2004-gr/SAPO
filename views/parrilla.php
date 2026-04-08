@@ -65,35 +65,26 @@ if ($hasStationId) {
     </script>
 
     <!-- Navegación por pestañas -->
-    <div style="border-bottom: 2px solid #e0e0e0; margin-bottom: 20px;">
-        <div style="display: flex; gap: 0; flex-wrap: wrap;">
-            <a href="?page=parrilla&section=coverage"
-               class="<?php echo $section === 'coverage' ? 'tab-active' : 'tab-inactive'; ?>"
-               style="padding: 12px 24px; text-decoration: none; border-bottom: 3px solid <?php echo $section === 'coverage' ? '#10b981' : 'transparent'; ?>; color: <?php echo $section === 'coverage' ? '#10b981' : '#6b7280'; ?>; font-weight: <?php echo $section === 'coverage' ? '600' : '400'; ?>; transition: all 0.2s;">
-                📊 Cobertura Semanal
-            </a>
-            <a href="?page=parrilla&section=programs"
-               class="<?php echo $section === 'programs' ? 'tab-active' : 'tab-inactive'; ?>"
-               style="padding: 12px 24px; text-decoration: none; border-bottom: 3px solid <?php echo $section === 'programs' ? '#10b981' : 'transparent'; ?>; color: <?php echo $section === 'programs' ? '#10b981' : '#6b7280'; ?>; font-weight: <?php echo $section === 'programs' ? '600' : '400'; ?>; transition: all 0.2s;">
-                📝 Gestión de Programas
-            </a>
-            <a href="?page=parrilla&section=config"
-               class="<?php echo $section === 'config' ? 'tab-active' : 'tab-inactive'; ?>"
-               style="padding: 12px 24px; text-decoration: none; border-bottom: 3px solid <?php echo $section === 'config' ? '#10b981' : 'transparent'; ?>; color: <?php echo $section === 'config' ? '#10b981' : '#6b7280'; ?>; font-weight: <?php echo $section === 'config' ? '600' : '400'; ?>; transition: all 0.2s;">
-                ⚙️ Configuración
-            </a>
-            <a href="?page=parrilla&section=embed"
-               class="<?php echo $section === 'embed' ? 'tab-active' : 'tab-inactive'; ?>"
-               style="padding: 12px 24px; text-decoration: none; border-bottom: 3px solid <?php echo $section === 'embed' ? '#10b981' : 'transparent'; ?>; color: <?php echo $section === 'embed' ? '#10b981' : '#6b7280'; ?>; font-weight: <?php echo $section === 'embed' ? '600' : '400'; ?>; transition: all 0.2s;">
-                🔗 Código para Incrustar
-            </a>
-            <a href="?page=parrilla&section=preview"
-               class="<?php echo $section === 'preview' ? 'tab-active' : 'tab-inactive'; ?>"
-               style="padding: 12px 24px; text-decoration: none; border-bottom: 3px solid <?php echo $section === 'preview' ? '#10b981' : 'transparent'; ?>; color: <?php echo $section === 'preview' ? '#10b981' : '#6b7280'; ?>; font-weight: <?php echo $section === 'preview' ? '600' : '400'; ?>; transition: all 0.2s;">
-                👁️ Vista Previa
-            </a>
-        </div>
-    </div>
+    <nav role="tablist" aria-label="Secciones de la parrilla" class="tabs" style="margin-bottom: 20px;">
+        <?php
+        $tabs = [
+            'coverage' => '📊 Cobertura Semanal',
+            'programs' => '📝 Gestión de Programas',
+            'config'   => '⚙️ Configuración',
+            'embed'    => '🔗 Código para Incrustar',
+            'preview'  => '👁️ Vista Previa',
+        ];
+        foreach ($tabs as $key => $label):
+            $isActive = ($section === $key);
+        ?>
+        <a href="?page=parrilla&section=<?php echo $key; ?>"
+           class="tab<?php echo $isActive ? ' active' : ''; ?>"
+           role="tab"
+           aria-selected="<?php echo $isActive ? 'true' : 'false'; ?>">
+            <?php echo $label; ?>
+        </a>
+        <?php endforeach; ?>
+    </nav>
 
     <!-- Contenido de las secciones -->
     <?php if ($section === 'preview'): ?>
@@ -155,11 +146,16 @@ if ($hasStationId) {
                     </small>
                 </div>
 
-                <h4 style="margin-top: 30px; margin-bottom: 15px; color: #374151;">🎨 Personalización del Widget</h4>
+                <details class="widget-customization" style="margin-top: 24px; border: 1px solid var(--border-color); border-radius: var(--border-radius); overflow: hidden;">
+                    <summary style="padding: 14px 18px; background: var(--secondary-light); cursor: pointer; font-weight: 600; color: var(--primary-dark); list-style: none; display: flex; align-items: center; gap: 8px;">
+                        🎨 Personalización del Widget
+                        <small style="font-weight: 400; color: #6b7280; margin-left: 4px;">(colores, estilo, fuente)</small>
+                    </summary>
+                    <div style="padding: 18px;">
 
                 <div class="form-group">
                     <label>Color principal de la parrilla:</label>
-                    <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
                         <input type="color"
                                name="widget_color"
                                value="<?php echo htmlEsc($widgetColor); ?>"
@@ -178,7 +174,7 @@ if ($hasStationId) {
 
                 <div class="form-group">
                     <label>Color de fondo de la parrilla:</label>
-                    <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
                         <input type="color"
                                name="widget_background_color"
                                value="<?php echo htmlEsc($azConfig['widget_background_color'] ?? '#ffffff'); ?>"
@@ -238,6 +234,9 @@ if ($hasStationId) {
                         <?php endforeach; ?>
                     </select>
                 </div>
+
+                    </div><!-- /details body -->
+                </details>
 
                 <button type="submit" class="btn btn-success">
                     <span class="btn-icon">💾</span> Guardar Configuración
@@ -381,9 +380,9 @@ if ($hasStationId) {
                 function copyCode(elementId) {
                     const code = document.getElementById(elementId).textContent;
                     navigator.clipboard.writeText(code).then(function() {
-                        alert('✅ Código copiado al portapapeles');
+                        showToast('Código copiado al portapapeles', 'success');
                     }, function() {
-                        alert('❌ Error al copiar el código');
+                        showToast('Error al copiar el código', 'error');
                     });
                 }
                 </script>
