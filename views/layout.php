@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAPO - Sistema de Automatización de Podcasts</title>
+    <title>SAPO - Sistema Avanzado de Programación y Operaciones para Radiobot</title>
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <link rel="stylesheet" href="assets/style.css">
 </head>
@@ -15,7 +15,7 @@
 <div class="container">
     <div class="header">
         <h1>🐸 SAPO</h1>
-        <div class="subtitle">Sistema de Automatización de Podcasts</div>
+        <div class="subtitle">Sistema Avanzado de Programación y Operaciones para Radiobot</div>
     </div>
 
     <?php if (isImpersonating()): ?>
@@ -129,7 +129,7 @@
     <?php endif; ?>
 
     <footer style="margin-top: 40px; padding: 20px 0; border-top: 1px solid #e2e8f0; text-align: center; color: #718096; font-size: 14px;">
-        <p style="margin: 0;">🐸 <strong>SAPO</strong> - Sistema de Automatización de Podcasts</p>
+        <p style="margin: 0;">🐸 <strong>SAPO</strong> - Sistema Avanzado de Programación y Operaciones para Radiobot</p>
         <p style="margin: 5px 0 0 0;">Versión <?php echo SAPO_VERSION; ?></p>
     </footer>
 </div>

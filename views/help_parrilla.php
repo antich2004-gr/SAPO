@@ -235,7 +235,7 @@
 
     <!-- Pie de página -->
     <div style="border-top: 2px solid #e2e8f0; padding-top: 20px; margin-top: 40px; text-align: center; color: #718096;">
-        <p><strong>🐸 SAPO</strong> - Sistema de Automatización de Podcasts para Radiobot</p>
+        <p><strong>🐸 SAPO</strong> - Sistema Avanzado de Programación y Operaciones para Radiobot</p>
         <p style="font-size: 14px;">¿Necesitas más ayuda? Contacta al administrador del sistema.</p>
     </div>
 </div>
