@@ -368,11 +368,11 @@ textarea {
 .main-nav {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 2px;
     background: var(--primary-dark);
     border-radius: var(--border-radius);
-    padding: 6px 10px;
-    margin-bottom: 18px;
+    padding: 4px 8px;
+    margin-bottom: var(--spacing-md);
     box-shadow: var(--shadow-sm);
     flex-wrap: wrap;
 }
@@ -380,10 +380,10 @@ textarea {
 .nav-link {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 6px 14px;
+    gap: 4px;
+    padding: 6px 10px;
     border-radius: 6px;
-    font-size: 0.875rem;
+    font-size: 0.85rem;
     font-weight: 500;
     color: rgba(255,255,255,0.75);
     text-decoration: none;
@@ -391,6 +391,7 @@ textarea {
     cursor: pointer;
     border: none;
     background: transparent;
+    white-space: nowrap;
 }
 
 .nav-link:hover {
@@ -845,15 +846,14 @@ table tbody tr:hover {
         flex-wrap: wrap;
     }
 
-    .tab {
-        flex: 1;
-        min-width: 80px;
+    .tab,
+    .tab-button {
+        flex: 1 0 auto;
+        min-width: 0;
         text-align: center;
         padding: 8px 10px;
-    }
-
-    .tab-button {
-        padding: 8px 12px;
+        font-size: 0.82rem;
+        white-space: nowrap;
     }
 
     .tabs-content {
@@ -926,9 +926,11 @@ table tbody tr:hover {
         min-height: 44px;
     }
 
+    .tab,
     .tab-button {
-        padding: 7px 10px;
-        font-size: 13px;
+        padding: 7px 8px;
+        font-size: 0.78rem;
+        flex: 1 0 45%;   /* máximo 2 por fila */
     }
 
     .tabs-content {
