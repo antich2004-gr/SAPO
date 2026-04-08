@@ -830,7 +830,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 <!-- PESTAÑA 1: MIS PODCASTS -->
                 <div id="tab-podcasts" class="tab-panel">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 10px;">
-                        <h3 style="margin: 0;">Podcasts Suscritos</h3>
+                        <h2 class="page-title" style="margin:0;">🎙️ Mis Podcasts</h2>
                         <button type="button" class="btn btn-success" onclick="showAddPodcastModal()">
                             <span class="btn-icon">➕</span> Agregar Nuevo Podcast
                         </button>
@@ -1226,7 +1226,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
                 <!-- PESTAÑA 4: CONFIGURACIÓN -->
                 <div id="tab-config" class="tab-panel">
-                    <h4>Configuración de Señales Horarias</h4>
+                    <h2 class="page-title">⏰ Señales horarias</h2>
                     <p style="color: #718096; margin-bottom: 30px;">
                         Sube tus señales horarias y configúralas cuando deban reproducirse en tu estación.
                     </p>
@@ -1331,7 +1331,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
                 <!-- PESTAÑA: GRABACIONES -->
                 <div id="tab-recordings" class="tab-panel">
-                    <h3 style="margin-bottom: 30px;">🔴 Grabaciones</h3>
+                    <h2 class="page-title">🔴 Grabaciones</h2>
 
                     <!-- Configuración de retención -->
                     <div style="background: #f7fafc; padding: 25px; border-radius: 12px; margin-bottom: 30px; border-left: 4px solid #3182ce;">

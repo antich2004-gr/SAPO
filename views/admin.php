@@ -5,7 +5,7 @@ $users = getAllUsers();
 ?>
 
 <div class="card">
-    <h2 style="margin:0 0 20px 0;">⚙️ Panel de Administración</h2>
+    <h2 class="page-title">⚙️ Panel de Administración</h2>
 
     <!-- ── CONFIGURACIÓN DEL SISTEMA ─────────────────────────────────────── -->
     <div class="section" style="margin-bottom: 30px;">
