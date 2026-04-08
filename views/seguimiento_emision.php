@@ -1394,8 +1394,6 @@ if ($hasSchedule) {
                 <?php else: ?>
                 <a href="<?php echo htmlEsc($debugBaseUrl . '&debug=1'); ?>" class="btn btn-secondary" style="font-size:12px; color:#94a3b8;">🔍 Debug</a>
                 <?php endif; ?>
-                <?php else: ?>
-                <a href="?" class="btn btn-secondary" style="font-size:13px;"><span class="btn-icon">←</span> Volver</a>
                 <?php endif; ?>
                 <button onclick="exportarPDF()" class="btn btn-secondary" style="font-size:13px;"><span class="btn-icon">🖨️</span> PDF</button>
                 <button onclick="exportarImagen()" class="btn btn-secondary" style="font-size:13px;" id="btn-imagen"><span class="btn-icon">🖼️</span> Imagen</button>
