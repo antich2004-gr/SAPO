@@ -19,14 +19,34 @@
     </div>
 
     <?php if (isImpersonating()): ?>
-    <div class="no-print" style="background: #1e40af; color: white; padding: 10px 20px; margin-bottom: 15px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+    <div class="no-print impersonate-bar">
         <span>👤 Viendo como <strong><?php echo htmlEsc($_SESSION['station_name']); ?></strong> (<?php echo htmlEsc($_SESSION['username']); ?>)</span>
         <form method="POST" style="margin: 0;">
             <input type="hidden" name="action" value="stop_impersonating">
             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-            <button type="submit" style="background: white; color: #1e40af; border: none; padding: 5px 14px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px;">← Volver a Admin</button>
+            <button type="submit" class="btn-impersonate-back">← Volver a Admin</button>
         </form>
     </div>
+    <?php endif; ?>
+
+    <?php if (isLoggedIn()): ?>
+    <nav class="main-nav no-print">
+        <?php if (isAdmin() && !isImpersonating()): ?>
+            <a href="?" class="nav-link <?php echo (!isset($_GET['page'])) ? 'active' : ''; ?>">⚙️ Admin</a>
+            <a href="?page=seguimiento_emision" class="nav-link <?php echo (($_GET['page'] ?? '') === 'seguimiento_emision') ? 'active' : ''; ?>">📊 Seguimiento</a>
+            <a href="?page=help" class="nav-link <?php echo (($_GET['page'] ?? '') === 'help') ? 'active' : ''; ?>">❓ Ayuda</a>
+        <?php else: ?>
+            <a href="?" class="nav-link <?php echo (!isset($_GET['page']) || !in_array($_GET['page'] ?? '', ['parrilla','seguimiento_emision','help','help_parrilla'])) ? 'active' : ''; ?>">🏠 Mi SAPO</a>
+            <a href="?page=parrilla" class="nav-link <?php echo (($_GET['page'] ?? '') === 'parrilla') ? 'active' : ''; ?>">📋 Parrilla</a>
+            <a href="?page=seguimiento_emision" class="nav-link <?php echo (($_GET['page'] ?? '') === 'seguimiento_emision') ? 'active' : ''; ?>">📊 Seguimiento</a>
+            <a href="?page=help" class="nav-link <?php echo (in_array($_GET['page'] ?? '', ['help','help_parrilla'])) ? 'active' : ''; ?>">❓ Ayuda</a>
+        <?php endif; ?>
+        <form method="POST" style="margin:0;">
+            <input type="hidden" name="action" value="logout">
+            <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+            <button type="submit" class="nav-link nav-link-logout">🚪 Salir</button>
+        </form>
+    </nav>
     <?php endif; ?>
 
     <?php if (!empty($message)): ?>
@@ -64,7 +84,7 @@
         $config = getConfig();
         $azuracastUrl = $config['azuracast_url'] ?? '';
 
-        echo '<div class="alert alert-warning" style="border-left: 4px solid #ffc107;">';
+        echo '<div class="alert alert-warning">';
         echo '<strong>⚠️ RECORDATORIO IMPORTANTE:</strong><br>';
         echo 'No olvides actualizar las playlists en Radiobot para que apunten a las nuevas rutas.';
         echo '</div>';
@@ -100,6 +120,7 @@
     </footer>
 </div>
 
+<div id="toast-container"></div>
 <script src="assets/app.js?v=<?php echo filemtime(__DIR__ . '/../assets/app.js'); ?>"></script>
 </body>
 </html>

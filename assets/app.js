@@ -1,6 +1,28 @@
 // assets/app.js - Funciones JavaScript SAPO
 
 /**
+ * Mostrar un toast/snackbar de notificación
+ * @param {string} mensaje - Texto a mostrar
+ * @param {'success'|'error'|'warning'|'info'} tipo - Tipo de toast
+ * @param {number} duracion - Duración en ms (por defecto 3500)
+ */
+function showToast(mensaje, tipo = 'info', duracion = 3500) {
+    const iconos = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${tipo}`;
+    toast.innerHTML = `<span>${iconos[tipo] || ''}</span><span>${mensaje}</span>`;
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.add('toast-exit');
+        toast.addEventListener('animationend', () => toast.remove(), { once: true });
+    }, duracion);
+}
+
+/**
  * Cambiar pestaña
  */
 function switchTab(tabName) {
