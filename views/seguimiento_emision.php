@@ -1399,10 +1399,6 @@ if ($hasSchedule) {
                 <?php endif; ?>
                 <button onclick="exportarPDF()" class="btn btn-secondary" style="font-size:13px;"><span class="btn-icon">🖨️</span> PDF</button>
                 <button onclick="exportarImagen()" class="btn btn-secondary" style="font-size:13px;" id="btn-imagen"><span class="btn-icon">🖼️</span> Imagen</button>
-                <form method="POST" style="display:inline; margin:0;">
-                    <input type="hidden" name="action" value="logout">
-                    <button type="submit" class="btn btn-secondary" style="font-size:13px;"><span class="btn-icon">🚪</span> Cerrar Sesión</button>
-                </form>
             </div>
         </div>
     </div>
