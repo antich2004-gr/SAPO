@@ -3,7 +3,7 @@
 ?>
 
 <div class="card">
-    <h2 style="margin-bottom: 30px;">📖 Ayuda - Cómo usar SAPO</h2>
+    <h2 style="margin-bottom: 30px;">❓ Ayuda</h2>
 
     <!-- Índice de contenidos -->
     <div id="indice" style="background: #f7fafc; border-left: 4px solid #667eea; padding: 20px; margin-bottom: 30px;">

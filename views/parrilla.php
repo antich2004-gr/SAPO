@@ -25,7 +25,7 @@ if ($hasStationId) {
 
 <div class="card">
     <div class="nav-buttons">
-        <h2>📺 Parrilla de Programación</h2>
+        <h2>📋 Parrilla</h2>
         <button onclick="clearPublicCache(this)" class="btn btn-secondary" title="Vacía la caché de la página pública de la parrilla y los widgets">
             <span class="btn-icon">🗑️</span> Vaciar caché
         </button>

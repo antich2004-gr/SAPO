@@ -4,7 +4,7 @@
 
 <div class="card">
     <div class="nav-buttons" style="margin-bottom: 30px;">
-        <h2>📅 Ayuda - Parrilla de programación</h2>
+        <h2>❓ Ayuda</h2>
         <a href="?page=help" class="btn btn-secondary">
             <span class="btn-icon">📖</span> Ayuda General
         </a>

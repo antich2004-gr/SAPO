@@ -5,7 +5,7 @@ $currentEmail = $currentUser['email'] ?? '';
 ?>
 
 <div class="card">
-    <h2 style="margin-bottom: var(--spacing-lg);">👤 Perfil de la emisora</h2>
+    <h2 style="margin-bottom: var(--spacing-lg);">👤 Mi Perfil</h2>
 
     <!-- ── DATOS DE LA EMISORA ──────────────────────────────────────────── -->
     <div style="margin-bottom: var(--spacing-lg);">

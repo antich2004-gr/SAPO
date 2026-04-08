@@ -1331,7 +1331,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
 
                 <!-- PESTAÑA: GRABACIONES -->
                 <div id="tab-recordings" class="tab-panel">
-                    <h3 style="margin-bottom: 30px;">🎙️ Gestión de Grabaciones</h3>
+                    <h3 style="margin-bottom: 30px;">🔴 Grabaciones</h3>
 
                     <!-- Configuración de retención -->
                     <div style="background: #f7fafc; padding: 25px; border-radius: 12px; margin-bottom: 30px; border-left: 4px solid #3182ce;">

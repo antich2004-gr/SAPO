@@ -25,7 +25,7 @@ if (!isAdmin() || isImpersonating()) {
         ?>
         <div class="card">
             <div class="nav-buttons">
-                <h2 style="margin:0;">📊 Historial de Emisión</h2>
+                <h2 style="margin:0;">📊 Seguimiento</h2>
                 <a href="?" class="btn btn-secondary"><span class="btn-icon">⚙️</span> Panel Admin</a>
             </div>
             <div class="section" style="max-width:400px;">
@@ -1378,7 +1378,7 @@ if ($hasSchedule) {
     <div style="padding: 20px 24px 16px; border-bottom: 1px solid #e2e8f0;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div>
-                <h2 style="margin:0 0 2px 0;">📊 Historial de Emisión</h2>
+                <h2 style="margin:0 0 2px 0;">📊 Seguimiento</h2>
                 <span style="color:#718096; font-size:13px;">📻 <strong><?php echo htmlEsc($trackingStation); ?></strong></span>
             </div>
             <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;" class="no-print">
