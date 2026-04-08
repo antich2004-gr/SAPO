@@ -1227,9 +1227,6 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                 <!-- PESTAÑA 4: CONFIGURACIÓN -->
                 <div id="tab-config" class="tab-panel">
                     <h2 class="page-title">⏰ Señales horarias</h2>
-                    <p style="color: #718096; margin-bottom: 30px;">
-                        Sube tus señales horarias y configúralas cuando deban reproducirse en tu estación.
-                    </p>
 
                     <!-- UPLOADER -->
                     <div class="time-signals-uploader">
