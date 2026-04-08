@@ -791,6 +791,56 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     // ADMIN: CHANGE USER PASSWORD
+    // USER: ACTUALIZAR PERFIL PROPIO (nombre emisora + email)
+    if ($action == 'update_profile' && isLoggedIn() && !isAdmin()) {
+        $stationName = trim($_POST['station_name'] ?? '');
+        $email       = trim($_POST['email'] ?? '');
+
+        if (empty($stationName)) {
+            $error = 'El nombre de la emisora no puede estar vacío';
+        } elseif (strlen($stationName) > 100) {
+            $error = 'El nombre de la emisora no puede superar 100 caracteres';
+        } elseif (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $error = 'El formato del email no es válido';
+        } else {
+            $result = updateUserProfile($_SESSION['user_id'], $stationName, $email);
+            if ($result['success']) {
+                $_SESSION['station_name'] = $stationName;
+                $message = 'Perfil actualizado correctamente';
+            } else {
+                $error = $result['error'];
+            }
+        }
+    }
+
+    // USER: CAMBIAR CONTRASEÑA PROPIA
+    if ($action == 'change_own_password' && isLoggedIn() && !isAdmin()) {
+        $currentPassword = $_POST['current_password'] ?? '';
+        $newPassword     = $_POST['new_password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+
+        if (empty($currentPassword) || empty($newPassword)) {
+            $error = 'Todos los campos son obligatorios';
+        } elseif (strlen($newPassword) < 8) {
+            $error = 'La nueva contraseña debe tener al menos 8 caracteres';
+        } elseif ($newPassword !== $confirmPassword) {
+            $error = 'Las contraseñas no coinciden';
+        } else {
+            $user = findUserById($_SESSION['user_id']);
+            if (!$user || !password_verify($currentPassword, $user['password'])) {
+                $error = 'La contraseña actual es incorrecta';
+            } else {
+                $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
+                $result = updateUserPassword($user['id'], $hashed);
+                if ($result['success']) {
+                    $message = 'Contraseña cambiada correctamente';
+                } else {
+                    $error = $result['error'];
+                }
+            }
+        }
+    }
+
     if ($action == 'admin_change_password' && isAdmin()) {
         $username = $_POST['username'] ?? '';
         $newPassword = $_POST['new_password'] ?? '';

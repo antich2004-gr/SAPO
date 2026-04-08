@@ -419,6 +419,28 @@ function deleteUser($userId) {
 }
 
 /**
+ * Actualizar perfil de una emisora (station_name y email)
+ */
+function updateUserProfile($userId, $stationName, $email) {
+    $db = getGlobalDB();
+
+    foreach ($db['users'] as &$user) {
+        if ($user['id'] == $userId) {
+            $user['station_name'] = $stationName;
+            $user['email'] = $email;
+            $result = saveGlobalDB($db);
+            if ($result) {
+                return ['success' => true, 'message' => 'Perfil actualizado correctamente'];
+            } else {
+                return ['success' => false, 'error' => 'Error al guardar en la base de datos'];
+            }
+        }
+    }
+
+    return ['success' => false, 'error' => 'Usuario no encontrado'];
+}
+
+/**
  * Actualizar contraseña de un usuario (solo admin)
  */
 function updateUserPassword($userId, $hashedPassword) {

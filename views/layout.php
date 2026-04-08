@@ -32,7 +32,7 @@
     <?php if (isLoggedIn()):
         $currentPage = $_GET['page'] ?? '';
         $currentTab  = $_GET['tab']  ?? '';
-        $isHomePage  = ($currentPage === '' || !in_array($currentPage, ['parrilla','seguimiento_emision','help','help_parrilla']));
+        $isHomePage  = ($currentPage === '' || !in_array($currentPage, ['parrilla','seguimiento_emision','help','help_parrilla','profile']));
     ?>
     <nav class="main-nav no-print">
         <?php if (isAdmin() && !isImpersonating()): ?>
@@ -53,6 +53,7 @@
                 </div>
             </div>
             <div class="nav-spacer"></div>
+            <a href="?page=profile" class="nav-link <?php echo ($currentPage === 'profile') ? 'active' : ''; ?>">👤 Mi Perfil</a>
             <a href="?page=help" class="nav-link <?php echo (in_array($currentPage, ['help','help_parrilla'])) ? 'active' : ''; ?>">❓ Ayuda</a>
         <?php endif; ?>
         <form method="POST" style="margin:0;">
@@ -120,6 +121,8 @@
         <?php require_once 'views/parrilla.php'; ?>
     <?php elseif (isset($_GET['page']) && $_GET['page'] == 'seguimiento_emision' && isLoggedIn()): ?>
         <?php require_once 'views/seguimiento_emision.php'; ?>
+    <?php elseif (isset($_GET['page']) && $_GET['page'] == 'profile' && isLoggedIn() && !isAdmin()): ?>
+        <?php require_once 'views/profile.php'; ?>
     <?php elseif (!isLoggedIn()): ?>
         <?php require_once 'views/login.php'; ?>
     <?php elseif (isAdmin()): ?>
