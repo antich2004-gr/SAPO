@@ -46,6 +46,10 @@ function checkLoginAttempts($username) {
 
 function recordLoginAttempt($username, $success = false) {
     $db = getGlobalDB();
+    if (!is_array($db) || !isset($db['users'])) {
+        error_log("[SAPO-Security] recordLoginAttempt: DB inválida, no se guarda para evitar corrupción");
+        return;
+    }
     if (!isset($db['login_attempts'])) {
         $db['login_attempts'] = [];
     }
