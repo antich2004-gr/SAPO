@@ -44,4 +44,21 @@ define('ERROR_RATE_LIMIT', 'Demasiadas peticiones. Por favor, espera un momento.
 define('ERROR_AUTH_FAILED', 'Usuario o contraseña incorrectos.');
 define('ERROR_LOCKED_ACCOUNT', 'Cuenta bloqueada temporalmente por demasiados intentos fallidos.');
 
+// Polyfills para PHP < 8.0 (str_contains, str_starts_with, str_ends_with son PHP 8.0+)
+if (!function_exists('str_contains')) {
+    function str_contains(string $haystack, string $needle): bool {
+        return $needle === '' || strpos($haystack, $needle) !== false;
+    }
+}
+if (!function_exists('str_starts_with')) {
+    function str_starts_with(string $haystack, string $needle): bool {
+        return $needle === '' || strncmp($haystack, $needle, strlen($needle)) === 0;
+    }
+}
+if (!function_exists('str_ends_with')) {
+    function str_ends_with(string $haystack, string $needle): bool {
+        return $needle === '' || substr($haystack, -strlen($needle)) === $needle;
+    }
+}
+
 ?>
