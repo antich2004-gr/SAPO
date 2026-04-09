@@ -171,13 +171,15 @@ done
 touch "$LOCK_FILE"
 trap 'rm -f "$LOCK_FILE"' EXIT
 
-# Leer API key/URL directamente del global.json de SAPO
+# Leer API key/URL y base_path directamente del global.json de SAPO
 SAPO_GLOBAL_JSON="$SCRIPT_DIR/../db/global.json"
 AZURACAST_API_URL=""
 AZURACAST_API_KEY=""
+SAPO_BASE_PATH=""
 if [[ -f "$SAPO_GLOBAL_JSON" ]]; then
     AZURACAST_API_URL=$(jq -r '.config.azuracast_api_url // ""' "$SAPO_GLOBAL_JSON" 2>/dev/null) || AZURACAST_API_URL=""
     AZURACAST_API_KEY=$(jq -r '.config.azuracast_api_key // ""' "$SAPO_GLOBAL_JSON" 2>/dev/null) || AZURACAST_API_KEY=""
+    SAPO_BASE_PATH=$(jq -r '.config.base_path // ""' "$SAPO_GLOBAL_JSON" 2>/dev/null) || SAPO_BASE_PATH=""
 fi
 
 mostrar_playlists_vacias() {
@@ -299,10 +301,13 @@ mostrar_estadisticas_oyentes() {
 }
 
 # --- VARIABLES DE DIRECTORIO ---
-BASE_DIR="/mnt/emisoras/$EMISORA/media"
+# Usar base_path de global.json si está configurado; si no, caer en /mnt/emisoras
+# (compatibilidad con la arquitectura Docker original donde /mnt/emisoras era un volumen).
+_BASE_ROOT="${SAPO_BASE_PATH:-/mnt/emisoras}"
+BASE_DIR="$_BASE_ROOT/$EMISORA/media"
 CONFIG_DIR="$BASE_DIR/Suscripciones"
 INFORMES_DIR="$BASE_DIR/Informes"
-LIQUIDSOAP_LOG="/mnt/emisoras/$EMISORA/config/liquidsoap.log"
+LIQUIDSOAP_LOG="$_BASE_ROOT/$EMISORA/config/liquidsoap.log"
 
 # Leer DIR_PODCAST o DIR_LIBRARY del podgetrc si existe, si no usar el valor por defecto
 _leer_dir_podcast() {
