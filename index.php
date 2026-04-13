@@ -1338,7 +1338,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $_SESSION['show_azuracast_reminder'] = true;
                     $_SESSION['azuracast_action'] = 'move_podcast';
                 }
-                header('Location: ' . basename($_SERVER['PHP_SELF']));
+                header('Location: ' . basename($_SERVER['PHP_SELF']) . '?tab=podcasts');
                 exit;
             } else {
                 $error = $result['error'];
