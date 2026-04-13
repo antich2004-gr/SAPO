@@ -1351,7 +1351,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $index = intval($_POST['index'] ?? -1);
         $result = deletePodcast($_SESSION['username'], $index);
         if ($result['success']) {
-            $message = $result['message'];
+            $_SESSION['message'] = $result['message'];
+            header('Location: ' . basename($_SERVER['PHP_SELF']) . '?tab=podcasts');
+            exit;
         } else {
             $error = $result['error'];
         }
