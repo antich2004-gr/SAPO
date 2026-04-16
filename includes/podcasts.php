@@ -755,23 +755,20 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
         }
     }
 
-    error_log("[SAPO-DEBUG2] editPodcast user=$username sanitizedName=$sanitizedName newKey=$newKey duracion_param=" . var_export($duracion, true) . " margen_param=$margen duraciones_keys=" . implode(',', array_keys($duraciones)) . " duraciones_path=" . getDuracionesPath($username));
-
     if (!empty($duracion)) {
-        $duraciones[$newKey]  = $duracion;
-        $margenesArr[$newKey] = (int)$margen;
+        $duraciones[$newKey] = $duracion;
     } else {
         unset($duraciones[$newKey]);
-        unset($margenesArr[$newKey]);
     }
+    // Margen se guarda siempre independientemente de si hay duracion
+    // (writeDuraciones omite la entrada si margen=5 y duracion vacía, que es el doble-defecto)
+    $margenesArr[$newKey] = (int)$margen;
+
     if ($oldName !== $sanitizedName) {
         unset($duraciones[strtolower($oldName)]);
         unset($margenesArr[strtolower($oldName)]);
     }
-    $writeResult = writeDuraciones($username, $duraciones, $margenesArr);
-    error_log("[SAPO-DEBUG2] writeDuraciones result=" . var_export($writeResult, true) . " final_keys=" . implode(',', array_keys($duraciones)));
-    $duracionesCheck = file_exists(getDuracionesPath($username)) ? file_get_contents(getDuracionesPath($username)) : 'FILE_NOT_FOUND';
-    error_log("[SAPO-DEBUG2] duraciones.txt content after write: " . trim($duracionesCheck));
+    writeDuraciones($username, $duraciones, $margenesArr);
 
     // ── Máx. episodios RSS ────────────────────────────────────────────────────
     if ($newType === 'rss') {
@@ -1095,18 +1092,26 @@ function writeDuraciones($username, $duraciones, $margenes = []) {
         mkdir($dir, 0755, true);
     }
 
+    // Combinar claves de duraciones y margenes para escribir entradas completas
+    // Esto permite guardar un margen aunque no haya duracion (formato nombre::margen)
+    $allKeys = array_unique(array_merge(array_keys($duraciones), array_keys($margenes)));
     $content = "";
-    foreach ($duraciones as $podcastName => $duracion) {
-        if (!empty($duracion)) {
-            $rawMargen = isset($margenes[$podcastName]) ? (int)$margenes[$podcastName] : 5;
-            // Normalizar: si el valor no es válido (ej. legacy 1), usar default 5
-            $margen = in_array($rawMargen, [5, 10, 15]) ? $rawMargen : 5;
-            $line = slugify($podcastName) . ":" . $duracion;
-            if ($margen !== 5) {
-                $line .= ":" . $margen;
-            }
-            $content .= $line . "\n";
+    foreach ($allKeys as $podcastName) {
+        $duracion  = $duraciones[$podcastName] ?? '';
+        $rawMargen = isset($margenes[$podcastName]) ? (int)$margenes[$podcastName] : 5;
+        // Normalizar: si el valor no es válido (ej. legacy 1), usar default 5
+        $margen = in_array($rawMargen, [5, 10, 15]) ? $rawMargen : 5;
+
+        // No escribir entradas donde ambos son los valores por defecto
+        if (empty($duracion) && $margen === 5) {
+            continue;
         }
+
+        $line = slugify($podcastName) . ":" . $duracion;
+        if ($margen !== 5) {
+            $line .= ":" . $margen;
+        }
+        $content .= $line . "\n";
     }
 
     return file_put_contents($duracionesPath, $content, LOCK_EX) !== false;
