@@ -8,10 +8,19 @@
 declare -A EMISORAS
 
 # Formato: EMISORAS["nombre_emisora"]="ruta_log;correo1,correo2;nombre_amigable"
-EMISORAS["galapagar"]="/mnt/emisoras/galapagar/media/Informes;fide@afoot.es,radiogalapagar@gmail.com;Radio Galapagar"
-EMISORAS["rvk"]="/mnt/emisoras/rvk/media/Informes;fide@afoot.es;Radio Vallekas"
-EMISORAS["cable"]="/mnt/emisoras/cable/media/Informes;fide@afoot.es,fberlin@radiocable.com;Radio Cable"
-EMISORAS["sonora"]="/mnt/emisoras/sonora/media/Informes;fide@afoot.es,sonora.asoc@uc3m.es;Sonora"
+EMISORAS["agora"]="/mnt/emisoras/agora/media/Informes;fide@afoot.es,continuidad@agorasolradio.org;Ágora Sol Radio"
+EMISORAS["almaina"]="/mnt/emisoras/almaina/media/Informes;programacion@radioalmaina.org,fide@afoot.es;Radio Almaina"
+EMISORAS["argayo"]="/mnt/emisoras/argayo/media/Informes;radio_argayo@riseup.net,fide@afoot.es;Radio Argayo"
+EMISORAS["contrabanda"]="/mnt/emisoras/contrabanda/media/Informes;contrabanda@contrabanda.org,fide@afoot.es;Contrabanda FM"
+EMISORAS["gallinera"]="/mnt/emisoras/gallinera/media/Informes;radiogallinera@protonmail.com,fide@afoot.es;Radio Gallinera"
+EMISORAS["mistelera"]="/mnt/emisoras/mistelera/media/Informes;radiomistelera@protonmail.com,fide@afoot.es;Radio Mistelera"
+EMISORAS["ruidofeminista"]="/mnt/emisoras/ruidofeminista/media/Informes;ruidofeministaradio@riseup.net,fide@afoot.es;Radio Ruido Feminista"
+EMISORAS["espiritrompa"]="/mnt/emisoras/espiritrompa/media/Informes;radioespiritrompa@sindominio.net,fide@afoot.es;Radio Espiritrompa"
+EMISORAS["topo"]="/mnt/emisoras/topo/media/Informes;estudioscentrales@radiotopo.org,fide@afoot.es;Radio Topo"
+EMISORAS["cadenazo"]="/mnt/emisoras/cadenazo/media/Informes;fide@afoot.es;Radio Cadenazo"
+EMISORAS["granja"]="/mnt/emisoras/granja/media/Informes;emisora@radiolagranja.es,fide@afoot.es;Radio La Granja"
+EMISORAS["irola"]="/mnt/emisoras/irola/media/Informes;irolairratia@riseup.net,fide@afoot.es;Irola Irratia"
+
 # =========================
 # Envío de informes
 # =========================
@@ -52,4 +61,3 @@ for EMISORA in "${!EMISORAS[@]}"; do
         echo "No se encontró el archivo de log para ${NOMBRE_AMIGABLE} en ${ARCHIVO_LOG}."
     fi
 done
-
