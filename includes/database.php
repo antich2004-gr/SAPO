@@ -54,7 +54,7 @@ function getGlobalDB() {
             'login_attempts' => []
         ];
         file_put_contents(GLOBAL_DB_FILE, json_encode($initialData, JSON_PRETTY_PRINT));
-        chmod(GLOBAL_DB_FILE, 0600); // Cambiar a 0600 para mayor seguridad
+        chmod(GLOBAL_DB_FILE, 0640); // Grupo puede leer (necesario para scripts de shell)
 
         // Guardar contraseña inicial en archivo temporal
         $credentialsFile = DATA_DIR . '/ADMIN_CREDENTIALS.txt';
