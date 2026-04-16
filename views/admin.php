@@ -41,15 +41,30 @@ $users = getAllUsers();
 
             <!-- Bloque: API de Radiobot -->
             <div style="background:#f7fafc;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:16px;">
-                <h4 style="margin:0 0 14px 0;font-size:14px;color:#4a5568;text-transform:uppercase;letter-spacing:.05em;">🔗 API de Radiobot</h4>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                    <h4 style="margin:0;font-size:14px;color:#4a5568;text-transform:uppercase;letter-spacing:.05em;">🔗 API de Radiobot</h4>
+                    <?php if (!empty($config['azuracast_api_url'])): ?>
+                    <form method="POST" style="margin:0;">
+                        <input type="hidden" name="action" value="test_api_connection">
+                        <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                        <button type="submit" class="btn btn-secondary" style="font-size:12px;padding:4px 12px;">🔌 Probar conexión</button>
+                    </form>
+                    <?php endif; ?>
+                </div>
+                <?php if (!empty($config['azuracast_api_url'])): ?>
+                <div style="background:#edf2f7;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#4a5568;">
+                    URL activa: <code style="background:#e2e8f0;padding:1px 5px;border-radius:3px;"><?php echo htmlEsc($config['azuracast_api_url']); ?></code>
+                    &nbsp;·&nbsp; API Key: <?php echo !empty($config['azuracast_api_key']) ? '<span style="color:#276749;">✅ configurada</span>' : '<span style="color:#c53030;">❌ no configurada</span>'; ?>
+                </div>
+                <?php endif; ?>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
                     <div class="form-group" style="margin:0;">
                         <label>URL de la API</label>
                         <input type="text" name="azuracast_api_url" value="<?php echo htmlEsc($config['azuracast_api_url'] ?? ''); ?>" placeholder="https://tu-servidor.com/api" maxlength="255">
                     </div>
                     <div class="form-group" style="margin:0;">
-                        <label>API Key <small style="font-weight:400;color:#718096;">(Admin → API Keys)</small></label>
-                        <input type="password" name="azuracast_api_key" value="<?php echo htmlEsc($config['azuracast_api_key'] ?? ''); ?>" placeholder="••••••••••••" maxlength="255" autocomplete="new-password">
+                        <label>API Key <small style="font-weight:400;color:#718096;">(Admin → API Keys · dejar vacío para no cambiarla)</small></label>
+                        <input type="text" name="azuracast_api_key" value="" placeholder="Introduce nueva clave para cambiarla" maxlength="255" autocomplete="off">
                     </div>
                 </div>
             </div>

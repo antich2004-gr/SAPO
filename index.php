@@ -729,16 +729,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $azuracastApiKey = trim($_POST['azuracast_api_key'] ?? '');
         $recordingsMountBase = trim($_POST['recordings_mount_base'] ?? '');
 
+        // Si la key llega vacía (campo password no tocado), conservar la existente
+        $currentConfig = getConfig();
+        if (empty($azuracastApiKey)) {
+            $azuracastApiKey = $currentConfig['azuracast_api_key'] ?? '';
+        }
+
         if (empty($basePath)) {
             $error = 'La ruta base es obligatoria';
+            // Guardar igualmente las credenciales de API con la ruta actual
+            saveConfig($currentConfig['base_path'], $subsFolder, $podcastsFolder, $azuracastApiUrl, $azuracastApiKey, $recordingsMountBase);
         } elseif (!is_dir($basePath)) {
             $error = 'La ruta base no existe o no es accesible';
+            // Guardar igualmente las credenciales de API con la ruta actual
+            saveConfig($currentConfig['base_path'], $subsFolder, $podcastsFolder, $azuracastApiUrl, $azuracastApiKey, $recordingsMountBase);
         } else {
             if (saveConfig($basePath, $subsFolder, $podcastsFolder, $azuracastApiUrl, $azuracastApiKey, $recordingsMountBase)) {
                 $message = 'Configuracion guardada correctamente';
             } else {
                 $error = 'Error al guardar la configuracion';
             }
+        }
+    }
+
+    // TEST API CONNECTION (admin)
+    if ($action == 'test_api_connection' && isAdmin()) {
+        $testResult = testAzuracastConnection();
+        if ($testResult['success']) {
+            $message = '✅ Conexión con la API correcta: ' . $testResult['message'];
+        } else {
+            $error = '❌ Error de conexión: ' . $testResult['message'];
         }
     }
     
