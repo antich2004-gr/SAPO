@@ -743,12 +743,24 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
 
     $duraciones  = readDuraciones($username);
     $margenesArr = readMargenes($username);
+
+    $newKey = strtolower($sanitizedName);
+
+    // Eliminar aliases con guiones bajos que crearían entradas duplicadas al guardar
+    // (p.ej. "100_fuegos" y "100fuegos" representan el mismo podcast)
+    foreach (array_keys($duraciones) as $existingKey) {
+        if ($existingKey !== $newKey && str_replace('_', '', $existingKey) === str_replace('_', '', $newKey)) {
+            unset($duraciones[$existingKey]);
+            unset($margenesArr[$existingKey]);
+        }
+    }
+
     if (!empty($duracion)) {
-        $duraciones[strtolower($sanitizedName)]  = $duracion;
-        $margenesArr[strtolower($sanitizedName)] = (int)$margen;
+        $duraciones[$newKey]  = $duracion;
+        $margenesArr[$newKey] = (int)$margen;
     } else {
-        unset($duraciones[strtolower($sanitizedName)]);
-        unset($margenesArr[strtolower($sanitizedName)]);
+        unset($duraciones[$newKey]);
+        unset($margenesArr[$newKey]);
     }
     if ($oldName !== $sanitizedName) {
         unset($duraciones[strtolower($oldName)]);
@@ -1010,6 +1022,12 @@ function readDuraciones($username) {
             $podcastName = strtolower(trim($parts[0]));
             $duracion = trim($parts[1]);
             $duraciones[$podcastName] = $duracion;
+            // Alias sin guiones bajos: permite encontrar la entrada cuando el podcast
+            // fue renombrado (ej. "100 Fuegos" → "100Fuegos" cambia la clave de lookup)
+            $noUnderscore = str_replace('_', '', $podcastName);
+            if ($noUnderscore !== $podcastName && !isset($duraciones[$noUnderscore])) {
+                $duraciones[$noUnderscore] = $duracion;
+            }
         }
     }
 
@@ -1047,6 +1065,11 @@ function readMargenes($username) {
             // Valores legacy como 1 se ignoran y se tratan como el default (5)
             if (in_array($margen, [5, 10, 15])) {
                 $margenes[$podcastName] = $margen;
+                // Alias sin guiones bajos (ver readDuraciones)
+                $noUnderscore = str_replace('_', '', $podcastName);
+                if ($noUnderscore !== $podcastName && !isset($margenes[$noUnderscore])) {
+                    $margenes[$noUnderscore] = $margen;
+                }
             }
         }
     }
