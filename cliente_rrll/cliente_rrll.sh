@@ -894,7 +894,7 @@ INFORME="$INFORMES_DIR/Informe_diario_${DIA}_${MES}_${ANO}.log"
         _DESCARGADOS_HOY=$(grep "^${_HOY_HIST}" "$RENOMBRADOS_HISTORICO" \
             | sed -n 's|.*Podcasts/[^/]*/\([^/]*\)/.*|\1|p' \
             | sort -u \
-            | tr '\n' '|')
+            | tr '\n' '|') || _DESCARGADOS_HOY=""
     fi
 
     awk -v ok_names="$_DESCARGADOS_HOY" '
