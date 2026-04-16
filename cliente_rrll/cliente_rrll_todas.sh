@@ -6,8 +6,9 @@
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 CLIENTE_SCRIPT="$SCRIPT_DIR/cliente_rrll.sh"
 
-# Ruta de db.json de SAPO
+# Rutas de base de datos de SAPO
 SAPO_DB="$(dirname "$SCRIPT_DIR")/db.json"
+SAPO_GLOBAL_DB="$(dirname "$SCRIPT_DIR")/db/global.json"
 
 # Directorio de logs
 LOG_DIR="/tmp/logs_cliente_rrll"
@@ -32,15 +33,35 @@ if [ ! -f "$SAPO_DB" ]; then
     exit 1
 fi
 
-# Leer config desde db.json (cada valor en su propia línea para evitar errores con campos vacíos)
+# Leer config: credenciales de API desde db/global.json, usuarios desde db.json
 SAPO_CONFIG=$(python3 -c "
-import json
-with open('$SAPO_DB') as f:
-    db = json.load(f)
-cfg = db.get('config', {})
+import json, os
+
+# Config global (API URL, API key, base_path)
+cfg = {}
+global_db_path = '$SAPO_GLOBAL_DB'
+if os.path.exists(global_db_path):
+    with open(global_db_path) as f:
+        gdb = json.load(f)
+    cfg = gdb.get('config', {})
+
+# Fallback: leer config desde db.json si global.json no tiene los valores
+db = {}
+if os.path.exists('$SAPO_DB'):
+    with open('$SAPO_DB') as f:
+        db = json.load(f)
+    old_cfg = db.get('config', {})
+    if not cfg.get('base_path'):
+        cfg['base_path'] = old_cfg.get('base_path', '/mnt/emisoras')
+    if not cfg.get('azuracast_api_url'):
+        cfg['azuracast_api_url'] = old_cfg.get('azuracast_api_url', '')
+    if not cfg.get('azuracast_api_key'):
+        cfg['azuracast_api_key'] = old_cfg.get('azuracast_api_key', '')
+
 print(cfg.get('base_path', '/mnt/emisoras'))
 print(cfg.get('azuracast_api_url', ''))
 print(cfg.get('azuracast_api_key', ''))
+
 for u in db.get('users', []):
     if not u.get('is_admin', False):
         print('USER:' + u['username'])
