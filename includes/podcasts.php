@@ -755,6 +755,8 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
         }
     }
 
+    error_log("[SAPO-DEBUG2] editPodcast user=$username sanitizedName=$sanitizedName newKey=$newKey duracion_param=" . var_export($duracion, true) . " margen_param=$margen duraciones_keys=" . implode(',', array_keys($duraciones)) . " duraciones_path=" . getDuracionesPath($username));
+
     if (!empty($duracion)) {
         $duraciones[$newKey]  = $duracion;
         $margenesArr[$newKey] = (int)$margen;
@@ -766,7 +768,10 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
         unset($duraciones[strtolower($oldName)]);
         unset($margenesArr[strtolower($oldName)]);
     }
-    writeDuraciones($username, $duraciones, $margenesArr);
+    $writeResult = writeDuraciones($username, $duraciones, $margenesArr);
+    error_log("[SAPO-DEBUG2] writeDuraciones result=" . var_export($writeResult, true) . " final_keys=" . implode(',', array_keys($duraciones)));
+    $duracionesCheck = file_exists(getDuracionesPath($username)) ? file_get_contents(getDuracionesPath($username)) : 'FILE_NOT_FOUND';
+    error_log("[SAPO-DEBUG2] duraciones.txt content after write: " . trim($duracionesCheck));
 
     // ── Máx. episodios RSS ────────────────────────────────────────────────────
     if ($newType === 'rss') {
