@@ -240,8 +240,8 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
             'type'          => $podcast['type'] ?? 'rss',
             'max_episodios' => $podcast['max_episodios'] ?? 1,
             'caducidad'     => $caducidades[$podcast['name']] ?? $defaultCaducidad,
-            'duracion' => $duraciones[$podcast['name']] ?? '',
-            'margen' => $margenes[$podcast['name']] ?? 5,
+            'duracion' => $duraciones[strtolower($podcast['name'])] ?? '',
+            'margen' => $margenes[strtolower($podcast['name'])] ?? 5,
             'paused' => isset($podcast['paused']) ? $podcast['paused'] : false,
             'feedInfo' => [
                 'timestamp' => $feedInfo['timestamp'],
@@ -972,7 +972,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                 // Calcular índice global considerando paginación
                                 $globalIndex = $offset + $index;
                                 $podcastCaducidad = $caducidades[$podcast['name']] ?? $defaultCaducidad;
-            $podcastDuracion = $duraciones[$podcast['name']] ?? '';
+            $podcastDuracion = $duraciones[strtolower($podcast['name'])] ?? '';
                                 if (($podcast['type'] ?? 'rss') === 'ytdlp') {
                                     $feedInfo   = ['timestamp' => null, 'cached' => false, 'cache_age' => 0];
                                     $statusInfo = ['class' => 'ytdlp', 'status' => 'Descarga vía yt-dlp', 'icon' => '📺', 'date' => '', 'days' => 0];
@@ -1125,7 +1125,7 @@ $editIndex = $isEditing ? intval($_GET['edit']) : null;
                                     <div class="podcast-list">
                                         <?php foreach ($categoryPodcasts as $podcast):
                                             $podcastCaducidad = $caducidades[$podcast['name']] ?? $defaultCaducidad;
-            $podcastDuracion = $duraciones[$podcast['name']] ?? '';
+            $podcastDuracion = $duraciones[strtolower($podcast['name'])] ?? '';
                                             if (($podcast['type'] ?? 'rss') === 'ytdlp') {
                                                 $feedInfo   = ['timestamp' => null, 'cached' => false, 'cache_age' => 0];
                                                 $statusInfo = ['class' => 'ytdlp', 'status' => 'Descarga vía yt-dlp', 'icon' => '📺', 'date' => '', 'days' => 0];

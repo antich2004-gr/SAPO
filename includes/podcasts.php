@@ -557,8 +557,8 @@ function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracio
         if (!empty($duracion)) {
             $duraciones = readDuraciones($username);
             $margenes = readMargenes($username);
-            $duraciones[$sanitizedName] = $duracion;
-            $margenes[$sanitizedName] = (int)$margen;
+            $duraciones[strtolower($sanitizedName)] = $duracion;
+            $margenes[strtolower($sanitizedName)] = (int)$margen;
             writeDuraciones($username, $duraciones, $margenes);
         }
 
@@ -744,15 +744,15 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
     $duraciones  = readDuraciones($username);
     $margenesArr = readMargenes($username);
     if (!empty($duracion)) {
-        $duraciones[$sanitizedName]  = $duracion;
-        $margenesArr[$sanitizedName] = (int)$margen;
+        $duraciones[strtolower($sanitizedName)]  = $duracion;
+        $margenesArr[strtolower($sanitizedName)] = (int)$margen;
     } else {
-        unset($duraciones[$sanitizedName]);
-        unset($margenesArr[$sanitizedName]);
+        unset($duraciones[strtolower($sanitizedName)]);
+        unset($margenesArr[strtolower($sanitizedName)]);
     }
     if ($oldName !== $sanitizedName) {
-        unset($duraciones[$oldName]);
-        unset($margenesArr[$oldName]);
+        unset($duraciones[strtolower($oldName)]);
+        unset($margenesArr[strtolower($oldName)]);
     }
     writeDuraciones($username, $duraciones, $margenesArr);
 
@@ -1007,7 +1007,7 @@ function readDuraciones($username) {
 
         $parts = explode(':', $line, 3);
         if (count($parts) >= 2) {
-            $podcastName = trim($parts[0]);
+            $podcastName = strtolower(trim($parts[0]));
             $duracion = trim($parts[1]);
             $duraciones[$podcastName] = $duracion;
         }
@@ -1041,7 +1041,7 @@ function readMargenes($username) {
 
         $parts = explode(':', $line, 3);
         if (count($parts) === 3) {
-            $podcastName = trim($parts[0]);
+            $podcastName = strtolower(trim($parts[0]));
             $margen = (int)trim($parts[2]);
             if ($margen > 0) {
                 $margenes[$podcastName] = $margen;
@@ -1068,7 +1068,7 @@ function writeDuraciones($username, $duraciones, $margenes = []) {
     $content = "";
     foreach ($duraciones as $podcastName => $duracion) {
         if (!empty($duracion)) {
-            $margen = isset($margenes[$podcastName]) ? (int)$margenes[$podcastName] : 1;
+            $margen = isset($margenes[$podcastName]) ? (int)$margenes[$podcastName] : 5;
             $line = slugify($podcastName) . ":" . $duracion;
             if ($margen !== 5) {
                 $line .= ":" . $margen;
