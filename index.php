@@ -1334,6 +1334,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (!in_array($margen, [5, 10, 15])) $margen = 5;
         $max_episodios = intval($_POST['max_episodios'] ?? 1);
         if ($max_episodios < 1 || $max_episodios > 50) $max_episodios = 1;
+        error_log("[SAPO-DEBUG] edit_podcast user={$_SESSION['username']} index=$index name=" . ($_POST['name'] ?? '') . " duracion=$duracion margen=$margen post_margen=" . ($_POST['margen'] ?? 'NOT_SET'));
 
         // Validar caducidad
         if ($caducidad < 1 || $caducidad > 365) {
