@@ -1043,7 +1043,9 @@ function readMargenes($username) {
         if (count($parts) === 3) {
             $podcastName = strtolower(trim($parts[0]));
             $margen = (int)trim($parts[2]);
-            if ($margen > 0) {
+            // Solo aceptar valores válidos del selector (5, 10, 15)
+            // Valores legacy como 1 se ignoran y se tratan como el default (5)
+            if (in_array($margen, [5, 10, 15])) {
                 $margenes[$podcastName] = $margen;
             }
         }
@@ -1068,7 +1070,9 @@ function writeDuraciones($username, $duraciones, $margenes = []) {
     $content = "";
     foreach ($duraciones as $podcastName => $duracion) {
         if (!empty($duracion)) {
-            $margen = isset($margenes[$podcastName]) ? (int)$margenes[$podcastName] : 5;
+            $rawMargen = isset($margenes[$podcastName]) ? (int)$margenes[$podcastName] : 5;
+            // Normalizar: si el valor no es válido (ej. legacy 1), usar default 5
+            $margen = in_array($rawMargen, [5, 10, 15]) ? $rawMargen : 5;
             $line = slugify($podcastName) . ":" . $duracion;
             if ($margen !== 5) {
                 $line .= ":" . $margen;
