@@ -244,7 +244,12 @@ function listRecordings($username) {
         if (is_dir($entryPath)) {
             // Subcarpeta de streamer: escanear su contenido
             $streamer = $entry;
-            foreach (scandir($entryPath) as $file) {
+            $subEntries = @scandir($entryPath);
+            if ($subEntries === false) {
+                error_log("RECORDINGS: Sin permiso para leer subdirectorio: $entryPath");
+                continue;
+            }
+            foreach ($subEntries as $file) {
                 if ($file === '.' || $file === '..') {
                     continue;
                 }
