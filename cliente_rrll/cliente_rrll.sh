@@ -42,7 +42,7 @@ if [[ "${1:-}" == "--runner" ]]; then
             continue
         fi
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] runner: iniciando descarga para $_emisora..." >> "$_log"
-        SAPO_LOG_FILE="$_log" nohup /bin/bash "$_script" \
+        SAPO_LOG_FILE="$_log" nohup sudo -u radioslibres /bin/bash "$_script" \
             --emisora "$_emisora" </dev/null >> "$_log" 2>&1 &
     done
     exit 0
