@@ -238,7 +238,7 @@ foreach ($programsData as $programKey => $programInfo) {
                 $minute = (int)$startDateTime->format('i');
                 $normalizedTimestamp = ($hour * 3600) + ($minute * 60);
 
-                $eventsByDay[$day][] = [
+                $eventData = [
                     'title' => $programInfo['display_title'] ?: $programName,
                     'original_title' => $programName,
                     'start_time' => $startDateTime->format('H:i'),
@@ -257,6 +257,11 @@ foreach ($programsData as $programKey => $programInfo) {
                     'social_facebook' => $programInfo['social_facebook'] ?? '',
                     'playlist_type' => $playlistType
                 ];
+                if ($playlistType === 'music_block') {
+                    $musicBlocksByDay[$day][] = $eventData;
+                } else {
+                    $eventsByDay[$day][] = $eventData;
+                }
             }
         }
 }
