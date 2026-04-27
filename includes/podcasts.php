@@ -224,7 +224,9 @@ function writeYtdlpFeeds($username, $feeds) {
         }
     }
 
+    $oldUmask = umask(0002);
     $result = file_put_contents($path, $content);
+    umask($oldUmask);
     if ($result === false) {
         $err = error_get_last();
         error_log('[SAPO] writeYtdlpFeeds: file_put_contents falló en ' . $path . ': ' . ($err['message'] ?? 'error desconocido'));
@@ -278,7 +280,9 @@ function writeCaducidades($username, $caducidades) {
         $content .= $podcastName . ':' . $dias . "\n";
     }
 
+    $oldUmask = umask(0002);
     $result = file_put_contents($path, $content);
+    umask($oldUmask);
     return $result !== false;
 }
 
@@ -358,7 +362,10 @@ function writeMaxEpisodiosRss($username, $data) {
         $content .= $podcastName . ':' . max(1, intval($n)) . "\n";
     }
 
-    return file_put_contents($path, $content) !== false;
+    $oldUmask = umask(0002);
+    $result = file_put_contents($path, $content);
+    umask($oldUmask);
+    return $result !== false;
 }
 
 function setMaxEpisodiosRss($username, $podcastName, $n) {
@@ -538,7 +545,9 @@ function writeServerList($username, $podcasts) {
         }
     }
     
+    $oldUmask = umask(0002);
     $result = file_put_contents($path, $content);
+    umask($oldUmask);
     if ($result === false) {
         $err = error_get_last();
         error_log('[SAPO] writeServerList: file_put_contents falló en ' . $path . ': ' . ($err['message'] ?? 'error desconocido'));
@@ -1133,7 +1142,10 @@ function writeDuraciones($username, $duraciones, $margenes = []) {
         }
     }
 
-    return file_put_contents($duracionesPath, $content, LOCK_EX) !== false;
+    $oldUmask = umask(0002);
+    $result = file_put_contents($duracionesPath, $content, LOCK_EX);
+    umask($oldUmask);
+    return $result !== false;
 }
 
 /**
