@@ -175,11 +175,27 @@ function readYtdlpFeeds($username) {
  */
 function writeYtdlpFeeds($username, $feeds) {
     $path = getYtdlpFeedsPath($username);
-    if (!$path) return false;
+    if (!$path) {
+        error_log('[SAPO] writeYtdlpFeeds: ruta inválida para usuario ' . $username);
+        return false;
+    }
 
     $dir = dirname($path);
     if (!is_dir($dir)) {
-        if (!mkdir($dir, 0755, true)) return false;
+        if (!mkdir($dir, 0755, true)) {
+            error_log('[SAPO] writeYtdlpFeeds: no se puede crear directorio ' . $dir);
+            return false;
+        }
+    }
+
+    if (is_file($path) && !is_writable($path)) {
+        error_log('[SAPO] writeYtdlpFeeds: sin permiso de escritura en ' . $path);
+        return false;
+    }
+
+    if (!is_writable($dir)) {
+        error_log('[SAPO] writeYtdlpFeeds: sin permiso de escritura en directorio ' . $dir);
+        return false;
     }
 
     $user = getCurrentUser();
@@ -208,7 +224,13 @@ function writeYtdlpFeeds($username, $feeds) {
         }
     }
 
-    return file_put_contents($path, $content) !== false;
+    $result = file_put_contents($path, $content);
+    if ($result === false) {
+        $err = error_get_last();
+        error_log('[SAPO] writeYtdlpFeeds: file_put_contents falló en ' . $path . ': ' . ($err['message'] ?? 'error desconocido'));
+        return false;
+    }
+    return true;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -457,15 +479,27 @@ function readServerList($username) {
 function writeServerList($username, $podcasts) {
     $path = getServerListPath($username);
     if (!$path) {
+        error_log('[SAPO] writeServerList: ruta inválida para usuario ' . $username);
         return false;
     }
-    
+
     $dir = dirname($path);
-    
+
     if (!is_dir($dir)) {
         if (!mkdir($dir, 0755, true)) {
+            error_log('[SAPO] writeServerList: no se puede crear directorio ' . $dir);
             return false;
         }
+    }
+
+    if (is_file($path) && !is_writable($path)) {
+        error_log('[SAPO] writeServerList: sin permiso de escritura en ' . $path . ' (propietario: ' . (function_exists('posix_getpwuid') ? (posix_getpwuid(fileowner($path))['name'] ?? fileowner($path)) : fileowner($path)) . ', permisos: ' . decoct(fileperms($path) & 0777) . ')');
+        return false;
+    }
+
+    if (!is_writable($dir)) {
+        error_log('[SAPO] writeServerList: sin permiso de escritura en directorio ' . $dir . ' (propietario: ' . (function_exists('posix_getpwuid') ? (posix_getpwuid(fileowner($dir))['name'] ?? fileowner($dir)) : fileowner($dir)) . ', permisos: ' . decoct(fileperms($dir) & 0777) . ')');
+        return false;
     }
     
     $user = getCurrentUser();
@@ -504,7 +538,13 @@ function writeServerList($username, $podcasts) {
         }
     }
     
-    return file_put_contents($path, $content) !== false;
+    $result = file_put_contents($path, $content);
+    if ($result === false) {
+        $err = error_get_last();
+        error_log('[SAPO] writeServerList: file_put_contents falló en ' . $path . ': ' . ($err['message'] ?? 'error desconocido'));
+        return false;
+    }
+    return true;
 }
 
 function addPodcast($username, $url, $category, $name, $caducidad = 30, $duracion = '', $margen = 5, $max_episodios = 1) {
@@ -723,6 +763,22 @@ function editPodcast($username, $index, $url, $category, $name, $caducidad = 30,
     }
 
     if (!$writeOk) {
+        $serverlistPath = getServerListPath($username);
+        if ($serverlistPath) {
+            $dir = dirname($serverlistPath);
+            if (!is_dir($dir)) {
+                error_log('[SAPO] editPodcast: directorio inexistente: ' . $dir);
+                return ['success' => false, 'error' => 'Error al actualizar el podcast: el directorio de suscripciones no existe. Revisa los logs del servidor.'];
+            }
+            if (is_file($serverlistPath) && !is_writable($serverlistPath)) {
+                error_log('[SAPO] editPodcast: sin escritura en serverlist.txt. Fix: chown www-data:www-data ' . $serverlistPath . ' && chmod 664 ' . $serverlistPath);
+                return ['success' => false, 'error' => 'Error al actualizar el podcast: sin permiso de escritura en serverlist.txt. Revisa los logs del servidor para el comando de corrección.'];
+            }
+            if (!is_writable($dir)) {
+                error_log('[SAPO] editPodcast: sin escritura en directorio. Fix: chown www-data:www-data ' . $dir . ' && chmod 775 ' . $dir);
+                return ['success' => false, 'error' => 'Error al actualizar el podcast: sin permiso de escritura en el directorio de suscripciones. Revisa los logs del servidor para el comando de corrección.'];
+            }
+        }
         return ['success' => false, 'error' => 'Error al actualizar el podcast'];
     }
 
