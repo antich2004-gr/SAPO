@@ -740,7 +740,11 @@ _verificar_duracion_en_dir() {
     local dir="$1" etiqueta="$2" umbral="$3"
     find "$dir" -type f \( -iname "*.mp3" -o -iname "*.ogg" -o -iname "*.wav" \) | while read -r archivo; do
         duracion=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$archivo" 2>/dev/null | cut -d. -f1)
-        if [[ -n "$duracion" && "$duracion" -gt "$umbral" ]]; then
+        # Fallback: algunos MP3 solo tienen duración a nivel de stream, no de contenedor
+        if [[ -z "$duracion" ]]; then
+            duracion=$(ffprobe -v error -show_entries stream=duration -of default=noprint_wrappers=1:nokey=1 "$archivo" 2>/dev/null | cut -d. -f1 | head -1)
+        fi
+        if [[ "$duracion" =~ ^[0-9]+$ && "$duracion" -gt "$umbral" ]]; then
             echo "⛔ $(basename "$archivo") en $etiqueta → ${duracion}s (excede)"
             fecha_actual=$(date +"%Y-%m-%d %H:%M:%S")
             echo "$fecha_actual|$archivo|EXCESO_DURACION" >> "$ELIMINADOS_HISTORICO"
