@@ -96,6 +96,7 @@ mem_mb=$(awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo 2>/dev/null)
 
 # ─── 2. AZURACAST ────────────────────────────────────────────────────────────
 LQ24=0
+MOUNTS_PRE=$(docker inspect -f '{{range .Mounts}}{{.Destination}}|{{.Source}}|{{.Type}}{{"\n"}}{{end}}' azuracast 2>/dev/null)
 h1 "2. AzuraCast"
 if [[ -f "$AZ_DIR/docker-compose.yml" ]]; then ok "Instalación encontrada en $AZ_DIR"
 else fail "No existe $AZ_DIR/docker-compose.yml (usa --azuracast-dir)"; fi
@@ -130,11 +131,22 @@ fi
 for f in docker-compose.override.yml docker-compose.new.yml; do
     if [[ -f "$AZ_DIR/$f" ]]; then
         warn "Existe $f (personalizaciones propias; revísalas tras actualizar):"
-        sed 's/^/        /' "$AZ_DIR/$f" | head -40
+        sed 's/^/        /' "$AZ_DIR/$f"
         cp "$AZ_DIR/$f" "$OUT/" 2>/dev/null
     fi
 done
 [[ -f "$AZ_DIR/docker-compose.yml" ]] && cp "$AZ_DIR/docker-compose.yml" "$OUT/docker-compose.yml.copy"
+
+# nginx del contenedor: un conf montado que falle tumba todo el panel
+if [[ -n "$C" ]]; then
+    if docker exec "$C" nginx -t >"$OUT/nginx_test.txt" 2>&1; then ok "nginx -t correcto en el contenedor"
+    else fail "nginx -t FALLA ya hoy: $(tail -2 "$OUT/nginx_test.txt" | tr '\n' ' ')"; fi
+    for cf in $(echo "$MOUNTS_PRE" | awk -F'|' '$1 ~ /^\/etc\/nginx\//{print $1}'); do
+        warn "Conf de nginx montado: $cf  (tras actualizar vuelve a ejecutar 'docker exec $C nginx -t'; copia en $OUT/)"
+        docker exec "$C" cat "$cf" > "$OUT/$(basename "$cf").copy" 2>/dev/null
+        grep -nE 'root |fastcgi_pass|listen |server_name|ssl_certificate|include ' "$OUT/$(basename "$cf").copy" 2>/dev/null | sed 's/^/        /'
+    done
+fi
 
 # Último backup nativo
 if [[ -n "$C" ]]; then
