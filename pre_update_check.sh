@@ -95,6 +95,7 @@ mem_mb=$(awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo 2>/dev/null)
 [[ -n "$mem_mb" ]] && info "Memoria disponible: ${mem_mb} MB"
 
 # ─── 2. AZURACAST ────────────────────────────────────────────────────────────
+LQ24=0
 h1 "2. AzuraCast"
 if [[ -f "$AZ_DIR/docker-compose.yml" ]]; then ok "Instalación encontrada en $AZ_DIR"
 else fail "No existe $AZ_DIR/docker-compose.yml (usa --azuracast-dir)"; fi
@@ -117,9 +118,10 @@ if [[ -f "$AZ_DIR/.env" ]]; then
 fi
 
 if [[ -n "$C" ]]; then
-    az_ver=$(docker exec "$C" sh -c 'cd /var/azuracast/www 2>/dev/null && php bin/console --version 2>/dev/null | head -1' 2>/dev/null)
+    az_ver=$(docker exec "$C" sh -c 'grep -hE "FALLBACK_VERSION|const .*VERSION" /var/azuracast/www/src/Version.php 2>/dev/null | head -2; cat /var/azuracast/www/.git-version 2>/dev/null' 2>/dev/null | tr -s ' \n' ' ')
     [[ -n "$az_ver" ]] && info "Aplicación: $az_ver"
     lq=$(docker exec "$C" sh -c 'liquidsoap --version 2>/dev/null | head -1' 2>/dev/null)
+    echo "$lq" | grep -qE 'Liquidsoap 2\.([4-9]|[1-9][0-9])' && LQ24=1
     [[ -n "$lq" ]] && info "Liquidsoap actual: $lq" || info "Liquidsoap: no se pudo leer la versión"
     phpv=$(docker exec "$C" php -r 'echo PHP_VERSION;' 2>/dev/null)
     [[ -n "$phpv" ]] && info "PHP dentro del contenedor: $phpv  (puede cambiar con la actualización)"
@@ -228,7 +230,7 @@ else
 
     # Dependencias de binarios que SAPO invoca
     for b in ffmpeg ffprobe jq curl; do
-        SAPO_EXEC "command -v $b" >/dev/null && ok "Binario '$b' disponible donde corre SAPO" || warn "Binario '$b' NO disponible donde corre SAPO"
+        SAPO_EXEC "command -v $b" >/dev/null && ok "Binario '$b' disponible donde corre SAPO" || { [[ "$b" == jq ]] && info "Binario 'jq' no está en el contenedor (OK si los scripts bash corren en el host)" || warn "Binario '$b' NO disponible donde corre SAPO"; }
     done
 
     # Credenciales de la API
@@ -252,12 +254,23 @@ if [[ -n "$ARCH_DIR" ]]; then
     [[ -d "$ARCH_DIR" ]] && ARCH_WHERE=host
     [[ -z "$ARCH_WHERE" && -n "$C" ]] && docker exec "$C" test -d "$ARCH_DIR" 2>/dev/null && ARCH_WHERE=container
 else
+    # Plugins de AzuraCast montados (Archikast suele ser uno)
+    pl_src=$(persist_src /var/azuracast/www/plugins)
+    if [[ -n "$pl_src" && -d "$pl_src" ]]; then
+        ok "Plugins de AzuraCast en $pl_src:"
+        for d in "$pl_src"/*/; do
+            [[ -d "$d" ]] || continue
+            echo "        - $(basename "$d")  $(grep -hoE '"(version|azuracast[^"]*)": *"[^"]+"' "$d/composer.json" 2>/dev/null | tr '\n' ' ')"
+            if [[ -z "$ARCH_DIR" ]] && basename "$d" | grep -qi archikast; then ARCH_DIR="${d%/}"; ARCH_WHERE=host; fi
+        done
+        warn "Los plugins se enganchan a clases internas de AzuraCast: pueden romperse con cualquier salto de versión (PHP/Symfony). Pruébalos en una copia antes"
+    fi
     # Contenedores propios
     other=$(docker ps --format '{{.Names}} ({{.Image}})' | grep -i archikast)
     [[ -n "$other" ]] && { ok "Contenedor(es) de Archikast:"; echo "$other" | sed 's/^/        /'; }
     # Directorios en host
-    ARCH_DIR=$(find /var/www /opt /srv /home /root "$AZ_DIR" -maxdepth 4 -type d -iname '*archikast*' 2>/dev/null | head -1)
-    [[ -n "$ARCH_DIR" ]] && ARCH_WHERE=host
+    [[ -z "$ARCH_WHERE" ]] && ARCH_DIR=$(find /var/www /opt /srv /home /root "$AZ_DIR" -maxdepth 4 -type d -iname '*archikast*' 2>/dev/null | head -1)
+    [[ -z "$ARCH_WHERE" && -n "$ARCH_DIR" ]] && ARCH_WHERE=host
     if [[ -z "$ARCH_WHERE" && -n "$C" ]]; then
         ARCH_DIR=$(docker exec "$C" find /var/azuracast /var/www -maxdepth 5 -type d -iname '*archikast*' 2>/dev/null | head -1)
         [[ -n "$ARCH_DIR" ]] && ARCH_WHERE=container
@@ -286,10 +299,10 @@ fi
 
 # ─── 6. CRON ─────────────────────────────────────────────────────────────────
 h1 "6. Tareas programadas (¿viven fuera del contenedor?)"
-hostcron=$( { crontab -l 2>/dev/null; cat /etc/cron.d/* 2>/dev/null; } | grep -iE 'sapo|archikast|record_emissions|cliente_rrll|rss_preload' )
+hostcron=$( { crontab -l 2>/dev/null; cat /etc/cron.d/* 2>/dev/null; } | grep -E '^[[:space:]]*([0-9*/,-]+[[:space:]]+){5}' | grep -iE 'sapo|archikast|record_emissions|cliente_rrll|rss_preload' )
 [[ -n "$hostcron" ]] && { ok "Cron en el HOST (no se pierde al actualizar):"; echo "$hostcron" | sed 's/^/        /'; }
 if [[ -n "$C" ]]; then
-    contcron=$(docker exec "$C" sh -c 'for u in azuracast root www-data; do crontab -l -u $u 2>/dev/null; done; cat /etc/cron.d/* 2>/dev/null' | grep -iE 'sapo|archikast|record_emissions|cliente_rrll|rss_preload')
+    contcron=$(docker exec "$C" sh -c 'for u in azuracast root www-data; do crontab -l -u $u 2>/dev/null; done; cat /etc/cron.d/* 2>/dev/null' | grep -E '^[[:space:]]*([0-9*/,-]+[[:space:]]+){5}' | grep -iE 'sapo|archikast|record_emissions|cliente_rrll|rss_preload')
     if [[ -n "$contcron" ]]; then
         fail "Cron de SAPO/Archikast DENTRO del contenedor (se pierde al recrearlo; pásalo al host o a un volumen):"
         echo "$contcron" | sed 's/^/        /'
@@ -331,6 +344,8 @@ else
                 fn="$api_dir/$(echo "$ep" | tr '/?=' '___').json"
                 code=$(api "/$ep" "$fn")
                 if [[ "$code" == 200 ]]; then ok "GET /$ep -> 200"
+                elif [[ "$ep" == */log/liquidsoap || "$ep" == */streamers ]]; then
+                    warn "GET /$ep -> $code (estado ANTES de actualizar; si ya falla hoy, no es regresión. Cuerpo: $(head -c 160 "$fn" | tr '\n' ' '))"
                 else fail "GET /$ep -> $code"; fi
             done
             # Estructura (claves) para comparar luego con el post-update
@@ -353,7 +368,8 @@ else
                 grep -qE '%include|%ifdef|%ifencoder'            "$f" && hits="$hits directivas-%"
                 grep -qiE 'senal|señal|time_?signal|SAPO'         "$f" && info "  contiene el bloque de señales horarias de SAPO"
                 if [[ -n "$hits" ]]; then
-                    warn "  Revisar contra Liquidsoap 2.4:$hits"
+                    if (( LQ24 )); then info "  Construcciones a vigilar:$hits (ya corre Liquidsoap 2.4.x con esta config; sin cambios esperados)"
+                    else warn "  Revisar contra Liquidsoap 2.4:$hits"; fi
                 else
                     ok "  Sin construcciones conocidas como problemáticas"
                 fi
