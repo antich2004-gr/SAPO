@@ -252,7 +252,7 @@ function _normProgName($s) {
     $s = preg_replace('/\s*[-–]\s*\(di?recto\)\s*$/ui', '', $s);
     $s = preg_replace('/\s*\(di?recto\)\s*$/ui', '', $s);
     $s = preg_replace('/\s*\(\d+h\d*\)\s*$/u', '', $s);
-    $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', mb_strtolower(trim($s)));
+    $ascii = asciiTranslit(mb_strtolower(trim($s)));
     return preg_replace('/\s+/', ' ', trim($ascii !== false ? $ascii : mb_strtolower(trim($s))));
 }
 

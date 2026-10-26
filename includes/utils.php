@@ -27,9 +27,36 @@ function validateInput($input, $type = 'text', $maxLength = 255) {
     }
 }
 
+/**
+ * Translitera UTF-8 a ASCII. Usa iconv si está disponible; si no (p. ej. PHP
+ * sin la extensión iconv), recurre a intl o a una tabla de acentos básica.
+ */
+function asciiTranslit($text) {
+    if (function_exists('iconv')) {
+        $r = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
+        if ($r !== false) return $r;
+    }
+    if (class_exists('Transliterator')) {
+        $t = Transliterator::create('Any-Latin; Latin-ASCII');
+        if ($t) {
+            $r = $t->transliterate($text);
+            if ($r !== false) return $r;
+        }
+    }
+    $text = strtr($text, [
+        'á'=>'a','à'=>'a','ä'=>'a','â'=>'a','ã'=>'a','å'=>'a','Á'=>'A','À'=>'A','Ä'=>'A','Â'=>'A','Ã'=>'A','Å'=>'A',
+        'é'=>'e','è'=>'e','ë'=>'e','ê'=>'e','É'=>'E','È'=>'E','Ë'=>'E','Ê'=>'E',
+        'í'=>'i','ì'=>'i','ï'=>'i','î'=>'i','Í'=>'I','Ì'=>'I','Ï'=>'I','Î'=>'I',
+        'ó'=>'o','ò'=>'o','ö'=>'o','ô'=>'o','õ'=>'o','Ó'=>'O','Ò'=>'O','Ö'=>'O','Ô'=>'O','Õ'=>'O',
+        'ú'=>'u','ù'=>'u','ü'=>'u','û'=>'u','Ú'=>'U','Ù'=>'U','Ü'=>'U','Û'=>'U',
+        'ñ'=>'n','Ñ'=>'N','ç'=>'c','Ç'=>'C','ß'=>'ss','·'=>'.','’'=>"'",'‘'=>"'",'“'=>'"','”'=>'"','–'=>'-','—'=>'-',
+    ]);
+    return preg_replace('/[^\x00-\x7F]/', '?', $text);
+}
+
 function slugify($text) {
     $text = preg_replace('~[^\pL\d]+~u', '_', $text);
-    $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
+    $text = asciiTranslit($text);
     $text = preg_replace('~[^-\w]+~', '', $text);
     $text = trim($text, '_');
     $text = preg_replace('~-+~', '_', $text);
@@ -38,7 +65,7 @@ function slugify($text) {
 }
 
 function sanitizePodcastName($text) {
-    $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
+    $text = asciiTranslit($text);
     $text = str_replace(' ', '_', $text);
     $text = preg_replace('/[^a-zA-Z0-9_-]/', '', $text);
     $text = preg_replace('/_+/', '_', $text);

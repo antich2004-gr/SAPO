@@ -75,7 +75,7 @@ function _erNorm(string $s): string {
     $s = preg_replace('/\s*[-–]\s*\(di?recto\)\s*$/ui', '', $s);
     $s = preg_replace('/\s*\(di?recto\)\s*$/ui', '', $s);
     $s = preg_replace('/\s*\(\d+h\d*\)\s*$/u', '', $s);
-    $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', strtolower(trim($s)));
+    $ascii = asciiTranslit(strtolower(trim($s)));
     return preg_replace('/\s+/', ' ', trim($ascii !== false ? $ascii : strtolower(trim($s))));
 }
 
